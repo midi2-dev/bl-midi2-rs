@@ -1,3 +1,5 @@
+use crate::group_id::GroupID;
+
 #[derive(Debug, PartialEq)]
 pub struct Packet {
     data: [u32; 4],
@@ -11,26 +13,6 @@ pub enum Type {
     SystemExclusiveData,
     Midi2ChannelVoice,
     Data,
-}
-
-#[derive(Debug, PartialEq)]
-pub enum Group {
-    G1,
-    G2,
-    G3,
-    G4,
-    G5,
-    G6,
-    G7,
-    G8,
-    G9,
-    G10,
-    G11,
-    G12,
-    G13,
-    G14,
-    G15,
-    G16,
 }
 
 impl Packet {
@@ -52,24 +34,24 @@ impl Packet {
         }
     }
 
-    pub fn group(&self) -> Group {
+    pub fn group(&self) -> GroupID {
         match self.data[0] >> 24 & 0xF {
-            0x0 => Group::G1,
-            0x1 => Group::G2,
-            0x2 => Group::G3,
-            0x3 => Group::G4,
-            0x4 => Group::G5,
-            0x5 => Group::G6,
-            0x6 => Group::G7,
-            0x7 => Group::G8,
-            0x8 => Group::G9,
-            0x9 => Group::G10,
-            0xA => Group::G11,
-            0xB => Group::G12,
-            0xC => Group::G13,
-            0xD => Group::G14,
-            0xE => Group::G15,
-            0xF => Group::G16,
+            0x0 => GroupID::G1,
+            0x1 => GroupID::G2,
+            0x2 => GroupID::G3,
+            0x3 => GroupID::G4,
+            0x4 => GroupID::G5,
+            0x5 => GroupID::G6,
+            0x6 => GroupID::G7,
+            0x7 => GroupID::G8,
+            0x8 => GroupID::G9,
+            0x9 => GroupID::G10,
+            0xA => GroupID::G11,
+            0xB => GroupID::G12,
+            0xC => GroupID::G13,
+            0xD => GroupID::G14,
+            0xE => GroupID::G15,
+            0xF => GroupID::G16,
             _ => panic!(),
         }
     }
@@ -102,23 +84,23 @@ mod tests {
 
     #[test]
     fn group_reported() {
-        let data_group_pairings: Vec<([u32; 4], Group)> = vec![
-            ([0x0000_0000, 0x0, 0x0, 0x0], Group::G1),
-            ([0x0100_0000, 0x0, 0x0, 0x0], Group::G2),
-            ([0x0200_0000, 0x0, 0x0, 0x0], Group::G3),
-            ([0x0300_0000, 0x0, 0x0, 0x0], Group::G4),
-            ([0x0400_0000, 0x0, 0x0, 0x0], Group::G5),
-            ([0x0500_0000, 0x0, 0x0, 0x0], Group::G6),
-            ([0x0600_0000, 0x0, 0x0, 0x0], Group::G7),
-            ([0x0700_0000, 0x0, 0x0, 0x0], Group::G8),
-            ([0x0800_0000, 0x0, 0x0, 0x0], Group::G9),
-            ([0x0900_0000, 0x0, 0x0, 0x0], Group::G10),
-            ([0x0A00_0000, 0x0, 0x0, 0x0], Group::G11),
-            ([0x0B00_0000, 0x0, 0x0, 0x0], Group::G12),
-            ([0x0C00_0000, 0x0, 0x0, 0x0], Group::G13),
-            ([0x0D00_0000, 0x0, 0x0, 0x0], Group::G14),
-            ([0x0E00_0000, 0x0, 0x0, 0x0], Group::G15),
-            ([0x0F00_0000, 0x0, 0x0, 0x0], Group::G16),
+        let data_group_pairings: Vec<([u32; 4], GroupID)> = vec![
+            ([0x0000_0000, 0x0, 0x0, 0x0], GroupID::G1),
+            ([0x0100_0000, 0x0, 0x0, 0x0], GroupID::G2),
+            ([0x0200_0000, 0x0, 0x0, 0x0], GroupID::G3),
+            ([0x0300_0000, 0x0, 0x0, 0x0], GroupID::G4),
+            ([0x0400_0000, 0x0, 0x0, 0x0], GroupID::G5),
+            ([0x0500_0000, 0x0, 0x0, 0x0], GroupID::G6),
+            ([0x0600_0000, 0x0, 0x0, 0x0], GroupID::G7),
+            ([0x0700_0000, 0x0, 0x0, 0x0], GroupID::G8),
+            ([0x0800_0000, 0x0, 0x0, 0x0], GroupID::G9),
+            ([0x0900_0000, 0x0, 0x0, 0x0], GroupID::G10),
+            ([0x0A00_0000, 0x0, 0x0, 0x0], GroupID::G11),
+            ([0x0B00_0000, 0x0, 0x0, 0x0], GroupID::G12),
+            ([0x0C00_0000, 0x0, 0x0, 0x0], GroupID::G13),
+            ([0x0D00_0000, 0x0, 0x0, 0x0], GroupID::G14),
+            ([0x0E00_0000, 0x0, 0x0, 0x0], GroupID::G15),
+            ([0x0F00_0000, 0x0, 0x0, 0x0], GroupID::G16),
         ];
         for (d, g) in data_group_pairings {
             assert_eq!(Packet{data: d}.group(), g);
