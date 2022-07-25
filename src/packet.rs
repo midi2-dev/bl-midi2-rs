@@ -1,8 +1,11 @@
-use crate::group_id::GroupID;
+#[derive(
+    Debug, 
+    Default,
+    PartialEq,
+)]
 
-#[derive(Debug, PartialEq)]
 pub struct Packet {
-    data: [u32; 4],
+    pub data: [u32; 4],
 }
 
 #[derive(Debug, PartialEq)]
@@ -34,26 +37,8 @@ impl Packet {
         }
     }
 
-    pub fn group(&self) -> GroupID {
-        match self.data[0] >> 24 & 0xF {
-            0x0 => GroupID::G1,
-            0x1 => GroupID::G2,
-            0x2 => GroupID::G3,
-            0x3 => GroupID::G4,
-            0x4 => GroupID::G5,
-            0x5 => GroupID::G6,
-            0x6 => GroupID::G7,
-            0x7 => GroupID::G8,
-            0x8 => GroupID::G9,
-            0x9 => GroupID::G10,
-            0xA => GroupID::G11,
-            0xB => GroupID::G12,
-            0xC => GroupID::G13,
-            0xD => GroupID::G14,
-            0xE => GroupID::G15,
-            0xF => GroupID::G16,
-            _ => panic!(),
-        }
+    pub fn group(&self) -> u8 {
+        (self.data[0] >> 24 & 0xF) as u8
     }
 }
 
@@ -62,7 +47,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn create_packet() {
+    fn default_packet() {
         let packet = Packet::new();
         assert_eq!(packet, Packet{ data: [0, 0, 0, 0] });
     }
@@ -84,23 +69,23 @@ mod tests {
 
     #[test]
     fn group_reported() {
-        let data_group_pairings: Vec<([u32; 4], GroupID)> = vec![
-            ([0x0000_0000, 0x0, 0x0, 0x0], GroupID::G1),
-            ([0x0100_0000, 0x0, 0x0, 0x0], GroupID::G2),
-            ([0x0200_0000, 0x0, 0x0, 0x0], GroupID::G3),
-            ([0x0300_0000, 0x0, 0x0, 0x0], GroupID::G4),
-            ([0x0400_0000, 0x0, 0x0, 0x0], GroupID::G5),
-            ([0x0500_0000, 0x0, 0x0, 0x0], GroupID::G6),
-            ([0x0600_0000, 0x0, 0x0, 0x0], GroupID::G7),
-            ([0x0700_0000, 0x0, 0x0, 0x0], GroupID::G8),
-            ([0x0800_0000, 0x0, 0x0, 0x0], GroupID::G9),
-            ([0x0900_0000, 0x0, 0x0, 0x0], GroupID::G10),
-            ([0x0A00_0000, 0x0, 0x0, 0x0], GroupID::G11),
-            ([0x0B00_0000, 0x0, 0x0, 0x0], GroupID::G12),
-            ([0x0C00_0000, 0x0, 0x0, 0x0], GroupID::G13),
-            ([0x0D00_0000, 0x0, 0x0, 0x0], GroupID::G14),
-            ([0x0E00_0000, 0x0, 0x0, 0x0], GroupID::G15),
-            ([0x0F00_0000, 0x0, 0x0, 0x0], GroupID::G16),
+        let data_group_pairings: Vec<([u32; 4], u8)> = vec![
+            ([0x0000_0000, 0x0, 0x0, 0x0], 0),
+            ([0x0100_0000, 0x0, 0x0, 0x0], 1),
+            ([0x0200_0000, 0x0, 0x0, 0x0], 2),
+            ([0x0300_0000, 0x0, 0x0, 0x0], 3),
+            ([0x0400_0000, 0x0, 0x0, 0x0], 4),
+            ([0x0500_0000, 0x0, 0x0, 0x0], 5),
+            ([0x0600_0000, 0x0, 0x0, 0x0], 6),
+            ([0x0700_0000, 0x0, 0x0, 0x0], 7),
+            ([0x0800_0000, 0x0, 0x0, 0x0], 8),
+            ([0x0900_0000, 0x0, 0x0, 0x0], 9),
+            ([0x0A00_0000, 0x0, 0x0, 0x0], 10),
+            ([0x0B00_0000, 0x0, 0x0, 0x0], 11),
+            ([0x0C00_0000, 0x0, 0x0, 0x0], 12),
+            ([0x0D00_0000, 0x0, 0x0, 0x0], 13),
+            ([0x0E00_0000, 0x0, 0x0, 0x0], 14),
+            ([0x0F00_0000, 0x0, 0x0, 0x0], 15),
         ];
         for (d, g) in data_group_pairings {
             assert_eq!(Packet{data: d}.group(), g);
