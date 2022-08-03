@@ -1,9 +1,7 @@
 #[derive(
-    Debug, 
     Default,
     PartialEq,
 )]
-
 pub struct Packet {
     pub data: [u32; 4],
 }
@@ -50,6 +48,19 @@ impl Packet {
 
     pub fn set_word(self, index: usize, v: u16) -> Self {
         todo!()
+    }
+}
+
+impl std::fmt::Debug for Packet { 
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(
+            f,
+            "Packet {{ data: [ {:#010X}, {:#010X}, {:#010X}, {:#010X} ] }}",  
+            self.data[0],
+            self.data[1],
+            self.data[2],
+            self.data[3],
+        )
     }
 }
 
@@ -133,5 +144,18 @@ mod tests {
         assert_eq!(p.word(0), 0x0123);
         assert_eq!(p.word(1), 0x4567);
         assert_eq!(p.word(6), 0x89AB);
+    }
+
+    #[test]
+    fn format() {
+        assert_eq!(
+            format!("{:?}", Packet{ data: [
+                0x0123_4567,
+                0x89AB_CDEF,
+                0x0123_4567,
+                0x89AB_CDEF,
+            ]}),
+            "Packet { data: [ 0x01234567, 0x89ABCDEF, 0x01234567, 0x89ABCDEF ] }"
+        );
     }
 }
