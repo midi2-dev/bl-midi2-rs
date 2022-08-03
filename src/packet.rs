@@ -25,6 +25,10 @@ impl Packet {
             .try_into()
             .unwrap()
     }
+    
+    pub fn set_nibble(mut self, index: usize, v: u8) -> Self {
+        todo!()
+    }
 
     pub fn octet(&self, index: usize) -> u8 {
         assert!(index < 16);
@@ -33,11 +37,19 @@ impl Packet {
             .unwrap()
     }
 
+    pub fn set_octet(self, index: usize, v: u8) -> Self {
+        todo!()
+    }
+
     pub fn word(&self, index: usize) -> u16 {
         assert!(index < 8);
         ((self.data[index / 2] >> (16 - (index % 2) * 16)) & 0xFFFF)
             .try_into()
             .unwrap()
+    }
+
+    pub fn set_word(self, index: usize, v: u16) -> Self {
+        todo!()
     }
 }
 
