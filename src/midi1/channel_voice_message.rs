@@ -98,3 +98,90 @@ impl std::convert::TryFrom<Packet> for ChannelVoiceMessage {
         }
     }
 }
+
+#[cfg(test)]
+mod from_packet_tests {
+    use super::*;
+
+    #[test]
+    fn note_off() {
+        assert_eq!(
+            ChannelVoiceMessage::try_from(Packet{data:[0x2A80_3C58,0x0,0x0,0x0]}),
+            Ok(ChannelVoiceMessage::NoteOff {
+                channel: 0,
+                note: 60,
+                velocity: 88,
+            })
+        );
+    }
+
+    #[test]
+    fn note_on() {
+        assert_eq!(
+            ChannelVoiceMessage::try_from(Packet{data:[0x2C9D_5020,0x0,0x0,0x0]}),
+            Ok(ChannelVoiceMessage::NoteOn {
+                channel: 13,
+                note: 80,
+                velocity: 32,
+            })
+        );
+    }
+
+    #[test]
+    fn key_pressure() {
+        assert_eq!(
+            ChannelVoiceMessage::try_from(Packet{data:[0x22A2_3EA0,0x0,0x0,0x0]}),
+            Ok(ChannelVoiceMessage::KeyPressure {
+                channel: 2,
+                note: 62,
+                value: 160,
+            })
+        );
+    }
+
+    #[test]
+    fn control_change() {
+        assert_eq!(
+            ChannelVoiceMessage::try_from(Packet{data:[0x21BF_010A,0x0,0x0,0x0]}),
+            Ok(ChannelVoiceMessage::ControlChange {
+                channel: 15,
+                controller: 1,
+                value: 10,
+            })
+        );
+    }
+
+    #[test]
+    fn program_change() {
+        assert_eq!(
+            ChannelVoiceMessage::try_from(Packet{data:[0x27C0_A400,0x0,0x0,0x0]}),
+            Ok(ChannelVoiceMessage::ProgramChange {
+                channel: 0,
+                program: 164,
+            })
+        );
+    }
+
+    #[test]
+    fn channel_pressure() {
+        assert_eq!(
+            ChannelVoiceMessage::try_from(Packet{data:[0x24D4_5300,0x0,0x0,0x0]}),
+            Ok(ChannelVoiceMessage::ChannelPressure {
+                channel: 4,
+                value: 83,
+            })
+        );
+    }
+
+    #[test]
+    fn pitch_bend() {
+        assert_eq!(
+            ChannelVoiceMessage::try_from(Packet{data:[0x2BE0_5381,0x0,0x0,0x0]}),
+            Ok(ChannelVoiceMessage::PitchBend {
+                channel: 0,
+                least_significant_bit: 83,
+                most_significant_bit: 129,
+            })
+        );
+    }
+}

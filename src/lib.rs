@@ -2,6 +2,7 @@ pub mod message;
 pub mod midi1;
 pub mod midi2;
 pub mod packet;
+pub mod system_message;
 
 pub use packet::Packet;
 
