@@ -99,8 +99,78 @@ impl std::convert::TryFrom<Packet> for ChannelVoiceMessage {
     }
 }
 
+impl From<ChannelVoiceMessage> for Packet {
+    fn from(m: ChannelVoiceMessage) -> Self {
+        match m {
+            ChannelVoiceMessage::NoteOff {
+                channel,
+                note,
+                velocity,
+            } => channel_voice_packet(0x8, channel, note, Some(velocity)),
+            ChannelVoiceMessage::NoteOn {
+                channel,
+                note,
+                velocity,
+            } => channel_voice_packet(0x9, channel, note, Some(velocity)),
+            ChannelVoiceMessage::KeyPressure {
+                channel,
+                note,
+                value,
+            } => channel_voice_packet(0xA, channel, note, Some(value)),
+            ChannelVoiceMessage::ControlChange {
+                channel,
+                controller,
+                value,
+            } => channel_voice_packet(0xB, channel, controller, Some(value)),
+            ChannelVoiceMessage::ProgramChange {
+                channel,
+                program,
+            } => channel_voice_packet(0xC, channel, program, None),
+            ChannelVoiceMessage::ChannelPressure {
+                channel,
+                value,
+            } => channel_voice_packet(0xD, channel, value, None),
+            ChannelVoiceMessage::PitchBend {
+                channel,
+                least_significant_bit,
+                most_significant_bit,
+            } => channel_voice_packet(
+                0xE, 
+                channel, 
+                least_significant_bit, 
+                Some(most_significant_bit),
+            ),
+        }
+    }
+}
+
+fn channel_voice_packet(
+    status: u8,
+    channel: u8, 
+    bit1: u8, 
+    bit2: Option<u8>
+) -> Packet {
+    let mut p = Packet {
+        data: [
+            0x2000_0000,
+            0x0,
+            0x0,
+            0x0,
+        ],
+    }
+    .set_nibble(2, status)
+    .set_nibble(3, channel)
+    .set_octet(2, bit1);
+
+    if let Some(b) = bit2 {
+        p = p.set_octet(3, b);
+    }
+
+    p
+}
+
 #[cfg(test)]
-mod from_packet_tests {
+mod message_from_packet {
     use super::*;
 
     #[test]
@@ -182,6 +252,94 @@ mod from_packet_tests {
                 least_significant_bit: 83,
                 most_significant_bit: 129,
             })
+        );
+    }
+}
+
+#[cfg(test)]
+mod packet_from_message {
+    use super::*;
+
+    #[test]
+    fn note_off() {
+        assert_eq!(
+            Packet::from(ChannelVoiceMessage::NoteOff {
+                channel: 0xA,
+                note: 0x66,
+                velocity: 0x88,
+            }),
+            Packet{ data: [ 0x208A_6688, 0x0, 0x0, 0x0 ] },
+        );
+    }
+
+    #[test]
+    fn note_on() {
+        assert_eq!(
+            Packet::from(ChannelVoiceMessage::NoteOn {
+                channel: 0x3,
+                note: 0x39,
+                velocity: 0x90,
+            }),
+            Packet{ data: [ 0x2093_3990, 0x0, 0x0, 0x0 ] },
+        );
+    }
+
+    #[test]
+    fn key_pressure() {
+        assert_eq!(
+            Packet::from(ChannelVoiceMessage::KeyPressure {
+                channel: 0x5,
+                note: 0xF2,
+                value: 0x40,
+            }),
+            Packet{ data: [ 0x20A5_F240, 0x0, 0x0, 0x0 ] },
+        );
+    }
+
+    #[test]
+    fn control_change() {
+        assert_eq!(
+            Packet::from(ChannelVoiceMessage::ControlChange {
+                channel: 0x0,
+                controller: 0x30,
+                value: 0xD3,
+            }),
+            Packet{ data: [ 0x20B0_30D3, 0x0, 0x0, 0x0 ] },
+        );
+    }
+
+    #[test]
+    fn program_change() {
+        assert_eq!(
+            Packet::from(ChannelVoiceMessage::ProgramChange {
+                channel: 0x8,
+                program: 0xEE,
+            }),
+            Packet{ data: [ 0x20C8_EE00, 0x0, 0x0, 0x0 ] },
+        );
+    }
+
+    #[test]
+    fn channel_pressure() {
+        assert_eq!(
+            Packet::from(ChannelVoiceMessage::ChannelPressure {
+                channel: 0xF,
+                value: 0x02,
+            }),
+            Packet{ data: [ 0x20DF_0200, 0x0, 0x0, 0x0 ] },
+        );
+    }
+
+    #[test]
+    fn pitch_bend() {
+        assert_eq!(
+            Packet::from(ChannelVoiceMessage::PitchBend {
+                channel: 0x0,
+                least_significant_bit: 0x88,
+                most_significant_bit: 0x77,
+
+            }),
+            Packet{ data: [ 0x20E0_8877, 0x0, 0x0, 0x0 ] },
         );
     }
 }

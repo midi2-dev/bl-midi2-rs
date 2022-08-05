@@ -17,6 +17,10 @@ impl Packet {
         self.nibble(1)
     }
 
+    pub fn set_group(self, g: u8) -> Self {
+        self.set_nibble(1, g)
+    }
+
     pub fn nibble(&self, index: usize) -> u8 {
         assert!(index < 32);
         ((self.data[index / 8] >> (28 - (index % 8) * 4)) & 0xF)
@@ -25,7 +29,10 @@ impl Packet {
     }
     
     pub fn set_nibble(mut self, index: usize, v: u8) -> Self {
-        todo!()
+        assert!(v <= 0xF);
+        assert!(index < 32);
+        self.data[index / 8] |= (v as u32) << (28 - (index % 8) * 4);
+        self
     }
 
     pub fn octet(&self, index: usize) -> u8 {
@@ -35,8 +42,10 @@ impl Packet {
             .unwrap()
     }
 
-    pub fn set_octet(self, index: usize, v: u8) -> Self {
-        todo!()
+    pub fn set_octet(mut self, index: usize, v: u8) -> Self {
+        assert!(index < 16);
+        self.data[index / 4] |= (v as u32) << (24 - (index % 4) * 8);
+        self
     }
 
     pub fn word(&self, index: usize) -> u16 {
@@ -46,8 +55,10 @@ impl Packet {
             .unwrap()
     }
 
-    pub fn set_word(self, index: usize, v: u16) -> Self {
-        todo!()
+    pub fn set_word(mut self, index: usize, v: u16) -> Self {
+        assert!(index < 8);
+        self.data[index / 2] |= (v as u32) << (16 - (index % 2) * 16);
+        self
     }
 }
 
@@ -100,6 +111,14 @@ mod tests {
     }
 
     #[test]
+    fn set_group() {
+        assert_eq!(
+            Packet{ data: [ 0x0, 0x0, 0x0, 0x0 ] }.set_group(2),
+            Packet{ data: [ 0x0200_0000, 0x0, 0x0, 0x0 ] },
+        );
+    }
+
+    #[test]
     fn nibble() {
         let p = Packet {
             data: [
@@ -113,6 +132,22 @@ mod tests {
         assert_eq!(p.nibble(3), 3);
         assert_eq!(p.nibble(16), 0);
         assert_eq!(p.nibble(19), 3);
+    }
+
+    #[test]
+    fn set_nibble() {
+        assert_eq!(
+            Packet::new().set_nibble(0, 0xB),
+            Packet { data: [0xB000_0000, 0x0, 0x0, 0x0] },
+        );
+        assert_eq!(
+            Packet::new().set_nibble(5, 0xB),
+            Packet { data: [0x0000_0B00, 0x0, 0x0, 0x0] },
+        );
+        assert_eq!(
+            Packet::new().set_nibble(10, 0xB),
+            Packet { data: [0x0, 0x00B0_0000, 0x0, 0x0] },
+        );
     }
 
     #[test]
@@ -132,6 +167,22 @@ mod tests {
     }
 
     #[test]
+    fn set_octet() {
+        assert_eq!(
+            Packet::new().set_octet(0, 0xBE),
+            Packet { data: [0xBE00_0000, 0x0, 0x0, 0x0] },
+        );
+        assert_eq!(
+            Packet::new().set_octet(2, 0xBE),
+            Packet { data: [0x0000_BE00, 0x0, 0x0, 0x0] },
+        );
+        assert_eq!(
+            Packet::new().set_octet(5, 0xBE),
+            Packet { data: [0x0, 0x00BE_0000, 0x0, 0x0] },
+        );
+    }
+
+    #[test]
     fn word() {
         let p = Packet {
             data: [
@@ -144,6 +195,22 @@ mod tests {
         assert_eq!(p.word(0), 0x0123);
         assert_eq!(p.word(1), 0x4567);
         assert_eq!(p.word(6), 0x89AB);
+    }
+
+    #[test]
+    fn set_word() {
+        assert_eq!(
+            Packet::new().set_word(0, 0x0ABE),
+            Packet { data: [0x0ABE_0000, 0x0, 0x0, 0x0] },
+        );
+        assert_eq!(
+            Packet::new().set_word(1, 0x0ABE),
+            Packet { data: [0x0000_0ABE, 0x0, 0x0, 0x0] },
+        );
+        assert_eq!(
+            Packet::new().set_word(3, 0x0ABE),
+            Packet { data: [0x0, 0x0000_0ABE, 0x0, 0x0] },
+        );
     }
 
     #[test]
