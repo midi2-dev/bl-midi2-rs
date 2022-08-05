@@ -1,7 +1,8 @@
 use crate::{
     midi1_channel_voice, 
     midi2_channel_voice, 
-    system,
+    system_common,
+    system_exclusive,
     Group,
     Packet,
 };
@@ -12,9 +13,9 @@ use crate::{
 )]
 enum MessageType {
     Utility,
-    System(system::Message),
+    System(system_common::Message),
     Midi1ChannelVoice(midi1_channel_voice::Message),
-    SystemExclusive,
+    SystemExclusive(system_exclusive::Message),
     Midi2ChannelVoice(midi2_channel_voice::Message),
     ExtendedData,
 }
@@ -36,7 +37,8 @@ enum MessageParseError {
     InvalidMessageType(u32),
     Midi1ChannelVoiceParseError(midi1_channel_voice::MessageParseError),
     Midi2ChannelVoiceParseError(midi2_channel_voice::MessageParseError),
-    SystemParseError(system::MessageParseError),
+    SystemCommonParseError(system_common::MessageParseError),
+    SystemExclusiveParseError(system_exclusive::MessageParseError),
 }
 
 impl std::convert::TryFrom<Packet> for Message {
@@ -51,32 +53,31 @@ impl std::convert::TryFrom<Packet> for Message {
                 })
             },
             0x1 => {
-                match system::Message::try_from(p) {
-                    Ok(message) => {
-                        Ok(Message {
-                            group,
-                            message_type: MessageType::System(message),
-                        })
-                    },
-                    Err(e) => { Err(MessageParseError::SystemParseError(e)) }
+                match system_common::Message::try_from(p) {
+                    Ok(message) => Ok(Message {
+                        group,
+                        message_type: MessageType::System(message),
+                    }),
+                    Err(e) => Err(MessageParseError::SystemCommonParseError(e))
                 }
             },
             0x2 => {
                 match midi1_channel_voice::Message::try_from(p) {
-                    Ok(message) => { 
-                        Ok(Message{
-                            group,
-                            message_type: MessageType::Midi1ChannelVoice(message)
-                        }) 
-                    },
-                    Err(e) => { Err(MessageParseError::Midi1ChannelVoiceParseError(e)) }
+                    Ok(message) => Ok(Message{
+                        group,
+                        message_type: MessageType::Midi1ChannelVoice(message)
+                    }),
+                    Err(e) => Err(MessageParseError::Midi1ChannelVoiceParseError(e))
                 }
             },
             0x3 => {
-                Ok(Message {
-                    group,
-                    message_type: MessageType::SystemExclusive,
-                })
+                match system_exclusive::Message::try_from(p) {
+                    Ok(message) => Ok(Message{
+                        group,
+                        message_type: MessageType::SystemExclusive(message)
+                    }),
+                    Err(e) => Err(MessageParseError::SystemExclusiveParseError(e)),
+                }
             },
             0x4 => {
                 match midi2_channel_voice::Message::try_from(p) {
@@ -86,7 +87,7 @@ impl std::convert::TryFrom<Packet> for Message {
                             message_type: MessageType::Midi2ChannelVoice(message)
                         }) 
                     },
-                    Err(e) => { Err(MessageParseError::Midi2ChannelVoiceParseError(e)) }
+                    Err(e) => Err(MessageParseError::Midi2ChannelVoiceParseError(e))
                 }
             },
             0x5 => {
@@ -95,9 +96,7 @@ impl std::convert::TryFrom<Packet> for Message {
                     message_type: MessageType::ExtendedData,
                 })
             },
-            invalid_type => {
-                Err(MessageParseError::InvalidMessageType(invalid_type))
-            },
+            invalid_type => Err(MessageParseError::InvalidMessageType(invalid_type)),
         }
     }
 }
