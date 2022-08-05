@@ -1,8 +1,8 @@
 pub mod message;
-pub mod midi1;
-pub mod midi2;
+pub mod midi1_channel_voice;
+pub mod midi2_channel_voice;
 pub mod packet;
-pub mod system_message;
+pub mod system;
 
 pub use packet::Packet;
 

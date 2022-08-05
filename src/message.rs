@@ -1,6 +1,7 @@
 use crate::{
-    midi1, 
-    midi2,
+    midi1_channel_voice, 
+    midi2_channel_voice, 
+    system,
     Group,
     Packet,
 };
@@ -11,10 +12,10 @@ use crate::{
 )]
 enum MessageType {
     Utility,
-    System,
-    Midi1ChannelVoice(midi1::ChannelVoiceMessage),
-    Data,
-    Midi2ChannelVoice(midi2::ChannelVoiceMessage),
+    System(system::Message),
+    Midi1ChannelVoice(midi1_channel_voice::Message),
+    SystemExclusive,
+    Midi2ChannelVoice(midi2_channel_voice::Message),
     ExtendedData,
 }
 
@@ -33,8 +34,9 @@ struct Message {
 )]
 enum MessageParseError {
     InvalidMessageType(u32),
-    Midi1ChannelVoiceParseError(midi1::ChannelVoiceMessageParseError),
-    Midi2ChannelVoiceParseError(midi2::ChannelVoiceMessageParseError),
+    Midi1ChannelVoiceParseError(midi1_channel_voice::MessageParseError),
+    Midi2ChannelVoiceParseError(midi2_channel_voice::MessageParseError),
+    SystemParseError(system::MessageParseError),
 }
 
 impl std::convert::TryFrom<Packet> for Message {
@@ -49,13 +51,18 @@ impl std::convert::TryFrom<Packet> for Message {
                 })
             },
             0x1 => {
-                Ok(Message {
-                    group,
-                    message_type: MessageType::System,
-                })
+                match system::Message::try_from(p) {
+                    Ok(message) => {
+                        Ok(Message {
+                            group,
+                            message_type: MessageType::System(message),
+                        })
+                    },
+                    Err(e) => { Err(MessageParseError::SystemParseError(e)) }
+                }
             },
             0x2 => {
-                match midi1::ChannelVoiceMessage::try_from(p) {
+                match midi1_channel_voice::Message::try_from(p) {
                     Ok(message) => { 
                         Ok(Message{
                             group,
@@ -68,11 +75,11 @@ impl std::convert::TryFrom<Packet> for Message {
             0x3 => {
                 Ok(Message {
                     group,
-                    message_type: MessageType::Data,
+                    message_type: MessageType::SystemExclusive,
                 })
             },
             0x4 => {
-                match midi2::ChannelVoiceMessage::try_from(p) {
+                match midi2_channel_voice::Message::try_from(p) {
                     Ok(message) => { 
                         Ok(Message{
                             group,
@@ -95,8 +102,14 @@ impl std::convert::TryFrom<Packet> for Message {
     }
 }
 
+impl std::convert::From<Message> for Packet {
+    fn from(_m: Message) -> Packet {
+        todo!()
+    }
+}
+
 #[cfg(test)]
-mod from_packet_tests {
+mod message_from_packet {
     use super::*;
 
     #[test]

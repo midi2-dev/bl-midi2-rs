@@ -12,7 +12,7 @@ use crate::{
     Debug,
     PartialEq,
 )]
-pub enum ChannelVoiceMessage {
+pub enum Message {
     NoteOff {
         channel: Channel,
         note: Note,
@@ -52,89 +52,95 @@ pub enum ChannelVoiceMessage {
     Debug,
     PartialEq,
 )]
-pub enum ChannelVoiceMessageParseError {
+pub enum MessageParseError {
     UnsupportedStatus(u8),
+    IncorrectMessageType(u8),
 }
 
-impl std::convert::TryFrom<Packet> for ChannelVoiceMessage {
-    type Error = ChannelVoiceMessageParseError;
+impl std::convert::TryFrom<Packet> for Message {
+    type Error = MessageParseError;
     fn try_from(p: Packet) -> Result<Self, Self::Error> {
-        let channel = p.nibble(3);
-        match p.nibble(2) {
-            0x8 => Ok(ChannelVoiceMessage::NoteOff {
-                channel,
-                note: p.octet(2),
-                velocity: p.octet(3),
-            }),
-            0x9 => Ok(ChannelVoiceMessage::NoteOn {
-                channel,
-                note: p.octet(2),
-                velocity: p.octet(3),
-            }),
-            0xA => Ok(ChannelVoiceMessage::KeyPressure {
-                channel,
-                note: p.octet(2),
-                value: p.octet(3),
-            }),
-            0xB => Ok(ChannelVoiceMessage::ControlChange {
-                channel,
-                controller: p.octet(2),
-                value: p.octet(3),
-            }),
-            0xC => Ok(ChannelVoiceMessage::ProgramChange {
-                channel,
-                program: p.octet(2),
-            }),
-            0xD => Ok(ChannelVoiceMessage::ChannelPressure {
-                channel,
-                value: p.octet(2),
-            }),
-            0xE => Ok(ChannelVoiceMessage::PitchBend {
-                channel,
-                least_significant_bit: p.octet(2),
-                most_significant_bit: p.octet(3),
-            }),
-            status => Err(ChannelVoiceMessageParseError::UnsupportedStatus(status)),
+        match p.nibble(0) {
+            2 => {
+                let channel = p.nibble(3);
+                match p.nibble(2) {
+                    0x8 => Ok(Message::NoteOff {
+                        channel,
+                        note: p.octet(2),
+                        velocity: p.octet(3),
+                    }),
+                    0x9 => Ok(Message::NoteOn {
+                        channel,
+                        note: p.octet(2),
+                        velocity: p.octet(3),
+                    }),
+                    0xA => Ok(Message::KeyPressure {
+                        channel,
+                        note: p.octet(2),
+                        value: p.octet(3),
+                    }),
+                    0xB => Ok(Message::ControlChange {
+                        channel,
+                        controller: p.octet(2),
+                        value: p.octet(3),
+                    }),
+                    0xC => Ok(Message::ProgramChange {
+                        channel,
+                        program: p.octet(2),
+                    }),
+                    0xD => Ok(Message::ChannelPressure {
+                        channel,
+                        value: p.octet(2),
+                    }),
+                    0xE => Ok(Message::PitchBend {
+                        channel,
+                        least_significant_bit: p.octet(2),
+                        most_significant_bit: p.octet(3),
+                    }),
+                    status => Err(MessageParseError::UnsupportedStatus(status)),
+                }
+            },
+            wrong_type => Err(MessageParseError::IncorrectMessageType(wrong_type)),
         }
     }
 }
 
-impl From<ChannelVoiceMessage> for Packet {
-    fn from(m: ChannelVoiceMessage) -> Self {
+impl From<Message> for Packet {
+    fn from(m: Message) -> Self {
         match m {
-            ChannelVoiceMessage::NoteOff {
+            Message::NoteOff {
                 channel,
                 note,
                 velocity,
-            } => channel_voice_packet(0x8, channel, note, Some(velocity)),
-            ChannelVoiceMessage::NoteOn {
+            } => message_packet(0x8, channel, note, Some(velocity)),
+            Message::NoteOn {
                 channel,
                 note,
                 velocity,
-            } => channel_voice_packet(0x9, channel, note, Some(velocity)),
-            ChannelVoiceMessage::KeyPressure {
+            } => message_packet(0x9, channel, note, Some(velocity)),
+            Message::KeyPressure {
                 channel,
                 note,
                 value,
-            } => channel_voice_packet(0xA, channel, note, Some(value)),
-            ChannelVoiceMessage::ControlChange {
+            } => message_packet(0xA, channel, note, Some(value)),
+            Message::ControlChange {
                 channel,
                 controller,
                 value,
-            } => channel_voice_packet(0xB, channel, controller, Some(value)),
-            ChannelVoiceMessage::ProgramChange {
+            } => message_packet(0xB, channel, controller, Some(value)),
+            Message::ProgramChange {
                 channel,
                 program,
-            } => channel_voice_packet(0xC, channel, program, None),
-            ChannelVoiceMessage::ChannelPressure {
+            } => message_packet(0xC, channel, program, None),
+            Message::ChannelPressure {
                 channel,
                 value,
-            } => channel_voice_packet(0xD, channel, value, None),
-            ChannelVoiceMessage::PitchBend {
+            } => message_packet(0xD, channel, value, None),
+            Message::PitchBend {
                 channel,
                 least_significant_bit,
                 most_significant_bit,
-            } => channel_voice_packet(
+            } => message_packet(
                 0xE, 
                 channel, 
                 least_significant_bit, 
@@ -144,7 +150,7 @@ impl From<ChannelVoiceMessage> for Packet {
     }
 }
 
-fn channel_voice_packet(
+fn message_packet(
     status: u8,
     channel: u8, 
     bit1: u8, 
@@ -174,10 +180,18 @@ mod message_from_packet {
     use super::*;
 
     #[test]
+    fn wrong_type() {
+        assert_eq!(
+            Message::try_from(Packet{data:[0x1000_0000,0x0,0x0,0x0]}),
+            Err(MessageParseError::IncorrectMessageType(0x1)),
+        );
+    }
+
+    #[test]
     fn note_off() {
         assert_eq!(
-            ChannelVoiceMessage::try_from(Packet{data:[0x2A80_3C58,0x0,0x0,0x0]}),
-            Ok(ChannelVoiceMessage::NoteOff {
+            Message::try_from(Packet{data:[0x2A80_3C58,0x0,0x0,0x0]}),
+            Ok(Message::NoteOff {
                 channel: 0,
                 note: 60,
                 velocity: 88,
@@ -188,8 +202,8 @@ mod message_from_packet {
     #[test]
     fn note_on() {
         assert_eq!(
-            ChannelVoiceMessage::try_from(Packet{data:[0x2C9D_5020,0x0,0x0,0x0]}),
-            Ok(ChannelVoiceMessage::NoteOn {
+            Message::try_from(Packet{data:[0x2C9D_5020,0x0,0x0,0x0]}),
+            Ok(Message::NoteOn {
                 channel: 13,
                 note: 80,
                 velocity: 32,
@@ -200,8 +214,8 @@ mod message_from_packet {
     #[test]
     fn key_pressure() {
         assert_eq!(
-            ChannelVoiceMessage::try_from(Packet{data:[0x22A2_3EA0,0x0,0x0,0x0]}),
-            Ok(ChannelVoiceMessage::KeyPressure {
+            Message::try_from(Packet{data:[0x22A2_3EA0,0x0,0x0,0x0]}),
+            Ok(Message::KeyPressure {
                 channel: 2,
                 note: 62,
                 value: 160,
@@ -212,8 +226,8 @@ mod message_from_packet {
     #[test]
     fn control_change() {
         assert_eq!(
-            ChannelVoiceMessage::try_from(Packet{data:[0x21BF_010A,0x0,0x0,0x0]}),
-            Ok(ChannelVoiceMessage::ControlChange {
+            Message::try_from(Packet{data:[0x21BF_010A,0x0,0x0,0x0]}),
+            Ok(Message::ControlChange {
                 channel: 15,
                 controller: 1,
                 value: 10,
@@ -224,8 +238,8 @@ mod message_from_packet {
     #[test]
     fn program_change() {
         assert_eq!(
-            ChannelVoiceMessage::try_from(Packet{data:[0x27C0_A400,0x0,0x0,0x0]}),
-            Ok(ChannelVoiceMessage::ProgramChange {
+            Message::try_from(Packet{data:[0x27C0_A400,0x0,0x0,0x0]}),
+            Ok(Message::ProgramChange {
                 channel: 0,
                 program: 164,
             })
@@ -235,8 +249,8 @@ mod message_from_packet {
     #[test]
     fn channel_pressure() {
         assert_eq!(
-            ChannelVoiceMessage::try_from(Packet{data:[0x24D4_5300,0x0,0x0,0x0]}),
-            Ok(ChannelVoiceMessage::ChannelPressure {
+            Message::try_from(Packet{data:[0x24D4_5300,0x0,0x0,0x0]}),
+            Ok(Message::ChannelPressure {
                 channel: 4,
                 value: 83,
             })
@@ -246,8 +260,8 @@ mod message_from_packet {
     #[test]
     fn pitch_bend() {
         assert_eq!(
-            ChannelVoiceMessage::try_from(Packet{data:[0x2BE0_5381,0x0,0x0,0x0]}),
-            Ok(ChannelVoiceMessage::PitchBend {
+            Message::try_from(Packet{data:[0x2BE0_5381,0x0,0x0,0x0]}),
+            Ok(Message::PitchBend {
                 channel: 0,
                 least_significant_bit: 83,
                 most_significant_bit: 129,
@@ -263,7 +277,7 @@ mod packet_from_message {
     #[test]
     fn note_off() {
         assert_eq!(
-            Packet::from(ChannelVoiceMessage::NoteOff {
+            Packet::from(Message::NoteOff {
                 channel: 0xA,
                 note: 0x66,
                 velocity: 0x88,
@@ -275,7 +289,7 @@ mod packet_from_message {
     #[test]
     fn note_on() {
         assert_eq!(
-            Packet::from(ChannelVoiceMessage::NoteOn {
+            Packet::from(Message::NoteOn {
                 channel: 0x3,
                 note: 0x39,
                 velocity: 0x90,
@@ -287,7 +301,7 @@ mod packet_from_message {
     #[test]
     fn key_pressure() {
         assert_eq!(
-            Packet::from(ChannelVoiceMessage::KeyPressure {
+            Packet::from(Message::KeyPressure {
                 channel: 0x5,
                 note: 0xF2,
                 value: 0x40,
@@ -299,7 +313,7 @@ mod packet_from_message {
     #[test]
     fn control_change() {
         assert_eq!(
-            Packet::from(ChannelVoiceMessage::ControlChange {
+            Packet::from(Message::ControlChange {
                 channel: 0x0,
                 controller: 0x30,
                 value: 0xD3,
@@ -311,7 +325,7 @@ mod packet_from_message {
     #[test]
     fn program_change() {
         assert_eq!(
-            Packet::from(ChannelVoiceMessage::ProgramChange {
+            Packet::from(Message::ProgramChange {
                 channel: 0x8,
                 program: 0xEE,
             }),
@@ -322,7 +336,7 @@ mod packet_from_message {
     #[test]
     fn channel_pressure() {
         assert_eq!(
-            Packet::from(ChannelVoiceMessage::ChannelPressure {
+            Packet::from(Message::ChannelPressure {
                 channel: 0xF,
                 value: 0x02,
             }),
@@ -333,7 +347,7 @@ mod packet_from_message {
     #[test]
     fn pitch_bend() {
         assert_eq!(
-            Packet::from(ChannelVoiceMessage::PitchBend {
+            Packet::from(Message::PitchBend {
                 channel: 0x0,
                 least_significant_bit: 0x88,
                 most_significant_bit: 0x77,

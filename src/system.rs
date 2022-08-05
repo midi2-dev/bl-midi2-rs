@@ -4,7 +4,7 @@ use crate::Packet;
     Debug,
     PartialEq,
 )]
-enum SystemMessage {
+pub enum Message {
     MidiTimeCode {
         time_code: u8,
     },
@@ -28,81 +28,77 @@ enum SystemMessage {
     Debug,
     PartialEq,
 )]
-enum SystemMessageParseError {
+pub enum MessageParseError {
     UnsupportedStatus(u8),
+    IncorrectMessageType(u8),
 }
 
-impl std::convert::TryFrom<Packet> for SystemMessage {
-    type Error = SystemMessageParseError;
+impl std::convert::TryFrom<Packet> for Message {
+    type Error = MessageParseError;
     fn try_from(p: Packet) -> Result<Self, Self::Error> {
-        assert_eq!(p.nibble(0), 0x1);
-        match p.octet(1) {
-            0xF1 => Ok(SystemMessage::MidiTimeCode {
-                time_code: p.octet(2),
-            }),
-            0xF2 => Ok(SystemMessage::SongPositionPointer {
-                least_significant_bit: p.octet(2),
-                most_significant_bit: p.octet(3),
-            }), 
-            0xF3 => Ok(SystemMessage::SongSelect {
-                song_number: p.octet(2),
-            }),
-            0xF6 => Ok(SystemMessage::TuneRequest),
-            0xF8 => Ok(SystemMessage::TimingClock),
-            0xFA => Ok(SystemMessage::Start),
-            0xFB => Ok(SystemMessage::Continue),
-            0xFC => Ok(SystemMessage::Stop),
-            0xFE => Ok(SystemMessage::ActiveSensing),
-            0xFF => Ok(SystemMessage::Reset),
-            status => Err(SystemMessageParseError::UnsupportedStatus(status)),
+        match p.nibble(0) {
+            1 => match p.octet(1) {
+                0xF1 => Ok(Message::MidiTimeCode {
+                    time_code: p.octet(2),
+                }),
+                0xF2 => Ok(Message::SongPositionPointer {
+                    least_significant_bit: p.octet(2),
+                    most_significant_bit: p.octet(3),
+                }), 
+                0xF3 => Ok(Message::SongSelect {
+                    song_number: p.octet(2),
+                }),
+                0xF6 => Ok(Message::TuneRequest),
+                0xF8 => Ok(Message::TimingClock),
+                0xFA => Ok(Message::Start),
+                0xFB => Ok(Message::Continue),
+                0xFC => Ok(Message::Stop),
+                0xFE => Ok(Message::ActiveSensing),
+                0xFF => Ok(Message::Reset),
+                status => Err(MessageParseError::UnsupportedStatus(status)),
+            },
+            wrong_type => Err(MessageParseError::IncorrectMessageType(wrong_type)),
         }
     }
 }
 
-impl std::convert::From<SystemMessage> for Packet {
-    fn from(m: SystemMessage) -> Self {
+impl std::convert::From<Message> for Packet {
+    fn from(m: Message) -> Self {
         match m {
-            SystemMessage::MidiTimeCode { 
+            Message::MidiTimeCode { 
                 time_code
-            } => system_message_packet(
+            } => message_packet(
                 0xF1, 
                 Some(time_code), 
                 None
             ),
-            SystemMessage::SongPositionPointer { 
+            Message::SongPositionPointer { 
                 least_significant_bit,
                 most_significant_bit,
-            } => system_message_packet(
+            } => message_packet(
                 0xF2, 
                 Some(least_significant_bit), 
                 Some(most_significant_bit),
             ),
-            SystemMessage::SongSelect { 
+            Message::SongSelect { 
                 song_number,
-            } => system_message_packet(
+            } => message_packet(
                 0xF3, 
                 Some(song_number), 
                 None,
             ),
-            SystemMessage::TuneRequest => 
-                system_message_packet(0xF6, None, None),
-            SystemMessage::TimingClock => 
-                system_message_packet(0xF8, None, None),
-            SystemMessage::Start => 
-                system_message_packet(0xFA, None, None),
-            SystemMessage::Continue => 
-                system_message_packet(0xFB, None, None),
-            SystemMessage::Stop => 
-                system_message_packet(0xFC, None, None),
-            SystemMessage::ActiveSensing => 
-                system_message_packet(0xFE, None, None),
-            SystemMessage::Reset => 
-                system_message_packet(0xFF, None, None),
+            Message::TuneRequest => message_packet(0xF6, None, None),
+            Message::TimingClock => message_packet(0xF8, None, None),
+            Message::Start => message_packet(0xFA, None, None),
+            Message::Continue => message_packet(0xFB, None, None),
+            Message::Stop => message_packet(0xFC, None, None),
+            Message::ActiveSensing => message_packet(0xFE, None, None),
+            Message::Reset => message_packet(0xFF, None, None),
         }
     }
 }
 
-fn system_message_packet(
+fn message_packet(
     status: u8,
     byte1: Option<u8>,
     byte2: Option<u8>,
@@ -134,18 +130,26 @@ mod message_from_packet {
     use super::*;
 
     #[test]
+    fn wrong_type() {
+        assert_eq!(
+            Message::try_from(Packet{data: [0x2000_0000,0x0,0x0,0x0]}),
+            Err(MessageParseError::IncorrectMessageType(0x2)),
+        );
+    }
+
+    #[test]
     fn midi_time_code() {
         assert_eq!(
-            SystemMessage::try_from(Packet{data: [0x10F1_3100,0x0,0x0,0x0]}),
-            Ok(SystemMessage::MidiTimeCode{ time_code: 49 }),
+            Message::try_from(Packet{data: [0x10F1_3100,0x0,0x0,0x0]}),
+            Ok(Message::MidiTimeCode{ time_code: 49 }),
         );
     }
 
     #[test]
     fn song_position_pointer() {
         assert_eq!(
-            SystemMessage::try_from(Packet{data: [0x10F2_B4D9,0x0,0x0,0x0]}),
-            Ok(SystemMessage::SongPositionPointer { 
+            Message::try_from(Packet{data: [0x10F2_B4D9,0x0,0x0,0x0]}),
+            Ok(Message::SongPositionPointer { 
                 least_significant_bit: 0xB4,
                 most_significant_bit: 0xD9,
             }),
@@ -155,64 +159,64 @@ mod message_from_packet {
     #[test]
     fn song_select() {
         assert_eq!(
-            SystemMessage::try_from(Packet{data: [0x10F3_4200,0x0,0x0,0x0]}),
-            Ok(SystemMessage::SongSelect{ song_number: 0x42 }),
+            Message::try_from(Packet{data: [0x10F3_4200,0x0,0x0,0x0]}),
+            Ok(Message::SongSelect{ song_number: 0x42 }),
         );
     }
 
     #[test]
     fn tune_request() {
         assert_eq!(
-            SystemMessage::try_from(Packet{data: [0x10F6_0000,0x0,0x0,0x0]}),
-            Ok(SystemMessage::TuneRequest),
+            Message::try_from(Packet{data: [0x10F6_0000,0x0,0x0,0x0]}),
+            Ok(Message::TuneRequest),
         );
     }
 
     #[test]
     fn timing_clock() {
         assert_eq!(
-            SystemMessage::try_from(Packet{data: [0x10F8_0000,0x0,0x0,0x0]}),
-            Ok(SystemMessage::TimingClock),
+            Message::try_from(Packet{data: [0x10F8_0000,0x0,0x0,0x0]}),
+            Ok(Message::TimingClock),
         );
     }
 
     #[test]
     fn start() {
         assert_eq!(
-            SystemMessage::try_from(Packet{data: [0x10FA_0000,0x0,0x0,0x0]}),
-            Ok(SystemMessage::Start),
+            Message::try_from(Packet{data: [0x10FA_0000,0x0,0x0,0x0]}),
+            Ok(Message::Start),
         );
     }
 
     #[test]
     fn continue_message() {
         assert_eq!(
-            SystemMessage::try_from(Packet{data: [0x10FB_0000,0x0,0x0,0x0]}),
-            Ok(SystemMessage::Continue),
+            Message::try_from(Packet{data: [0x10FB_0000,0x0,0x0,0x0]}),
+            Ok(Message::Continue),
         );
     }
 
     #[test]
     fn stop() {
         assert_eq!(
-            SystemMessage::try_from(Packet{data: [0x10FC_0000,0x0,0x0,0x0]}),
-            Ok(SystemMessage::Stop),
+            Message::try_from(Packet{data: [0x10FC_0000,0x0,0x0,0x0]}),
+            Ok(Message::Stop),
         );
     }
 
     #[test]
     fn active_sensing() {
         assert_eq!(
-            SystemMessage::try_from(Packet{data: [0x10FE_0000,0x0,0x0,0x0]}),
-            Ok(SystemMessage::ActiveSensing),
+            Message::try_from(Packet{data: [0x10FE_0000,0x0,0x0,0x0]}),
+            Ok(Message::ActiveSensing),
         );
     }
 
     #[test]
     fn reset() {
         assert_eq!(
-            SystemMessage::try_from(Packet{data: [0x10FF_0000,0x0,0x0,0x0]}),
-            Ok(SystemMessage::Reset),
+            Message::try_from(Packet{data: [0x10FF_0000,0x0,0x0,0x0]}),
+            Ok(Message::Reset),
         );
     }
 }
@@ -224,7 +228,7 @@ mod packet_from_message {
     #[test]
     fn midi_time_code() {
         assert_eq!(
-            Packet::from(SystemMessage::MidiTimeCode {
+            Packet::from(Message::MidiTimeCode {
                 time_code: 0xAA
             }),
             Packet{ data: [ 0x10F1_AA00, 0x0, 0x0, 0x0 ] },
@@ -234,7 +238,7 @@ mod packet_from_message {
     #[test]
     fn song_position_pointer() {
         assert_eq!(
-            Packet::from(SystemMessage::SongPositionPointer {
+            Packet::from(Message::SongPositionPointer {
                 least_significant_bit: 0x31,
                 most_significant_bit: 0x41,
             }),
@@ -245,7 +249,7 @@ mod packet_from_message {
     #[test]
     fn song_select() {
         assert_eq!(
-            Packet::from(SystemMessage::SongSelect {
+            Packet::from(Message::SongSelect {
                 song_number: 0xEB
             }),
             Packet{ data: [ 0x10F3_EB00, 0x0, 0x0, 0x0 ] },
@@ -255,7 +259,7 @@ mod packet_from_message {
     #[test]
     fn tune_request() {
         assert_eq!(
-            Packet::from(SystemMessage::TuneRequest),
+            Packet::from(Message::TuneRequest),
             Packet{ data: [ 0x10F6_0000, 0x0, 0x0, 0x0 ] },
         );
     }
@@ -263,7 +267,7 @@ mod packet_from_message {
     #[test]
     fn timing_clock() {
         assert_eq!(
-            Packet::from(SystemMessage::TimingClock),
+            Packet::from(Message::TimingClock),
             Packet{ data: [ 0x10F8_0000, 0x0, 0x0, 0x0 ] },
         );
     }
@@ -271,7 +275,7 @@ mod packet_from_message {
     #[test]
     fn start() {
         assert_eq!(
-            Packet::from(SystemMessage::Start),
+            Packet::from(Message::Start),
             Packet{ data: [ 0x10FA_0000, 0x0, 0x0, 0x0 ] },
         );
     }
@@ -279,7 +283,7 @@ mod packet_from_message {
     #[test]
     fn continue_message() {
         assert_eq!(
-            Packet::from(SystemMessage::Continue),
+            Packet::from(Message::Continue),
             Packet{ data: [ 0x10FB_0000, 0x0, 0x0, 0x0 ] },
         );
     }
@@ -287,7 +291,7 @@ mod packet_from_message {
     #[test]
     fn stop() {
         assert_eq!(
-            Packet::from(SystemMessage::Stop),
+            Packet::from(Message::Stop),
             Packet{ data: [ 0x10FC_0000, 0x0, 0x0, 0x0 ] },
         );
     }
@@ -295,7 +299,7 @@ mod packet_from_message {
     #[test]
     fn active_sensing() {
         assert_eq!(
-            Packet::from(SystemMessage::ActiveSensing),
+            Packet::from(Message::ActiveSensing),
             Packet{ data: [ 0x10FE_0000, 0x0, 0x0, 0x0 ] },
         );
     }
@@ -303,7 +307,7 @@ mod packet_from_message {
     #[test]
     fn reset() {
         assert_eq!(
-            Packet::from(SystemMessage::Reset),
+            Packet::from(Message::Reset),
             Packet{ data: [ 0x10FF_0000, 0x0, 0x0, 0x0 ] },
         );
     }
