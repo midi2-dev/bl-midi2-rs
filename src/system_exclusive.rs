@@ -60,6 +60,36 @@ impl std::convert::TryFrom<Packet> for Message {
     }
 }
 
+#[derive(
+    Debug,
+    PartialEq,
+)]
+pub enum SerializationError {
+    TooManyDataOctets(usize),
+}
+
+impl std::convert::TryFrom<Message> for Packet {
+    type Error = SerializationError;
+    fn try_from(m: Message) -> Result<Self, Self::Error> {
+        match m.data.len() {
+            len if len <= 6 => {
+                let mut p = Packet {
+                    data: [0x3000_0000, 0x0, 0x0, 0x0 ],
+                }
+                    .set_nibble(2, m.status as u8)
+                    .set_nibble(3, m.data.len().try_into().unwrap());
+
+                for i in 0..len {
+                    p = p.set_octet(i + 2, m.data[i]);
+                }
+
+                Ok(p)
+            },
+            too_large => Err(SerializationError::TooManyDataOctets(too_large)),
+        }
+    }
+}
+
 fn map_status_bit(b: u8) -> Status {
     match b {
         0x0 => Status::Complete,
@@ -139,6 +169,74 @@ mod message_from_packet {
                 status: Status::End,
                 data: Vec::new(),
             }),
+        );
+    }
+}
+
+#[cfg(test)]
+mod packet_from_message {
+    use super::*;
+
+    #[test]
+    fn too_many_data_bits() {
+        assert_eq!(
+            Packet::try_from(Message {
+                status: Status::Complete,
+                data: vec![
+                    0x0,
+                    0x0,
+                    0x0,
+                    0x0,
+                    0x0,
+                    0x0,
+                    0x0,
+                ],
+            }),
+            Err(SerializationError::TooManyDataOctets(7)),
+        );
+    }
+
+    #[test]
+    fn complete() {
+        assert_eq!(
+            Packet::try_from(Message {
+                status: Status::Complete,
+                data: vec![0xAB, 0xCD],
+            }),
+            Ok(Packet{data:[0x3002_ABCD, 0x0, 0x0, 0x0]}),
+        );
+    }
+
+    #[test]
+    fn begin() {
+        assert_eq!(
+            Packet::try_from(Message {
+                status: Status::Begin,
+                data: vec![0x14, 0x14, 0x21, 0x35, 0x62, 0x37],
+            }),
+            Ok(Packet{data:[0x3016_1414, 0x2135_6237, 0x0, 0x0]}),
+        );
+    }
+
+    #[test]
+    fn continue_status() {
+        assert_eq!(
+            Packet::try_from(Message {
+                status: Status::Continue,
+                data: vec![0xFF, 0xFF, 0xFF]
+            }),
+            Ok(Packet{data:[0x3023_FFFF, 0xFF00_0000, 0x0, 0x0]}),
+        );
+    }
+
+    #[test]
+    fn end() {
+        assert_eq!(
+            Packet::try_from(Message {
+                status: Status::End,
+                data: vec![],
+            }),
+            Ok(Packet{data:[0x3030_0000, 0x0, 0x0, 0x0]}),
         );
     }
 }
