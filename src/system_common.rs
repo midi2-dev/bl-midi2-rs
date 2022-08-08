@@ -28,13 +28,13 @@ pub enum Message {
     Debug,
     PartialEq,
 )]
-pub enum MessageParseError {
+pub enum DeserializeError {
     UnsupportedStatus(u8),
     IncorrectMessageType(u8),
 }
 
 impl std::convert::TryFrom<Packet> for Message {
-    type Error = MessageParseError;
+    type Error = DeserializeError;
     fn try_from(p: Packet) -> Result<Self, Self::Error> {
         match p.nibble(0) {
             1 => match p.octet(1) {
@@ -55,9 +55,9 @@ impl std::convert::TryFrom<Packet> for Message {
                 0xFC => Ok(Message::Stop),
                 0xFE => Ok(Message::ActiveSensing),
                 0xFF => Ok(Message::Reset),
-                status => Err(MessageParseError::UnsupportedStatus(status)),
+                status => Err(DeserializeError::UnsupportedStatus(status)),
             },
-            wrong_type => Err(MessageParseError::IncorrectMessageType(wrong_type)),
+            wrong_type => Err(DeserializeError::IncorrectMessageType(wrong_type)),
         }
     }
 }
@@ -133,7 +133,7 @@ mod message_from_packet {
     fn wrong_type() {
         assert_eq!(
             Message::try_from(Packet{data: [0x2000_0000,0x0,0x0,0x0]}),
-            Err(MessageParseError::IncorrectMessageType(0x2)),
+            Err(DeserializeError::IncorrectMessageType(0x2)),
         );
     }
 

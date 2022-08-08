@@ -25,37 +25,27 @@ enum Status {
     Debug,
     PartialEq,
 )]
-pub enum MessageParseError {
+pub enum DeserializeError {
     InvalidStatusBit(u8),
     DataOutOfRange(u8),
     IncorrectMessageType(u8),
 }
 
 impl std::convert::TryFrom<Packet> for Message {
-    type Error = MessageParseError;
+    type Error = DeserializeError;
     fn try_from(p: Packet) -> Result<Self, Self::Error> {
         match p.nibble(0) {
-            3 => {
-                match p.nibble(2) {
-                    0x0..=0x3 => {
-                        match p.nibble(3) {
-                            len if len <= 5 => Ok(Message {
-                                status: map_status_bit(p.nibble(2)),
-                                data: {
-                                    let mut d = Vec::new();
-                                    for i in 0..p.nibble(3) { 
-                                        d.push(p.octet((i + 2).into()));
-                                    }
-                                    d
-                                },
-                            }),
-                            overflow_len => Err(MessageParseError::DataOutOfRange(overflow_len)),
-                        }
-                    },
-                    status => Err(MessageParseError::InvalidStatusBit(status)),
-                }
+            3 => match p.nibble(2) {
+                0x0..=0x3 => match p.nibble(3) {
+                    0..=5 => Ok(Message {
+                        status: map_status_bit(p.nibble(2)),
+                        data: p.octets(2, (2 + p.nibble(3)).into()),
+                    }),
+                    overflow_len => Err(DeserializeError::DataOutOfRange(overflow_len)),
+                },
+                status => Err(DeserializeError::InvalidStatusBit(status)),
             },
-            wrong_type => Err(MessageParseError::IncorrectMessageType(wrong_type)),
+            wrong_type => Err(DeserializeError::IncorrectMessageType(wrong_type)),
         }
     }
 }
@@ -72,19 +62,11 @@ impl std::convert::TryFrom<Message> for Packet {
     type Error = SerializationError;
     fn try_from(m: Message) -> Result<Self, Self::Error> {
         match m.data.len() {
-            len if len <= 6 => {
-                let mut p = Packet {
-                    data: [0x3000_0000, 0x0, 0x0, 0x0 ],
-                }
-                    .set_nibble(2, m.status as u8)
-                    .set_nibble(3, m.data.len().try_into().unwrap());
-
-                for i in 0..len {
-                    p = p.set_octet(i + 2, m.data[i]);
-                }
-
-                Ok(p)
-            },
+            len if len <= 6 => Ok(Packet { data: [0x3000_0000, 0x0, 0x0, 0x0 ] }
+                .set_nibble(2, m.status as u8)
+                .set_nibble(3, m.data.len().try_into().unwrap())
+                .set_octets(2, m.data)
+            ),
             too_large => Err(SerializationError::TooManyDataOctets(too_large)),
         }
     }
@@ -108,7 +90,7 @@ mod message_from_packet {
     fn incorrect_message_type() {
         assert_eq!(
             Message::try_from(Packet{data:[0x2000_0000,0x0,0x0,0x0]}),
-            Err(MessageParseError::IncorrectMessageType(0x2)),
+            Err(DeserializeError::IncorrectMessageType(0x2)),
         );
     }
 
@@ -116,7 +98,7 @@ mod message_from_packet {
     fn invalid_status_bit() {
         assert_eq!(
             Message::try_from(Packet{data:[0x30A0_0000,0x0,0x0,0x0]}),
-            Err(MessageParseError::InvalidStatusBit(0xA)),
+            Err(DeserializeError::InvalidStatusBit(0xA)),
         );
     }
 
@@ -124,7 +106,7 @@ mod message_from_packet {
     fn data_overflow() {
         assert_eq!(
             Message::try_from(Packet{data:[0x3009_0000,0x0,0x0,0x0]}),
-            Err(MessageParseError::DataOutOfRange(0x9)),
+            Err(DeserializeError::DataOutOfRange(0x9)),
         );
     }
 

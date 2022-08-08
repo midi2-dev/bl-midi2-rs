@@ -1,3 +1,4 @@
+pub mod extended_system_exclusive;
 pub mod message;
 pub mod midi1_channel_voice;
 pub mod midi2_channel_voice;

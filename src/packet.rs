@@ -48,6 +48,25 @@ impl Packet {
         self
     }
 
+    pub fn octets(&self, begin: usize, end: usize) -> Vec<u8> {
+        assert!(begin <= end);
+        assert!(begin < 16);
+        assert!(end < 17);
+        let mut ret = Vec::with_capacity(end - begin);
+        for i in begin..end {
+            ret.push(self.octet(i.into()));
+        }
+        ret
+    }
+
+    pub fn set_octets(mut self, begin: usize, d: Vec<u8>) -> Self {
+        assert!(begin + d.len() < 17);
+        for o in d.iter().enumerate() {
+            self = self.set_octet(o.0 + begin, *o.1);
+        }
+        self
+    }
+
     pub fn word(&self, index: usize) -> u16 {
         assert!(index < 8);
         ((self.data[index / 2] >> (16 - (index % 2) * 16)) & 0xFFFF)
@@ -179,6 +198,55 @@ mod tests {
         assert_eq!(
             Packet::new().set_octet(5, 0xBE),
             Packet { data: [0x0, 0x00BE_0000, 0x0, 0x0] },
+        );
+    }
+
+    #[test]
+    fn octets() {
+        assert_eq!(
+            Packet{ data: [0x0012_3456, 0x7800_0000, 0x0, 0x0 ] }.octets(1, 5),
+            vec![0x12, 0x34, 0x56, 0x78],
+        );
+        assert_eq!(
+            Packet{ data: [0x0012_3456, 0x7890_ABCD, 0xEF12_3456, 0x7890_ABCD ] }.octets(0, 16),
+            vec![
+                0x00,
+                0x12,
+                0x34,
+                0x56,
+                0x78,
+                0x90,
+                0xAB,
+                0xCD,
+                0xEF,
+                0x12,
+                0x34,
+                0x56,
+                0x78,
+                0x90,
+                0xAB,
+                0xCD,
+            ],
+        );
+        assert_eq!(
+            Packet{ data: [0x0, 0x0, 0x0, 0x0] }.octets(0, 0),
+            vec![],
+        );
+    }
+
+    #[test]
+    fn set_octets() {
+        assert_eq!(
+            Packet::new().set_octets(2, vec![0xFF, 0xFF, 0xFF, 0xFF, 0xFF]),
+            Packet{ data: [ 0x0000_FFFF, 0xFFFF_FF00, 0x0, 0x0 ] },
+        );
+        assert_eq!(
+            Packet::new().set_octets(0, Vec::new()),
+            Packet{ data: [ 0x0, 0x0, 0x0, 0x0 ] },
+        );
+        assert_eq!(
+            Packet::new().set_octets(0, [0xFF].repeat(16)),
+            Packet{ data: [ 0xFFFF_FFFF, 0xFFFF_FFFF, 0xFFFF_FFFF, 0xFFFF_FFFF ] },
         );
     }
 
