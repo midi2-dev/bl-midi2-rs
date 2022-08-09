@@ -126,7 +126,7 @@ fn message_packet(
 
 
 #[cfg(test)]
-mod message_from_packet {
+mod deserialize {
     use super::*;
 
     #[test]
@@ -222,7 +222,7 @@ mod message_from_packet {
 }
 
 #[cfg(test)]
-mod packet_from_message {
+mod serialize {
     use super::*;
 
     #[test]

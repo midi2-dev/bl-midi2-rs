@@ -108,7 +108,7 @@ impl std::convert::From<Message> for Packet {
 }
 
 #[cfg(test)]
-mod message_from_packet {
+mod deserialize {
     use super::*;
 
     #[test]

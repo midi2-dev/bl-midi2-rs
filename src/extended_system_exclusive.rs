@@ -41,7 +41,7 @@ impl std::convert::TryFrom<Packet> for Message {
             5 => match p.nibble(2) {
                 status if status <= 0x3 => match p.nibble(3) {
                     0 => Err(DeserializeError::ExpectedStreamId),
-                    l if l >= 0 && l <= 14 => Ok(Message {
+                    l if l < 0xF => Ok(Message {
                         status: map_to_status(status),
                         stream_id: p.octet(2),
                         data: p.octets(3, (2 + l).into()),
@@ -60,6 +60,21 @@ impl std::convert::TryFrom<Packet> for Message {
     }
 }
 
+impl std::convert::From<Message> for Packet {
+    fn from(Message{status, stream_id, data}: Message) -> Self {
+        Packet {
+            data: [
+                0x5000_0000,
+                0x0,0x0,0x0,
+            ],
+        }
+        .set_nibble(2, map_from_status(status))
+        .set_nibble(3, (data.len() + 1).try_into().unwrap())
+        .set_octet(2, stream_id)
+        .set_octets(3, data)
+    }
+}
+
 fn map_to_status(val: u8) -> Status {
     match val {
         0x0 => Status::Complete,
@@ -69,9 +84,18 @@ fn map_to_status(val: u8) -> Status {
         _ => panic!(),
     }
 }
+    
+fn map_from_status(status: Status) -> u8 {
+    match status {
+        Status::Complete => 0x0,
+        Status::Begin => 0x1,
+        Status::Continue => 0x2,
+        Status::End(_) => 0x3,
+    }
+}
 
 #[cfg(test)]
-mod message_from_packet {
+mod deserialize {
     use super::*;
 
     #[test]
@@ -181,6 +205,92 @@ mod message_from_packet {
                 stream_id: 0xA1,
                 data: vec![0xFF, 0xFF],
             }),
+        );
+    }
+}
+
+#[cfg(test)]
+mod serialize {
+    use super::*;
+
+    #[test]
+    fn status() {
+        let data = [
+            (Status::Complete, 0x0),
+            (Status::Begin, 0x1),
+            (Status::Continue, 0x2),
+            (Status::End(true), 0x3),
+        ];
+        for d in data {
+            assert_eq!(
+                Packet::from(Message {
+                    status: d.0,
+                    stream_id: 0x0,
+                    data: Vec::new(),
+                }),
+                Packet{data:[0x5001_0000,0x0,0x0,0x0]}.set_nibble(2, d.1),
+            );
+        }
+    }
+
+    #[test]
+    fn stream_id() {
+        assert_eq!(
+            Packet::from(Message {
+                status: Status::Complete,
+                stream_id: 0x0A,
+                data: Vec::new(),
+            }),
+            Packet{data:[0x5001_0A00,0x0,0x0,0x0]},
+        );
+    }
+
+    #[test]
+    fn data() {
+        assert_eq!(
+            Packet::from(Message {
+                status: Status::Complete,
+                stream_id: 0x0,
+                data: vec![
+                    0x12,
+                    0x34,
+                    0x56,
+                    0x78,
+                    0x90,
+                    0xAB,
+                    0xCD,
+                    0xEF,
+                    0x12,
+                    0x34,
+                    0x56,
+                    0x78,
+                    0x90,
+                ],
+            }),
+            Packet{data:[
+                0x500E_0012,
+                0x3456_7890,
+                0xABCD_EF12,
+                0x3456_7890
+            ]},
+        );
+        assert_eq!(
+            Packet::from(Message {
+                status: Status::Complete,
+                stream_id: 0x0,
+                data: vec![
+                    0xFF,
+                    0xFF,
+                    0xFF,
+                    0xFF,
+                    0xFF,
+                ],
+            }),
+            Packet{data:[
+                0x5006_00FF,
+                0xFFFF_FFFF,
+                0x0, 0x0,
+            ]},
         );
     }
 }
