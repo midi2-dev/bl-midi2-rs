@@ -1,10 +1,18 @@
 use crate::{
-    midi1_channel_voice, 
-    midi2_channel_voice, 
-    system_common,
-    system_exclusive,
+    ExtendedSysExMessage,
+    ExtendedSysExDeserializeError,
+    UtilityMessage,
+    UtilityDeserializeError,
     Group,
+    Midi1ChannelVoiceMessage,
+    Midi1ChannelVoiceDeserializeError,
+    Midi2ChannelVoiceMessage,
+    Midi2ChannelVoiceDeserializeError,
     Packet,
+    SysCommonMessage,
+    SysCommonDeserializeError,
+    SysExMessage,
+    SysExDeserializeError,
 };
 
 #[derive(
@@ -12,19 +20,19 @@ use crate::{
     PartialEq,
 )]
 enum MessageType {
-    Utility,
-    System(system_common::Message),
-    Midi1ChannelVoice(midi1_channel_voice::Message),
-    SystemExclusive(system_exclusive::Message),
-    Midi2ChannelVoice(midi2_channel_voice::Message),
-    ExtendedSystemExclusive,
+    Utility(UtilityMessage),
+    System(SysCommonMessage),
+    Midi1ChannelVoice(Midi1ChannelVoiceMessage),
+    SystemExclusive(SysExMessage),
+    Midi2ChannelVoice(Midi2ChannelVoiceMessage),
+    ExtendedSystemExclusive(ExtendedSysExMessage),
 }
 
 #[derive(
     Debug,
     PartialEq,
 )]
-struct Message {
+pub struct Message {
     group: Group,
     message_type: MessageType,
 }
@@ -33,12 +41,14 @@ struct Message {
     Debug,
     PartialEq,
 )]
-enum DeserializeError {
+pub enum DeserializeError {
+    ExtendedSystemExclusive(ExtendedSysExDeserializeError),
     InvalidMessageType(u32),
-    Midi1ChannelVoice(midi1_channel_voice::DeserializeError),
-    Midi2ChannelVoice(midi2_channel_voice::DeserializeError),
-    SystemCommon(system_common::DeserializeError),
-    SystemExclusive(system_exclusive::DeserializeError),
+    Midi1ChannelVoice(Midi1ChannelVoiceDeserializeError),
+    Midi2ChannelVoice(Midi2ChannelVoiceDeserializeError),
+    SystemCommon(SysCommonDeserializeError),
+    SystemExclusive(SysExDeserializeError),
+    Utility(UtilityDeserializeError),
 }
 
 impl std::convert::TryFrom<Packet> for Message {
@@ -47,13 +57,16 @@ impl std::convert::TryFrom<Packet> for Message {
         let group = p.group();
         return match p.data[0] >> 28 {
             0x0 => {
-                Ok(Message {
-                    group,
-                    message_type: MessageType::Utility,
-                })
+                match UtilityMessage::try_from(p) {
+                    Ok(message) => Ok(Message {
+                        group,
+                        message_type: MessageType::Utility(message),
+                    }),
+                    Err(e) => Err(DeserializeError::Utility(e))
+                }
             },
             0x1 => {
-                match system_common::Message::try_from(p) {
+                match SysCommonMessage::try_from(p) {
                     Ok(message) => Ok(Message {
                         group,
                         message_type: MessageType::System(message),
@@ -62,7 +75,7 @@ impl std::convert::TryFrom<Packet> for Message {
                 }
             },
             0x2 => {
-                match midi1_channel_voice::Message::try_from(p) {
+                match Midi1ChannelVoiceMessage::try_from(p) {
                     Ok(message) => Ok(Message{
                         group,
                         message_type: MessageType::Midi1ChannelVoice(message)
@@ -71,7 +84,7 @@ impl std::convert::TryFrom<Packet> for Message {
                 }
             },
             0x3 => {
-                match system_exclusive::Message::try_from(p) {
+                match SysExMessage::try_from(p) {
                     Ok(message) => Ok(Message{
                         group,
                         message_type: MessageType::SystemExclusive(message)
@@ -80,7 +93,7 @@ impl std::convert::TryFrom<Packet> for Message {
                 }
             },
             0x4 => {
-                match midi2_channel_voice::Message::try_from(p) {
+                match Midi2ChannelVoiceMessage::try_from(p) {
                     Ok(message) => { 
                         Ok(Message{
                             group,
@@ -91,10 +104,15 @@ impl std::convert::TryFrom<Packet> for Message {
                 }
             },
             0x5 => {
-                Ok(Message {
-                    group,
-                    message_type: MessageType::ExtendedSystemExclusive,
-                })
+                match ExtendedSysExMessage::try_from(p) {
+                    Ok(message) => { 
+                        Ok(Message{
+                            group,
+                            message_type: MessageType::ExtendedSystemExclusive(message)
+                        }) 
+                    },
+                    Err(e) => Err(DeserializeError::ExtendedSystemExclusive(e))
+                }
             },
             invalid_type => Err(DeserializeError::InvalidMessageType(invalid_type)),
         }
