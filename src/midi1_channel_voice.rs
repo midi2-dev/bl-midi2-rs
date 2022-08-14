@@ -1,12 +1,4 @@
-use crate::{
-    Channel,
-    Controller,
-    Note,
-    Value,
-    Velocity,
-    Packet,
-    Program,
-};
+use crate::Packet;
 
 #[derive(
     Debug,
@@ -14,37 +6,37 @@ use crate::{
 )]
 pub enum Message {
     NoteOff {
-        channel: Channel,
-        note: Note,
-        velocity: Velocity,
+        channel: u8,
+        note: u8,
+        velocity: u8,
     },
     NoteOn {
-        channel: Channel,
-        note: Note,
-        velocity: Velocity,
+        channel: u8,
+        note: u8,
+        velocity: u8,
     },
     KeyPressure {
-        channel: Channel,
-        note: Note,
-        value: Value,
+        channel: u8,
+        note: u8,
+        value: u8,
     },
     ControlChange {
-        channel: Channel,
-        controller: Controller,
-        value: Value,
+        channel: u8,
+        controller: u8,
+        value: u8,
     },
     ProgramChange {
-        channel: Channel,
-        program: Program,
+        channel: u8,
+        program: u8,
     },
     ChannelPressure {
-        channel: Channel,
-        value: Value,    
+        channel: u8,
+        value: u8,    
     },
     PitchBend {
-        channel: Channel,
-        least_significant_bit: Value,
-        most_significant_bit: Value,
+        channel: u8,
+        least_significant_bit: u8,
+        most_significant_bit: u8,
     },
 }
 

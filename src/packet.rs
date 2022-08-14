@@ -21,6 +21,20 @@ impl Packet {
         self.set_nibble(1, g)
     }
 
+    pub fn bit(&self, index: usize) -> u8 {
+        assert!(index < 128);
+        ((self.data[index / 32] >> (31 - (index % 32))) & 0b1)
+            .try_into()
+            .unwrap()
+    }
+
+    pub fn set_bit(mut self, index: usize, v: u8) -> Self {
+        assert!(v <= 0b1);
+        assert!(index < 128);
+        self.data[index / 32] |= (v as u32) << (31 - (index % 32));
+        self
+    }
+
     pub fn nibble(&self, index: usize) -> u8 {
         assert!(index < 32);
         ((self.data[index / 8] >> (28 - (index % 8) * 4)) & 0xF)
@@ -134,6 +148,61 @@ mod tests {
         assert_eq!(
             Packet{ data: [ 0x0, 0x0, 0x0, 0x0 ] }.set_group(2),
             Packet{ data: [ 0x0200_0000, 0x0, 0x0, 0x0 ] },
+        );
+    }
+
+    #[test]
+    fn bit() {
+        let p = Packet {
+            data: [
+                0b1000_0000_0000_0000_0000_0000_0000_0010,
+                0b0111_1111_1111_1111_1111_1111_1111_0111,
+                0b0000_0010_0000_0000_0000_0000_0000_0000,
+                0b1111_0111_1111_1111_1111_1111_1111_1111,
+            ]
+        };
+        assert_eq!(p.bit(0), 1);
+        assert_eq!(p.bit(30), 1);
+        assert_eq!(p.bit(32), 0);
+        assert_eq!(p.bit(60), 0);
+        assert_eq!(p.bit(70), 1);
+        assert_eq!(p.bit(100), 0);
+    }
+
+    #[test]
+    fn set_bit() {
+        assert_eq!(
+            Packet::new().set_bit(0, 0x1),
+            Packet { 
+                data: [
+                    0b1000_0000_0000_0000_0000_0000_0000_0000,
+                    0x0, 
+                    0x0, 
+                    0x0
+                ] 
+            },
+        );
+        assert_eq!(
+            Packet::new().set_bit(10, 0x1),
+            Packet { 
+                data: [
+                    0b0000_0000_0010_0000_0000_0000_0000_0000,
+                    0x0, 
+                    0x0, 
+                    0x0
+                ] 
+            },
+        );
+        assert_eq!(
+            Packet::new().set_bit(74, 0x1),
+            Packet { 
+                data: [
+                    0x0, 
+                    0x0, 
+                    0b0000_0000_0010_0000_0000_0000_0000_0000,
+                    0x0
+                ] 
+            },
         );
     }
 

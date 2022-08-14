@@ -1,0 +1,27 @@
+#[derive(
+    Debug,
+    PartialEq,
+)]
+pub enum Controller {
+    Modulation,
+    Breath,
+    Pitch7_25,
+    Volume,
+    Balance,
+    Pan,
+    Expression,
+    SoundVariation,
+    Timbre,
+    ReleaseTime,
+    AttackTime,
+    Brightness,
+    DecayTime,
+    VebratoRate,
+    VebratoDepth,
+    VebratoDelay,
+    Undefined,
+    ReverbSendLevel,
+    ChorusSendLevel,
+    SoundController(u8),
+    EffectDepth(u8),
+}
