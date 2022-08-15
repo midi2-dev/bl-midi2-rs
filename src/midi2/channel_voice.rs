@@ -35,6 +35,59 @@ pub enum Message {
         controller: u8,
         data: u32,
     },
+    PerNoteManagement {
+        channel: u8,
+        note: u8,
+        detach: bool,
+        reset: bool,
+    },
+    ControlChange {
+        channel: u8,
+        index: u8,
+        data: u32,
+    },
+    RegisteredController {
+        channel: u8,
+        bank: u8,
+        index: u8,
+        data: u32,
+    },
+    AssignableController {
+        channel: u8,
+        bank: u8,
+        index: u8,
+        data: u32,
+    },
+    RelativeRegisteredController {
+        channel: u8,
+        bank: u8,
+        index: u8,
+        data: u32,
+    },
+    RelativeAssignableController {
+        channel: u8,
+        bank: u8,
+        index: u8,
+        data: u32,
+    },
+    ProgramChange {
+        channel: u8,
+        program: u8,
+        bank: Option<(u8,u8)>,
+    },
+    ChannelPressure {
+        channel: u8,
+        data: u32,
+    },
+    PitchBend {
+        channel: u8,
+        data: u32,
+    },
+    PerNotePitchBend {
+        channel: u8,
+        note: u8,
+        data: u32,
+    },
 }
 
 #[derive(
@@ -127,6 +180,62 @@ impl std::convert::TryFrom<Packet> for Message {
                     channel: p.nibble(3),
                     note: p.octet(2),
                     controller: p.octet(3),
+                    data: p.data[1],
+                }),
+                0xF => Ok(Message::PerNoteManagement {
+                    channel: p.nibble(3),
+                    note: p.octet(2),
+                    detach: p.bit(30) != 0,
+                    reset: p.bit(31) != 0,
+                }),
+                0xB => Ok(Message::ControlChange {
+                    channel: p.nibble(3),
+                    index: p.octet(2),
+                    data: p.data[1],
+                }),
+                0x2 => Ok(Message::RegisteredController {
+                    channel: p.nibble(3),
+                    bank: p.octet(2),
+                    index: p.octet(3),
+                    data: p.data[1],
+                }),
+                0x3 => Ok(Message::AssignableController {
+                    channel: p.nibble(3),
+                    bank: p.octet(2),
+                    index: p.octet(3),
+                    data: p.data[1],
+                }),
+                0x4 => Ok(Message::RelativeRegisteredController {
+                    channel: p.nibble(3),
+                    bank: p.octet(2),
+                    index: p.octet(3),
+                    data: p.data[1],
+                }),
+                0x5 => Ok(Message::RelativeAssignableController {
+                    channel: p.nibble(3),
+                    bank: p.octet(2),
+                    index: p.octet(3),
+                    data: p.data[1],
+                }),
+                0xC => Ok(Message::ProgramChange {
+                    channel: p.nibble(3),
+                    program: p.octet(4),
+                    bank: match p.bit(31) {
+                        1 => Some((p.octet(6), p.octet(7))),
+                        _ => None,
+                    }
+                }),
+                0xD => Ok(Message::ChannelPressure {
+                    channel: p.nibble(3),
+                    data: p.data[1],
+                }),
+                0xE => Ok(Message::PitchBend {
+                    channel: p.nibble(3),
+                    data: p.data[1],
+                }),
+                0x6 => Ok(Message::PerNotePitchBend {
+                    channel: p.nibble(3),
+                    note: p.octet(2),
                     data: p.data[1],
                 }),
                 _ => panic!(),
@@ -298,6 +407,151 @@ mod deserialize {
                 note: 0x78,
                 controller: 0xBE,
                 data: 0x3141_5926,
+            }),
+        );
+    }
+
+    #[test]
+    fn per_note_management() {
+        let data = [
+            (0, 0, false, false),
+            (1, 0, true, false),
+            (0, 1, false, true),
+            (1, 1, true, true),
+        ];
+        for d in data {
+            assert_eq!(
+                Message::try_from(Packet{
+                    data:[0x40F9_AB00,0x0,0x0,0x0]
+                }.set_bit(30, d.0).set_bit(31, d.1)),
+                Ok(Message::PerNoteManagement {
+                    channel: 0x9,
+                    note: 0xAB,
+                    detach: d.2,
+                    reset: d.3,
+                }),
+            );
+        }
+    }
+
+    #[test]
+    fn control_change() {
+        assert_eq!(
+            Message::try_from(Packet{data:[0x40BC_F100, 0x1234_5678, 0x0, 0x0]}),
+            Ok(Message::ControlChange {
+                channel: 0xC,
+                index: 0xF1,
+                data: 0x1234_5678,
+            }),
+        );
+    }
+
+    #[test]
+    fn registered_controller() {
+        assert_eq!(
+            Message::try_from(Packet{data:[0x4022_DAB0,0x1234_5678,0x0,0x0]}),
+            Ok(Message::RegisteredController {
+                channel: 0x2,
+                bank: 0xDA,
+                index: 0xB0,
+                data: 0x1234_5678,
+            }),
+        );
+    }
+
+    #[test]
+    fn assignable_controller() {
+        assert_eq!(
+            Message::try_from(Packet{data:[0x403A_3141,0x1234_5678,0x0,0x0]}),
+            Ok(Message::AssignableController {
+                channel: 0xA,
+                bank: 0x31,
+                index: 0x41,
+                data: 0x1234_5678,
+            }),
+        );
+    }
+
+    #[test]
+    fn relative_registered_controller() {
+        assert_eq!(
+            Message::try_from(Packet{data:[0x4041_FACE,0x1234_5678,0x0,0x0]}),
+            Ok(Message::RelativeRegisteredController {
+                channel: 0x1,
+                bank: 0xFA,
+                index: 0xCE,
+                data: 0x1234_5678,
+            }),
+        );
+    }
+
+    #[test]
+    fn relative_assignable_controller() {
+        assert_eq!(
+            Message::try_from(Packet{data:[0x405C_DEF0,0x1234_5678,0x0,0x0]}),
+            Ok(Message::RelativeAssignableController {
+                channel: 0xC,
+                bank: 0xDE,
+                index: 0xF0,
+                data: 0x1234_5678,
+            }),
+        );
+    }
+
+    #[test]
+    fn program_change() {
+        assert_eq!(
+            Message::try_from(Packet{data:[0x40C3_0000,0xBE00_0000,0x0,0x0]}),
+            Ok(Message::ProgramChange {
+                channel: 0x3,
+                program: 0xBE,
+                bank: None,
+            }),
+        );
+    }
+
+    #[test]
+    fn program_change_with_bank() {
+        assert_eq!(
+            Message::try_from(Packet{data:[0x40C3_0001,0xBE00_BA55,0x0,0x0]}),
+            Ok(Message::ProgramChange {
+                channel: 0x3,
+                program: 0xBE,
+                bank: Some((0xBA, 0x55)),
+            }),
+        );
+    }
+
+    #[test]
+    fn channel_pressure() {
+        assert_eq!(
+            Message::try_from(Packet{data:[0x40D5_0000,0x1234_5678,0x0,0x0]}),
+            Ok(Message::ChannelPressure {
+                channel: 0x5,
+                data: 0x1234_5678,
+            }),
+        );
+    }
+
+    #[test]
+    fn pitch_bend() {
+        assert_eq!(
+            Message::try_from(Packet{data:[0x40E8_0000,0x1234_5678,0x0,0x0]}),
+            Ok(Message::PitchBend {
+                channel: 0x8,
+                data: 0x1234_5678,
+            }),
+        );
+    }
+
+    #[test]
+    fn per_note_pitch_bend() {
+        assert_eq!(
+            Message::try_from(Packet{data:[0x4066_8700,0x1234_5678,0x0,0x0]}),
+            Ok(Message::PerNotePitchBend {
+                channel: 0x6,
+                note: 0x87,
+                data: 0x1234_5678,
             }),
         );
     }
