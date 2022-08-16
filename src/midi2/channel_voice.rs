@@ -97,45 +97,10 @@ pub enum Message {
 pub enum Attribute {
     ManufacturerSpecific(u16),
     ProfileSpecific(u16),
-    Pitch7_9(pitch_7_9::Value),
-}
-
-pub mod pitch_7_9 {
-    #[derive(
-        Debug,
-        PartialEq,
-    )]
-    pub struct Value(pub u16);
-
-    impl Value {
-        pub fn note(&self) -> u16 {
-            self.0 >> 9
-        }
-        pub fn pitch_up(&self) -> u16 {
-            self.0 & 0b0000_0001_1111_1111
-        }
-    }
-
-    #[cfg(test)]
-    mod tests {
-        use super::*;
-
-        #[test]
-        fn note() {
-            assert_eq!(
-                Value(0b0010_0100_0011_1111).note(),
-                0b0010010,
-            );
-        }
-
-        #[test]
-        fn pitch_up() {
-            assert_eq!(
-                Value(0b0010_0100_0011_1111).pitch_up(),
-                0b000111111,
-            );
-        }
-    }
+    Pitch7_9 {
+        note: u8,
+        pitch_up: u16,
+    },
 }
 
 #[derive(
@@ -146,6 +111,7 @@ pub enum DeserializeError {
     IncorrectMessageType(u8),
     InvalidAttributeType(u8),
     InvalidControllerCode(u8),
+    InvalidStatusByte(u8),
 }
 
 impl std::convert::TryFrom<Packet> for Message {
@@ -238,7 +204,7 @@ impl std::convert::TryFrom<Packet> for Message {
                     note: p.octet(2),
                     data: p.data[1],
                 }),
-                _ => panic!(),
+                s => Err(DeserializeError::InvalidStatusByte(s)),
             }
             t => Err(DeserializeError::IncorrectMessageType(t)),
         }
@@ -250,7 +216,10 @@ fn attribute(t: u8, data: u16) -> Result<Option<Attribute>, DeserializeError> {
         0x0 => Ok(None),
         0x1 => Ok(Some(Attribute::ManufacturerSpecific(data))),
         0x2 => Ok(Some(Attribute::ProfileSpecific(data))),
-        0x3 => Ok(Some(Attribute::Pitch7_9(pitch_7_9::Value(data)))),
+        0x3 => Ok(Some(Attribute::Pitch7_9 {
+            note: (data >> 9).try_into().unwrap(),
+            pitch_up: data & 0b0000_0001_1111_1111,
+        })),
         t => Err(DeserializeError::InvalidAttributeType(t)),
     }
 }
@@ -326,7 +295,7 @@ mod deserialize {
         let data = [
             (0x1, Attribute::ManufacturerSpecific(0xABCD)),
             (0x2, Attribute::ProfileSpecific(0xABCD)),
-            (0x3, Attribute::Pitch7_9(pitch_7_9::Value(0xABCD))),
+            (0x3, Attribute::Pitch7_9{note: 0b1010101, pitch_up: 0b111001101}),
         ];
         for d in data {
             assert_eq!(
