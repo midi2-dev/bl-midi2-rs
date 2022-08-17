@@ -1,5 +1,5 @@
 use super::controllers::Controller;
-use crate::{helpers::mask, Packet};
+use crate::{data_pair::DataPair, helpers::mask, Packet};
 
 #[derive(Debug, PartialEq)]
 pub enum Message {
@@ -70,7 +70,7 @@ pub enum Message {
     ProgramChange {
         channel: ux::u4,
         program: ux::u7,
-        bank: Option<(ux::u7, ux::u7)>,
+        bank: Option<DataPair>,
     },
     ChannelPressure {
         channel: ux::u4,
@@ -175,7 +175,10 @@ impl std::convert::TryFrom<Packet> for Message {
                     channel: p.nibble(3),
                     program: mask(p.octet(4)),
                     bank: if p.bit(31) {
-                        Some((mask(p.octet(6)), mask(p.octet(7))))
+                        Some(DataPair {
+                            msb: mask(p.octet(6)),
+                            lsb: mask(p.octet(7)),
+                        })
                     } else {
                         None
                     },
@@ -508,7 +511,10 @@ mod deserialize {
             Ok(Message::ProgramChange {
                 channel: ux::u4::new(0x3),
                 program: ux::u7::new(0x1E),
-                bank: Some((ux::u7::new(0x2A), ux::u7::new(0x55))),
+                bank: Some(DataPair {
+                    msb: ux::u7::new(0x2A),
+                    lsb: ux::u7::new(0x55),
+                }),
             }),
         );
     }

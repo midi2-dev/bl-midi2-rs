@@ -1,4 +1,4 @@
-use crate::{helpers::mask, Packet};
+use crate::{data_pair::DataPair, helpers::mask, Packet};
 
 #[derive(Debug, PartialEq)]
 pub enum Message {
@@ -32,8 +32,7 @@ pub enum Message {
     },
     PitchBend {
         channel: ux::u4,
-        least_significant_bit: ux::u7,
-        most_significant_bit: ux::u7,
+        data: DataPair,
     },
 }
 
@@ -80,8 +79,10 @@ impl std::convert::TryFrom<Packet> for Message {
                     }),
                     0xE => Ok(Message::PitchBend {
                         channel,
-                        least_significant_bit: mask(p.octet(2)),
-                        most_significant_bit: mask(p.octet(3)),
+                        data: DataPair {
+                            lsb: mask(p.octet(2)),
+                            msb: mask(p.octet(3)),
+                        },
                     }),
                     status => Err(DeserializeError::UnsupportedStatus(status)),
                 }
@@ -122,14 +123,8 @@ impl From<Message> for Packet {
             }
             Message::PitchBend {
                 channel,
-                least_significant_bit,
-                most_significant_bit,
-            } => message_packet(
-                0xE,
-                channel,
-                least_significant_bit,
-                Some(most_significant_bit),
-            ),
+                data: DataPair { lsb, msb },
+            } => message_packet(0xE, channel, lsb, Some(msb)),
         }
     }
 }
@@ -253,8 +248,10 @@ mod deserialize {
             }),
             Ok(Message::PitchBend {
                 channel: ux::u4::new(0),
-                least_significant_bit: ux::u7::new(0x53),
-                most_significant_bit: ux::u7::new(0x3C),
+                data: DataPair {
+                    lsb: ux::u7::new(0x53),
+                    msb: ux::u7::new(0x3C),
+                },
             })
         );
     }
@@ -351,8 +348,10 @@ mod serialize {
         assert_eq!(
             Packet::from(Message::PitchBend {
                 channel: ux::u4::new(0x0),
-                least_significant_bit: ux::u7::new(0x5F),
-                most_significant_bit: ux::u7::new(0x77),
+                data: DataPair {
+                    lsb: ux::u7::new(0x5F),
+                    msb: ux::u7::new(0x77),
+                },
             }),
             Packet {
                 data: [0x20E0_5F77, 0x0, 0x0, 0x0]

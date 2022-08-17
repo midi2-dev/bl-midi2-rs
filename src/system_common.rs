@@ -1,17 +1,10 @@
-use crate::{helpers::mask, Packet};
+use crate::{data_pair::DataPair, helpers::mask, Packet};
 
 #[derive(Debug, PartialEq)]
 pub enum Message {
-    MidiTimeCode {
-        time_code: ux::u7,
-    },
-    SongPositionPointer {
-        least_significant_bit: ux::u7,
-        most_significant_bit: ux::u7,
-    },
-    SongSelect {
-        song_number: ux::u7,
-    },
+    MidiTimeCode { time_code: ux::u7 },
+    SongPositionPointer(DataPair),
+    SongSelect { song_number: ux::u7 },
     TuneRequest,
     TimingClock,
     Start,
@@ -35,10 +28,10 @@ impl std::convert::TryFrom<Packet> for Message {
                 0xF1 => Ok(Message::MidiTimeCode {
                     time_code: mask(p.octet(2)),
                 }),
-                0xF2 => Ok(Message::SongPositionPointer {
-                    least_significant_bit: mask(p.octet(2)),
-                    most_significant_bit: mask(p.octet(3)),
-                }),
+                0xF2 => Ok(Message::SongPositionPointer(DataPair {
+                    lsb: mask(p.octet(2)),
+                    msb: mask(p.octet(3)),
+                })),
                 0xF3 => Ok(Message::SongSelect {
                     song_number: mask(p.octet(2)),
                 }),
@@ -60,14 +53,7 @@ impl std::convert::From<Message> for Packet {
     fn from(m: Message) -> Self {
         match m {
             Message::MidiTimeCode { time_code } => message_packet(0xF1, Some(time_code), None),
-            Message::SongPositionPointer {
-                least_significant_bit,
-                most_significant_bit,
-            } => message_packet(
-                0xF2,
-                Some(least_significant_bit),
-                Some(most_significant_bit),
-            ),
+            Message::SongPositionPointer(DataPair { lsb, msb }) => message_packet(0xF2, Some(lsb), Some(msb)),
             Message::SongSelect { song_number } => message_packet(0xF3, Some(song_number), None),
             Message::TuneRequest => message_packet(0xF6, None, None),
             Message::TimingClock => message_packet(0xF8, None, None),
@@ -129,10 +115,10 @@ mod deserialize {
             Message::try_from(Packet {
                 data: [0x10F2_2449, 0x0, 0x0, 0x0]
             }),
-            Ok(Message::SongPositionPointer {
-                least_significant_bit: ux::u7::new(0x24),
-                most_significant_bit: ux::u7::new(0x49),
-            }),
+            Ok(Message::SongPositionPointer(DataPair {
+                lsb: ux::u7::new(0x24),
+                msb: ux::u7::new(0x49),
+            })),
         );
     }
 
@@ -238,10 +224,10 @@ mod serialize {
     #[test]
     fn song_position_pointer() {
         assert_eq!(
-            Packet::from(Message::SongPositionPointer {
-                least_significant_bit: ux::u7::new(0x31),
-                most_significant_bit: ux::u7::new(0x41),
-            }),
+            Packet::from(Message::SongPositionPointer(DataPair {
+                lsb: ux::u7::new(0x31),
+                msb: ux::u7::new(0x41),
+            })),
             Packet {
                 data: [0x10F2_3141, 0x0, 0x0, 0x0]
             },
