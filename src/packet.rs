@@ -1,16 +1,11 @@
-#[derive(
-    Default,
-    PartialEq,
-)]
+#[derive(Default, PartialEq)]
 pub struct Packet {
     pub data: [u32; 4],
 }
 
 impl Packet {
     pub fn new() -> Self {
-        Packet {
-            data: [0, 0, 0, 0],
-        }
+        Packet { data: [0, 0, 0, 0] }
     }
 
     pub fn group(&self) -> ux::u4 {
@@ -28,7 +23,10 @@ impl Packet {
 
     pub fn set_bit(mut self, index: usize, v: bool) -> Self {
         assert!(index < 128);
-        let v: u32 = match v { true => 1, false => 0 };
+        let v: u32 = match v {
+            true => 1,
+            false => 0,
+        };
         self.data[index / 32] |= v << (31 - (index % 32));
         self
     }
@@ -39,7 +37,7 @@ impl Packet {
             .try_into()
             .unwrap()
     }
-    
+
     pub fn set_nibble(mut self, index: usize, v: ux::u4) -> Self {
         assert!(index < 32);
         self.data[index / 8] |= u32::from(v) << (28 - (index % 8) * 4);
@@ -92,15 +90,12 @@ impl Packet {
     }
 }
 
-impl std::fmt::Debug for Packet { 
+impl std::fmt::Debug for Packet {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         write!(
             f,
-            "Packet {{ data: [ {:#010X}, {:#010X}, {:#010X}, {:#010X} ] }}",  
-            self.data[0],
-            self.data[1],
-            self.data[2],
-            self.data[3],
+            "Packet {{ data: [ {:#010X}, {:#010X}, {:#010X}, {:#010X} ] }}",
+            self.data[0], self.data[1], self.data[2], self.data[3],
         )
     }
 }
@@ -112,7 +107,7 @@ mod tests {
     #[test]
     fn default_packet() {
         let packet = Packet::new();
-        assert_eq!(packet, Packet{ data: [0, 0, 0, 0] });
+        assert_eq!(packet, Packet { data: [0, 0, 0, 0] });
     }
 
     #[test]
@@ -136,15 +131,20 @@ mod tests {
             ([0x0F00_0000, 0x0, 0x0, 0x0], ux::u4::new(15)),
         ];
         for (d, g) in data_group_pairings {
-            assert_eq!(Packet{data: d}.group(), g);
+            assert_eq!(Packet { data: d }.group(), g);
         }
     }
 
     #[test]
     fn set_group() {
         assert_eq!(
-            Packet{ data: [ 0x0, 0x0, 0x0, 0x0 ] }.set_group(ux::u4::new(2)),
-            Packet{ data: [ 0x0200_0000, 0x0, 0x0, 0x0 ] },
+            Packet {
+                data: [0x0, 0x0, 0x0, 0x0]
+            }
+            .set_group(ux::u4::new(2)),
+            Packet {
+                data: [0x0200_0000, 0x0, 0x0, 0x0]
+            },
         );
     }
 
@@ -156,7 +156,7 @@ mod tests {
                 0b0111_1111_1111_1111_1111_1111_1111_0111,
                 0b0000_0010_0000_0000_0000_0000_0000_0000,
                 0b1111_0111_1111_1111_1111_1111_1111_1111,
-            ]
+            ],
         };
         assert_eq!(p.bit(0), true);
         assert_eq!(p.bit(30), true);
@@ -170,35 +170,20 @@ mod tests {
     fn set_bit() {
         assert_eq!(
             Packet::new().set_bit(0, true),
-            Packet { 
-                data: [
-                    0b1000_0000_0000_0000_0000_0000_0000_0000,
-                    0x0, 
-                    0x0, 
-                    0x0
-                ] 
+            Packet {
+                data: [0b1000_0000_0000_0000_0000_0000_0000_0000, 0x0, 0x0, 0x0]
             },
         );
         assert_eq!(
             Packet::new().set_bit(10, true),
-            Packet { 
-                data: [
-                    0b0000_0000_0010_0000_0000_0000_0000_0000,
-                    0x0, 
-                    0x0, 
-                    0x0
-                ] 
+            Packet {
+                data: [0b0000_0000_0010_0000_0000_0000_0000_0000, 0x0, 0x0, 0x0]
             },
         );
         assert_eq!(
             Packet::new().set_bit(74, true),
-            Packet { 
-                data: [
-                    0x0, 
-                    0x0, 
-                    0b0000_0000_0010_0000_0000_0000_0000_0000,
-                    0x0
-                ] 
+            Packet {
+                data: [0x0, 0x0, 0b0000_0000_0010_0000_0000_0000_0000_0000, 0x0]
             },
         );
     }
@@ -206,12 +191,7 @@ mod tests {
     #[test]
     fn nibble() {
         let p = Packet {
-            data: [
-                0x0123_4567,
-                0x89AB_CDEF,
-                0x0123_4567,
-                0x89AB_CDEF,
-            ]
+            data: [0x0123_4567, 0x89AB_CDEF, 0x0123_4567, 0x89AB_CDEF],
         };
         assert_eq!(p.nibble(0), ux::u4::new(0));
         assert_eq!(p.nibble(3), ux::u4::new(3));
@@ -223,27 +203,28 @@ mod tests {
     fn set_nibble() {
         assert_eq!(
             Packet::new().set_nibble(0, ux::u4::new(0xB)),
-            Packet { data: [0xB000_0000, 0x0, 0x0, 0x0] },
+            Packet {
+                data: [0xB000_0000, 0x0, 0x0, 0x0]
+            },
         );
         assert_eq!(
             Packet::new().set_nibble(5, ux::u4::new(0xB)),
-            Packet { data: [0x0000_0B00, 0x0, 0x0, 0x0] },
+            Packet {
+                data: [0x0000_0B00, 0x0, 0x0, 0x0]
+            },
         );
         assert_eq!(
             Packet::new().set_nibble(10, ux::u4::new(0xB)),
-            Packet { data: [0x0, 0x00B0_0000, 0x0, 0x0] },
+            Packet {
+                data: [0x0, 0x00B0_0000, 0x0, 0x0]
+            },
         );
     }
 
     #[test]
     fn octet() {
         let p = Packet {
-            data: [
-                0x0123_4567,
-                0x89AB_CDEF,
-                0x0123_4567,
-                0x89AB_CDEF,
-            ]
+            data: [0x0123_4567, 0x89AB_CDEF, 0x0123_4567, 0x89AB_CDEF],
         };
         assert_eq!(p.octet(0), 0x01);
         assert_eq!(p.octet(3), 0x67);
@@ -255,47 +236,48 @@ mod tests {
     fn set_octet() {
         assert_eq!(
             Packet::new().set_octet(0, 0xBE),
-            Packet { data: [0xBE00_0000, 0x0, 0x0, 0x0] },
+            Packet {
+                data: [0xBE00_0000, 0x0, 0x0, 0x0]
+            },
         );
         assert_eq!(
             Packet::new().set_octet(2, 0xBE),
-            Packet { data: [0x0000_BE00, 0x0, 0x0, 0x0] },
+            Packet {
+                data: [0x0000_BE00, 0x0, 0x0, 0x0]
+            },
         );
         assert_eq!(
             Packet::new().set_octet(5, 0xBE),
-            Packet { data: [0x0, 0x00BE_0000, 0x0, 0x0] },
+            Packet {
+                data: [0x0, 0x00BE_0000, 0x0, 0x0]
+            },
         );
     }
 
     #[test]
     fn octets() {
         assert_eq!(
-            Packet{ data: [0x0012_3456, 0x7800_0000, 0x0, 0x0 ] }.octets(1, 5),
+            Packet {
+                data: [0x0012_3456, 0x7800_0000, 0x0, 0x0]
+            }
+            .octets(1, 5),
             vec![0x12, 0x34, 0x56, 0x78],
         );
         assert_eq!(
-            Packet{ data: [0x0012_3456, 0x7890_ABCD, 0xEF12_3456, 0x7890_ABCD ] }.octets(0, 16),
+            Packet {
+                data: [0x0012_3456, 0x7890_ABCD, 0xEF12_3456, 0x7890_ABCD]
+            }
+            .octets(0, 16),
             vec![
-                0x00,
-                0x12,
-                0x34,
-                0x56,
-                0x78,
-                0x90,
-                0xAB,
-                0xCD,
-                0xEF,
-                0x12,
-                0x34,
-                0x56,
-                0x78,
-                0x90,
-                0xAB,
-                0xCD,
+                0x00, 0x12, 0x34, 0x56, 0x78, 0x90, 0xAB, 0xCD, 0xEF, 0x12, 0x34, 0x56, 0x78, 0x90,
+                0xAB, 0xCD,
             ],
         );
         assert_eq!(
-            Packet{ data: [0x0, 0x0, 0x0, 0x0] }.octets(0, 0),
+            Packet {
+                data: [0x0, 0x0, 0x0, 0x0]
+            }
+            .octets(0, 0),
             vec![],
         );
     }
@@ -304,27 +286,28 @@ mod tests {
     fn set_octets() {
         assert_eq!(
             Packet::new().set_octets(2, vec![0xFF, 0xFF, 0xFF, 0xFF, 0xFF]),
-            Packet{ data: [ 0x0000_FFFF, 0xFFFF_FF00, 0x0, 0x0 ] },
+            Packet {
+                data: [0x0000_FFFF, 0xFFFF_FF00, 0x0, 0x0]
+            },
         );
         assert_eq!(
             Packet::new().set_octets(0, Vec::new()),
-            Packet{ data: [ 0x0, 0x0, 0x0, 0x0 ] },
+            Packet {
+                data: [0x0, 0x0, 0x0, 0x0]
+            },
         );
         assert_eq!(
             Packet::new().set_octets(0, [0xFF].repeat(16)),
-            Packet{ data: [ 0xFFFF_FFFF, 0xFFFF_FFFF, 0xFFFF_FFFF, 0xFFFF_FFFF ] },
+            Packet {
+                data: [0xFFFF_FFFF, 0xFFFF_FFFF, 0xFFFF_FFFF, 0xFFFF_FFFF]
+            },
         );
     }
 
     #[test]
     fn word() {
         let p = Packet {
-            data: [
-                0x0123_4567,
-                0x89AB_CDEF,
-                0x0123_4567,
-                0x89AB_CDEF,
-            ]
+            data: [0x0123_4567, 0x89AB_CDEF, 0x0123_4567, 0x89AB_CDEF],
         };
         assert_eq!(p.word(0), 0x0123);
         assert_eq!(p.word(1), 0x4567);
@@ -335,27 +318,33 @@ mod tests {
     fn set_word() {
         assert_eq!(
             Packet::new().set_word(0, 0x0ABE),
-            Packet { data: [0x0ABE_0000, 0x0, 0x0, 0x0] },
+            Packet {
+                data: [0x0ABE_0000, 0x0, 0x0, 0x0]
+            },
         );
         assert_eq!(
             Packet::new().set_word(1, 0x0ABE),
-            Packet { data: [0x0000_0ABE, 0x0, 0x0, 0x0] },
+            Packet {
+                data: [0x0000_0ABE, 0x0, 0x0, 0x0]
+            },
         );
         assert_eq!(
             Packet::new().set_word(3, 0x0ABE),
-            Packet { data: [0x0, 0x0000_0ABE, 0x0, 0x0] },
+            Packet {
+                data: [0x0, 0x0000_0ABE, 0x0, 0x0]
+            },
         );
     }
 
     #[test]
     fn format() {
         assert_eq!(
-            format!("{:?}", Packet{ data: [
-                0x0123_4567,
-                0x89AB_CDEF,
-                0x0123_4567,
-                0x89AB_CDEF,
-            ]}),
+            format!(
+                "{:?}",
+                Packet {
+                    data: [0x0123_4567, 0x89AB_CDEF, 0x0123_4567, 0x89AB_CDEF,]
+                }
+            ),
             "Packet { data: [ 0x01234567, 0x89ABCDEF, 0x01234567, 0x89ABCDEF ] }"
         );
     }

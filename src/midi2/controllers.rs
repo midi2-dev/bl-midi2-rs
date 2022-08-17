@@ -1,7 +1,4 @@
-#[derive(
-    Debug,
-    PartialEq,
-)]
+#[derive(Debug, PartialEq)]
 pub enum Controller {
     Modulation,
     Breath,

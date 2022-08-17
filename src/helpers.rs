@@ -1,6 +1,6 @@
 use crate::bounded::Bounded;
 
-pub fn mask<U, T>(u: U) -> T 
+pub fn mask<U, T>(u: U) -> T
 where
     U: core::ops::BitAnd<U>,
     T: std::convert::TryFrom<<U as std::ops::BitAnd>::Output>,
@@ -27,4 +27,3 @@ mod tests {
         assert_eq!(ux::u4::new(0b0111), mask(v));
     }
 }
-

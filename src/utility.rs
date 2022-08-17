@@ -1,17 +1,9 @@
-use crate::{
-    helpers::mask,
-    Packet,
-};
+use crate::{helpers::mask, Packet};
 
-#[derive(
-    Debug,
-    PartialEq,
-)]
+#[derive(Debug, PartialEq)]
 pub enum Message {
     NoOp,
-    TimeStamp {
-        time_stamp: ux::u20,
-    },
+    TimeStamp { time_stamp: ux::u20 },
 }
 
 impl std::convert::From<Message> for Packet {
@@ -20,12 +12,9 @@ impl std::convert::From<Message> for Packet {
             Message::NoOp => Packet {
                 data: [0x0, 0x0, 0x0, 0x0],
             },
-            Message::TimeStamp{ time_stamp } => Packet {
-                data: [
-                    u32::from(time_stamp) | 0x0020_0000,
-                    0x0, 0x0, 0x0
-                ],
-            }
+            Message::TimeStamp { time_stamp } => Packet {
+                data: [u32::from(time_stamp) | 0x0020_0000, 0x0, 0x0, 0x0],
+            },
         }
     }
 }
@@ -36,18 +25,17 @@ impl std::convert::TryFrom<Packet> for Message {
         match u8::from(p.nibble(0)) {
             0 => match u8::from(p.nibble(2)) {
                 0 => Ok(Message::NoOp),
-                2 => Ok(Message::TimeStamp{time_stamp: mask(p.data[0])}),
-                s => Err(DeserializeError::InvalidStatusBit(s))
+                2 => Ok(Message::TimeStamp {
+                    time_stamp: mask(p.data[0]),
+                }),
+                s => Err(DeserializeError::InvalidStatusBit(s)),
             },
-            t => Err(DeserializeError::IncorrectMessageType(t))
+            t => Err(DeserializeError::IncorrectMessageType(t)),
         }
     }
 }
 
-#[derive(
-    Debug,
-    PartialEq,
-)]
+#[derive(Debug, PartialEq)]
 pub enum DeserializeError {
     InvalidStatusBit(u8),
     IncorrectMessageType(u8),
@@ -56,11 +44,13 @@ pub enum DeserializeError {
 #[cfg(test)]
 mod deserialize {
     use super::*;
-    
+
     #[test]
     fn invalid_type() {
         assert_eq!(
-            Message::try_from(Packet{data:[0x1000_0000, 0x0, 0x0, 0x0]}),
+            Message::try_from(Packet {
+                data: [0x1000_0000, 0x0, 0x0, 0x0]
+            }),
             Err(DeserializeError::IncorrectMessageType(1)),
         );
     }
@@ -68,7 +58,9 @@ mod deserialize {
     #[test]
     fn invalid_status_bit() {
         assert_eq!(
-            Message::try_from(Packet{data:[0x0030_0000, 0x0, 0x0, 0x0]}),
+            Message::try_from(Packet {
+                data: [0x0030_0000, 0x0, 0x0, 0x0]
+            }),
             Err(DeserializeError::InvalidStatusBit(3)),
         );
     }
@@ -76,7 +68,9 @@ mod deserialize {
     #[test]
     fn noop() {
         assert_eq!(
-            Message::try_from(Packet{data:[0x0,0x0,0x0,0x0]}),
+            Message::try_from(Packet {
+                data: [0x0, 0x0, 0x0, 0x0]
+            }),
             Ok(Message::NoOp),
         );
     }
@@ -84,8 +78,12 @@ mod deserialize {
     #[test]
     fn time_stamp() {
         assert_eq!(
-            Message::try_from(Packet{data:[0x0022_ABCD,0x0,0x0,0x0]}),
-            Ok(Message::TimeStamp{ time_stamp: ux::u20::new(0x2ABCD) }),
+            Message::try_from(Packet {
+                data: [0x0022_ABCD, 0x0, 0x0, 0x0]
+            }),
+            Ok(Message::TimeStamp {
+                time_stamp: ux::u20::new(0x2ABCD)
+            }),
         );
     }
 }
@@ -98,15 +96,21 @@ mod serialize {
     fn noop() {
         assert_eq!(
             Packet::from(Message::NoOp),
-            Packet{data:[0x0,0x0,0x0,0x0]},
+            Packet {
+                data: [0x0, 0x0, 0x0, 0x0]
+            },
         );
     }
 
     #[test]
     fn time_stamp() {
         assert_eq!(
-            Packet::from(Message::TimeStamp{ time_stamp: ux::u20::new(0x2ABCD) }),
-            Packet{data:[0x0022_ABCD,0x0,0x0,0x0]},
+            Packet::from(Message::TimeStamp {
+                time_stamp: ux::u20::new(0x2ABCD)
+            }),
+            Packet {
+                data: [0x0022_ABCD, 0x0, 0x0, 0x0]
+            },
         );
     }
 }

@@ -1,12 +1,6 @@
-use crate::{
-    Packet,
-    helpers::mask,
-};
+use crate::{helpers::mask, Packet};
 
-#[derive(
-    Debug,
-    PartialEq,
-)]
+#[derive(Debug, PartialEq)]
 pub enum Message {
     MidiTimeCode {
         time_code: ux::u7,
@@ -27,10 +21,7 @@ pub enum Message {
     Reset,
 }
 
-#[derive(
-    Debug,
-    PartialEq,
-)]
+#[derive(Debug, PartialEq)]
 pub enum DeserializeError {
     UnsupportedStatus(u8),
     IncorrectMessageType(u8),
@@ -47,7 +38,7 @@ impl std::convert::TryFrom<Packet> for Message {
                 0xF2 => Ok(Message::SongPositionPointer {
                     least_significant_bit: mask(p.octet(2)),
                     most_significant_bit: mask(p.octet(3)),
-                }), 
+                }),
                 0xF3 => Ok(Message::SongSelect {
                     song_number: mask(p.octet(2)),
                 }),
@@ -68,28 +59,16 @@ impl std::convert::TryFrom<Packet> for Message {
 impl std::convert::From<Message> for Packet {
     fn from(m: Message) -> Self {
         match m {
-            Message::MidiTimeCode { 
-                time_code
-            } => message_packet(
-                0xF1, 
-                Some(time_code), 
-                None
-            ),
-            Message::SongPositionPointer { 
+            Message::MidiTimeCode { time_code } => message_packet(0xF1, Some(time_code), None),
+            Message::SongPositionPointer {
                 least_significant_bit,
                 most_significant_bit,
             } => message_packet(
-                0xF2, 
-                Some(least_significant_bit), 
+                0xF2,
+                Some(least_significant_bit),
                 Some(most_significant_bit),
             ),
-            Message::SongSelect { 
-                song_number,
-            } => message_packet(
-                0xF3, 
-                Some(song_number), 
-                None,
-            ),
+            Message::SongSelect { song_number } => message_packet(0xF3, Some(song_number), None),
             Message::TuneRequest => message_packet(0xF6, None, None),
             Message::TimingClock => message_packet(0xF8, None, None),
             Message::Start => message_packet(0xFA, None, None),
@@ -101,18 +80,9 @@ impl std::convert::From<Message> for Packet {
     }
 }
 
-fn message_packet(
-    status: u8,
-    byte1: Option<ux::u7>,
-    byte2: Option<ux::u7>,
-) -> Packet {
+fn message_packet(status: u8, byte1: Option<ux::u7>, byte2: Option<ux::u7>) -> Packet {
     let mut p = Packet {
-        data: [
-            0x1000_0000,
-            0x0,
-            0x0,
-            0x0,
-        ],
+        data: [0x1000_0000, 0x0, 0x0, 0x0],
     }
     .set_octet(1, mask(status));
 
@@ -127,7 +97,6 @@ fn message_packet(
     p
 }
 
-
 #[cfg(test)]
 mod deserialize {
     use super::*;
@@ -135,7 +104,9 @@ mod deserialize {
     #[test]
     fn wrong_type() {
         assert_eq!(
-            Message::try_from(Packet{data: [0x2000_0000,0x0,0x0,0x0]}),
+            Message::try_from(Packet {
+                data: [0x2000_0000, 0x0, 0x0, 0x0]
+            }),
             Err(DeserializeError::IncorrectMessageType(0x2)),
         );
     }
@@ -143,16 +114,22 @@ mod deserialize {
     #[test]
     fn midi_time_code() {
         assert_eq!(
-            Message::try_from(Packet{data: [0x10F1_3100,0x0,0x0,0x0]}),
-            Ok(Message::MidiTimeCode{ time_code: ux::u7::new(49) }),
+            Message::try_from(Packet {
+                data: [0x10F1_3100, 0x0, 0x0, 0x0]
+            }),
+            Ok(Message::MidiTimeCode {
+                time_code: ux::u7::new(49)
+            }),
         );
     }
 
     #[test]
     fn song_position_pointer() {
         assert_eq!(
-            Message::try_from(Packet{data: [0x10F2_2449,0x0,0x0,0x0]}),
-            Ok(Message::SongPositionPointer { 
+            Message::try_from(Packet {
+                data: [0x10F2_2449, 0x0, 0x0, 0x0]
+            }),
+            Ok(Message::SongPositionPointer {
                 least_significant_bit: ux::u7::new(0x24),
                 most_significant_bit: ux::u7::new(0x49),
             }),
@@ -162,15 +139,21 @@ mod deserialize {
     #[test]
     fn song_select() {
         assert_eq!(
-            Message::try_from(Packet{data: [0x10F3_4200,0x0,0x0,0x0]}),
-            Ok(Message::SongSelect{ song_number: ux::u7::new(0x42) }),
+            Message::try_from(Packet {
+                data: [0x10F3_4200, 0x0, 0x0, 0x0]
+            }),
+            Ok(Message::SongSelect {
+                song_number: ux::u7::new(0x42)
+            }),
         );
     }
 
     #[test]
     fn tune_request() {
         assert_eq!(
-            Message::try_from(Packet{data: [0x10F6_0000,0x0,0x0,0x0]}),
+            Message::try_from(Packet {
+                data: [0x10F6_0000, 0x0, 0x0, 0x0]
+            }),
             Ok(Message::TuneRequest),
         );
     }
@@ -178,7 +161,9 @@ mod deserialize {
     #[test]
     fn timing_clock() {
         assert_eq!(
-            Message::try_from(Packet{data: [0x10F8_0000,0x0,0x0,0x0]}),
+            Message::try_from(Packet {
+                data: [0x10F8_0000, 0x0, 0x0, 0x0]
+            }),
             Ok(Message::TimingClock),
         );
     }
@@ -186,7 +171,9 @@ mod deserialize {
     #[test]
     fn start() {
         assert_eq!(
-            Message::try_from(Packet{data: [0x10FA_0000,0x0,0x0,0x0]}),
+            Message::try_from(Packet {
+                data: [0x10FA_0000, 0x0, 0x0, 0x0]
+            }),
             Ok(Message::Start),
         );
     }
@@ -194,7 +181,9 @@ mod deserialize {
     #[test]
     fn continue_message() {
         assert_eq!(
-            Message::try_from(Packet{data: [0x10FB_0000,0x0,0x0,0x0]}),
+            Message::try_from(Packet {
+                data: [0x10FB_0000, 0x0, 0x0, 0x0]
+            }),
             Ok(Message::Continue),
         );
     }
@@ -202,7 +191,9 @@ mod deserialize {
     #[test]
     fn stop() {
         assert_eq!(
-            Message::try_from(Packet{data: [0x10FC_0000,0x0,0x0,0x0]}),
+            Message::try_from(Packet {
+                data: [0x10FC_0000, 0x0, 0x0, 0x0]
+            }),
             Ok(Message::Stop),
         );
     }
@@ -210,7 +201,9 @@ mod deserialize {
     #[test]
     fn active_sensing() {
         assert_eq!(
-            Message::try_from(Packet{data: [0x10FE_0000,0x0,0x0,0x0]}),
+            Message::try_from(Packet {
+                data: [0x10FE_0000, 0x0, 0x0, 0x0]
+            }),
             Ok(Message::ActiveSensing),
         );
     }
@@ -218,7 +211,9 @@ mod deserialize {
     #[test]
     fn reset() {
         assert_eq!(
-            Message::try_from(Packet{data: [0x10FF_0000,0x0,0x0,0x0]}),
+            Message::try_from(Packet {
+                data: [0x10FF_0000, 0x0, 0x0, 0x0]
+            }),
             Ok(Message::Reset),
         );
     }
@@ -234,7 +229,9 @@ mod serialize {
             Packet::from(Message::MidiTimeCode {
                 time_code: ux::u7::new(0x1A)
             }),
-            Packet{ data: [ 0x10F1_1A00, 0x0, 0x0, 0x0 ] },
+            Packet {
+                data: [0x10F1_1A00, 0x0, 0x0, 0x0]
+            },
         );
     }
 
@@ -245,7 +242,9 @@ mod serialize {
                 least_significant_bit: ux::u7::new(0x31),
                 most_significant_bit: ux::u7::new(0x41),
             }),
-            Packet{ data: [ 0x10F2_3141, 0x0, 0x0, 0x0 ] },
+            Packet {
+                data: [0x10F2_3141, 0x0, 0x0, 0x0]
+            },
         );
     }
 
@@ -255,7 +254,9 @@ mod serialize {
             Packet::from(Message::SongSelect {
                 song_number: ux::u7::new(0x5B)
             }),
-            Packet{ data: [ 0x10F3_5B00, 0x0, 0x0, 0x0 ] },
+            Packet {
+                data: [0x10F3_5B00, 0x0, 0x0, 0x0]
+            },
         );
     }
 
@@ -263,7 +264,9 @@ mod serialize {
     fn tune_request() {
         assert_eq!(
             Packet::from(Message::TuneRequest),
-            Packet{ data: [ 0x10F6_0000, 0x0, 0x0, 0x0 ] },
+            Packet {
+                data: [0x10F6_0000, 0x0, 0x0, 0x0]
+            },
         );
     }
 
@@ -271,7 +274,9 @@ mod serialize {
     fn timing_clock() {
         assert_eq!(
             Packet::from(Message::TimingClock),
-            Packet{ data: [ 0x10F8_0000, 0x0, 0x0, 0x0 ] },
+            Packet {
+                data: [0x10F8_0000, 0x0, 0x0, 0x0]
+            },
         );
     }
 
@@ -279,7 +284,9 @@ mod serialize {
     fn start() {
         assert_eq!(
             Packet::from(Message::Start),
-            Packet{ data: [ 0x10FA_0000, 0x0, 0x0, 0x0 ] },
+            Packet {
+                data: [0x10FA_0000, 0x0, 0x0, 0x0]
+            },
         );
     }
 
@@ -287,7 +294,9 @@ mod serialize {
     fn continue_message() {
         assert_eq!(
             Packet::from(Message::Continue),
-            Packet{ data: [ 0x10FB_0000, 0x0, 0x0, 0x0 ] },
+            Packet {
+                data: [0x10FB_0000, 0x0, 0x0, 0x0]
+            },
         );
     }
 
@@ -295,7 +304,9 @@ mod serialize {
     fn stop() {
         assert_eq!(
             Packet::from(Message::Stop),
-            Packet{ data: [ 0x10FC_0000, 0x0, 0x0, 0x0 ] },
+            Packet {
+                data: [0x10FC_0000, 0x0, 0x0, 0x0]
+            },
         );
     }
 
@@ -303,7 +314,9 @@ mod serialize {
     fn active_sensing() {
         assert_eq!(
             Packet::from(Message::ActiveSensing),
-            Packet{ data: [ 0x10FE_0000, 0x0, 0x0, 0x0 ] },
+            Packet {
+                data: [0x10FE_0000, 0x0, 0x0, 0x0]
+            },
         );
     }
 
@@ -311,7 +324,9 @@ mod serialize {
     fn reset() {
         assert_eq!(
             Packet::from(Message::Reset),
-            Packet{ data: [ 0x10FF_0000, 0x0, 0x0, 0x0 ] },
+            Packet {
+                data: [0x10FF_0000, 0x0, 0x0, 0x0]
+            },
         );
     }
 }

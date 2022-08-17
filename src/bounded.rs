@@ -13,7 +13,7 @@ macro_rules! bounded_impl {
                 <$t>::MIN
             }
         }
-    }
+    };
 }
 
 bounded_impl!(ux::u1);

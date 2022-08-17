@@ -1,13 +1,7 @@
-use crate::{
-    Packet,
-    helpers::mask,
-};
 use super::controllers::Controller;
+use crate::{helpers::mask, Packet};
 
-#[derive(
-    Debug,
-    PartialEq,
-)]
+#[derive(Debug, PartialEq)]
 pub enum Message {
     NoteOff {
         channel: ux::u4,
@@ -76,7 +70,7 @@ pub enum Message {
     ProgramChange {
         channel: ux::u4,
         program: ux::u7,
-        bank: Option<(ux::u7,ux::u7)>,
+        bank: Option<(ux::u7, ux::u7)>,
     },
     ChannelPressure {
         channel: ux::u4,
@@ -93,23 +87,14 @@ pub enum Message {
     },
 }
 
-#[derive(
-    Debug,
-    PartialEq,
-)]
+#[derive(Debug, PartialEq)]
 pub enum Attribute {
     ManufacturerSpecific(u16),
     ProfileSpecific(u16),
-    Pitch7_9 {
-        note: ux::u7,
-        pitch_up: ux::u9,
-    },
+    Pitch7_9 { note: ux::u7, pitch_up: ux::u9 },
 }
 
-#[derive(
-    Debug,
-    PartialEq,
-)]
+#[derive(Debug, PartialEq)]
 pub enum DeserializeError {
     IncorrectMessageType(u8),
     InvalidAttributeType(u8),
@@ -189,10 +174,11 @@ impl std::convert::TryFrom<Packet> for Message {
                 0xC => Ok(Message::ProgramChange {
                     channel: p.nibble(3),
                     program: mask(p.octet(4)),
-                    bank: match p.bit(31) {
-                        true => Some((mask(p.octet(6)), mask(p.octet(7)))),
-                        _ => None,
-                    }
+                    bank: if p.bit(31) {
+                        Some((mask(p.octet(6)), mask(p.octet(7))))
+                    } else {
+                        None
+                    },
                 }),
                 0xD => Ok(Message::ChannelPressure {
                     channel: p.nibble(3),
@@ -208,7 +194,7 @@ impl std::convert::TryFrom<Packet> for Message {
                     data: p.data[1],
                 }),
                 s => Err(DeserializeError::InvalidStatusByte(s)),
-            }
+            },
             t => Err(DeserializeError::IncorrectMessageType(t)),
         }
     }
@@ -229,29 +215,29 @@ fn attribute(t: u8, data: u16) -> Result<Option<Attribute>, DeserializeError> {
 
 fn controller(code: u8) -> Result<Controller, DeserializeError> {
     match code {
-            1 => Ok(Controller::Modulation),
-            2 => Ok(Controller::Breath),
-            3 => Ok(Controller::Pitch7_25),
-            7 => Ok(Controller::Volume),
-            8 => Ok(Controller::Balance),
-            10 => Ok(Controller::Pan),
-            11 => Ok(Controller::Expression),
-            70 => Ok(Controller::SoundController(1)),
-            71 => Ok(Controller::SoundController(2)),
-            72 => Ok(Controller::SoundController(3)),
-            73 => Ok(Controller::SoundController(4)),
-            74 => Ok(Controller::SoundController(5)),
-            75 => Ok(Controller::SoundController(6)),
-            76 => Ok(Controller::SoundController(7)),
-            77 => Ok(Controller::SoundController(8)),
-            78 => Ok(Controller::SoundController(9)),
-            79 => Ok(Controller::SoundController(10)),
-            91 => Ok(Controller::EffectDepth(1)),
-            92 => Ok(Controller::EffectDepth(2)),
-            93 => Ok(Controller::EffectDepth(3)),
-            94 => Ok(Controller::EffectDepth(4)),
-            95 => Ok(Controller::EffectDepth(5)),
-            c => Err(DeserializeError::InvalidControllerCode(c)),
+        1 => Ok(Controller::Modulation),
+        2 => Ok(Controller::Breath),
+        3 => Ok(Controller::Pitch7_25),
+        7 => Ok(Controller::Volume),
+        8 => Ok(Controller::Balance),
+        10 => Ok(Controller::Pan),
+        11 => Ok(Controller::Expression),
+        70 => Ok(Controller::SoundController(1)),
+        71 => Ok(Controller::SoundController(2)),
+        72 => Ok(Controller::SoundController(3)),
+        73 => Ok(Controller::SoundController(4)),
+        74 => Ok(Controller::SoundController(5)),
+        75 => Ok(Controller::SoundController(6)),
+        76 => Ok(Controller::SoundController(7)),
+        77 => Ok(Controller::SoundController(8)),
+        78 => Ok(Controller::SoundController(9)),
+        79 => Ok(Controller::SoundController(10)),
+        91 => Ok(Controller::EffectDepth(1)),
+        92 => Ok(Controller::EffectDepth(2)),
+        93 => Ok(Controller::EffectDepth(3)),
+        94 => Ok(Controller::EffectDepth(4)),
+        95 => Ok(Controller::EffectDepth(5)),
+        c => Err(DeserializeError::InvalidControllerCode(c)),
     }
 }
 
@@ -262,7 +248,9 @@ mod deserialize {
     #[test]
     fn incorrect_type() {
         assert_eq!(
-            Message::try_from(Packet{data:[0x0,0x0,0x0,0x0]}),
+            Message::try_from(Packet {
+                data: [0x0, 0x0, 0x0, 0x0]
+            }),
             Err(DeserializeError::IncorrectMessageType(0)),
         );
     }
@@ -270,7 +258,9 @@ mod deserialize {
     #[test]
     fn note_off() {
         assert_eq!(
-            Message::try_from(Packet{data:[0x408A_6300,0xABCD_0000,0x0,0x0]}),
+            Message::try_from(Packet {
+                data: [0x408A_6300, 0xABCD_0000, 0x0, 0x0]
+            }),
             Ok(Message::NoteOff {
                 channel: ux::u4::new(0xA),
                 note: ux::u7::new(0x63),
@@ -279,11 +269,13 @@ mod deserialize {
             })
         );
     }
-    
+
     #[test]
     fn note_on() {
         assert_eq!(
-            Message::try_from(Packet{data:[0x4093_5000,0x6666_0000,0x0,0x0]}),
+            Message::try_from(Packet {
+                data: [0x4093_5000, 0x6666_0000, 0x0, 0x0]
+            }),
             Ok(Message::NoteOn {
                 channel: ux::u4::new(0x3),
                 note: ux::u7::new(0x50),
@@ -298,17 +290,21 @@ mod deserialize {
         let data = [
             (0x1, Attribute::ManufacturerSpecific(0xABCD)),
             (0x2, Attribute::ProfileSpecific(0xABCD)),
-            (0x3, Attribute::Pitch7_9 {
-                note: ux::u7::new(0b1010101), 
-                pitch_up: ux::u9::new(0b111001101),
-            }),
+            (
+                0x3,
+                Attribute::Pitch7_9 {
+                    note: ux::u7::new(0b1010101),
+                    pitch_up: ux::u9::new(0b111001101),
+                },
+            ),
         ];
         for d in data {
             assert_eq!(
                 Message::try_from(
-                    Packet{
-                        data:[0x4097_6E00,0x1415_ABCD,0x0,0x0]
-                    }.set_octet(3, d.0)
+                    Packet {
+                        data: [0x4097_6E00, 0x1415_ABCD, 0x0, 0x0]
+                    }
+                    .set_octet(3, d.0)
                 ),
                 Ok(Message::NoteOn {
                     channel: ux::u4::new(0x7),
@@ -323,7 +319,9 @@ mod deserialize {
     #[test]
     fn key_pressure() {
         assert_eq!(
-            Message::try_from(Packet{data:[0x40A5_3A00,0xABCD_EF01,0x0,0x0]}),
+            Message::try_from(Packet {
+                data: [0x40A5_3A00, 0xABCD_EF01, 0x0, 0x0]
+            }),
             Ok(Message::KeyPressure {
                 channel: ux::u4::new(0x5),
                 note: ux::u7::new(0x3A),
@@ -360,9 +358,12 @@ mod deserialize {
         ];
         for d in data {
             assert_eq!(
-                Message::try_from(Packet {
-                    data:[0x4001_4100,0xABCD_EF01,0x0,0x0]
-                }.set_octet(3, d.0)),
+                Message::try_from(
+                    Packet {
+                        data: [0x4001_4100, 0xABCD_EF01, 0x0, 0x0]
+                    }
+                    .set_octet(3, d.0)
+                ),
                 Ok(Message::RegisteredPerNoteController {
                     channel: ux::u4::new(0x1),
                     note: ux::u7::new(0x41),
@@ -376,7 +377,9 @@ mod deserialize {
     #[test]
     fn assignable_per_note_controller() {
         assert_eq!(
-            Message::try_from(Packet{data:[0x4010_78BE,0x3141_5926,0x0,0x0]}),
+            Message::try_from(Packet {
+                data: [0x4010_78BE, 0x3141_5926, 0x0, 0x0]
+            }),
             Ok(Message::AssignablePerNoteController {
                 channel: ux::u4::new(0x0),
                 note: ux::u7::new(0x78),
@@ -388,17 +391,16 @@ mod deserialize {
 
     #[test]
     fn per_note_management() {
-        let data = [
-            (false, false),
-            (true, false),
-            (false, true),
-            (true, true),
-        ];
+        let data = [(false, false), (true, false), (false, true), (true, true)];
         for d in data {
             assert_eq!(
-                Message::try_from(Packet{
-                    data:[0x40F9_3B00,0x0,0x0,0x0]
-                }.set_bit(30, d.0).set_bit(31, d.1)),
+                Message::try_from(
+                    Packet {
+                        data: [0x40F9_3B00, 0x0, 0x0, 0x0]
+                    }
+                    .set_bit(30, d.0)
+                    .set_bit(31, d.1)
+                ),
                 Ok(Message::PerNoteManagement {
                     channel: ux::u4::new(0x9),
                     note: ux::u7::new(0x3B),
@@ -412,7 +414,9 @@ mod deserialize {
     #[test]
     fn control_change() {
         assert_eq!(
-            Message::try_from(Packet{data:[0x40BC_F100, 0x1234_5678, 0x0, 0x0]}),
+            Message::try_from(Packet {
+                data: [0x40BC_F100, 0x1234_5678, 0x0, 0x0]
+            }),
             Ok(Message::ControlChange {
                 channel: ux::u4::new(0xC),
                 index: 0xF1,
@@ -424,7 +428,9 @@ mod deserialize {
     #[test]
     fn registered_controller() {
         assert_eq!(
-            Message::try_from(Packet{data:[0x4022_3A40,0x1234_5678,0x0,0x0]}),
+            Message::try_from(Packet {
+                data: [0x4022_3A40, 0x1234_5678, 0x0, 0x0]
+            }),
             Ok(Message::RegisteredController {
                 channel: ux::u4::new(0x2),
                 bank: ux::u7::new(0x3A),
@@ -437,7 +443,9 @@ mod deserialize {
     #[test]
     fn assignable_controller() {
         assert_eq!(
-            Message::try_from(Packet{data:[0x403A_3141,0x1234_5678,0x0,0x0]}),
+            Message::try_from(Packet {
+                data: [0x403A_3141, 0x1234_5678, 0x0, 0x0]
+            }),
             Ok(Message::AssignableController {
                 channel: ux::u4::new(0xA),
                 bank: ux::u7::new(0x31),
@@ -450,7 +458,9 @@ mod deserialize {
     #[test]
     fn relative_registered_controller() {
         assert_eq!(
-            Message::try_from(Packet{data:[0x4041_5A2E,0x1234_5678,0x0,0x0]}),
+            Message::try_from(Packet {
+                data: [0x4041_5A2E, 0x1234_5678, 0x0, 0x0]
+            }),
             Ok(Message::RelativeRegisteredController {
                 channel: ux::u4::new(0x1),
                 bank: ux::u7::new(0x5A),
@@ -463,7 +473,9 @@ mod deserialize {
     #[test]
     fn relative_assignable_controller() {
         assert_eq!(
-            Message::try_from(Packet{data:[0x405C_4E30,0x1234_5678,0x0,0x0]}),
+            Message::try_from(Packet {
+                data: [0x405C_4E30, 0x1234_5678, 0x0, 0x0]
+            }),
             Ok(Message::RelativeAssignableController {
                 channel: ux::u4::new(0xC),
                 bank: ux::u7::new(0x4E),
@@ -476,7 +488,9 @@ mod deserialize {
     #[test]
     fn program_change() {
         assert_eq!(
-            Message::try_from(Packet{data:[0x40C3_0000,0x0100_0000,0x0,0x0]}),
+            Message::try_from(Packet {
+                data: [0x40C3_0000, 0x0100_0000, 0x0, 0x0]
+            }),
             Ok(Message::ProgramChange {
                 channel: ux::u4::new(0x3),
                 program: ux::u7::new(0x01),
@@ -488,7 +502,9 @@ mod deserialize {
     #[test]
     fn program_change_with_bank() {
         assert_eq!(
-            Message::try_from(Packet{data:[0x40C3_0001,0x1E00_2A55,0x0,0x0]}),
+            Message::try_from(Packet {
+                data: [0x40C3_0001, 0x1E00_2A55, 0x0, 0x0]
+            }),
             Ok(Message::ProgramChange {
                 channel: ux::u4::new(0x3),
                 program: ux::u7::new(0x1E),
@@ -500,7 +516,9 @@ mod deserialize {
     #[test]
     fn channel_pressure() {
         assert_eq!(
-            Message::try_from(Packet{data:[0x40D5_0000,0x1234_5678,0x0,0x0]}),
+            Message::try_from(Packet {
+                data: [0x40D5_0000, 0x1234_5678, 0x0, 0x0]
+            }),
             Ok(Message::ChannelPressure {
                 channel: ux::u4::new(0x5),
                 data: 0x1234_5678,
@@ -511,7 +529,9 @@ mod deserialize {
     #[test]
     fn pitch_bend() {
         assert_eq!(
-            Message::try_from(Packet{data:[0x40E8_0000,0x1234_5678,0x0,0x0]}),
+            Message::try_from(Packet {
+                data: [0x40E8_0000, 0x1234_5678, 0x0, 0x0]
+            }),
             Ok(Message::PitchBend {
                 channel: ux::u4::new(0x8),
                 data: 0x1234_5678,
@@ -522,7 +542,9 @@ mod deserialize {
     #[test]
     fn per_note_pitch_bend() {
         assert_eq!(
-            Message::try_from(Packet{data:[0x4066_3C00,0x1234_5678,0x0,0x0]}),
+            Message::try_from(Packet {
+                data: [0x4066_3C00, 0x1234_5678, 0x0, 0x0]
+            }),
             Ok(Message::PerNotePitchBend {
                 channel: ux::u4::new(0x6),
                 note: ux::u7::new(0x3C),
