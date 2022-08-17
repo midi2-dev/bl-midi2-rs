@@ -1,4 +1,7 @@
-use crate::Packet;
+use crate::{
+    helpers::mask,
+    Packet,
+};
 
 #[derive(
     Debug,
@@ -34,12 +37,13 @@ pub enum DeserializeError {
 impl std::convert::TryFrom<Packet> for Message {
     type Error = DeserializeError;
     fn try_from(p: Packet) -> Result<Self, Self::Error> {
-        match p.nibble(0) {
-            3 => match p.nibble(2) {
-                0x0..=0x3 => match p.nibble(3) {
+        match u8::from(p.nibble(0)) {
+            3 => match u8::from(p.nibble(2)) {
+                0x0..=0x3 => match u8::from(p.nibble(3)) {
                     0..=5 => Ok(Message {
                         status: map_status_bit(p.nibble(2)),
-                        data: p.octets(2, (2 + p.nibble(3)).into()),
+                        // see comment: ux missing From usize impls
+                        data: p.octets(2, (2 + u8::from(p.nibble(3))).into()),
                     }),
                     overflow_len => Err(DeserializeError::DataOutOfRange(overflow_len)),
                 },
@@ -53,14 +57,15 @@ impl std::convert::TryFrom<Packet> for Message {
 impl std::convert::From<Message> for Packet {
     fn from(m: Message) -> Self {
         Packet { data: [0x3000_0000, 0x0, 0x0, 0x0 ] }
-            .set_nibble(2, m.status as u8)
-            .set_nibble(3, m.data.len().try_into().unwrap())
+            .set_nibble(2, mask(m.status as u8))
+            // see comment: ux missing From usize impls
+            .set_nibble(3, u8::try_from(m.data.len()).unwrap().try_into().unwrap())
             .set_octets(2, m.data)
     }
 }
 
-fn map_status_bit(b: u8) -> Status {
-    match b {
+fn map_status_bit(b: ux::u4) -> Status {
+    match u8::from(b) {
         0x0 => Status::Complete,
         0x1 => Status::Begin,
         0x2 => Status::Continue,
@@ -190,3 +195,9 @@ mod serialize {
         );
     }
 }
+
+// ux missing From usize impls:
+//
+// the ux crate does note imlement From 
+// for usize on its types :-/
+// Should be forthcoming in a future release.

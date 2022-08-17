@@ -1,4 +1,7 @@
-use crate::Packet;
+use crate::{
+    Packet,
+    helpers::mask,
+};
 
 #[derive(
     Debug,
@@ -6,14 +9,14 @@ use crate::Packet;
 )]
 pub enum Message {
     MidiTimeCode {
-        time_code: u8,
+        time_code: ux::u7,
     },
     SongPositionPointer {
-        least_significant_bit: u8,
-        most_significant_bit: u8,
+        least_significant_bit: ux::u7,
+        most_significant_bit: ux::u7,
     },
     SongSelect {
-        song_number: u8,
+        song_number: ux::u7,
     },
     TuneRequest,
     TimingClock,
@@ -36,17 +39,17 @@ pub enum DeserializeError {
 impl std::convert::TryFrom<Packet> for Message {
     type Error = DeserializeError;
     fn try_from(p: Packet) -> Result<Self, Self::Error> {
-        match p.nibble(0) {
-            1 => match p.octet(1) {
+        match u8::from(p.nibble(0)) {
+            1 => match u8::from(p.octet(1)) {
                 0xF1 => Ok(Message::MidiTimeCode {
-                    time_code: p.octet(2),
+                    time_code: mask(p.octet(2)),
                 }),
                 0xF2 => Ok(Message::SongPositionPointer {
-                    least_significant_bit: p.octet(2),
-                    most_significant_bit: p.octet(3),
+                    least_significant_bit: mask(p.octet(2)),
+                    most_significant_bit: mask(p.octet(3)),
                 }), 
                 0xF3 => Ok(Message::SongSelect {
-                    song_number: p.octet(2),
+                    song_number: mask(p.octet(2)),
                 }),
                 0xF6 => Ok(Message::TuneRequest),
                 0xF8 => Ok(Message::TimingClock),
@@ -100,8 +103,8 @@ impl std::convert::From<Message> for Packet {
 
 fn message_packet(
     status: u8,
-    byte1: Option<u8>,
-    byte2: Option<u8>,
+    byte1: Option<ux::u7>,
+    byte2: Option<ux::u7>,
 ) -> Packet {
     let mut p = Packet {
         data: [
@@ -111,14 +114,14 @@ fn message_packet(
             0x0,
         ],
     }
-    .set_octet(1, status);
+    .set_octet(1, mask(status));
 
     if let Some(b) = byte1 {
-        p = p.set_octet(2, b);
+        p = p.set_octet(2, b.into());
     }
 
     if let Some(b) = byte2 {
-        p = p.set_octet(3, b);
+        p = p.set_octet(3, b.into());
     }
 
     p
@@ -141,17 +144,17 @@ mod deserialize {
     fn midi_time_code() {
         assert_eq!(
             Message::try_from(Packet{data: [0x10F1_3100,0x0,0x0,0x0]}),
-            Ok(Message::MidiTimeCode{ time_code: 49 }),
+            Ok(Message::MidiTimeCode{ time_code: ux::u7::new(49) }),
         );
     }
 
     #[test]
     fn song_position_pointer() {
         assert_eq!(
-            Message::try_from(Packet{data: [0x10F2_B4D9,0x0,0x0,0x0]}),
+            Message::try_from(Packet{data: [0x10F2_2449,0x0,0x0,0x0]}),
             Ok(Message::SongPositionPointer { 
-                least_significant_bit: 0xB4,
-                most_significant_bit: 0xD9,
+                least_significant_bit: ux::u7::new(0x24),
+                most_significant_bit: ux::u7::new(0x49),
             }),
         );
     }
@@ -160,7 +163,7 @@ mod deserialize {
     fn song_select() {
         assert_eq!(
             Message::try_from(Packet{data: [0x10F3_4200,0x0,0x0,0x0]}),
-            Ok(Message::SongSelect{ song_number: 0x42 }),
+            Ok(Message::SongSelect{ song_number: ux::u7::new(0x42) }),
         );
     }
 
@@ -229,9 +232,9 @@ mod serialize {
     fn midi_time_code() {
         assert_eq!(
             Packet::from(Message::MidiTimeCode {
-                time_code: 0xAA
+                time_code: ux::u7::new(0x1A)
             }),
-            Packet{ data: [ 0x10F1_AA00, 0x0, 0x0, 0x0 ] },
+            Packet{ data: [ 0x10F1_1A00, 0x0, 0x0, 0x0 ] },
         );
     }
 
@@ -239,8 +242,8 @@ mod serialize {
     fn song_position_pointer() {
         assert_eq!(
             Packet::from(Message::SongPositionPointer {
-                least_significant_bit: 0x31,
-                most_significant_bit: 0x41,
+                least_significant_bit: ux::u7::new(0x31),
+                most_significant_bit: ux::u7::new(0x41),
             }),
             Packet{ data: [ 0x10F2_3141, 0x0, 0x0, 0x0 ] },
         );
@@ -250,9 +253,9 @@ mod serialize {
     fn song_select() {
         assert_eq!(
             Packet::from(Message::SongSelect {
-                song_number: 0xEB
+                song_number: ux::u7::new(0x5B)
             }),
-            Packet{ data: [ 0x10F3_EB00, 0x0, 0x0, 0x0 ] },
+            Packet{ data: [ 0x10F3_5B00, 0x0, 0x0, 0x0 ] },
         );
     }
 

@@ -1,4 +1,7 @@
-use crate::Packet;
+use crate::{
+    Packet,
+    helpers::mask,
+};
 
 #[derive(
     Debug,
@@ -6,37 +9,37 @@ use crate::Packet;
 )]
 pub enum Message {
     NoteOff {
-        channel: u8,
-        note: u8,
-        velocity: u8,
+        channel: ux::u4,
+        note: ux::u7,
+        velocity: ux::u7,
     },
     NoteOn {
-        channel: u8,
-        note: u8,
-        velocity: u8,
+        channel: ux::u4,
+        note: ux::u7,
+        velocity: ux::u7,
     },
     KeyPressure {
-        channel: u8,
-        note: u8,
-        value: u8,
+        channel: ux::u4,
+        note: ux::u7,
+        value: ux::u7,
     },
     ControlChange {
-        channel: u8,
-        controller: u8,
-        value: u8,
+        channel: ux::u4,
+        controller: ux::u7,
+        value: ux::u7,
     },
     ProgramChange {
-        channel: u8,
-        program: u8,
+        channel: ux::u4,
+        program: ux::u7,
     },
     ChannelPressure {
-        channel: u8,
-        value: u8,    
+        channel: ux::u4,
+        value: ux::u7,    
     },
     PitchBend {
-        channel: u8,
-        least_significant_bit: u8,
-        most_significant_bit: u8,
+        channel: ux::u4,
+        least_significant_bit: ux::u7,
+        most_significant_bit: ux::u7,
     },
 }
 
@@ -52,42 +55,42 @@ pub enum DeserializeError {
 impl std::convert::TryFrom<Packet> for Message {
     type Error = DeserializeError;
     fn try_from(p: Packet) -> Result<Self, Self::Error> {
-        match p.nibble(0) {
+        match u8::from(p.nibble(0)) {
             2 => {
                 let channel = p.nibble(3);
-                match p.nibble(2) {
+                match u8::from(p.nibble(2)) {
                     0x8 => Ok(Message::NoteOff {
                         channel,
-                        note: p.octet(2),
-                        velocity: p.octet(3),
+                        note: mask(p.octet(2)),
+                        velocity: mask(p.octet(3)),
                     }),
                     0x9 => Ok(Message::NoteOn {
                         channel,
-                        note: p.octet(2),
-                        velocity: p.octet(3),
+                        note: mask(p.octet(2)),
+                        velocity: mask(p.octet(3)),
                     }),
                     0xA => Ok(Message::KeyPressure {
                         channel,
-                        note: p.octet(2),
-                        value: p.octet(3),
+                        note: mask(p.octet(2)),
+                        value: mask(p.octet(3)),
                     }),
                     0xB => Ok(Message::ControlChange {
                         channel,
-                        controller: p.octet(2),
-                        value: p.octet(3),
+                        controller: mask(p.octet(2)),
+                        value: mask(p.octet(3)),
                     }),
                     0xC => Ok(Message::ProgramChange {
                         channel,
-                        program: p.octet(2),
+                        program: mask(p.octet(2)),
                     }),
                     0xD => Ok(Message::ChannelPressure {
                         channel,
-                        value: p.octet(2),
+                        value: mask(p.octet(2)),
                     }),
                     0xE => Ok(Message::PitchBend {
                         channel,
-                        least_significant_bit: p.octet(2),
-                        most_significant_bit: p.octet(3),
+                        least_significant_bit: mask(p.octet(2)),
+                        most_significant_bit: mask(p.octet(3)),
                     }),
                     status => Err(DeserializeError::UnsupportedStatus(status)),
                 }
@@ -104,17 +107,17 @@ impl From<Message> for Packet {
                 channel,
                 note,
                 velocity,
-            } => message_packet(0x8, channel, note, Some(velocity)),
+            } => message_packet(0x8, channel, note.into(), Some(velocity)),
             Message::NoteOn {
                 channel,
                 note,
                 velocity,
-            } => message_packet(0x9, channel, note, Some(velocity)),
+            } => message_packet(0x9, channel, note.into(), Some(velocity)),
             Message::KeyPressure {
                 channel,
                 note,
                 value,
-            } => message_packet(0xA, channel, note, Some(value)),
+            } => message_packet(0xA, channel, note.into(), Some(value)),
             Message::ControlChange {
                 channel,
                 controller,
@@ -144,9 +147,9 @@ impl From<Message> for Packet {
 
 fn message_packet(
     status: u8,
-    channel: u8, 
-    bit1: u8, 
-    bit2: Option<u8>
+    channel: ux::u4, 
+    bit1: ux::u7, 
+    bit2: Option<ux::u7>
 ) -> Packet {
     let mut p = Packet {
         data: [
@@ -156,12 +159,12 @@ fn message_packet(
             0x0,
         ],
     }
-    .set_nibble(2, status)
+    .set_nibble(2, mask(status))
     .set_nibble(3, channel)
-    .set_octet(2, bit1);
+    .set_octet(2, bit1.into());
 
     if let Some(b) = bit2 {
-        p = p.set_octet(3, b);
+        p = p.set_octet(3, b.into());
     }
 
     p
@@ -184,9 +187,9 @@ mod deserialize {
         assert_eq!(
             Message::try_from(Packet{data:[0x2A80_3C58,0x0,0x0,0x0]}),
             Ok(Message::NoteOff {
-                channel: 0,
-                note: 60,
-                velocity: 88,
+                channel: ux::u4::new(0),
+                note: ux::u7::new(60),
+                velocity: ux::u7::new(88),
             })
         );
     }
@@ -196,9 +199,9 @@ mod deserialize {
         assert_eq!(
             Message::try_from(Packet{data:[0x2C9D_5020,0x0,0x0,0x0]}),
             Ok(Message::NoteOn {
-                channel: 13,
-                note: 80,
-                velocity: 32,
+                channel: ux::u4::new(13),
+                note: ux::u7::new(80),
+                velocity: ux::u7::new(32),
             })
         );
     }
@@ -206,11 +209,11 @@ mod deserialize {
     #[test]
     fn key_pressure() {
         assert_eq!(
-            Message::try_from(Packet{data:[0x22A2_3EA0,0x0,0x0,0x0]}),
+            Message::try_from(Packet{data:[0x22A2_7F5D,0x0,0x0,0x0]}),
             Ok(Message::KeyPressure {
-                channel: 2,
-                note: 62,
-                value: 160,
+                channel: ux::u4::new(2),
+                note: ux::u7::new(0x7F),
+                value: ux::u7::new(0x5D),
             })
         );
     }
@@ -220,9 +223,9 @@ mod deserialize {
         assert_eq!(
             Message::try_from(Packet{data:[0x21BF_010A,0x0,0x0,0x0]}),
             Ok(Message::ControlChange {
-                channel: 15,
-                controller: 1,
-                value: 10,
+                channel: ux::u4::new(15),
+                controller: ux::u7::new(1),
+                value: ux::u7::new(10),
             })
         );
     }
@@ -230,10 +233,10 @@ mod deserialize {
     #[test]
     fn program_change() {
         assert_eq!(
-            Message::try_from(Packet{data:[0x27C0_A400,0x0,0x0,0x0]}),
+            Message::try_from(Packet{data:[0x27C0_6600,0x0,0x0,0x0]}),
             Ok(Message::ProgramChange {
-                channel: 0,
-                program: 164,
+                channel: ux::u4::new(0),
+                program: ux::u7::new(0x66),
             })
         );
     }
@@ -243,8 +246,8 @@ mod deserialize {
         assert_eq!(
             Message::try_from(Packet{data:[0x24D4_5300,0x0,0x0,0x0]}),
             Ok(Message::ChannelPressure {
-                channel: 4,
-                value: 83,
+                channel: ux::u4::new(4),
+                value: ux::u7::new(83),
             })
         );
     }
@@ -252,11 +255,11 @@ mod deserialize {
     #[test]
     fn pitch_bend() {
         assert_eq!(
-            Message::try_from(Packet{data:[0x2BE0_5381,0x0,0x0,0x0]}),
+            Message::try_from(Packet{data:[0x2BE0_533C,0x0,0x0,0x0]}),
             Ok(Message::PitchBend {
-                channel: 0,
-                least_significant_bit: 83,
-                most_significant_bit: 129,
+                channel: ux::u4::new(0),
+                least_significant_bit: ux::u7::new(0x53),
+                most_significant_bit: ux::u7::new(0x3C),
             })
         );
     }
@@ -270,11 +273,11 @@ mod serialize {
     fn note_off() {
         assert_eq!(
             Packet::from(Message::NoteOff {
-                channel: 0xA,
-                note: 0x66,
-                velocity: 0x88,
+                channel: ux::u4::new(0xA),
+                note: ux::u7::new(0x66),
+                velocity: ux::u7::new(0x5A),
             }),
-            Packet{ data: [ 0x208A_6688, 0x0, 0x0, 0x0 ] },
+            Packet{ data: [ 0x208A_665A, 0x0, 0x0, 0x0 ] },
         );
     }
 
@@ -282,11 +285,11 @@ mod serialize {
     fn note_on() {
         assert_eq!(
             Packet::from(Message::NoteOn {
-                channel: 0x3,
-                note: 0x39,
-                velocity: 0x90,
+                channel: ux::u4::new(0x3),
+                note: ux::u7::new(0x39),
+                velocity: ux::u7::new(0x40),
             }),
-            Packet{ data: [ 0x2093_3990, 0x0, 0x0, 0x0 ] },
+            Packet{ data: [ 0x2093_3940, 0x0, 0x0, 0x0 ] },
         );
     }
 
@@ -294,11 +297,11 @@ mod serialize {
     fn key_pressure() {
         assert_eq!(
             Packet::from(Message::KeyPressure {
-                channel: 0x5,
-                note: 0xF2,
-                value: 0x40,
+                channel: ux::u4::new(0x5),
+                note: ux::u7::new(0x7F),
+                value: ux::u7::new(0x40),
             }),
-            Packet{ data: [ 0x20A5_F240, 0x0, 0x0, 0x0 ] },
+            Packet{ data: [ 0x20A5_7F40, 0x0, 0x0, 0x0 ] },
         );
     }
 
@@ -306,11 +309,11 @@ mod serialize {
     fn control_change() {
         assert_eq!(
             Packet::from(Message::ControlChange {
-                channel: 0x0,
-                controller: 0x30,
-                value: 0xD3,
+                channel: ux::u4::new(0x0),
+                controller: ux::u7::new(0x30),
+                value: ux::u7::new(0x32),
             }),
-            Packet{ data: [ 0x20B0_30D3, 0x0, 0x0, 0x0 ] },
+            Packet{ data: [ 0x20B0_3032, 0x0, 0x0, 0x0 ] },
         );
     }
 
@@ -318,10 +321,10 @@ mod serialize {
     fn program_change() {
         assert_eq!(
             Packet::from(Message::ProgramChange {
-                channel: 0x8,
-                program: 0xEE,
+                channel: ux::u4::new(0x8),
+                program: ux::u7::new(0x04),
             }),
-            Packet{ data: [ 0x20C8_EE00, 0x0, 0x0, 0x0 ] },
+            Packet{ data: [ 0x20C8_0400, 0x0, 0x0, 0x0 ] },
         );
     }
 
@@ -329,8 +332,8 @@ mod serialize {
     fn channel_pressure() {
         assert_eq!(
             Packet::from(Message::ChannelPressure {
-                channel: 0xF,
-                value: 0x02,
+                channel: ux::u4::new(0xF),
+                value: ux::u7::new(0x02),
             }),
             Packet{ data: [ 0x20DF_0200, 0x0, 0x0, 0x0 ] },
         );
@@ -340,12 +343,12 @@ mod serialize {
     fn pitch_bend() {
         assert_eq!(
             Packet::from(Message::PitchBend {
-                channel: 0x0,
-                least_significant_bit: 0x88,
-                most_significant_bit: 0x77,
+                channel: ux::u4::new(0x0),
+                least_significant_bit: ux::u7::new(0x5F),
+                most_significant_bit: ux::u7::new(0x77),
 
             }),
-            Packet{ data: [ 0x20E0_8877, 0x0, 0x0, 0x0 ] },
+            Packet{ data: [ 0x20E0_5F77, 0x0, 0x0, 0x0 ] },
         );
     }
 }

@@ -37,9 +37,9 @@ pub enum DeserializeError {
 impl std::convert::TryFrom<Packet> for Message {
     type Error = DeserializeError;
     fn try_from(p: Packet) -> Result<Self, Self::Error> {
-        match p.nibble(0) {
-            5 => match p.nibble(2) {
-                status if status <= 0x3 => match p.nibble(3) {
+        match u8::from(p.nibble(0)) {
+            5 => match u8::from(p.nibble(2)) {
+                status if status <= 0x3 => match u8::from(p.nibble(3)) {
                     0 => Err(DeserializeError::ExpectedStreamId),
                     l if l < 0xF => Ok(Message {
                         status: map_to_status(status),
@@ -85,12 +85,12 @@ fn map_to_status(val: u8) -> Status {
     }
 }
     
-fn map_from_status(status: Status) -> u8 {
+fn map_from_status(status: Status) -> ux::u4 {
     match status {
-        Status::Complete => 0x0,
-        Status::Begin => 0x1,
-        Status::Continue => 0x2,
-        Status::End(_) => 0x3,
+        Status::Complete => ux::u4::new(0x0),
+        Status::Begin => ux::u4::new(0x1),
+        Status::Continue => ux::u4::new(0x2),
+        Status::End(_) => ux::u4::new(0x3),
     }
 }
 
@@ -141,10 +141,10 @@ mod deserialize {
     #[test]
     fn status() {
         let data = [
-            (0x0, Status::Complete),
-            (0x1, Status::Begin),
-            (0x2, Status::Continue),
-            (0x3, Status::End(true)),
+            (ux::u4::new(0x0), Status::Complete),
+            (ux::u4::new(0x1), Status::Begin),
+            (ux::u4::new(0x2), Status::Continue),
+            (ux::u4::new(0x3), Status::End(true)),
         ];
         for d in data {
             assert_eq!(
@@ -216,10 +216,10 @@ mod serialize {
     #[test]
     fn status() {
         let data = [
-            (Status::Complete, 0x0),
-            (Status::Begin, 0x1),
-            (Status::Continue, 0x2),
-            (Status::End(true), 0x3),
+            (Status::Complete, ux::u4::new(0x0)),
+            (Status::Begin, ux::u4::new(0x1)),
+            (Status::Continue, ux::u4::new(0x2)),
+            (Status::End(true), ux::u4::new(0x3)),
         ];
         for d in data {
             assert_eq!(

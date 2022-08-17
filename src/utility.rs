@@ -1,4 +1,7 @@
-use crate::Packet;
+use crate::{
+    helpers::mask,
+    Packet,
+};
 
 #[derive(
     Debug,
@@ -7,7 +10,7 @@ use crate::Packet;
 pub enum Message {
     NoOp,
     TimeStamp {
-        time_stamp: u16,
+        time_stamp: ux::u20,
     },
 }
 
@@ -18,8 +21,11 @@ impl std::convert::From<Message> for Packet {
                 data: [0x0, 0x0, 0x0, 0x0],
             },
             Message::TimeStamp{ time_stamp } => Packet {
-                data: [0x0020_0000, 0x0, 0x0, 0x0]
-            }.set_word(1, time_stamp)
+                data: [
+                    u32::from(time_stamp) | 0x0020_0000,
+                    0x0, 0x0, 0x0
+                ],
+            }
         }
     }
 }
@@ -27,10 +33,10 @@ impl std::convert::From<Message> for Packet {
 impl std::convert::TryFrom<Packet> for Message {
     type Error = DeserializeError;
     fn try_from(p: Packet) -> Result<Self, Self::Error> {
-        match p.nibble(0) {
-            0 => match p.nibble(2) {
+        match u8::from(p.nibble(0)) {
+            0 => match u8::from(p.nibble(2)) {
                 0 => Ok(Message::NoOp),
-                2 => Ok(Message::TimeStamp{time_stamp: p.word(1)}),
+                2 => Ok(Message::TimeStamp{time_stamp: mask(p.data[0])}),
                 s => Err(DeserializeError::InvalidStatusBit(s))
             },
             t => Err(DeserializeError::IncorrectMessageType(t))
@@ -78,8 +84,8 @@ mod deserialize {
     #[test]
     fn time_stamp() {
         assert_eq!(
-            Message::try_from(Packet{data:[0x0020_ABCD,0x0,0x0,0x0]}),
-            Ok(Message::TimeStamp{ time_stamp: 0xABCD }),
+            Message::try_from(Packet{data:[0x0022_ABCD,0x0,0x0,0x0]}),
+            Ok(Message::TimeStamp{ time_stamp: ux::u20::new(0x2ABCD) }),
         );
     }
 }
@@ -99,8 +105,8 @@ mod serialize {
     #[test]
     fn time_stamp() {
         assert_eq!(
-            Packet::from(Message::TimeStamp{ time_stamp: 0xABCD }),
-            Packet{data:[0x0020_ABCD,0x0,0x0,0x0]},
+            Packet::from(Message::TimeStamp{ time_stamp: ux::u20::new(0x2ABCD) }),
+            Packet{data:[0x0022_ABCD,0x0,0x0,0x0]},
         );
     }
 }

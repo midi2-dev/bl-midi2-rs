@@ -13,39 +13,36 @@ impl Packet {
         }
     }
 
-    pub fn group(&self) -> u8 {
+    pub fn group(&self) -> ux::u4 {
         self.nibble(1)
     }
 
-    pub fn set_group(self, g: u8) -> Self {
+    pub fn set_group(self, g: ux::u4) -> Self {
         self.set_nibble(1, g)
     }
 
-    pub fn bit(&self, index: usize) -> u8 {
+    pub fn bit(&self, index: usize) -> bool {
         assert!(index < 128);
-        ((self.data[index / 32] >> (31 - (index % 32))) & 0b1)
-            .try_into()
-            .unwrap()
+        (self.data[index / 32] >> (31 - (index % 32))) & 0b1 != 0
     }
 
-    pub fn set_bit(mut self, index: usize, v: u8) -> Self {
-        assert!(v <= 0b1);
+    pub fn set_bit(mut self, index: usize, v: bool) -> Self {
         assert!(index < 128);
-        self.data[index / 32] |= (v as u32) << (31 - (index % 32));
+        let v: u32 = match v { true => 1, false => 0 };
+        self.data[index / 32] |= v << (31 - (index % 32));
         self
     }
 
-    pub fn nibble(&self, index: usize) -> u8 {
+    pub fn nibble(&self, index: usize) -> ux::u4 {
         assert!(index < 32);
         ((self.data[index / 8] >> (28 - (index % 8) * 4)) & 0xF)
             .try_into()
             .unwrap()
     }
     
-    pub fn set_nibble(mut self, index: usize, v: u8) -> Self {
-        assert!(v <= 0xF);
+    pub fn set_nibble(mut self, index: usize, v: ux::u4) -> Self {
         assert!(index < 32);
-        self.data[index / 8] |= (v as u32) << (28 - (index % 8) * 4);
+        self.data[index / 8] |= u32::from(v) << (28 - (index % 8) * 4);
         self
     }
 
@@ -120,23 +117,23 @@ mod tests {
 
     #[test]
     fn group_reported() {
-        let data_group_pairings: Vec<([u32; 4], u8)> = vec![
-            ([0x0000_0000, 0x0, 0x0, 0x0], 0),
-            ([0x0100_0000, 0x0, 0x0, 0x0], 1),
-            ([0x0200_0000, 0x0, 0x0, 0x0], 2),
-            ([0x0300_0000, 0x0, 0x0, 0x0], 3),
-            ([0x0400_0000, 0x0, 0x0, 0x0], 4),
-            ([0x0500_0000, 0x0, 0x0, 0x0], 5),
-            ([0x0600_0000, 0x0, 0x0, 0x0], 6),
-            ([0x0700_0000, 0x0, 0x0, 0x0], 7),
-            ([0x0800_0000, 0x0, 0x0, 0x0], 8),
-            ([0x0900_0000, 0x0, 0x0, 0x0], 9),
-            ([0x0A00_0000, 0x0, 0x0, 0x0], 10),
-            ([0x0B00_0000, 0x0, 0x0, 0x0], 11),
-            ([0x0C00_0000, 0x0, 0x0, 0x0], 12),
-            ([0x0D00_0000, 0x0, 0x0, 0x0], 13),
-            ([0x0E00_0000, 0x0, 0x0, 0x0], 14),
-            ([0x0F00_0000, 0x0, 0x0, 0x0], 15),
+        let data_group_pairings: Vec<([u32; 4], ux::u4)> = vec![
+            ([0x0000_0000, 0x0, 0x0, 0x0], ux::u4::new(0)),
+            ([0x0100_0000, 0x0, 0x0, 0x0], ux::u4::new(1)),
+            ([0x0200_0000, 0x0, 0x0, 0x0], ux::u4::new(2)),
+            ([0x0300_0000, 0x0, 0x0, 0x0], ux::u4::new(3)),
+            ([0x0400_0000, 0x0, 0x0, 0x0], ux::u4::new(4)),
+            ([0x0500_0000, 0x0, 0x0, 0x0], ux::u4::new(5)),
+            ([0x0600_0000, 0x0, 0x0, 0x0], ux::u4::new(6)),
+            ([0x0700_0000, 0x0, 0x0, 0x0], ux::u4::new(7)),
+            ([0x0800_0000, 0x0, 0x0, 0x0], ux::u4::new(8)),
+            ([0x0900_0000, 0x0, 0x0, 0x0], ux::u4::new(9)),
+            ([0x0A00_0000, 0x0, 0x0, 0x0], ux::u4::new(10)),
+            ([0x0B00_0000, 0x0, 0x0, 0x0], ux::u4::new(11)),
+            ([0x0C00_0000, 0x0, 0x0, 0x0], ux::u4::new(12)),
+            ([0x0D00_0000, 0x0, 0x0, 0x0], ux::u4::new(13)),
+            ([0x0E00_0000, 0x0, 0x0, 0x0], ux::u4::new(14)),
+            ([0x0F00_0000, 0x0, 0x0, 0x0], ux::u4::new(15)),
         ];
         for (d, g) in data_group_pairings {
             assert_eq!(Packet{data: d}.group(), g);
@@ -146,7 +143,7 @@ mod tests {
     #[test]
     fn set_group() {
         assert_eq!(
-            Packet{ data: [ 0x0, 0x0, 0x0, 0x0 ] }.set_group(2),
+            Packet{ data: [ 0x0, 0x0, 0x0, 0x0 ] }.set_group(ux::u4::new(2)),
             Packet{ data: [ 0x0200_0000, 0x0, 0x0, 0x0 ] },
         );
     }
@@ -161,18 +158,18 @@ mod tests {
                 0b1111_0111_1111_1111_1111_1111_1111_1111,
             ]
         };
-        assert_eq!(p.bit(0), 1);
-        assert_eq!(p.bit(30), 1);
-        assert_eq!(p.bit(32), 0);
-        assert_eq!(p.bit(60), 0);
-        assert_eq!(p.bit(70), 1);
-        assert_eq!(p.bit(100), 0);
+        assert_eq!(p.bit(0), true);
+        assert_eq!(p.bit(30), true);
+        assert_eq!(p.bit(32), false);
+        assert_eq!(p.bit(60), false);
+        assert_eq!(p.bit(70), true);
+        assert_eq!(p.bit(100), false);
     }
 
     #[test]
     fn set_bit() {
         assert_eq!(
-            Packet::new().set_bit(0, 0x1),
+            Packet::new().set_bit(0, true),
             Packet { 
                 data: [
                     0b1000_0000_0000_0000_0000_0000_0000_0000,
@@ -183,7 +180,7 @@ mod tests {
             },
         );
         assert_eq!(
-            Packet::new().set_bit(10, 0x1),
+            Packet::new().set_bit(10, true),
             Packet { 
                 data: [
                     0b0000_0000_0010_0000_0000_0000_0000_0000,
@@ -194,7 +191,7 @@ mod tests {
             },
         );
         assert_eq!(
-            Packet::new().set_bit(74, 0x1),
+            Packet::new().set_bit(74, true),
             Packet { 
                 data: [
                     0x0, 
@@ -216,24 +213,24 @@ mod tests {
                 0x89AB_CDEF,
             ]
         };
-        assert_eq!(p.nibble(0), 0);
-        assert_eq!(p.nibble(3), 3);
-        assert_eq!(p.nibble(16), 0);
-        assert_eq!(p.nibble(19), 3);
+        assert_eq!(p.nibble(0), ux::u4::new(0));
+        assert_eq!(p.nibble(3), ux::u4::new(3));
+        assert_eq!(p.nibble(16), ux::u4::new(0));
+        assert_eq!(p.nibble(19), ux::u4::new(3));
     }
 
     #[test]
     fn set_nibble() {
         assert_eq!(
-            Packet::new().set_nibble(0, 0xB),
+            Packet::new().set_nibble(0, ux::u4::new(0xB)),
             Packet { data: [0xB000_0000, 0x0, 0x0, 0x0] },
         );
         assert_eq!(
-            Packet::new().set_nibble(5, 0xB),
+            Packet::new().set_nibble(5, ux::u4::new(0xB)),
             Packet { data: [0x0000_0B00, 0x0, 0x0, 0x0] },
         );
         assert_eq!(
-            Packet::new().set_nibble(10, 0xB),
+            Packet::new().set_nibble(10, ux::u4::new(0xB)),
             Packet { data: [0x0, 0x00B0_0000, 0x0, 0x0] },
         );
     }
