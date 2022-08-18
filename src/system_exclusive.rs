@@ -2,11 +2,50 @@ use crate::{helpers::mask, Packet};
 
 #[derive(Debug, PartialEq)]
 pub struct Message {
-    pub status: Status,
-    pub data: Vec<u8>,
+    status: Status,
+    data: Vec<u8>,
 }
 
-#[derive(Debug, PartialEq)]
+impl Message {
+    fn from_data(data: Vec<u8>) -> Vec<Self> {
+        if data.len() <= 6 {
+            vec![
+                Message {
+                    status: Status::Complete,
+                    data,
+                }
+            ]
+        } else {
+            let mut ret = Vec::new();
+
+            for chunk in data.chunks(6) {
+                ret.push(Message{
+                    status: Status::Continue,
+                    data: chunk
+                        .iter()
+                        .map(|v| v.clone())
+                        .collect(),
+                });
+            }
+
+            let l = ret.len();
+            ret[0].status = Status::Begin;
+            ret[l - 1].status = Status::End;
+
+            ret
+        }
+    }
+
+    fn status(&self) -> Status {
+        self.status
+    }
+
+    fn data(&self) -> &Vec<u8> {
+        &self.data
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
 #[repr(u8)]
 pub enum Status {
     Complete = 0x0,
@@ -208,8 +247,89 @@ mod serialize {
     }
 }
 
+#[cfg(test)]
+mod from_data {
+    use super::*;
+
+    #[test]
+    fn empty_message() {
+        assert_eq!(
+            Message::from_data(Vec::new()),
+            vec![
+                Message {
+                    status: Status::Complete,
+                    data: Vec::new(),
+                },
+            ],
+        );
+    }
+
+    #[test]
+    fn complete_message() {
+        assert_eq!(
+            Message::from_data((0..5).collect()),
+            vec![
+                Message {
+                    status: Status::Complete,
+                    data: (0..5).collect(),
+                },
+            ],
+        );
+    }
+
+    #[test]
+    fn full_complete_message() {
+        assert_eq!(
+            Message::from_data((0..6).collect()),
+            vec![
+                Message {
+                    status: Status::Complete,
+                    data: (0..6).collect(),
+                },
+            ],
+        );
+    }
+
+    #[test]
+    fn continued_message_2_parts() {
+        assert_eq!(
+            Message::from_data((0..10).collect()),
+            vec![
+                Message {
+                    status: Status::Begin,
+                    data: (0..6).collect(),
+                },
+                Message {
+                    status: Status::End,
+                    data: (6..10).collect(),
+                },
+            ],
+        );
+    }
+
+    #[test]
+    fn continued_message_3_parts() {
+        assert_eq!(
+            Message::from_data((0..15).collect()),
+            vec![
+                Message {
+                    status: Status::Begin,
+                    data: (0..6).collect(),
+                },
+                Message {
+                    status: Status::Continue,
+                    data: (6..12).collect(),
+                },
+                Message {
+                    status: Status::End,
+                    data: (12..15).collect(),
+                },
+            ],
+        );
+    }
+}
+
 // ux missing From usize impls:
 //
-// the ux crate does note imlement From
-// for usize on its types :-/
+// the ux crate does note imlement From<usize> on its types :-/
 // Should be forthcoming in a future release.
