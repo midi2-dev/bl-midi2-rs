@@ -3,11 +3,11 @@ use crate::{helpers::mask, Packet};
 #[derive(Debug, PartialEq)]
 pub struct Message {
     status: Status,
-    data: Vec<u8>,
+    data: Vec<ux::u7>,
 }
 
 impl Message {
-    fn from_data(data: Vec<u8>) -> Vec<Self> {
+    fn from_data(data: Vec<ux::u7>) -> Vec<Self> {
         if data.len() <= 6 {
             vec![
                 Message {
@@ -40,7 +40,7 @@ impl Message {
         self.status
     }
 
-    fn data(&self) -> &Vec<u8> {
+    fn data(&self) -> &Vec<ux::u7> {
         &self.data
     }
 }
@@ -70,7 +70,10 @@ impl std::convert::TryFrom<Packet> for Message {
                     0..=5 => Ok(Message {
                         status: map_status_bit(p.nibble(2)),
                         // see comment: ux missing From usize impls
-                        data: p.octets(2, (2 + u8::from(p.nibble(3))).into()),
+                        data: p.octets(2, (2 + u8::from(p.nibble(3))).into())
+                            .iter()
+                            .map(|v| mask(v.clone()))
+                            .collect(),
                     }),
                     overflow_len => Err(DeserializeError::DataOutOfRange(overflow_len)),
                 },
@@ -89,7 +92,7 @@ impl std::convert::From<Message> for Packet {
         .set_nibble(2, mask(m.status as u8))
         // see comment: ux missing From usize impls
         .set_nibble(3, u8::try_from(m.data.len()).unwrap().try_into().unwrap())
-        .set_octets(2, m.data)
+        .set_octets(2, m.data.iter().map(|v| v.clone().into()).collect())
     }
 }
 
@@ -145,7 +148,7 @@ mod deserialize {
             }),
             Ok(Message {
                 status: Status::Complete,
-                data: vec![0x12, 0x34, 0x56],
+                data: vec![ux::u7::new(0x12), ux::u7::new(0x34), ux::u7::new(0x56)],
             }),
         );
     }
@@ -154,11 +157,11 @@ mod deserialize {
     fn begin_message() {
         assert_eq!(
             Message::try_from(Packet {
-                data: [0x3012_ABCD, 0x0, 0x0, 0x0]
+                data: [0x3012_5B6D, 0x0, 0x0, 0x0]
             }),
             Ok(Message {
                 status: Status::Begin,
-                data: vec![0xAB, 0xCD],
+                data: vec![ux::u7::new(0x5B), ux::u7::new(0x6D)],
             }),
         );
     }
@@ -167,11 +170,17 @@ mod deserialize {
     fn continue_status() {
         assert_eq!(
             Message::try_from(Packet {
-                data: [0x3025_3141, 0x1592_6500, 0x0, 0x0]
+                data: [0x3025_3141, 0x1512_6500, 0x0, 0x0]
             }),
             Ok(Message {
                 status: Status::Continue,
-                data: vec![0x31, 0x41, 0x15, 0x92, 0x65],
+                data: vec![
+                    ux::u7::new(0x31), 
+                    ux::u7::new(0x41), 
+                    ux::u7::new(0x15),
+                    ux::u7::new(0x12),
+                    ux::u7::new(0x65)
+                ],
             }),
         );
     }
@@ -199,10 +208,10 @@ mod serialize {
         assert_eq!(
             Packet::from(Message {
                 status: Status::Complete,
-                data: vec![0xAB, 0xCD],
+                data: vec![ux::u7::new(0x2B), ux::u7::new(0x4D)],
             }),
             Packet {
-                data: [0x3002_ABCD, 0x0, 0x0, 0x0]
+                data: [0x3002_2B4D, 0x0, 0x0, 0x0]
             },
         );
     }
@@ -212,7 +221,14 @@ mod serialize {
         assert_eq!(
             Packet::from(Message {
                 status: Status::Begin,
-                data: vec![0x14, 0x14, 0x21, 0x35, 0x62, 0x37],
+                data: vec![
+                    ux::u7::new(0x14), 
+                    ux::u7::new(0x14), 
+                    ux::u7::new(0x21), 
+                    ux::u7::new(0x35), 
+                    ux::u7::new(0x62), 
+                    ux::u7::new(0x37)
+                ],
             }),
             Packet {
                 data: [0x3016_1414, 0x2135_6237, 0x0, 0x0]
@@ -225,10 +241,10 @@ mod serialize {
         assert_eq!(
             Packet::from(Message {
                 status: Status::Continue,
-                data: vec![0xFF, 0xFF, 0xFF]
+                data: vec![ux::u7::new(0x7F), ux::u7::new(0x7F), ux::u7::new(0x7F)]
             }),
             Packet {
-                data: [0x3023_FFFF, 0xFF00_0000, 0x0, 0x0]
+                data: [0x3023_7F7F, 0x7F00_0000, 0x0, 0x0]
             },
         );
     }
@@ -267,11 +283,11 @@ mod from_data {
     #[test]
     fn complete_message() {
         assert_eq!(
-            Message::from_data((0..5).collect()),
+            Message::from_data((0..5).map(|v| ux::u7::new(v.clone())).collect()),
             vec![
                 Message {
                     status: Status::Complete,
-                    data: (0..5).collect(),
+                    data: (0..5).map(|v| ux::u7::new(v.clone())).collect(),
                 },
             ],
         );
@@ -280,11 +296,11 @@ mod from_data {
     #[test]
     fn full_complete_message() {
         assert_eq!(
-            Message::from_data((0..6).collect()),
+            Message::from_data((0..6).map(|v| ux::u7::new(v.clone())).collect()),
             vec![
                 Message {
                     status: Status::Complete,
-                    data: (0..6).collect(),
+                    data: (0..6).map(|v| ux::u7::new(v.clone())).collect(),
                 },
             ],
         );
@@ -293,15 +309,15 @@ mod from_data {
     #[test]
     fn continued_message_2_parts() {
         assert_eq!(
-            Message::from_data((0..10).collect()),
+            Message::from_data((0..10).map(|v| ux::u7::new(v.clone())).collect()),
             vec![
                 Message {
                     status: Status::Begin,
-                    data: (0..6).collect(),
+                    data: (0..6).map(|v| ux::u7::new(v.clone())).collect(),
                 },
                 Message {
                     status: Status::End,
-                    data: (6..10).collect(),
+                    data: (6..10).map(|v| ux::u7::new(v.clone())).collect(),
                 },
             ],
         );
@@ -310,19 +326,19 @@ mod from_data {
     #[test]
     fn continued_message_3_parts() {
         assert_eq!(
-            Message::from_data((0..15).collect()),
+            Message::from_data((0..15).map(|v| ux::u7::new(v.clone())).collect()),
             vec![
                 Message {
                     status: Status::Begin,
-                    data: (0..6).collect(),
+                    data: (0..6).map(|v| ux::u7::new(v.clone())).collect(),
                 },
                 Message {
                     status: Status::Continue,
-                    data: (6..12).collect(),
+                    data: (6..12).map(|v| ux::u7::new(v.clone())).collect(),
                 },
                 Message {
                     status: Status::End,
-                    data: (12..15).collect(),
+                    data: (12..15).map(|v| ux::u7::new(v.clone())).collect(),
                 },
             ],
         );
