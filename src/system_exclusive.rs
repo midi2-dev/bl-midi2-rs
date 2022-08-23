@@ -7,7 +7,7 @@ pub struct Message {
 }
 
 impl Message {
-    fn from_data(data: Vec<ux::u7>) -> Vec<Self> {
+    pub fn from_data(data: Vec<ux::u7>) -> Vec<Self> {
         if data.len() <= 6 {
             vec![
                 Message {
@@ -36,11 +36,11 @@ impl Message {
         }
     }
 
-    fn status(&self) -> Status {
+    pub fn status(&self) -> Status {
         self.status
     }
 
-    fn data(&self) -> &Vec<ux::u7> {
+    pub fn data(&self) -> &Vec<ux::u7> {
         &self.data
     }
 }

@@ -8,15 +8,15 @@ pub struct Message {
 }
 
 impl Message {
-    fn status(&self) -> Status {
+    pub fn status(&self) -> Status {
         self.status
     }
 
-    fn stream_id(&self) -> u8 {
+    pub fn stream_id(&self) -> u8 {
         self.stream_id
     }
 
-    fn data(&self) -> &Vec<u8> {
+    pub fn data(&self) -> &Vec<u8> {
         &self.data
     }
 }

@@ -22,3 +22,23 @@ impl Muid {
         &self.0
     }
 }
+
+pub enum Index {
+    Byte1,
+    Byte2,
+    Byte3,
+    Byte4,
+}
+
+impl std::ops::Index<Index> for Muid {
+    type Output = u8;
+
+    fn index(&self, i: Index) -> &Self::Output {
+        match i {
+            Index::Byte1 => &self.0[0],
+            Index::Byte2 => &self.0[1],
+            Index::Byte3 => &self.0[2],
+            Index::Byte4 => &self.0[3],
+        }
+    }
+}
