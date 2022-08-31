@@ -1,4 +1,4 @@
-use crate::{helpers::mask, Packet};
+use crate::{std_error_impl, helpers::mask, Packet};
 
 #[derive(Debug, PartialEq)]
 pub enum Message {
@@ -40,6 +40,7 @@ pub enum DeserializeError {
     InvalidStatusBit(u8),
     IncorrectMessageType(u8),
 }
+std_error_impl!(DeserializeError);
 
 #[cfg(test)]
 mod deserialize {

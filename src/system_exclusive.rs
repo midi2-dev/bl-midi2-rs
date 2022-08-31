@@ -1,4 +1,4 @@
-use crate::{helpers::mask, Packet};
+use crate::{std_error_impl, helpers::mask, Packet};
 
 #[derive(Debug, PartialEq)]
 pub struct Message {
@@ -60,6 +60,7 @@ pub enum DeserializeError {
     DataOutOfRange(u8),
     IncorrectMessageType(u8),
 }
+std_error_impl!(DeserializeError); 
 
 impl std::convert::TryFrom<Packet> for Message {
     type Error = DeserializeError;
