@@ -1,6 +1,10 @@
 use crate::{std_error_impl, helpers::mask, Packet};
 
-#[derive(Debug, PartialEq)]
+#[derive(
+    Clone,
+    Debug,
+    PartialEq,
+)]
 pub struct Message {
     status: Status,
     data: Vec<ux::u7>,
@@ -54,7 +58,11 @@ pub enum Status {
     End = 0x3,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(
+    Clone,
+    Debug,
+    PartialEq,
+)]
 pub enum DeserializeError {
     InvalidStatusBit(u8),
     DataOutOfRange(u8),

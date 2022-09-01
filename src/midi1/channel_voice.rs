@@ -1,6 +1,10 @@
-use crate::{std_error_impl, data_pair::DataPair, helpers::mask, Packet};
+use crate::{std_error_impl, helpers::mask, Packet};
 
-#[derive(Debug, PartialEq)]
+#[derive(
+    Clone,
+    Debug, 
+    PartialEq,
+)]
 pub enum Message {
     NoteOff {
         channel: ux::u4,
@@ -32,11 +36,15 @@ pub enum Message {
     },
     PitchBend {
         channel: ux::u4,
-        data: DataPair,
+        data: [ux::u7; 2],
     },
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(
+    Clone,
+    Debug,
+    PartialEq,
+)]
 pub enum DeserializeError {
     UnsupportedStatus(u8),
     IncorrectMessageType(u8),
@@ -80,10 +88,10 @@ impl std::convert::TryFrom<Packet> for Message {
                     }),
                     0xE => Ok(Message::PitchBend {
                         channel,
-                        data: DataPair {
-                            lsb: mask(p.octet(2)),
-                            msb: mask(p.octet(3)),
-                        },
+                        data: [
+                            mask(p.octet(2)),
+                            mask(p.octet(3)),
+                        ],
                     }),
                     status => Err(DeserializeError::UnsupportedStatus(status)),
                 }
@@ -124,7 +132,7 @@ impl From<Message> for Packet {
             }
             Message::PitchBend {
                 channel,
-                data: DataPair { lsb, msb },
+                data: [lsb, msb],
             } => message_packet(0xE, channel, lsb, Some(msb)),
         }
     }
@@ -249,10 +257,10 @@ mod deserialize {
             }),
             Ok(Message::PitchBend {
                 channel: ux::u4::new(0),
-                data: DataPair {
-                    lsb: ux::u7::new(0x53),
-                    msb: ux::u7::new(0x3C),
-                },
+                data: [
+                    ux::u7::new(0x53),
+                    ux::u7::new(0x3C),
+                ],
             })
         );
     }
@@ -349,10 +357,10 @@ mod serialize {
         assert_eq!(
             Packet::from(Message::PitchBend {
                 channel: ux::u4::new(0x0),
-                data: DataPair {
-                    lsb: ux::u7::new(0x5F),
-                    msb: ux::u7::new(0x77),
-                },
+                data: [ 
+                    ux::u7::new(0x5F),
+                    ux::u7::new(0x77),
+                ],
             }),
             Packet {
                 data: [0x20E0_5F77, 0x0, 0x0, 0x0]

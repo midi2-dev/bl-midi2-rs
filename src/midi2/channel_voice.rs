@@ -1,7 +1,11 @@
 use super::controllers::Controller;
-use crate::{std_error_impl, data_pair::DataPair, helpers::mask, Packet};
+use crate::{std_error_impl, helpers::mask, Packet};
 
-#[derive(Debug, PartialEq)]
+#[derive(
+    Clone,
+    Debug,
+    PartialEq,
+)]
 pub enum Message {
     NoteOff {
         channel: ux::u4,
@@ -70,7 +74,7 @@ pub enum Message {
     ProgramChange {
         channel: ux::u4,
         program: ux::u7,
-        bank: Option<DataPair>,
+        bank: Option<[ux::u7; 2]>,
     },
     ChannelPressure {
         channel: ux::u4,
@@ -87,14 +91,22 @@ pub enum Message {
     },
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(
+    Clone,
+    Debug,
+    PartialEq,
+)]
 pub enum Attribute {
     ManufacturerSpecific(u16),
     ProfileSpecific(u16),
     Pitch7_9 { note: ux::u7, pitch_up: ux::u9 },
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(
+    Clone,
+    Debug,
+    PartialEq,
+)]
 pub enum DeserializeError {
     IncorrectMessageType(u8),
     InvalidAttributeType(u8),
@@ -176,10 +188,10 @@ impl std::convert::TryFrom<Packet> for Message {
                     channel: p.nibble(3),
                     program: mask(p.octet(4)),
                     bank: if p.bit(31) {
-                        Some(DataPair {
-                            msb: mask(p.octet(6)),
-                            lsb: mask(p.octet(7)),
-                        })
+                        Some([
+                            mask(p.octet(6)),
+                            mask(p.octet(7)),
+                        ])
                     } else {
                         None
                     },
@@ -512,10 +524,10 @@ mod deserialize {
             Ok(Message::ProgramChange {
                 channel: ux::u4::new(0x3),
                 program: ux::u7::new(0x1E),
-                bank: Some(DataPair {
-                    msb: ux::u7::new(0x2A),
-                    lsb: ux::u7::new(0x55),
-                }),
+                bank: Some([
+                    ux::u7::new(0x2A),
+                    ux::u7::new(0x55),
+                ]),
             }),
         );
     }

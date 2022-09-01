@@ -1,6 +1,10 @@
 use crate::{std_error_impl, Packet};
 
-#[derive(Debug, PartialEq)]
+#[derive(
+    Clone,
+    Debug,
+    PartialEq,
+)]
 pub struct Message {
     status: Status,
     stream_id: u8,
@@ -87,7 +91,11 @@ pub enum Status {
     End(bool),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(
+    Clone,
+    Debug,
+    PartialEq,
+)]
 pub enum DeserializeError {
     ExpectedStreamId,
     InvalidStatusBit(u8),

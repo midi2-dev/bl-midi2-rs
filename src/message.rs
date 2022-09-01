@@ -5,7 +5,11 @@ use crate::{
     UtilityDeserializeError, UtilityMessage,
 };
 
-#[derive(Debug, PartialEq)]
+#[derive(
+    Clone,
+    Debug,
+    PartialEq,
+)]
 enum MessageType {
     Utility(UtilityMessage),
     System(SysCommonMessage),
@@ -15,13 +19,21 @@ enum MessageType {
     ExtendedSystemExclusive(ExtendedSysExMessage),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(
+    Clone,
+    Debug,
+    PartialEq,
+)]
 pub struct Message {
     group: Group,
     message_type: MessageType,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(
+    Clone,
+    Debug,
+    PartialEq,
+)]
 pub enum DeserializeError {
     ExtendedSystemExclusive(ExtendedSysExDeserializeError),
     InvalidMessageType(u32),

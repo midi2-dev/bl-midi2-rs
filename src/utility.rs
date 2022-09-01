@@ -1,6 +1,10 @@
 use crate::{std_error_impl, helpers::mask, Packet};
 
-#[derive(Debug, PartialEq)]
+#[derive(
+    Clone,
+    Debug,
+    PartialEq,
+)]
 pub enum Message {
     NoOp,
     TimeStamp { time_stamp: ux::u20 },
@@ -35,7 +39,11 @@ impl std::convert::TryFrom<Packet> for Message {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(
+    Clone,
+    Debug,
+    PartialEq,
+)]
 pub enum DeserializeError {
     InvalidStatusBit(u8),
     IncorrectMessageType(u8),
