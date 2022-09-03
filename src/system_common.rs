@@ -1,4 +1,4 @@
-use crate::{std_error_impl, helpers::mask, Packet};
+use crate::{helpers::mask, Packet};
 
 #[derive(
     Clone,
@@ -27,7 +27,6 @@ pub enum DeserializeError {
     UnsupportedStatus(u8),
     IncorrectMessageType(u8),
 }
-std_error_impl!(DeserializeError);
 
 impl std::convert::TryFrom<Packet> for Message {
     type Error = DeserializeError;

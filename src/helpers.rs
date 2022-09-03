@@ -27,15 +27,3 @@ mod tests {
         assert_eq!(ux::u4::new(0b0111), mask(v));
     }
 }
-
-#[macro_export]
-macro_rules! std_error_impl {
-    ($t:ty) => {
-        impl std::fmt::Display for $t {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-                (self as &dyn std::fmt::Debug).fmt(f)
-            }
-        }
-        impl std::error::Error for $t {}
-    };
-}

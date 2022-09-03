@@ -1,4 +1,4 @@
-use crate::{std_error_impl, helpers::mask, Packet};
+use crate::{helpers::mask, Packet};
 
 #[derive(
     Clone,
@@ -48,7 +48,6 @@ pub enum DeserializeError {
     InvalidStatusBit(u8),
     IncorrectMessageType(u8),
 }
-std_error_impl!(DeserializeError);
 
 #[cfg(test)]
 mod deserialize {
