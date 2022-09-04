@@ -112,7 +112,7 @@ mod tests {
 
     #[test]
     fn group_reported() {
-        let data_group_pairings: Vec<([u32; 4], ux::u4)> = vec![
+        let data_group_pairings:[([u32; 4], ux::u4); 16] = [
             ([0x0000_0000, 0x0, 0x0, 0x0], ux::u4::new(0)),
             ([0x0100_0000, 0x0, 0x0, 0x0], ux::u4::new(1)),
             ([0x0200_0000, 0x0, 0x0, 0x0], ux::u4::new(2)),

@@ -7,45 +7,17 @@ use crate::{helpers::mask, Packet};
 )]
 pub struct Message {
     status: Status,
-    data: Vec<ux::u7>,
+    data: [ux::u7; 6],
+    data_len: usize,
 }
 
 impl Message {
-    pub fn from_data(data: Vec<ux::u7>) -> Vec<Self> {
-        if data.len() <= 6 {
-            vec![
-                Message {
-                    status: Status::Complete,
-                    data,
-                }
-            ]
-        } else {
-            let mut ret = Vec::new();
-
-            for chunk in data.chunks(6) {
-                ret.push(Message{
-                    status: Status::Continue,
-                    data: chunk
-                        .iter()
-                        .map(|v| v.clone())
-                        .collect(),
-                });
-            }
-
-            let l = ret.len();
-            ret[0].status = Status::Begin;
-            ret[l - 1].status = Status::End;
-
-            ret
-        }
-    }
-
     pub fn status(&self) -> Status {
         self.status
     }
 
-    pub fn data(&self) -> &Vec<ux::u7> {
-        &self.data
+    pub fn data(&self) -> &[ux::u7] {
+        &self.data[..self.data_len]
     }
 }
 
@@ -75,14 +47,18 @@ impl std::convert::TryFrom<Packet> for Message {
         match u8::from(p.nibble(0)) {
             3 => match u8::from(p.nibble(2)) {
                 0x0..=0x3 => match u8::from(p.nibble(3)) {
-                    0..=5 => Ok(Message {
-                        status: map_status_bit(p.nibble(2)),
-                        // see comment: ux missing From usize impls
-                        data: p.octets(2, (2 + u8::from(p.nibble(3))).into())
-                            .iter()
-                            .map(|v| mask(v.clone()))
-                            .collect(),
-                    }),
+                    0..=5 => {
+                        let mut m = Message {
+                            status: map_status_bit(p.nibble(2)),
+                            data: Default::default(),
+                            // see comment: ux missing From usize impls
+                            data_len: u8::from(p.nibble(3)).into(),
+                        };
+                        for (i, val) in p.octets(2, 2 + m.data_len).iter().enumerate() {
+                            m.data[i] = mask(*val);
+                        }
+                        Ok(m)
+                    },
                     overflow_len => Err(DeserializeError::DataOutOfRange(overflow_len)),
                 },
                 status => Err(DeserializeError::InvalidStatusBit(status)),
@@ -99,9 +75,83 @@ impl std::convert::From<Message> for Packet {
         }
         .set_nibble(2, mask(m.status as u8))
         // see comment: ux missing From usize impls
-        .set_nibble(3, u8::try_from(m.data.len()).unwrap().try_into().unwrap())
+        .set_nibble(3, u8::try_from(m.data_len).unwrap().try_into().unwrap())
         .set_octets(2, m.data.iter().map(|v| v.clone().into()).collect())
     }
+}
+
+#[derive(
+    Clone,
+    Debug,
+    PartialEq,
+)]
+pub struct MessageGroup(Vec<Message>);
+
+impl core::ops::Deref for MessageGroup {
+    type Target = [Message];
+    fn deref(&self) -> &Self::Target {
+        &*self.0
+    }
+}
+
+impl MessageGroup {
+    pub fn from_data(data: &[ux::u7]) -> Self {
+        let mut ret = MessageGroup(Vec::new());
+
+        for chunk in data.chunks(6) {
+            let mut m = Message {
+                status: Status::Continue,
+                data: Default::default(),
+                data_len: chunk.len(),
+            };
+            m.data[..chunk.len()].clone_from_slice(&chunk);
+            ret.0.push(m);
+        }
+
+        if ret.len() == 1 {
+            ret.0[0].status = Status::Complete;
+        } else if ret.len() > 1 {
+            let l = ret.len();
+            ret.0[0].status = Status::Begin;
+            ret.0[l - 1].status = Status::End;
+        }
+
+        ret
+    }
+
+    pub fn from_messages(messages: &[Message]) -> Result<Self, MessagesDoNotFormGroup> {
+        if messages.len() == 0 {
+            Ok(MessageGroup(Vec::new()))
+        } else if messages.len() == 1 && messages[0].status == Status::Complete {
+            Ok(MessageGroup(vec![messages[0].clone()]))
+        } else {
+            if no_begin(&messages) || no_end(&messages) || incorrect_body(&messages) {
+                Err(MessagesDoNotFormGroup)
+            } else {
+                Ok(MessageGroup(messages.iter().map(|m| m.clone()).collect()))
+            }
+        }
+    }
+}
+
+#[derive(
+    Clone,
+    Debug,
+    PartialEq,
+)]
+pub struct MessagesDoNotFormGroup;
+
+fn no_begin(messages: &[Message]) -> bool {
+    messages[0].status != Status::Begin
+}
+
+fn no_end(messages: &[Message]) -> bool {
+    messages[messages.len() - 1].status != Status::End
+}
+
+fn incorrect_body(messages: &[Message]) -> bool {
+    let cont = |m: &Message| { m.status == Status::Continue };
+    messages.len() > 2 && !messages[1..(messages.len() - 1)].iter().all(cont)
 }
 
 fn map_status_bit(b: ux::u4) -> Status {
@@ -156,7 +206,15 @@ mod deserialize {
             }),
             Ok(Message {
                 status: Status::Complete,
-                data: vec![ux::u7::new(0x12), ux::u7::new(0x34), ux::u7::new(0x56)],
+                data: [
+                    ux::u7::new(0x12), 
+                    ux::u7::new(0x34), 
+                    ux::u7::new(0x56),
+                    ux::u7::new(0x0),
+                    ux::u7::new(0x0),
+                    ux::u7::new(0x0),
+                ],
+                data_len: 3,
             }),
         );
     }
@@ -169,7 +227,15 @@ mod deserialize {
             }),
             Ok(Message {
                 status: Status::Begin,
-                data: vec![ux::u7::new(0x5B), ux::u7::new(0x6D)],
+                data: [
+                    ux::u7::new(0x5B), 
+                    ux::u7::new(0x6D),
+                    ux::u7::new(0x0),
+                    ux::u7::new(0x0),
+                    ux::u7::new(0x0),
+                    ux::u7::new(0x0),
+                ],
+                data_len: 2,
             }),
         );
     }
@@ -182,13 +248,15 @@ mod deserialize {
             }),
             Ok(Message {
                 status: Status::Continue,
-                data: vec![
+                data: [
                     ux::u7::new(0x31), 
                     ux::u7::new(0x41), 
                     ux::u7::new(0x15),
                     ux::u7::new(0x12),
-                    ux::u7::new(0x65)
+                    ux::u7::new(0x65),
+                    ux::u7::new(0x0),
                 ],
+                data_len: 5,
             }),
         );
     }
@@ -201,7 +269,8 @@ mod deserialize {
             }),
             Ok(Message {
                 status: Status::End,
-                data: Vec::new(),
+                data: Default::default(),
+                data_len: 0,
             }),
         );
     }
@@ -216,7 +285,15 @@ mod serialize {
         assert_eq!(
             Packet::from(Message {
                 status: Status::Complete,
-                data: vec![ux::u7::new(0x2B), ux::u7::new(0x4D)],
+                data: [
+                    ux::u7::new(0x2B), 
+                    ux::u7::new(0x4D),
+                    ux::u7::new(0x0),
+                    ux::u7::new(0x0),
+                    ux::u7::new(0x0),
+                    ux::u7::new(0x0),
+                ],
+                data_len: 2,
             }),
             Packet {
                 data: [0x3002_2B4D, 0x0, 0x0, 0x0]
@@ -229,7 +306,7 @@ mod serialize {
         assert_eq!(
             Packet::from(Message {
                 status: Status::Begin,
-                data: vec![
+                data: [
                     ux::u7::new(0x14), 
                     ux::u7::new(0x14), 
                     ux::u7::new(0x21), 
@@ -237,6 +314,7 @@ mod serialize {
                     ux::u7::new(0x62), 
                     ux::u7::new(0x37)
                 ],
+                data_len: 6,
             }),
             Packet {
                 data: [0x3016_1414, 0x2135_6237, 0x0, 0x0]
@@ -249,7 +327,15 @@ mod serialize {
         assert_eq!(
             Packet::from(Message {
                 status: Status::Continue,
-                data: vec![ux::u7::new(0x7F), ux::u7::new(0x7F), ux::u7::new(0x7F)]
+                data: [
+                    ux::u7::new(0x7F), 
+                    ux::u7::new(0x7F), 
+                    ux::u7::new(0x7F),
+                    ux::u7::new(0x0),
+                    ux::u7::new(0x0),
+                    ux::u7::new(0x0),
+                ],
+                data_len: 3,
             }),
             Packet {
                 data: [0x3023_7F7F, 0x7F00_0000, 0x0, 0x0]
@@ -262,7 +348,8 @@ mod serialize {
         assert_eq!(
             Packet::from(Message {
                 status: Status::End,
-                data: vec![],
+                data: Default::default(),
+                data_len: 0,
             }),
             Packet {
                 data: [0x3030_0000, 0x0, 0x0, 0x0]
@@ -272,83 +359,105 @@ mod serialize {
 }
 
 #[cfg(test)]
-mod from_data {
+mod message_group {
     use super::*;
 
+    fn data_vec(begin: u8, end: u8) -> Vec<ux::u7> {
+        (begin..end).map(|v| ux::u7::new(v)).collect()
+    }
+
     #[test]
-    fn empty_message() {
+    fn empty_message_group() {
         assert_eq!(
-            Message::from_data(Vec::new()),
-            vec![
-                Message {
-                    status: Status::Complete,
-                    data: Vec::new(),
-                },
-            ],
+            MessageGroup::from_data(&Vec::<ux::u7>::new()),
+            MessageGroup(Vec::new()),
         );
     }
 
     #[test]
     fn complete_message() {
         assert_eq!(
-            Message::from_data((0..5).map(|v| ux::u7::new(v.clone())).collect()),
-            vec![
+            MessageGroup::from_data(&data_vec(0, 5)),
+            MessageGroup(vec![
                 Message {
                     status: Status::Complete,
-                    data: (0..5).map(|v| ux::u7::new(v.clone())).collect(),
+                    data: [
+                        ux::u7::new(0x0),
+                        ux::u7::new(0x1),
+                        ux::u7::new(0x2),
+                        ux::u7::new(0x3),
+                        ux::u7::new(0x4),
+                        ux::u7::new(0x0),
+                    ],
+                    data_len: 5,
                 },
-            ],
+            ]),
         );
     }
 
     #[test]
     fn full_complete_message() {
         assert_eq!(
-            Message::from_data((0..6).map(|v| ux::u7::new(v.clone())).collect()),
-            vec![
+            MessageGroup::from_data(&data_vec(0, 6)),
+            MessageGroup(vec![
                 Message {
                     status: Status::Complete,
-                    data: (0..6).map(|v| ux::u7::new(v.clone())).collect(),
+                    data: [
+                        ux::u7::new(0x0),
+                        ux::u7::new(0x1),
+                        ux::u7::new(0x2),
+                        ux::u7::new(0x3),
+                        ux::u7::new(0x4),
+                        ux::u7::new(0x5),
+                    ],
+                    data_len: 6,
                 },
-            ],
-        );
-    }
-
-    #[test]
-    fn continued_message_2_parts() {
-        assert_eq!(
-            Message::from_data((0..10).map(|v| ux::u7::new(v.clone())).collect()),
-            vec![
-                Message {
-                    status: Status::Begin,
-                    data: (0..6).map(|v| ux::u7::new(v.clone())).collect(),
-                },
-                Message {
-                    status: Status::End,
-                    data: (6..10).map(|v| ux::u7::new(v.clone())).collect(),
-                },
-            ],
+            ]),
         );
     }
 
     #[test]
     fn continued_message_3_parts() {
         assert_eq!(
-            Message::from_data((0..15).map(|v| ux::u7::new(v.clone())).collect()),
-            vec![
+            MessageGroup::from_data(&data_vec(0, 15)),
+            MessageGroup(vec![
                 Message {
                     status: Status::Begin,
-                    data: (0..6).map(|v| ux::u7::new(v.clone())).collect(),
+                    data: [
+                        ux::u7::new(0x0),
+                        ux::u7::new(0x1),
+                        ux::u7::new(0x2),
+                        ux::u7::new(0x3),
+                        ux::u7::new(0x4),
+                        ux::u7::new(0x5),
+                    ],
+                    data_len: 6,
                 },
                 Message {
                     status: Status::Continue,
-                    data: (6..12).map(|v| ux::u7::new(v.clone())).collect(),
+                    data: [
+                        ux::u7::new(0x6),
+                        ux::u7::new(0x7),
+                        ux::u7::new(0x8),
+                        ux::u7::new(0x9),
+                        ux::u7::new(0xA),
+                        ux::u7::new(0xB),
+                    ],
+                    data_len: 6,
                 },
                 Message {
                     status: Status::End,
-                    data: (12..15).map(|v| ux::u7::new(v.clone())).collect(),
+                    data: [
+                        ux::u7::new(0xC),
+                        ux::u7::new(0xD),
+                        ux::u7::new(0xE),
+                        ux::u7::new(0x0),
+                        ux::u7::new(0x0),
+                        ux::u7::new(0x0),
+                    ],
+                    data_len: 3,
                 },
-            ],
+            ]),
         );
     }
 }
