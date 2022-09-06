@@ -64,8 +64,8 @@ impl Message {
     const VERSION: u8 = 0x01;
 }
 
-impl std::convert::From<Message> for Vec<ext_sysex::Message> {
-    fn from(m: Message) -> Self {
+impl std::convert::From<(Message, u8)> for ext_sysex::MessageGroup {
+    fn from((m, stream_id): (Message, u8)) -> Self {
         match m {
             Message::Discovery {
                 source,
@@ -77,34 +77,37 @@ impl std::convert::From<Message> for Vec<ext_sysex::Message> {
                 profile_configuration_supported,
                 property_exchange_supported,
                 max_sysex_message_size,
-            } => ext_sysex::Builder::new().data(ci_data(
-                DeviceId::MidiPort,
-                0x70,
-                source.value().clone(),
-                [0x7F, 0x7F, 0x7F, 0x7F],
-                vec![
-                    device_manufacturer[0],
-                    device_manufacturer[1],
-                    device_manufacturer[2],
-                    device_family[0],
-                    device_family[1],
-                    device_model_number[0],
-                    device_model_number[1],
-                    software_version[0],
-                    software_version[1],
-                    software_version[2],
-                    software_version[3],
-                    bitmap(vec![
-                        (0x1, protocol_negotiation_supported),
-                        (0x2, profile_configuration_supported),
-                        (0x3, property_exchange_supported),
-                    ]),
-                    max_sysex_message_size[0],
-                    max_sysex_message_size[1],
-                    max_sysex_message_size[2],
-                    max_sysex_message_size[3],
-                ],
-            )).build(),
+            } => ext_sysex::MessageGroup::from_data(
+                &ci_data(
+                    DeviceId::MidiPort,
+                    0x70,
+                    source.value().clone(),
+                    [0x7F, 0x7F, 0x7F, 0x7F],
+                    vec![
+                        device_manufacturer[0],
+                        device_manufacturer[1],
+                        device_manufacturer[2],
+                        device_family[0],
+                        device_family[1],
+                        device_model_number[0],
+                        device_model_number[1],
+                        software_version[0],
+                        software_version[1],
+                        software_version[2],
+                        software_version[3],
+                        bitmap(vec![
+                            (0x1, protocol_negotiation_supported),
+                            (0x2, profile_configuration_supported),
+                            (0x3, property_exchange_supported),
+                        ]),
+                        max_sysex_message_size[0],
+                        max_sysex_message_size[1],
+                        max_sysex_message_size[2],
+                        max_sysex_message_size[3],
+                    ],
+                ),
+                stream_id,
+            ),
             Message::DiscoveryReply {
                 source,
                 destination,
@@ -116,60 +119,69 @@ impl std::convert::From<Message> for Vec<ext_sysex::Message> {
                 profile_configuration_supported,
                 property_exchange_supported,
                 max_sysex_message_size,
-            } => ext_sysex::Builder::new().data(ci_data(
-                DeviceId::MidiPort,
-                0x70,
-                source.value().clone(),
-                destination.value().clone(),
-                vec![
-                    device_manufacturer[0],
-                    device_manufacturer[1],
-                    device_manufacturer[2],
-                    device_family[0],
-                    device_family[1],
-                    device_model_number[0],
-                    device_model_number[1],
-                    software_version[0],
-                    software_version[1],
-                    software_version[2],
-                    software_version[3],
-                    bitmap(vec![
-                        (0x1, protocol_negotiation_supported),
-                        (0x2, profile_configuration_supported),
-                        (0x3, property_exchange_supported),
-                    ]),
-                    max_sysex_message_size[0],
-                    max_sysex_message_size[1],
-                    max_sysex_message_size[2],
-                    max_sysex_message_size[3],
-                ],
-            )).build(),
+            } => ext_sysex::MessageGroup::from_data(
+                &ci_data(
+                    DeviceId::MidiPort,
+                    0x70,
+                    source.value().clone(),
+                    destination.value().clone(),
+                    vec![
+                        device_manufacturer[0],
+                        device_manufacturer[1],
+                        device_manufacturer[2],
+                        device_family[0],
+                        device_family[1],
+                        device_model_number[0],
+                        device_model_number[1],
+                        software_version[0],
+                        software_version[1],
+                        software_version[2],
+                        software_version[3],
+                        bitmap(vec![
+                            (0x1, protocol_negotiation_supported),
+                            (0x2, profile_configuration_supported),
+                            (0x3, property_exchange_supported),
+                        ]),
+                        max_sysex_message_size[0],
+                        max_sysex_message_size[1],
+                        max_sysex_message_size[2],
+                        max_sysex_message_size[3],
+                    ],
+                ),
+                stream_id,
+            ),
             Message::InvalidateMuid{
                 source,
                 target,
-            } => ext_sysex::Builder::new().data(ci_data(
-                DeviceId::MidiPort,
-                0x7E,
-                source.value().clone(),
-                [0x7F, 0x7F, 0x7F, 0x7F],
-                vec![
-                    target[muid::Index::Byte1],
-                    target[muid::Index::Byte2],
-                    target[muid::Index::Byte3],
-                    target[muid::Index::Byte4],
-                ],
-            )).build(),
+            } => ext_sysex::MessageGroup::from_data(
+                &ci_data(
+                    DeviceId::MidiPort,
+                    0x7E,
+                    source.value().clone(),
+                    [0x7F, 0x7F, 0x7F, 0x7F],
+                    vec![
+                        target[muid::Index::Byte1],
+                        target[muid::Index::Byte2],
+                        target[muid::Index::Byte3],
+                        target[muid::Index::Byte4],
+                    ],
+                ),
+                stream_id,
+            ),
             Message::Nak {
                 source,
                 destination,
                 device_id,
-            } => ext_sysex::Builder::new().data(ci_data(
-                device_id,
-                0x7F,
-                source.value().clone(),
-                destination.value().clone(),
-                Vec::new(),
-            )).build(),
+            } => ext_sysex::MessageGroup::from_data(
+                &ci_data(
+                    device_id,
+                    0x7F,
+                    source.value().clone(),
+                    destination.value().clone(),
+                    Vec::new(),
+                ),
+                stream_id,
+            ), 
             _ => todo!(),
         }
     }
@@ -228,33 +240,41 @@ mod to_extended_sysex {
     fn discovery() {
         let source = muid::Muid::new();
         assert_eq!(
-            Vec::<ext_sysex::Message>::from(Message::Discovery {
-                source: source.clone(),
-                device_manufacturer: [0x1, 0x2, 0x3],
-                device_family: [0x4, 0x5],
-                device_model_number: [0x5, 0x6],
-                software_version: [0x7, 0x8, 0x9, 0xA],
-                protocol_negotiation_supported: true,
-                profile_configuration_supported: true,
-                property_exchange_supported: true,
-                max_sysex_message_size: [0xB, 0xC, 0xD, 0xE],
-            }),
-            ext_sysex::Builder::new().data(vec![
-                0x7E,
-                0x7F,
-                0x0D,
-                0x70,
-                0x01,
-                source[muid::Index::Byte1], source[muid::Index::Byte2], 
-                source[muid::Index::Byte3], source[muid::Index::Byte4],
-                0x7F, 0x7F, 0x7F, 0x7F, 
-                0x1, 0x2, 0x3, // device manufacturer
-                0x4, 0x5, // device family
-                0x5, 0x6, // device model
-                0x7, 0x8, 0x9, 0xA, // software version
-                0b0000_1110, // ci support flags
-                0xB, 0xC, 0xD, 0xE, // max message size
-            ]).build(),
+            ext_sysex::MessageGroup::from(
+                (
+                    Message::Discovery {
+                        source: source.clone(),
+                        device_manufacturer: [0x1, 0x2, 0x3],
+                        device_family: [0x4, 0x5],
+                        device_model_number: [0x5, 0x6],
+                        software_version: [0x7, 0x8, 0x9, 0xA],
+                        protocol_negotiation_supported: true,
+                        profile_configuration_supported: true,
+                        property_exchange_supported: true,
+                        max_sysex_message_size: [0xB, 0xC, 0xD, 0xE],
+                    },
+                    0xB,
+                ),
+            ),
+            ext_sysex::MessageGroup::from_data(
+                &vec![
+                    0x7E,
+                    0x7F,
+                    0x0D,
+                    0x70,
+                    0x01,
+                    source[muid::Index::Byte1], source[muid::Index::Byte2], 
+                    source[muid::Index::Byte3], source[muid::Index::Byte4],
+                    0x7F, 0x7F, 0x7F, 0x7F, 
+                    0x1, 0x2, 0x3, // device manufacturer
+                    0x4, 0x5, // device family
+                    0x5, 0x6, // device model
+                    0x7, 0x8, 0x9, 0xA, // software version
+                    0b0000_1110, // ci support flags
+                    0xB, 0xC, 0xD, 0xE, // max message size
+                ],
+                0xB,
+            ),
         );
     }
 
@@ -263,35 +283,43 @@ mod to_extended_sysex {
         let source = muid::Muid::new();
         let destination = muid::Muid::new();
         assert_eq!(
-            Vec::<ext_sysex::Message>::from(Message::DiscoveryReply {
-                source: source.clone(),
-                destination: destination.clone(),
-                device_manufacturer: [0x1, 0x2, 0x3],
-                device_family: [0x4, 0x5],
-                device_model_number: [0x5, 0x6],
-                software_version: [0x7, 0x8, 0x9, 0xA],
-                protocol_negotiation_supported: true,
-                profile_configuration_supported: false,
-                property_exchange_supported: true,
-                max_sysex_message_size: [0xB, 0xC, 0xD, 0xE],
-            }),
-            ext_sysex::Builder::new().data(vec![
-                0x7E,
-                0x7F,
-                0x0D,
-                0x70,
-                0x01,
-                source[muid::Index::Byte1], source[muid::Index::Byte2], 
-                source[muid::Index::Byte3], source[muid::Index::Byte4],
-                destination[muid::Index::Byte1], destination[muid::Index::Byte2], 
-                destination[muid::Index::Byte3], destination[muid::Index::Byte4],
-                0x1, 0x2, 0x3, // device manufacturer
-                0x4, 0x5, // device family
-                0x5, 0x6, // device model
-                0x7, 0x8, 0x9, 0xA, // software version
-                0b0000_1010, // ci support flags
-                0xB, 0xC, 0xD, 0xE, // max message size
-            ]).build(),
+            ext_sysex::MessageGroup::from(
+                (
+                    Message::DiscoveryReply {
+                        source: source.clone(),
+                        destination: destination.clone(),
+                        device_manufacturer: [0x1, 0x2, 0x3],
+                        device_family: [0x4, 0x5],
+                        device_model_number: [0x5, 0x6],
+                        software_version: [0x7, 0x8, 0x9, 0xA],
+                        protocol_negotiation_supported: true,
+                        profile_configuration_supported: false,
+                        property_exchange_supported: true,
+                        max_sysex_message_size: [0xB, 0xC, 0xD, 0xE],
+                    },
+                    0x1,
+                ),
+            ),
+            ext_sysex::MessageGroup::from_data(
+                &vec![
+                    0x7E,
+                    0x7F,
+                    0x0D,
+                    0x70,
+                    0x01,
+                    source[muid::Index::Byte1], source[muid::Index::Byte2], 
+                    source[muid::Index::Byte3], source[muid::Index::Byte4],
+                    destination[muid::Index::Byte1], destination[muid::Index::Byte2], 
+                    destination[muid::Index::Byte3], destination[muid::Index::Byte4],
+                    0x1, 0x2, 0x3, // device manufacturer
+                    0x4, 0x5, // device family
+                    0x5, 0x6, // device model
+                    0x7, 0x8, 0x9, 0xA, // software version
+                    0b0000_1010, // ci support flags
+                    0xB, 0xC, 0xD, 0xE, // max message size
+                ],
+                0x1,
+            )
         );
     }
 
@@ -300,22 +328,30 @@ mod to_extended_sysex {
         let source = muid::Muid::new();
         let target = muid::Muid::new();
         assert_eq!(
-            Vec::<ext_sysex::Message>::from(Message::InvalidateMuid {
-                source: source.clone(),
-                target: target.clone(),
-            }),
-            ext_sysex::Builder::new().data(vec![
-                0x7E,
-                0x7F,
-                0x0D,
-                0x7E,
-                0x01,
-                source[muid::Index::Byte1], source[muid::Index::Byte2], 
-                source[muid::Index::Byte3], source[muid::Index::Byte4],
-                0x7F, 0x7F, 0x7F, 0x7F, // destination
-                target[muid::Index::Byte1], target[muid::Index::Byte2], 
-                target[muid::Index::Byte3], target[muid::Index::Byte4],
-            ]).build(),
+            ext_sysex::MessageGroup::from(
+                (
+                    Message::InvalidateMuid {
+                        source: source.clone(),
+                        target: target.clone(),
+                    },
+                    0x4,
+                ),
+            ),
+            ext_sysex::MessageGroup::from_data(
+                &vec![
+                    0x7E,
+                    0x7F,
+                    0x0D,
+                    0x7E,
+                    0x01,
+                    source[muid::Index::Byte1], source[muid::Index::Byte2], 
+                    source[muid::Index::Byte3], source[muid::Index::Byte4],
+                    0x7F, 0x7F, 0x7F, 0x7F, // destination
+                    target[muid::Index::Byte1], target[muid::Index::Byte2], 
+                    target[muid::Index::Byte3], target[muid::Index::Byte4],
+                ],
+                0x4,
+            )
         );
     }
 
@@ -324,22 +360,30 @@ mod to_extended_sysex {
         let source = muid::Muid::new();
         let destination = muid::Muid::new();
         assert_eq!(
-            Vec::<ext_sysex::Message>::from(Message::Nak {
-                source: source.clone(),
-                destination: destination.clone(),
-                device_id: DeviceId::Channel(ux::u4::new(0xA)),
-            }),
-            ext_sysex::Builder::new().data(vec![
-                0x7E,
-                0x0A,
-                0x0D,
-                0x7F,
-                Message::VERSION,
-                source[muid::Index::Byte1], source[muid::Index::Byte2], 
-                source[muid::Index::Byte3], source[muid::Index::Byte4],
-                destination[muid::Index::Byte1], destination[muid::Index::Byte2], 
-                destination[muid::Index::Byte3], destination[muid::Index::Byte4],
-            ]).build(),
+            ext_sysex::MessageGroup::from(
+                (
+                    Message::Nak {
+                        source: source.clone(),
+                        destination: destination.clone(),
+                        device_id: DeviceId::Channel(ux::u4::new(0xA)),
+                    },
+                    0x3,
+                ),
+            ),
+            ext_sysex::MessageGroup::from_data(
+                &vec![
+                    0x7E,
+                    0x0A,
+                    0x0D,
+                    0x7F,
+                    Message::VERSION,
+                    source[muid::Index::Byte1], source[muid::Index::Byte2], 
+                    source[muid::Index::Byte3], source[muid::Index::Byte4],
+                    destination[muid::Index::Byte1], destination[muid::Index::Byte2], 
+                    destination[muid::Index::Byte3], destination[muid::Index::Byte4],
+                ],
+                0x3,
+            ),
         );
     }
 }

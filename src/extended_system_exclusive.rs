@@ -25,62 +25,6 @@ impl Message {
     }
 }
 
-#[derive(Clone)]
-pub struct Builder {
-    data: Vec<u8>,
-    stream_id: u8,
-}
-
-impl Builder {
-    pub fn new() -> Self {
-        Builder {
-            data: Vec::new(),
-            stream_id: 0,
-        }
-    }
-
-    pub fn build(self) -> Vec<Message> {
-        if self.data.len() <= 13 {
-            vec![
-                Message {
-                    status: Status::Complete,
-                    stream_id: self.stream_id,
-                    data: self.data,
-                }
-            ]
-        } else {
-            let mut ret = Vec::new();
-
-            for chunk in self.data.chunks(13) {
-                ret.push(Message{
-                    status: Status::Continue,
-                    stream_id: self.stream_id,
-                    data: chunk
-                        .iter()
-                        .map(|v| v.clone())
-                        .collect(),
-                });
-            }
-
-            let l = ret.len();
-            ret[0].status = Status::Begin;
-            ret[l - 1].status = Status::End(true);
-
-            ret
-        }
-    }
-
-    pub fn data(mut self, d: Vec<u8>) -> Self {
-        self.data = d;
-        self
-    }
-
-    pub fn stream_id(mut self, id: u8) -> Self {
-        self.stream_id = id;
-        self
-    }
-}
-
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Status {
     Complete,
@@ -163,6 +107,59 @@ fn map_from_status(status: Status) -> ux::u4 {
         Status::Begin => ux::u4::new(0x1),
         Status::Continue => ux::u4::new(0x2),
         Status::End(_) => ux::u4::new(0x3),
+    }
+}
+
+#[derive(
+    Clone,
+    Debug,
+    PartialEq,
+)]
+pub struct MessageGroup(Vec<Message>);
+
+impl core::ops::Deref for MessageGroup {
+    type Target = [Message];
+    fn deref(&self) -> &Self::Target {
+        &*self.0
+    }
+}
+
+impl MessageGroup {
+    pub fn from_data(data: &[u8], stream_id: u8) -> MessageGroup {
+        if data.len() <= 13 {
+            MessageGroup(
+                vec![
+                    Message {
+                        status: Status::Complete,
+                        stream_id: stream_id,
+                        data: data.to_vec(),
+                    }
+                ]
+            )
+        } else {
+            let mut ret = MessageGroup(Vec::new());
+
+            for chunk in data.chunks(13) {
+                ret.0.push(Message{
+                    status: Status::Continue,
+                    stream_id: stream_id,
+                    data: chunk
+                        .iter()
+                        .map(|v| v.clone())
+                        .collect(),
+                });
+            }
+
+            let l = ret.0.len();
+            ret.0[0].status = Status::Begin;
+            ret.0[l - 1].status = Status::End(true);
+
+            ret
+        }
+    }
+
+    pub fn from_messages(_messages: &[Message]) -> MessageGroup {
+        todo!()
     }
 }
 
@@ -357,68 +354,68 @@ mod serialize {
 }
 
 #[cfg(test)]
-mod builder {
+mod message_group {
     use super::*;
 
     #[test]
     fn no_data() {
         assert_eq!(
-            Builder::new().build(),
-            vec![Message{ 
+            MessageGroup::from_data(&Vec::new(), 0),
+            MessageGroup(vec![Message{ 
                 status: Status::Complete,
                 stream_id: 0, 
                 data: Vec::new(), 
-            }],
+            }]),
         );
     }
 
     #[test]
     fn stream_id() {
         assert_eq!(
-            Builder::new().stream_id(0xB3).build(),
-            vec![Message{ 
+            MessageGroup::from_data(&Vec::new(), 0xB3),
+            MessageGroup(vec![Message{ 
                 status: Status::Complete,
                 stream_id: 0xB3, 
                 data: Vec::new(), 
-            }],
+            }]),
         );
     }
 
     #[test]
     fn complete_message() {
         assert_eq!(
-            Builder::new()
-                .data(std::iter::repeat(0x0).take(10).collect())
-                .build(),
-            vec![Message{ 
+            MessageGroup::from_data(
+                &std::iter::repeat(0x0).take(10).collect::<Vec<u8>>(), 
+                0x0
+            ),
+            MessageGroup(vec![Message{ 
                 status: Status::Complete,
                 stream_id: 0x0, 
                 data: std::iter::repeat(0x0).take(10).collect(),
-            }],
+            }]),
         );
     }
 
     #[test]
     fn full_complete_message() {
         assert_eq!(
-            Builder::new()
-                .data(std::iter::repeat(0x0).take(13).collect())
-                .build(),
-            vec![Message{ 
+            MessageGroup::from_data(
+                &std::iter::repeat(0x0).take(13).collect::<Vec<u8>>(),
+                0x0
+            ),
+            MessageGroup(vec![Message{ 
                 status: Status::Complete,
                 stream_id: 0x0, 
-                data: std::iter::repeat(0x0).take(13).collect(),
-            }],
+                data: std::iter::repeat(0x0).take(13).collect::<Vec<u8>>(),
+            }]),
         );
     }
 
     #[test]
     fn continued_message_2_parts() {
         assert_eq!(
-            Builder::new()
-                .data((0..).take(20).collect())
-                .build(),
-            vec![
+            MessageGroup::from_data(&(0..).take(20).collect::<Vec<u8>>(), 0x0),
+            MessageGroup(vec![
                 Message{ 
                     status: Status::Begin,
                     stream_id: 0x0, 
@@ -429,17 +426,15 @@ mod builder {
                     stream_id: 0x0, 
                     data: (13..20).collect(),
                 },
-            ],
+            ]),
         );
     }
 
     #[test]
     fn continued_message_3_parts() {
         assert_eq!(
-            Builder::new()
-                .data((0..).take(30).collect())
-                .build(),
-            vec![
+            MessageGroup::from_data(&(0..).take(30).collect::<Vec<u8>>(), 0x0),
+            MessageGroup(vec![
                 Message{ 
                     status: Status::Begin,
                     stream_id: 0x0, 
@@ -455,7 +450,7 @@ mod builder {
                     stream_id: 0x0, 
                     data: (26..30).collect(),
                 },
-            ],
+            ]),
         );
     }
 }
