@@ -81,13 +81,11 @@ impl std::convert::From<Message> for Packet {
             data,
         }: Message,
     ) -> Self {
-        Packet {
-            data: [0x5000_0000, 0x0, 0x0, 0x0],
-        }
-        .set_nibble(2, map_from_status(status))
-        .set_nibble(3, (data.len() + 1).try_into().unwrap())
-        .set_octet(2, stream_id)
-        .set_octets(3, data)
+        Packet::from_data(&[0x5000_0000])
+            .set_nibble(2, map_from_status(status))
+            .set_nibble(3, (data.len() + 1).try_into().unwrap())
+            .set_octet(2, stream_id)
+            .set_octets(3, data)
     }
 }
 
@@ -170,9 +168,7 @@ mod deserialize {
     #[test]
     fn incorrect_message_type() {
         assert_eq!(
-            Message::try_from(Packet {
-                data: [0x0, 0x0, 0x0, 0x0]
-            }),
+            Message::try_from(<Packet as Default>::default()),
             Err(DeserializeError::IncorrectMessageType(0x0)),
         );
     }
@@ -180,9 +176,7 @@ mod deserialize {
     #[test]
     fn invalid_status() {
         assert_eq!(
-            Message::try_from(Packet {
-                data: [0x5040_0000, 0x0, 0x0, 0x0]
-            }),
+            Message::try_from(Packet::from_data(&[0x5040_0000])),
             Err(DeserializeError::InvalidStatusBit(0x4)),
         );
     }
@@ -190,9 +184,7 @@ mod deserialize {
     #[test]
     fn data_overflow() {
         assert_eq!(
-            Message::try_from(Packet {
-                data: [0x500F_0000, 0x0, 0x0, 0x0]
-            }),
+            Message::try_from(Packet::from_data(&[0x500F_0000])),
             Err(DeserializeError::DataOutOfRange(0xF)),
         );
     }
@@ -200,9 +192,7 @@ mod deserialize {
     #[test]
     fn expected_stream_id() {
         assert_eq!(
-            Message::try_from(Packet {
-                data: [0x5000_0000, 0x0, 0x0, 0x0]
-            }),
+            Message::try_from(Packet::from_data(&[0x5000_0000])),
             Err(DeserializeError::ExpectedStreamId),
         );
     }
@@ -210,11 +200,9 @@ mod deserialize {
     #[test]
     fn stream_id() {
         assert_eq!(
-            Message::try_from(Packet {
-                data: [0x5001_BE00, 0x0, 0x0, 0x0]
-            })
-            .unwrap()
-            .stream_id,
+            Message::try_from(Packet::from_data(&[0x5001_BE00]))
+                .unwrap()
+                .stream_id,
             0xBE,
         );
     }
@@ -230,10 +218,7 @@ mod deserialize {
         for d in data {
             assert_eq!(
                 Message::try_from(
-                    Packet {
-                        data: [0x5001_A000, 0x0, 0x0, 0x0]
-                    }
-                    .set_nibble(2, d.0)
+                    Packet::from_data(&[0x5001_A000]).set_nibble(2, d.0)
                 ),
                 Ok(Message {
                     status: d.1,
@@ -247,9 +232,7 @@ mod deserialize {
     #[test]
     fn end_invalid() {
         assert_eq!(
-            Message::try_from(Packet {
-                data: [0x503F_A000, 0x0, 0x0, 0x0]
-            }),
+            Message::try_from(Packet::from_data(&[0x503F_A000])),
             Ok(Message {
                 status: Status::End(false),
                 stream_id: 0xA0,
@@ -261,9 +244,12 @@ mod deserialize {
     #[test]
     fn data() {
         assert_eq!(
-            Message::try_from(Packet {
-                data: [0x500E_A123, 0x4567_890A, 0xBCDE_F123, 0x4567_890A,]
-            }),
+            Message::try_from(Packet::from_data(&[
+                0x500E_A123, 
+                0x4567_890A, 
+                0xBCDE_F123, 
+                0x4567_890A,
+            ])),
             Ok(Message {
                 status: Status::Complete,
                 stream_id: 0xA1,
@@ -273,9 +259,7 @@ mod deserialize {
             }),
         );
         assert_eq!(
-            Message::try_from(Packet {
-                data: [0x5003_A1FF, 0xFF00_0000, 0x0, 0x0,]
-            }),
+            Message::try_from(Packet::from_data(&[0x5003_A1FF, 0xFF00_0000])),
             Ok(Message {
                 status: Status::Complete,
                 stream_id: 0xA1,
@@ -304,10 +288,7 @@ mod serialize {
                     stream_id: 0x0,
                     data: Vec::new(),
                 }),
-                Packet {
-                    data: [0x5001_0000, 0x0, 0x0, 0x0]
-                }
-                .set_nibble(2, d.1),
+                Packet::from_data(&[0x5001_0000]).set_nibble(2, d.1),
             );
         }
     }
@@ -320,9 +301,7 @@ mod serialize {
                 stream_id: 0x0A,
                 data: Vec::new(),
             }),
-            Packet {
-                data: [0x5001_0A00, 0x0, 0x0, 0x0]
-            },
+            Packet::from_data(&[0x5001_0A00]),
         );
     }
 
@@ -336,9 +315,12 @@ mod serialize {
                     0x12, 0x34, 0x56, 0x78, 0x90, 0xAB, 0xCD, 0xEF, 0x12, 0x34, 0x56, 0x78, 0x90,
                 ],
             }),
-            Packet {
-                data: [0x500E_0012, 0x3456_7890, 0xABCD_EF12, 0x3456_7890]
-            },
+            Packet::from_data(&[
+                0x500E_0012, 
+                0x3456_7890, 
+                0xABCD_EF12, 
+                0x3456_7890,
+            ])
         );
         assert_eq!(
             Packet::from(Message {
@@ -346,9 +328,10 @@ mod serialize {
                 stream_id: 0x0,
                 data: vec![0xFF, 0xFF, 0xFF, 0xFF, 0xFF,],
             }),
-            Packet {
-                data: [0x5006_00FF, 0xFFFF_FFFF, 0x0, 0x0,]
-            },
+            Packet::from_data(&[
+                0x5006_00FF, 
+                0xFFFF_FFFF,
+            ]),
         );
     }
 }

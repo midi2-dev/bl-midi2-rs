@@ -13,12 +13,10 @@ pub enum Message {
 impl std::convert::From<Message> for Packet {
     fn from(m: Message) -> Self {
         match m {
-            Message::NoOp => Packet {
-                data: [0x0, 0x0, 0x0, 0x0],
-            },
-            Message::TimeStamp { time_stamp } => Packet {
-                data: [u32::from(time_stamp) | 0x0020_0000, 0x0, 0x0, 0x0],
-            },
+            Message::NoOp => Default::default(),
+            Message::TimeStamp { time_stamp } => Packet::from_data(
+                &[u32::from(time_stamp) | 0x0020_0000],
+            ),
         }
     }
 }
@@ -30,7 +28,7 @@ impl std::convert::TryFrom<Packet> for Message {
             0 => match u8::from(p.nibble(2)) {
                 0 => Ok(Message::NoOp),
                 2 => Ok(Message::TimeStamp {
-                    time_stamp: mask(p.data[0]),
+                    time_stamp: mask(p[0]),
                 }),
                 s => Err(DeserializeError::InvalidStatusBit(s)),
             },
@@ -56,9 +54,7 @@ mod deserialize {
     #[test]
     fn invalid_type() {
         assert_eq!(
-            Message::try_from(Packet {
-                data: [0x1000_0000, 0x0, 0x0, 0x0]
-            }),
+            Message::try_from(Packet::from_data(&[0x1000_0000])),
             Err(DeserializeError::IncorrectMessageType(1)),
         );
     }
@@ -66,9 +62,7 @@ mod deserialize {
     #[test]
     fn invalid_status_bit() {
         assert_eq!(
-            Message::try_from(Packet {
-                data: [0x0030_0000, 0x0, 0x0, 0x0]
-            }),
+            Message::try_from(Packet::from_data(&[0x0030_0000])),
             Err(DeserializeError::InvalidStatusBit(3)),
         );
     }
@@ -76,9 +70,7 @@ mod deserialize {
     #[test]
     fn noop() {
         assert_eq!(
-            Message::try_from(Packet {
-                data: [0x0, 0x0, 0x0, 0x0]
-            }),
+            Message::try_from(<Packet as Default>::default()),
             Ok(Message::NoOp),
         );
     }
@@ -86,9 +78,7 @@ mod deserialize {
     #[test]
     fn time_stamp() {
         assert_eq!(
-            Message::try_from(Packet {
-                data: [0x0022_ABCD, 0x0, 0x0, 0x0]
-            }),
+            Message::try_from(Packet::from_data(&[0x0022_ABCD])),
             Ok(Message::TimeStamp {
                 time_stamp: ux::u20::new(0x2ABCD)
             }),
@@ -104,9 +94,7 @@ mod serialize {
     fn noop() {
         assert_eq!(
             Packet::from(Message::NoOp),
-            Packet {
-                data: [0x0, 0x0, 0x0, 0x0]
-            },
+            <Packet as Default>::default(),
         );
     }
 
@@ -116,9 +104,7 @@ mod serialize {
             Packet::from(Message::TimeStamp {
                 time_stamp: ux::u20::new(0x2ABCD)
             }),
-            Packet {
-                data: [0x0022_ABCD, 0x0, 0x0, 0x0]
-            },
+            Packet::from_data(&[0x0022_ABCD]),
         );
     }
 }
