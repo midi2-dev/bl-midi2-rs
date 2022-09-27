@@ -70,13 +70,11 @@ impl std::convert::TryFrom<Packet> for Message {
 
 impl std::convert::From<Message> for Packet {
     fn from(m: Message) -> Self {
-        Packet {
-            data: [0x3000_0000, 0x0, 0x0, 0x0],
-        }
-        .set_nibble(2, mask(m.status as u8))
-        // see comment: ux missing From usize impls
-        .set_nibble(3, u8::try_from(m.data_len).unwrap().try_into().unwrap())
-        .set_octets(2, m.data.iter().map(|v| v.clone().into()).collect())
+        Packet::from_data(&[0x3000_0000])
+            .set_nibble(2, mask(m.status as u8))
+            // see comment: ux missing From usize impls
+            .set_nibble(3, u8::try_from(m.data_len).unwrap().try_into().unwrap())
+            .set_octets(2, m.data.iter().map(|v| v.clone().into()).collect())
     }
 }
 
@@ -171,9 +169,7 @@ mod deserialize {
     #[test]
     fn incorrect_message_type() {
         assert_eq!(
-            Message::try_from(Packet {
-                data: [0x2000_0000, 0x0, 0x0, 0x0]
-            }),
+            Message::try_from(Packet::from_data(&[0x2000_0000])),
             Err(DeserializeError::IncorrectMessageType(0x2)),
         );
     }
@@ -181,9 +177,7 @@ mod deserialize {
     #[test]
     fn invalid_status_bit() {
         assert_eq!(
-            Message::try_from(Packet {
-                data: [0x30A0_0000, 0x0, 0x0, 0x0]
-            }),
+            Message::try_from(Packet::from_data(&[0x30A0_0000])),
             Err(DeserializeError::InvalidStatusBit(0xA)),
         );
     }
@@ -191,9 +185,7 @@ mod deserialize {
     #[test]
     fn data_overflow() {
         assert_eq!(
-            Message::try_from(Packet {
-                data: [0x3009_0000, 0x0, 0x0, 0x0]
-            }),
+            Message::try_from(Packet::from_data(&[0x3009_0000])),
             Err(DeserializeError::DataOutOfRange(0x9)),
         );
     }
@@ -201,9 +193,10 @@ mod deserialize {
     #[test]
     fn complete_message() {
         assert_eq!(
-            Message::try_from(Packet {
-                data: [0x3003_1234, 0x5600_0000, 0x0, 0x0]
-            }),
+            Message::try_from(Packet::from_data(&[
+                0x3003_1234, 
+                0x5600_0000,
+            ])),
             Ok(Message {
                 status: Status::Complete,
                 data: [
@@ -222,9 +215,7 @@ mod deserialize {
     #[test]
     fn begin_message() {
         assert_eq!(
-            Message::try_from(Packet {
-                data: [0x3012_5B6D, 0x0, 0x0, 0x0]
-            }),
+            Message::try_from(Packet::from_data(&[0x3012_5B6D])),
             Ok(Message {
                 status: Status::Begin,
                 data: [
@@ -243,9 +234,10 @@ mod deserialize {
     #[test]
     fn continue_status() {
         assert_eq!(
-            Message::try_from(Packet {
-                data: [0x3025_3141, 0x1512_6500, 0x0, 0x0]
-            }),
+            Message::try_from(Packet::from_data(&[
+                0x3025_3141, 
+                0x1512_6500,
+            ])),
             Ok(Message {
                 status: Status::Continue,
                 data: [
@@ -264,9 +256,7 @@ mod deserialize {
     #[test]
     fn end() {
         assert_eq!(
-            Message::try_from(Packet {
-                data: [0x3030_0000, 0x0, 0x0, 0x0]
-            }),
+            Message::try_from(Packet::from_data(&[0x3030_0000])),
             Ok(Message {
                 status: Status::End,
                 data: Default::default(),
@@ -295,9 +285,7 @@ mod serialize {
                 ],
                 data_len: 2,
             }),
-            Packet {
-                data: [0x3002_2B4D, 0x0, 0x0, 0x0]
-            },
+            Packet::from_data(&[0x3002_2B4D]),
         );
     }
 
@@ -316,9 +304,10 @@ mod serialize {
                 ],
                 data_len: 6,
             }),
-            Packet {
-                data: [0x3016_1414, 0x2135_6237, 0x0, 0x0]
-            },
+            Packet::from_data(&[
+                0x3016_1414, 
+                0x2135_6237,
+            ]),
         );
     }
 
@@ -337,9 +326,10 @@ mod serialize {
                 ],
                 data_len: 3,
             }),
-            Packet {
-                data: [0x3023_7F7F, 0x7F00_0000, 0x0, 0x0]
-            },
+            Packet::from_data(&[
+                0x3023_7F7F, 
+                0x7F00_0000,
+            ]),
         );
     }
 
@@ -351,9 +341,7 @@ mod serialize {
                 data: Default::default(),
                 data_len: 0,
             }),
-            Packet {
-                data: [0x3030_0000, 0x0, 0x0, 0x0]
-            },
+            Packet::from_data(&[0x3030_0000]),
         );
     }
 }
