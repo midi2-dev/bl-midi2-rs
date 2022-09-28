@@ -10,6 +10,7 @@ pub mod utility;
 
 mod bounded;
 mod helpers;
+mod message_trait;
 
 // todo: remove this
 use packet::Packet;
