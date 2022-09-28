@@ -1,7 +1,11 @@
-#[derive(Default, PartialEq)]
-pub struct Packet([u32; 4]);
+#[derive(Clone, Default, PartialEq)]
+pub struct Packet(pub [u32; 4]);
 
 impl Packet {
+    pub fn new() -> Self {
+        Default::default()
+    }
+
     /// Create a new packet with the given data.
     /// 
     /// Will panic if the data slice length is 
@@ -107,9 +111,14 @@ impl std::fmt::Debug for Packet {
 
 impl core::ops::Deref for Packet {
     type Target = [u32];
-
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+impl core::ops::DerefMut for Packet {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
 

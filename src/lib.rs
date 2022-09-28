@@ -1,4 +1,6 @@
+pub mod error;
 pub mod extended_system_exclusive;
+pub mod message;
 pub mod midi1;
 pub mod midi2;
 pub mod packet;
@@ -9,4 +11,5 @@ pub mod utility;
 mod bounded;
 mod helpers;
 
-pub use packet::Packet;
+// todo: remove this
+use packet::Packet;
