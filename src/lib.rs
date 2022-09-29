@@ -1,7 +1,7 @@
 pub mod error;
 pub mod extended_system_exclusive;
 pub mod message;
-pub mod midi1;
+pub mod midi1_channel_voice;
 pub mod midi2;
 pub mod packet;
 pub mod system_common;

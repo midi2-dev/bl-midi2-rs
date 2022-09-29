@@ -1,7 +1,7 @@
 use crate::{
     error::Error,
     helpers::mask, 
-    message_trait,
+    message_trait::{self, message_trait_impl},
     packet::Packet, 
 };
 
@@ -54,18 +54,7 @@ impl std::convert::TryFrom<Packet> for Message {
     }
 }
 
-impl message_trait::Message for Message {
-    fn group(&self) -> ux::u4 {
-        self.group
-    }
-
-    fn set_group(self, group: ux::u4) -> Self {
-        Self {
-            group,
-            ..self
-        }
-    }
-}
+message_trait_impl!(Message);
 
 fn validate_packet(p: &Packet) -> Result<(), Error>  {
     match super::validate_packet(&p) {
