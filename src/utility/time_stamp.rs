@@ -1,6 +1,6 @@
 use crate::{
     error::Error,
-    helpers::mask, 
+    helpers::truncate, 
     packet::Packet, 
 };
 use builder_derive::Builder;
@@ -31,7 +31,7 @@ impl std::convert::TryFrom<Packet> for Message {
     fn try_from(p: Packet) -> Result<Self, Self::Error> {
         match validate_packet(&p) {
             Ok(_) => Ok(Message {
-                time_stamp: mask(p[0]),
+                time_stamp: truncate(p[0]),
                 group: p.nibble(1),
             }),
             Err(e) => Err(e),

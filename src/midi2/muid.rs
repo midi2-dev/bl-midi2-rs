@@ -1,4 +1,4 @@
-use crate::helpers::mask;
+use crate::helpers::truncate;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Muid([u8; 4]);
@@ -11,10 +11,10 @@ impl Muid {
             .as_secs();
         let v = oorandom::Rand32::new(seed).rand_u32();
         Muid([
-            mask(v >> 26), 
-            mask((v & 0x00FF_0000) >> 16),
-            mask((v & 0x0000_FF00) >> 8),
-            mask(v & 0x0000_00FF), 
+            truncate(v >> 26), 
+            truncate((v & 0x00FF_0000) >> 16),
+            truncate((v & 0x0000_FF00) >> 8),
+            truncate(v & 0x0000_00FF), 
         ])
     }
 

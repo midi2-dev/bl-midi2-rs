@@ -1,5 +1,5 @@
 use super::controllers::Controller;
-use crate::{helpers::mask, Packet};
+use crate::{helpers::truncate, Packet};
 
 #[derive(
     Clone,
@@ -121,75 +121,75 @@ impl std::convert::TryFrom<Packet> for Message {
             0x4 => match u8::from(p.nibble(2)) {
                 0x8 => Ok(Message::NoteOff {
                     channel: p.nibble(3),
-                    note: mask(p.octet(2)),
+                    note: truncate(p.octet(2)),
                     velocity: p.word(2),
                     attribute: attribute(p.octet(3), p.word(3))?,
                 }),
                 0x9 => Ok(Message::NoteOn {
                     channel: p.nibble(3),
-                    note: mask(p.octet(2)),
+                    note: truncate(p.octet(2)),
                     velocity: p.word(2),
                     attribute: attribute(p.octet(3), p.word(3))?,
                 }),
                 0xA => Ok(Message::KeyPressure {
                     channel: p.nibble(3),
-                    note: mask(p.octet(2)),
+                    note: truncate(p.octet(2)),
                     data: p[1],
                 }),
                 0x0 => Ok(Message::RegisteredPerNoteController {
                     channel: p.nibble(3),
-                    note: mask(p.octet(2)),
+                    note: truncate(p.octet(2)),
                     controller: controller(p.octet(3))?,
                     data: p[1],
                 }),
                 0x1 => Ok(Message::AssignablePerNoteController {
                     channel: p.nibble(3),
-                    note: mask(p.octet(2)),
+                    note: truncate(p.octet(2)),
                     controller: p.octet(3),
                     data: p[1],
                 }),
                 0xF => Ok(Message::PerNoteManagement {
                     channel: p.nibble(3),
-                    note: mask(p.octet(2)),
+                    note: truncate(p.octet(2)),
                     detach: p.bit(30),
                     reset: p.bit(31),
                 }),
                 0xB => Ok(Message::ControlChange {
                     channel: p.nibble(3),
-                    index: mask(p.octet(2)),
+                    index: truncate(p.octet(2)),
                     data: p[1],
                 }),
                 0x2 => Ok(Message::RegisteredController {
                     channel: p.nibble(3),
-                    bank: mask(p.octet(2)),
-                    index: mask(p.octet(3)),
+                    bank: truncate(p.octet(2)),
+                    index: truncate(p.octet(3)),
                     data: p[1],
                 }),
                 0x3 => Ok(Message::AssignableController {
                     channel: p.nibble(3),
-                    bank: mask(p.octet(2)),
-                    index: mask(p.octet(3)),
+                    bank: truncate(p.octet(2)),
+                    index: truncate(p.octet(3)),
                     data: p[1],
                 }),
                 0x4 => Ok(Message::RelativeRegisteredController {
                     channel: p.nibble(3),
-                    bank: mask(p.octet(2)),
-                    index: mask(p.octet(3)),
+                    bank: truncate(p.octet(2)),
+                    index: truncate(p.octet(3)),
                     data: p[1],
                 }),
                 0x5 => Ok(Message::RelativeAssignableController {
                     channel: p.nibble(3),
-                    bank: mask(p.octet(2)),
-                    index: mask(p.octet(3)),
+                    bank: truncate(p.octet(2)),
+                    index: truncate(p.octet(3)),
                     data: p[1],
                 }),
                 0xC => Ok(Message::ProgramChange {
                     channel: p.nibble(3),
-                    program: mask(p.octet(4)),
+                    program: truncate(p.octet(4)),
                     bank: if p.bit(31) {
                         Some([
-                            mask(p.octet(6)),
-                            mask(p.octet(7)),
+                            truncate(p.octet(6)),
+                            truncate(p.octet(7)),
                         ])
                     } else {
                         None
@@ -205,7 +205,7 @@ impl std::convert::TryFrom<Packet> for Message {
                 }),
                 0x6 => Ok(Message::PerNotePitchBend {
                     channel: p.nibble(3),
-                    note: mask(p.octet(2)),
+                    note: truncate(p.octet(2)),
                     data: p[1],
                 }),
                 s => Err(DeserializeError::InvalidStatusByte(s)),
@@ -221,8 +221,8 @@ fn attribute(t: u8, data: u16) -> Result<Option<Attribute>, DeserializeError> {
         0x1 => Ok(Some(Attribute::ManufacturerSpecific(data))),
         0x2 => Ok(Some(Attribute::ProfileSpecific(data))),
         0x3 => Ok(Some(Attribute::Pitch7_9 {
-            note: mask(data >> 9),
-            pitch_up: mask(data),
+            note: truncate(data >> 9),
+            pitch_up: truncate(data),
         })),
         t => Err(DeserializeError::InvalidAttributeType(t)),
     }

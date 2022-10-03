@@ -1,6 +1,6 @@
 use crate::{
     error::Error,
-    helpers::mask, 
+    helpers::truncate, 
     packet::Packet,
 };
 use builder_derive::Builder;
@@ -9,7 +9,6 @@ use getters_derive::Getters;
 #[derive(
     Clone,
     Debug, 
-    Default, 
     PartialEq,
     Builder,
     Getters,
@@ -28,8 +27,8 @@ impl std::convert::TryFrom<Packet> for Message {
             Ok(_) => Ok(Message{
                 group: p.nibble(1),
                 channel: p.nibble(3),
-                note: mask(p.octet(2)),
-                velocity: mask(p.octet(3)),
+                note: truncate(p.octet(2)),
+                velocity: truncate(p.octet(3)),
             }),
             Err(e) => Err(e),
         }

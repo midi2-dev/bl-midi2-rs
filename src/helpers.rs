@@ -1,6 +1,6 @@
 use crate::bounded::Bounded;
 
-pub fn mask<U, T>(u: U) -> T
+pub fn truncate<U, T>(u: U) -> T
 where
     U: core::ops::BitAnd<U>,
     T: std::convert::TryFrom<<U as std::ops::BitAnd>::Output>,
@@ -16,14 +16,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn mask_u8_to_u7() {
+    fn truncate_u8_to_u7() {
         let v: u8 = 0b0110_0111;
-        assert_eq!(ux::u7::new(0b110_0111), mask(v));
+        assert_eq!(ux::u7::new(0b110_0111), truncate(v));
     }
 
     #[test]
-    fn mask_u8_to_u4() {
+    fn truncate_u8_to_u4() {
         let v: u8 = 0b0110_0111;
-        assert_eq!(ux::u4::new(0b0111), mask(v));
+        assert_eq!(ux::u4::new(0b0111), truncate(v));
     }
 }

@@ -16,8 +16,7 @@ use getters_derive::Getters;
 pub struct Message {
     group: ux::u4,
     channel: ux::u4,
-    note: ux::u7,
-    velocity: ux::u7,
+    bend: ux::u14,
 }
 
 impl std::convert::TryFrom<Packet> for Message {
@@ -27,8 +26,7 @@ impl std::convert::TryFrom<Packet> for Message {
             Ok(_) => Ok(Message{
                 group: p.nibble(1),
                 channel: p.nibble(3),
-                note: truncate(p.octet(2)),
-                velocity: truncate(p.octet(3)),
+                bend: (ux::u14::from(p.octet(3)) << 7) | ux::u14::from(p.octet(2)),
             }),
             Err(e) => Err(e),
         }
@@ -38,7 +36,7 @@ impl std::convert::TryFrom<Packet> for Message {
 fn validate_packet(p: &Packet) -> Result<(), Error> {
     match super::validate_packet(p) {
         Ok(_) => {
-            if p.nibble(2) != ux::u4::new(0b1000) {
+            if p.nibble(2) != ux::u4::new(0b1110) {
                 Err(Error::InvalidData)
             } else {
                 Ok(())
@@ -53,10 +51,10 @@ impl From<Message> for Packet {
         Packet::new()
             .set_nibble(0, ux::u4::new(0x2))
             .set_nibble(1, m.group)
-            .set_nibble(2, ux::u4::new(0x8))
+            .set_nibble(2, ux::u4::new(0b1110))
             .set_nibble(3, m.channel)
-            .set_octet(2, m.note.into())
-            .set_octet(3, m.velocity.into())
+            .set_octet(2, truncate(m.bend & ux::u14::new(0b0000000_0111111)))
+            .set_octet(3, truncate(m.bend >> 7))
     }
 }
 
@@ -65,17 +63,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn wrong_type() {
-        assert_eq!(
-            Message::try_from(Packet::from_data(&[0x1000_0000])),
-            Err(Error::InvalidData),
-        );
-    }
-
-    #[test]
     fn wrong_status() {
         assert_eq!(
-            Message::try_from(Packet::from_data(&[0x2040_0000])),
+            Message::try_from(Packet::from_data(&[0x2000_0000])),
             Err(Error::InvalidData),
         );
     }
@@ -83,12 +73,11 @@ mod tests {
     #[test]
     fn deserialize() {
         assert_eq!(
-            Message::try_from(Packet::from_data(&[0x2A80_3C58])),
-            Ok(Message{
-                group: ux::u4::new(0xA),
+            Message::try_from(Packet::from_data(&[0b0010_1011_1110_0000_01101001_00110011])),
+            Ok(Message {
+                group: ux::u4::new(0xB),
                 channel: ux::u4::new(0),
-                note: ux::u7::new(0x3C),
-                velocity: ux::u7::new(0x58),
+                bend: ux::u14::new(0b0110011_1101001),
             })
         );
     }
@@ -97,12 +86,11 @@ mod tests {
     fn serialize() {
         assert_eq!(
             Packet::from(Message {
-                group: ux::u4::new(0x3),
-                channel: ux::u4::new(0xA),
-                note: ux::u7::new(0x66),
-                velocity: ux::u7::new(0x5A),
+                group: ux::u4::new(0x5),
+                channel: ux::u4::new(0x0),
+                bend: ux::u14::new(0b0011011_0111001),
             }),
-            Packet::from_data(&[0x238A_665A]),
+            Packet::from_data(&[0b0010_0101_1110_0000_00111001_00011011]),
         );
     }
 }

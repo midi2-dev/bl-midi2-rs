@@ -1,4 +1,4 @@
-use crate::{helpers::mask, Packet};
+use crate::{helpers::truncate, Packet};
 
 #[derive(
     Clone,
@@ -34,14 +34,14 @@ impl std::convert::TryFrom<Packet> for Message {
         match u8::from(p.nibble(0)) {
             1 => match u8::from(p.octet(1)) {
                 0xF1 => Ok(Message::MidiTimeCode {
-                    time_code: mask(p.octet(2)),
+                    time_code: truncate(p.octet(2)),
                 }),
                 0xF2 => Ok(Message::SongPositionPointer([
-                    mask(p.octet(2)),
-                    mask(p.octet(3)),
+                    truncate(p.octet(2)),
+                    truncate(p.octet(3)),
                 ])),
                 0xF3 => Ok(Message::SongSelect {
-                    song_number: mask(p.octet(2)),
+                    song_number: truncate(p.octet(2)),
                 }),
                 0xF6 => Ok(Message::TuneRequest),
                 0xF8 => Ok(Message::TimingClock),
@@ -76,7 +76,7 @@ impl std::convert::From<Message> for Packet {
 
 fn message_packet(status: u8, byte1: Option<ux::u7>, byte2: Option<ux::u7>) -> Packet {
     let mut p = Packet::from_data(&[0x1000_0000])
-        .set_octet(1, mask(status));
+        .set_octet(1, truncate(status));
 
     if let Some(b) = byte1 {
         p = p.set_octet(2, b.into());

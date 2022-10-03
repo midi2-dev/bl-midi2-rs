@@ -1,4 +1,4 @@
-use crate::{helpers::mask, Packet};
+use crate::{helpers::truncate, Packet};
 
 #[derive(
     Clone,
@@ -55,7 +55,7 @@ impl std::convert::TryFrom<Packet> for Message {
                             data_len: u8::from(p.nibble(3)).into(),
                         };
                         for (i, val) in p.octets(2, 2 + m.data_len).iter().enumerate() {
-                            m.data[i] = mask(*val);
+                            m.data[i] = truncate(*val);
                         }
                         Ok(m)
                     },
@@ -71,7 +71,7 @@ impl std::convert::TryFrom<Packet> for Message {
 impl std::convert::From<Message> for Packet {
     fn from(m: Message) -> Self {
         Packet::from_data(&[0x3000_0000])
-            .set_nibble(2, mask(m.status as u8))
+            .set_nibble(2, truncate(m.status as u8))
             // see comment: ux missing From usize impls
             .set_nibble(3, u8::try_from(m.data_len).unwrap().try_into().unwrap())
             .set_octets(2, m.data.iter().map(|v| v.clone().into()).collect())

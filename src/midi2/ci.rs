@@ -1,6 +1,6 @@
 use super::*;
 use crate::{
-    helpers::mask,
+    helpers::truncate,
     extended_system_exclusive as ext_sysex,
 };
 
@@ -533,8 +533,8 @@ fn append_profile_id(p: profile::Id, mut data: Vec<u8>) -> Vec<u8> {
 
 fn append_profiles(profiles: Vec<profile::Id>, mut data: Vec<u8>) -> Vec<u8> {
     assert!(data.len() < u16::from(ux::u14::MAX).into());
-    data.push(mask(profiles.len()));
-    data.push(mask(profiles.len() >> 3));
+    data.push(truncate(profiles.len()));
+    data.push(truncate(profiles.len() >> 3));
     for p in profiles {
         data = append_profile_id(p, data);
     }

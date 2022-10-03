@@ -8,7 +8,6 @@ use getters_derive::Getters;
 #[derive(
     Clone,
     Debug,
-    Default,
     PartialEq,
     Builder,
     Getters,
