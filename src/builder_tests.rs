@@ -1,4 +1,4 @@
-use midi2_derive::Builder;
+use builder_derive::Builder;
 use crate::error::Error;
 
 #[derive(Builder)]

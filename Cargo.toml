@@ -1,9 +1,10 @@
 [package]
-name = "midi2-rs"
+name = "midi2"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-midi2-derive = { path = "midi2-derive" }
+builder-derive = { path = "builder-derive" }
+getters-derive = { path = "getters-derive" }
 oorandom = "11.1.3"
 ux = "0.1.5"

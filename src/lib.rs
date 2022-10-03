@@ -14,6 +14,8 @@ mod message_trait;
 
 #[cfg(test)]
 mod builder_tests;
+#[cfg(test)]
+mod getter_tests;
 
 // todo: remove this
 use packet::Packet;
