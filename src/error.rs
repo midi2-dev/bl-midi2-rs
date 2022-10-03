@@ -6,4 +6,5 @@
 pub enum Error {
     InvalidData,
     MissingFields,
+    BufferOverflow,
 }

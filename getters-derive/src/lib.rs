@@ -35,21 +35,12 @@ fn getter(field: &syn::Field) -> proc_macro2::TokenStream {
                 &self.#field_name
             }
         )
-    } else if has_attr(field, "slice_interface") {
-        if let syn::Type::Tuple(tup) = &field.ty {
-            if let syn::Type::Array(a) = &tup.elems[0] {
-                let array_type = &*a.elem;
-                quote!(
-                    fn #field_name(&self) -> &[#array_type] {
-                        &self.#field_name.0[0..self.#field_name.1]
-                    }
-                )
-            } else {
-                unreachable!()
+    } else if let Some(ty) = slice_data_type(&field.ty) {
+        quote!(
+            fn #field_name(&self) -> &[#ty] {
+                self.#field_name.data()
             }
-        } else {
-            unreachable!()
-        }
+        )
     } else {
         quote!(
             fn #field_name(&self) -> #field_type {
@@ -57,6 +48,28 @@ fn getter(field: &syn::Field) -> proc_macro2::TokenStream {
             }
         )
     }
+}
+
+fn slice_data_type<'t>(ty: &'t syn::Type) -> Option<&'t syn::Type> {
+    if let syn::Type::Path(syn::TypePath {
+        path: syn::Path { segments, .. },
+        ..
+    }) = ty
+    {
+        if let core::option::Option::Some(syn::PathSegment {
+            ident,
+            arguments:
+                syn::PathArguments::AngleBracketed(syn::AngleBracketedGenericArguments { args, .. }),
+        }) = segments.last()
+        {
+            if ident == "SliceData" {
+                if let core::option::Option::Some(syn::GenericArgument::Type(ty)) = args.first() {
+                    return core::option::Option::Some(ty);
+                }
+            }
+        }
+    }
+    None
 }
 
 fn has_attr(field: &syn::Field, attr_name: &str) -> bool {

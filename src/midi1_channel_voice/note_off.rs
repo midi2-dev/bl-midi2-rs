@@ -1,15 +1,18 @@
 use crate::{
     error::Error,
     helpers::mask, 
-    message_trait::{self, message_trait_impl},
     packet::Packet,
 };
+use builder_derive::Builder;
+use getters_derive::Getters;
 
 #[derive(
     Clone,
     Debug, 
     Default, 
     PartialEq,
+    Builder,
+    Getters,
 )]
 pub struct Message {
     group: ux::u4,
@@ -57,8 +60,6 @@ impl From<Message> for Packet {
             .set_octet(3, m.velocity.into())
     }
 }
-
-message_trait_impl!(Message);
 
 #[cfg(test)]
 mod tests {

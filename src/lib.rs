@@ -10,7 +10,7 @@ pub mod utility;
 
 mod bounded;
 mod helpers;
-mod message_trait;
+mod slice_data;
 
 #[cfg(test)]
 mod builder_tests;

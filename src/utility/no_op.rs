@@ -1,14 +1,17 @@
 use crate::{
     error::Error, 
     packet::Packet,
-    message_trait,
 };
+use builder_derive::Builder;
+use getters_derive::Getters;
 
 #[derive(
     Clone,
     Debug,
     Default,
     PartialEq,
+    Builder,
+    Getters,
 )]
 pub struct Message {
     group: ux::u4,
@@ -26,19 +29,6 @@ impl std::convert::TryFrom<Packet> for Message {
         match validate_packet(&p) {
             Ok(_) => Ok(Message{ group: p.nibble(1) }),
             Err(e) => Err(e),
-        }
-    }
-}
-
-impl message_trait::Message for Message {
-    fn group(&self) -> ux::u4 {
-        self.group
-    }
-
-    fn set_group(self, group: ux::u4) -> Self {
-        Self {
-            group,
-            ..self
         }
     }
 }

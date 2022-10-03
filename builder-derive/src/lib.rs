@@ -96,15 +96,37 @@ fn assign_field(field: &syn::Field) -> proc_macro2::TokenStream {
     } else {
         if let Some(default) = field.attrs.iter().find_map(default_field_value) {
             quote!(
-                #field_name: match self.#field_name {
-                    Some(v) => v,
+                #field_name: match &self.#field_name {
+                    Some(v) => v.clone(),
                     None => #default,
+                }
+            )
+        } else if field.attrs.iter().any(value_default_attr) {
+            quote!(
+                #field_name: match &self.#field_name {
+                    Some(v) => v.clone(),
+                    None => Default::default(),
                 }
             )
         } else {
             quote!(#field_name: self.#field_name.clone().ok_or(Error::MissingFields)?)
         }
     }
+}
+
+fn value_default_attr(attr: &syn::Attribute) -> bool {
+    if attr.path.is_ident("builder") {
+        if let std::result::Result::Ok(syn::Meta::List(list)) = attr.parse_meta() {
+            for nested_meta in list.nested {
+                if let syn::NestedMeta::Meta(syn::Meta::Path(path)) = nested_meta {
+                    if path.is_ident("value_default") {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+    false
 }
 
 fn default_field_value(attr: &syn::Attribute) -> core::option::Option<syn::Ident> {
@@ -127,13 +149,25 @@ fn default_field_value(attr: &syn::Attribute) -> core::option::Option<syn::Ident
 fn functionize_field(field: &syn::Field) -> proc_macro2::TokenStream {
     let field_name = field.ident.as_ref().unwrap();
     let mut field_type = &field.ty;
-    if let core::option::Option::Some(inner_ty) = extract_inner_type(field_type, "Option") {
-        field_type = inner_ty;
+    if let Some(ty) = extract_inner_type(field_type, "SliceData") {
+        quote!(
+            fn #field_name(&mut self, #field_name: &[#ty]) -> Result<&mut Self, Error> {
+                self.#field_name = Some(Default::default());
+                match self.#field_name.as_mut().unwrap().set_data(#field_name) {
+                    Ok(_) => Ok(self),
+                    Err(e) => Err(e),
+                }
+            }
+        )
+    } else {
+        if let core::option::Option::Some(inner_ty) = extract_inner_type(field_type, "Option") {
+            field_type = inner_ty;
+        }
+        let setter_function_def = setter(field_name, field_type);
+        quote!(
+           #setter_function_def
+        )
     }
-    let setter_function_def = setter(field_name, field_type);
-    quote!(
-       #setter_function_def
-    )
 }
 
 fn setter(field_name: &syn::Ident, field_type: &syn::Type) -> proc_macro2::TokenStream {
@@ -166,7 +200,7 @@ fn extract_inner_type<'t>(ty: &'t syn::Type, expected_ident: &str) -> Option<&'t
         }) = segments.last()
         {
             if ident == expected_ident {
-                if let core::option::Option::Some(syn::GenericArgument::Type(ty)) = args.last() {
+                if let core::option::Option::Some(syn::GenericArgument::Type(ty)) = args.first() {
                     return core::option::Option::Some(ty);
                 }
             }

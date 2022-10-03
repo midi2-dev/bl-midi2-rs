@@ -1,4 +1,5 @@
 use getters_derive::Getters;
+use crate::slice_data::SliceData;
 
 #[derive(Getters)]
 #[derive(Default, Debug, PartialEq)]
@@ -6,8 +7,7 @@ struct TestMessage {
     note: ux::u7,
     #[getters(ref)]
     id: [u8; 3],
-    #[getters(slice_interface)]
-    data: ([ux::u7; 10], usize),
+    data: SliceData<ux::u7, 10>,
 }
 
 #[test]
@@ -30,7 +30,7 @@ fn ref_getter() {
 fn slice_interface_getter() {
     assert_eq!(
         TestMessage { 
-            data: (
+            data: SliceData(
                 [
                     ux::u7::new(0x1),
                     ux::u7::new(0x2),

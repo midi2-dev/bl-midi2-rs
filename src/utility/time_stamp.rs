@@ -1,36 +1,21 @@
 use crate::{
     error::Error,
     helpers::mask, 
-    message_trait::{self, message_trait_impl},
     packet::Packet, 
 };
+use builder_derive::Builder;
+use getters_derive::Getters;
 
 #[derive(
     Clone,
     Debug,
-    Default,
     PartialEq,
+    Builder,
+    Getters,
 )]
 pub struct Message {
     time_stamp: ux::u20,
     group: ux::u4,
-}
-
-impl Message {
-    pub fn new() -> Self {
-        Default::default()
-    }
-
-    pub fn time_stamp(&self) -> ux::u20 {
-        self.time_stamp
-    }
-
-    pub fn set_time_stamp(self, time_stamp: ux::u20) -> Self {
-        Self {
-            time_stamp,
-            ..self
-        }
-    }
 }
 
 impl std::convert::From<Message> for Packet {
@@ -53,8 +38,6 @@ impl std::convert::TryFrom<Packet> for Message {
         }
     }
 }
-
-message_trait_impl!(Message);
 
 fn validate_packet(p: &Packet) -> Result<(), Error>  {
     match super::validate_packet(&p) {
@@ -100,20 +83,9 @@ mod tests {
         assert_eq!(
             Message { 
                 time_stamp: ux::u20::new(0x314),
-                ..Default::default()
+                group: Default::default(),
             }.time_stamp(),
             ux::u20::new(0x314),
-        );
-    }
-
-    #[test]
-    fn set_time_stamp() {
-        assert_eq!(
-            Message::new().set_time_stamp(ux::u20::new(42)),
-            Message { 
-                time_stamp: ux::u20::new(42),
-                ..Default::default()
-            },
         );
     }
 }
