@@ -19,6 +19,44 @@ pub struct Message {
     bend: ux::u14,
 }
 
+impl Message {
+    pub fn bend_lsb(&self) -> ux::u7 {
+        truncate(self.bend)
+    }
+
+    pub fn bend_msb(&self) -> ux::u7 {
+        truncate(self.bend >> 7)
+    }
+}
+
+impl Builder {
+    pub fn bend_lsb(&mut self, bend_lsb: ux::u7) -> &mut Self {
+        match &mut self.bend {
+            Some(b) => {
+                *b &= ux::u14::new(0b1111111_0000000);
+                *b |= ux::u14::from(bend_lsb);
+            },
+            None => {
+                self.bend = Some(ux::u14::from(bend_lsb));
+            },
+        }
+        self
+    }
+
+    pub fn bend_msb(&mut self, bend_msb: ux::u7) -> &mut Self {
+        match &mut self.bend {
+            Some(b) => {
+                *b &= ux::u14::new(0b0000000_1111111);
+                *b |= ux::u14::from(bend_msb << 7);
+            },
+            None => {
+                self.bend = Some(ux::u14::from(bend_msb << 7));
+            },
+        }
+        self
+    }
+}
+
 impl std::convert::TryFrom<Packet> for Message {
     type Error = Error;
     fn try_from(p: Packet) -> Result<Self, Self::Error> {
