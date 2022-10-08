@@ -3,6 +3,7 @@ use crate::{
     helpers::truncate, 
     packet::Packet,
 };
+use super::attribute;
 use builder_derive::Builder;
 use getters_derive::Getters;
 
@@ -17,7 +18,8 @@ pub struct Message {
     group: ux::u4,
     channel: ux::u4,
     note: ux::u7,
-    velocity: ux::u7,
+    velocity: u16,
+    attribute: Option<attribute::Attribute>,
 }
 
 impl std::convert::TryFrom<Packet> for Message {
@@ -28,7 +30,8 @@ impl std::convert::TryFrom<Packet> for Message {
                 group: p.nibble(1),
                 channel: p.nibble(3),
                 note: truncate(p.octet(2)),
-                velocity: truncate(p.octet(3)),
+                velocity: p.word(2),
+                attribute: attribute::from_packet(&p)?,
             }),
             Err(e) => Err(e),
         }
@@ -38,7 +41,7 @@ impl std::convert::TryFrom<Packet> for Message {
 fn validate_packet(p: &Packet) -> Result<(), Error> {
     match super::validate_packet(p) {
         Ok(_) => {
-            if p.nibble(2) != ux::u4::new(0b1001) {
+            if p.nibble(2) != ux::u4::new(0b1000) {
                 Err(Error::InvalidData)
             } else {
                 Ok(())
@@ -50,14 +53,16 @@ fn validate_packet(p: &Packet) -> Result<(), Error> {
 
 impl From<Message> for Packet {
     fn from(m: Message) -> Self {
-        Packet::new()
-            .set_nibble(0, ux::u4::new(0x2))
+        let mut p = Packet::new()
+            .set_nibble(0, ux::u4::new(0x4))
             .set_nibble(1, m.group)
-            .set_nibble(2, ux::u4::new(0b1001))
+            .set_nibble(2, ux::u4::new(0b1000))
             .set_nibble(3, m.channel)
             .set_octet(2, m.note.into())
-            .set_octet(3, m.velocity.into())
-            .to_owned()
+            .set_word(2, m.velocity)
+            .to_owned();
+        attribute::write_attribute(&mut p, m.attribute);
+        p
     }
 }
 
@@ -76,7 +81,7 @@ mod tests {
     #[test]
     fn wrong_status() {
         assert_eq!(
-            Message::try_from(Packet::from_data(&[0x2080_0000])),
+            Message::try_from(Packet::from_data(&[0x4040_0000])),
             Err(Error::InvalidData),
         );
     }
@@ -84,12 +89,16 @@ mod tests {
     #[test]
     fn deserialize() {
         assert_eq!(
-            Message::try_from(Packet::from_data(&[0x2A90_3C58])),
-            Ok(Message{
-                group: ux::u4::new(0xA),
-                channel: ux::u4::new(0),
-                note: ux::u7::new(0x3C),
-                velocity: ux::u7::new(0x58),
+            Message::try_from(Packet::from_data(&[
+                0x408A_6301, 
+                0xABCD_1234,
+            ])),
+            Ok(Message {
+                group: ux::u4::new(0x0),
+                channel: ux::u4::new(0xA),
+                note: ux::u7::new(0x63),
+                velocity: 0xABCD,
+                attribute: Some(attribute::Attribute::ManufacturerSpecific(0x1234)),
             })
         );
     }
@@ -98,12 +107,13 @@ mod tests {
     fn serialize() {
         assert_eq!(
             Packet::from(Message {
-                group: ux::u4::new(0x3),
-                channel: ux::u4::new(0xA),
-                note: ux::u7::new(0x66),
-                velocity: ux::u7::new(0x5A),
+                group: ux::u4::new(0x5),
+                channel: ux::u4::new(0x2),
+                note: ux::u7::new(0x7B),
+                velocity: 0x07A0,
+                attribute: None
             }),
-            Packet::from_data(&[0x239A_665A]),
+            Packet::from_data(&[0x4582_7B00, 0x07A0_0000]),
         );
     }
 }

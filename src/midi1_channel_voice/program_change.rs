@@ -54,6 +54,7 @@ impl From<Message> for Packet {
             .set_nibble(2, ux::u4::new(0b1100))
             .set_nibble(3, m.channel)
             .set_octet(2, m.program.into())
+            .to_owned()
     }
 }
 

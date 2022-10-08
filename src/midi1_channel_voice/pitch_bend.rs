@@ -55,6 +55,7 @@ impl From<Message> for Packet {
             .set_nibble(3, m.channel)
             .set_octet(2, truncate(m.bend & ux::u14::new(0b0000000_0111111)))
             .set_octet(3, truncate(m.bend >> 7))
+            .to_owned()
     }
 }
 

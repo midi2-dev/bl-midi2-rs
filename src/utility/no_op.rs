@@ -18,7 +18,7 @@ pub struct Message {
 
 impl std::convert::From<Message> for Packet {
     fn from(m: Message) -> Self {
-        Packet::new().set_nibble(1, m.group)
+        Packet::new().set_nibble(1, m.group).to_owned()
     }
 }
 

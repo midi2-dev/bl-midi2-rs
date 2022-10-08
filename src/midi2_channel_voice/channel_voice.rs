@@ -96,17 +96,6 @@ pub enum Message {
     Debug,
     PartialEq,
 )]
-pub enum Attribute {
-    ManufacturerSpecific(u16),
-    ProfileSpecific(u16),
-    Pitch7_9 { note: ux::u7, pitch_up: ux::u9 },
-}
-
-#[derive(
-    Clone,
-    Debug,
-    PartialEq,
-)]
 pub enum DeserializeError {
     IncorrectMessageType(u8),
     InvalidAttributeType(u8),

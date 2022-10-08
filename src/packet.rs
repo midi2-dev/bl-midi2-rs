@@ -21,7 +21,7 @@ impl Packet {
         self.nibble(1)
     }
 
-    pub fn set_group(self, g: ux::u4) -> Self {
+    pub fn set_group(&mut self, g: ux::u4) -> &mut Self {
         self.set_nibble(1, g)
     }
 
@@ -30,7 +30,7 @@ impl Packet {
         (self.0[index / 32] >> (31 - (index % 32))) & 0b1 != 0
     }
 
-    pub fn set_bit(mut self, index: usize, v: bool) -> Self {
+    pub fn set_bit(&mut self, index: usize, v: bool) -> &mut Self {
         assert!(index < 128);
         let v: u32 = match v {
             true => 1,
@@ -47,7 +47,7 @@ impl Packet {
             .unwrap()
     }
 
-    pub fn set_nibble(mut self, index: usize, v: ux::u4) -> Self {
+    pub fn set_nibble(&mut self, index: usize, v: ux::u4) -> &mut Self {
         assert!(index < 32);
         self.0[index / 8] |= u32::from(v) << (28 - (index % 8) * 4);
         self
@@ -60,27 +60,24 @@ impl Packet {
             .unwrap()
     }
 
-    pub fn set_octet(mut self, index: usize, v: u8) -> Self {
+    pub fn set_octet(&mut self, index: usize, v: u8) -> &mut Self {
         assert!(index < 16);
         self.0[index / 4] |= (v as u32) << (24 - (index % 4) * 8);
         self
     }
 
-    pub fn octets(&self, begin: usize, end: usize) -> Vec<u8> {
-        assert!(begin <= end);
-        assert!(begin < 16);
-        assert!(end < 17);
-        let mut ret = Vec::with_capacity(end - begin);
-        for i in begin..end {
-            ret.push(self.octet(i.into()));
+    pub fn octets<'a>(&self, begin: usize, data: &'a mut [u8]) -> &'a [u8] {
+        assert!(begin + data.len() < 17);
+        for i in 0..data.len() {
+            data[i] = self.octet((i + begin).into()); 
         }
-        ret
+        data
     }
 
-    pub fn set_octets(mut self, begin: usize, d: Vec<u8>) -> Self {
-        assert!(begin + d.len() < 17);
-        for o in d.iter().enumerate() {
-            self = self.set_octet(o.0 + begin, *o.1);
+    pub fn set_octets(&mut self, begin: usize, data: &[u8]) -> &mut Self {
+        assert!(begin + data.len() < 17);
+        for o in data.iter().enumerate() {
+            self.set_octet(o.0 + begin, *o.1);
         }
         self
     }
@@ -92,7 +89,7 @@ impl Packet {
             .unwrap()
     }
 
-    pub fn set_word(mut self, index: usize, v: u16) -> Self {
+    pub fn set_word(&mut self, index: usize, v: u16) -> &mut Self {
         assert!(index < 8);
         self.0[index / 2] |= (v as u32) << (16 - (index % 2) * 16);
         self
@@ -167,7 +164,7 @@ mod tests {
         assert_eq!(
             Packet([0x0, 0x0, 0x0, 0x0])
             .set_group(ux::u4::new(2)),
-            Packet([0x0200_0000, 0x0, 0x0, 0x0]),
+            &Packet([0x0200_0000, 0x0, 0x0, 0x0]),
         );
     }
 
@@ -191,15 +188,15 @@ mod tests {
     fn set_bit() {
         assert_eq!(
             <Packet as Default>::default().set_bit(0, true),
-            Packet([0b1000_0000_0000_0000_0000_0000_0000_0000, 0x0, 0x0, 0x0]),
+            &Packet([0b1000_0000_0000_0000_0000_0000_0000_0000, 0x0, 0x0, 0x0]),
         );
         assert_eq!(
             <Packet as Default>::default().set_bit(10, true),
-            Packet([0b0000_0000_0010_0000_0000_0000_0000_0000, 0x0, 0x0, 0x0]),
+            &Packet([0b0000_0000_0010_0000_0000_0000_0000_0000, 0x0, 0x0, 0x0]),
         );
         assert_eq!(
             <Packet as Default>::default().set_bit(74, true),
-            Packet([0x0, 0x0, 0b0000_0000_0010_0000_0000_0000_0000_0000, 0x0]),
+            &Packet([0x0, 0x0, 0b0000_0000_0010_0000_0000_0000_0000_0000, 0x0]),
         );
     }
 
@@ -216,15 +213,15 @@ mod tests {
     fn set_nibble() {
         assert_eq!(
             <Packet as Default>::default().set_nibble(0, ux::u4::new(0xB)),
-            Packet([0xB000_0000, 0x0, 0x0, 0x0]),
+            &Packet([0xB000_0000, 0x0, 0x0, 0x0]),
         );
         assert_eq!(
             <Packet as Default>::default().set_nibble(5, ux::u4::new(0xB)),
-            Packet([0x0000_0B00, 0x0, 0x0, 0x0]),
+            &Packet([0x0000_0B00, 0x0, 0x0, 0x0]),
         );
         assert_eq!(
             <Packet as Default>::default().set_nibble(10, ux::u4::new(0xB)),
-            Packet([0x0, 0x00B0_0000, 0x0, 0x0]),
+            &Packet([0x0, 0x00B0_0000, 0x0, 0x0]),
         );
     }
 
@@ -241,53 +238,58 @@ mod tests {
     fn set_octet() {
         assert_eq!(
             <Packet as Default>::default().set_octet(0, 0xBE),
-            Packet([0xBE00_0000, 0x0, 0x0, 0x0]),
+            &Packet([0xBE00_0000, 0x0, 0x0, 0x0]),
         );
         assert_eq!(
             <Packet as Default>::default().set_octet(2, 0xBE),
-            Packet([0x0000_BE00, 0x0, 0x0, 0x0]),
+            &Packet([0x0000_BE00, 0x0, 0x0, 0x0]),
         );
         assert_eq!(
             <Packet as Default>::default().set_octet(5, 0xBE),
-            Packet([0x0, 0x00BE_0000, 0x0, 0x0]),
+            &Packet([0x0, 0x00BE_0000, 0x0, 0x0]),
         );
     }
 
     #[test]
     fn octets() {
-        assert_eq!(
-            Packet([0x0012_3456, 0x7800_0000, 0x0, 0x0])
-            .octets(1, 5),
-            vec![0x12, 0x34, 0x56, 0x78],
-        );
-        assert_eq!(
-            Packet([0x0012_3456, 0x7890_ABCD, 0xEF12_3456, 0x7890_ABCD])
-            .octets(0, 16),
-            vec![
-                0x00, 0x12, 0x34, 0x56, 0x78, 0x90, 0xAB, 0xCD, 0xEF, 0x12, 0x34, 0x56, 0x78, 0x90,
-                0xAB, 0xCD,
-            ],
-        );
-        assert_eq!(
-            Packet([0x0, 0x0, 0x0, 0x0])
-            .octets(0, 0),
-            vec![],
-        );
+        {
+            let mut data: [u8; 4] = Default::default();
+            assert_eq!(
+                &vec![0x12, 0x34, 0x56, 0x78],
+                Packet([0x0012_3456, 0x7800_0000, 0x0, 0x0]).octets(1, &mut data),
+            );
+        }
+        {
+            let mut data: [u8; 16] = Default::default();
+            assert_eq!(
+                Packet([0x0012_3456, 0x7890_ABCD, 0xEF12_3456, 0x7890_ABCD]).octets(0, &mut data),
+                &vec![
+                    0x00, 0x12, 0x34, 0x56, 0x78, 0x90, 0xAB, 0xCD, 0xEF, 0x12, 0x34, 0x56, 0x78, 0x90,
+                    0xAB, 0xCD,
+                ],
+            );
+        }
+        {
+            assert_eq!(
+                Packet([0x0, 0x0, 0x0, 0x0]).octets(0, &mut []),
+                &vec![],
+            );
+        }
     }
 
     #[test]
     fn set_octets() {
         assert_eq!(
-            <Packet as Default>::default().set_octets(2, vec![0xFF, 0xFF, 0xFF, 0xFF, 0xFF]),
-            Packet([0x0000_FFFF, 0xFFFF_FF00, 0x0, 0x0]),
+            <Packet as Default>::default().set_octets(2, &vec![0xFF, 0xFF, 0xFF, 0xFF, 0xFF]),
+            &Packet([0x0000_FFFF, 0xFFFF_FF00, 0x0, 0x0]),
         );
         assert_eq!(
-            <Packet as Default>::default().set_octets(0, Vec::new()),
-            Packet([0x0, 0x0, 0x0, 0x0]),
+            <Packet as Default>::default().set_octets(0, &Vec::new()),
+            &Packet([0x0, 0x0, 0x0, 0x0]),
         );
         assert_eq!(
-            <Packet as Default>::default().set_octets(0, [0xFF].repeat(16)),
-            Packet([0xFFFF_FFFF, 0xFFFF_FFFF, 0xFFFF_FFFF, 0xFFFF_FFFF]),
+            <Packet as Default>::default().set_octets(0, &[0xFF].repeat(16)),
+            &Packet([0xFFFF_FFFF, 0xFFFF_FFFF, 0xFFFF_FFFF, 0xFFFF_FFFF]),
         );
     }
 
@@ -303,15 +305,15 @@ mod tests {
     fn set_word() {
         assert_eq!(
             <Packet as Default>::default().set_word(0, 0x0ABE),
-            Packet([0x0ABE_0000, 0x0, 0x0, 0x0]),
+            &Packet([0x0ABE_0000, 0x0, 0x0, 0x0]),
         );
         assert_eq!(
             <Packet as Default>::default().set_word(1, 0x0ABE),
-            Packet([0x0000_0ABE, 0x0, 0x0, 0x0]),
+            &Packet([0x0000_0ABE, 0x0, 0x0, 0x0]),
         );
         assert_eq!(
             <Packet as Default>::default().set_word(3, 0x0ABE),
-            Packet([0x0, 0x0000_0ABE, 0x0, 0x0]),
+            &Packet([0x0, 0x0000_0ABE, 0x0, 0x0]),
         );
     }
 

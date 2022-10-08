@@ -57,6 +57,7 @@ impl From<Message> for Packet {
             .set_nibble(3, m.channel)
             .set_octet(2, m.controller.into())
             .set_octet(3, m.value.into())
+            .to_owned()
     }
 }
 

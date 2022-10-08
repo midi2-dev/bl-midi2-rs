@@ -22,7 +22,9 @@ impl std::convert::From<Message> for Packet {
     fn from(m: Message) -> Self {
         Packet::from_data(
             &[u32::from(m.time_stamp) |  0x0020_0000],
-        ).set_nibble(1, m.group)
+        )
+            .set_nibble(1, m.group)
+            .to_owned()
     }
 }
 
