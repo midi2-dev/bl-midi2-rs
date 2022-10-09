@@ -4,7 +4,7 @@ pub fn truncate<U, T>(u: U) -> T
 where
     U: core::ops::BitAnd<U>,
     T: std::convert::TryFrom<<U as std::ops::BitAnd>::Output>,
-    <T as TryFrom<<U as std::ops::BitAnd>::Output>>::Error: std::fmt::Debug,
+    <T as TryFrom<<U as std::ops::BitAnd>::Output>>::Error: core::fmt::Debug,
     T: Bounded,
     T: std::convert::Into<U>,
 {

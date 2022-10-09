@@ -22,41 +22,40 @@ pub struct Message {
     attribute: Option<attribute::Attribute>,
 }
 
+impl Message {
+    pub const TYPE_CODE: ux::u4 = super::TYPE_CODE;
+    pub const OP_CODE: ux::u4 = ux::u4::new(0b1001);
+}
+
 impl std::convert::TryFrom<Packet> for Message {
     type Error = Error;
     fn try_from(p: Packet) -> Result<Self, Self::Error> {
-        match validate_packet(&p) {
-            Ok(_) => Ok(Message{
-                group: p.nibble(1),
-                channel: p.nibble(3),
-                note: truncate(p.octet(2)),
-                velocity: p.word(2),
-                attribute: attribute::from_packet(&p)?,
-            }),
-            Err(e) => Err(e),
-        }
+        validate_packet(&p)?;
+        Ok(Message{
+            group: p.nibble(1),
+            channel: p.nibble(3),
+            note: truncate(p.octet(2)),
+            velocity: p.word(2),
+            attribute: attribute::from_packet(&p)?,
+        })
     }
 }
 
 fn validate_packet(p: &Packet) -> Result<(), Error> {
-    match super::validate_packet(p) {
-        Ok(_) => {
-            if p.nibble(2) != ux::u4::new(0b1001) {
-                Err(Error::InvalidData)
-            } else {
-                Ok(())
-            }
-        },
-        Err(e) => Err(e),
+    super::validate_packet(p)?;
+    if p.nibble(2) != Message::OP_CODE {
+        Err(Error::InvalidData)
+    } else {
+        Ok(())
     }
 }
 
 impl From<Message> for Packet {
     fn from(m: Message) -> Self {
         let mut p = Packet::new()
-            .set_nibble(0, ux::u4::new(0x4))
+            .set_nibble(0, Message::TYPE_CODE)
             .set_nibble(1, m.group)
-            .set_nibble(2, ux::u4::new(0b1001))
+            .set_nibble(2, Message::OP_CODE)
             .set_nibble(3, m.channel)
             .set_octet(2, m.note.into())
             .set_word(2, m.velocity)
