@@ -3,6 +3,7 @@ use crate::{
     packet::Packet,
 };
 
+pub mod note_on;
 pub mod note_off;
 
 mod attribute;
