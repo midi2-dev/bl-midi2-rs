@@ -3,12 +3,14 @@ use crate::{
     packet::Packet,
 };
 
-pub mod note_on;
-pub mod note_off;
 pub mod key_pressure;
 
 mod attribute;
+mod note;
+
 pub use attribute::Attribute;
+pub use note::note_on;
+pub use note::note_off;
 
 const TYPE_CODE: ux::u4 = ux::u4::new(0x4);
 
