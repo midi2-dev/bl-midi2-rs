@@ -5,14 +5,12 @@ use crate::{
 };
 use super::attribute;
 use builder_derive::Builder;
-use getters_derive::Getters;
 
 #[derive(
     Clone,
     Debug, 
     PartialEq,
     Builder,
-    Getters,
 )]
 pub struct Message {
     group: ux::u4,
@@ -22,45 +20,46 @@ pub struct Message {
     attribute: Option<attribute::Attribute>,
 }
 
+impl Message {
+    pub fn note(&self) -> ux::u7 { self.note }
+    pub fn velocity(&self) -> u16 { self.velocity }
+    pub fn attribute(&self) -> Option<attribute::Attribute> { self.attribute }
+}
+
+impl super::super::Message for Message {
+    const TYPE: ux::u4 = ux::u4::new(0x4);
+    fn group(&self) -> ux::u4 { self.group }
+}
+
+impl super::Message for Message {
+    const OP_CODE: ux::u4 = ux::u4::new(0b1001);
+    fn channel(&self) -> ux::u4 { self.channel }
+}
+
 impl std::convert::TryFrom<Packet> for Message {
     type Error = Error;
     fn try_from(p: Packet) -> Result<Self, Self::Error> {
-        match validate_packet(&p) {
-            Ok(_) => Ok(Message{
-                group: p.nibble(1),
-                channel: p.nibble(3),
-                note: truncate(p.octet(2)),
-                velocity: p.word(2),
-                attribute: attribute::from_packet(&p)?,
-            }),
-            Err(e) => Err(e),
-        }
-    }
-}
-
-fn validate_packet(p: &Packet) -> Result<(), Error> {
-    match super::validate_packet(p) {
-        Ok(_) => {
-            if p.nibble(2) != ux::u4::new(0b1001) {
-                Err(Error::InvalidData)
-            } else {
-                Ok(())
-            }
-        },
-        Err(e) => Err(e),
+        <Message as super::MessagePrivate>::validate_packet(&p)?;
+        Ok(Message{
+            group: p.nibble(1),
+            channel: p.nibble(3),
+            note: truncate(p.octet(2)),
+            velocity: p.word(2),
+            attribute: attribute::from_packet(&p)?,
+        })
     }
 }
 
 impl From<Message> for Packet {
     fn from(m: Message) -> Self {
-        let mut p = Packet::new()
-            .set_nibble(0, ux::u4::new(0x4))
-            .set_nibble(1, m.group)
-            .set_nibble(2, ux::u4::new(0b1001))
-            .set_nibble(3, m.channel)
+        let mut p = Packet::new();
+        <Message as super::MessagePrivate>::write_data_to_packet(
+            super::Data { group: m.group, channel: m.channel },
+            &mut p,
+        );
+        p
             .set_octet(2, m.note.into())
-            .set_word(2, m.velocity)
-            .to_owned();
+            .set_word(2, m.velocity);
         attribute::write_attribute(&mut p, m.attribute);
         p
     }
