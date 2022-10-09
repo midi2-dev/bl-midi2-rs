@@ -3,15 +3,11 @@ use crate::{
     helpers::truncate, 
     packet::Packet, 
 };
-use builder_derive::Builder;
-use getters_derive::Getters;
 
 #[derive(
     Clone,
     Debug,
     PartialEq,
-    Builder,
-    Getters,
 )]
 pub struct Message {
     time_stamp: ux::u20,
@@ -86,7 +82,7 @@ mod tests {
             Message { 
                 time_stamp: ux::u20::new(0x314),
                 group: Default::default(),
-            }.time_stamp(),
+            }.time_stamp,
             ux::u20::new(0x314),
         );
     }

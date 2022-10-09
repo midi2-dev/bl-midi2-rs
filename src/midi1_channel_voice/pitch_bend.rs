@@ -3,15 +3,11 @@ use crate::{
     helpers::truncate, 
     packet::Packet,
 };
-use builder_derive::Builder;
-use getters_derive::Getters;
 
 #[derive(
     Clone,
     Debug, 
     PartialEq,
-    Builder,
-    Getters,
 )]
 pub struct Message {
     group: ux::u4,

@@ -1,6 +1,5 @@
 pub type Message = super::Message<0b1000>;
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
