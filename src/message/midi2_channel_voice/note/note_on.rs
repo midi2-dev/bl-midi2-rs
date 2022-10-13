@@ -5,7 +5,7 @@ mod tests {
     use super::*;
     use crate::{
         error::Error,
-        packet::Packet,
+        packet::{Packet, PacketMethods},
         util::message_traits_test,
     };
     use super::super::attribute;

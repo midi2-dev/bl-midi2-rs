@@ -1,5 +1,5 @@
 use crate::{
-    packet::Packet,
+    packet::{Packet, PacketMethods},
     error::Error,
     util::Numeric,
 };

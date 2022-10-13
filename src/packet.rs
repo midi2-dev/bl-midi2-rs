@@ -1,72 +1,81 @@
 #[derive(Clone, Default, PartialEq)]
-pub struct Packet(pub [u32; 4]);
+pub struct Packet([u32; 4]);
 
 impl Packet {
     pub fn new() -> Self {
         Default::default()
     }
 
-    /// Create a new packet with the given data.
-    /// 
-    /// Will panic if the data slice length is 
-    /// greater than 4.
     pub fn from_data(d: &[u32]) -> Self {
         assert!(d.len() <= 4);
         let mut p: Packet = Default::default();
         p.0[0..d.len()].copy_from_slice(d);
         p
     }
+}
 
-    pub fn group(&self) -> ux::u4 {
-        self.nibble(1)
-    }
+pub trait PacketMethods : {
+    fn set_group(&mut self, g: ux::u4) -> &mut Self;
+    fn bit(&self, index: usize) -> bool;
+    fn set_bit(&mut self, index: usize, v: bool) -> &mut Self;
+    fn nibble(&self, index: usize) -> ux::u4;
+    fn set_nibble(&mut self, index: usize, v: ux::u4) -> &mut Self;
+    fn octet(&self, index: usize) -> u8;
+    fn set_octet(&mut self, index: usize, v: u8) -> &mut Self;
+    fn octets<'a>(&self, begin: usize, data: &'a mut [u8]) -> &'a [u8];
+    fn set_octets(&mut self, begin: usize, data: &[u8]) -> &mut Self;
+    fn word(&self, index: usize) -> u16;
+    fn set_word(&mut self, index: usize, v: u16) -> &mut Self;
+}
 
-    pub fn set_group(&mut self, g: ux::u4) -> &mut Self {
+impl PacketMethods for Packet {
+
+    fn set_group(&mut self, g: ux::u4) -> &mut Self {
         self.set_nibble(1, g)
     }
 
-    pub fn bit(&self, index: usize) -> bool {
+    fn bit(&self, index: usize) -> bool {
         assert!(index < 128);
-        (self.0[index / 32] >> (31 - (index % 32))) & 0b1 != 0
+        (self[index / 32] >> (31 - (index % 32))) & 0b1 != 0
     }
 
-    pub fn set_bit(&mut self, index: usize, v: bool) -> &mut Self {
+    fn set_bit(&mut self, index: usize, v: bool) -> &mut Self {
         assert!(index < 128);
         let v: u32 = match v {
             true => 1,
             false => 0,
         };
-        self.0[index / 32] |= v << (31 - (index % 32));
+        self[index / 32] |= v << (31 - (index % 32));
         self
     }
 
-    pub fn nibble(&self, index: usize) -> ux::u4 {
+    fn nibble(&self, index: usize) -> ux::u4 {
         assert!(index < 32);
-        ((self.0[index / 8] >> (28 - (index % 8) * 4)) & 0xF)
+        ((self[index / 8] >> (28 - (index % 8) * 4)) & 0xF)
             .try_into()
             .unwrap()
     }
 
-    pub fn set_nibble(&mut self, index: usize, v: ux::u4) -> &mut Self {
+    fn set_nibble(&mut self, index: usize, v: ux::u4) -> &mut Self {
         assert!(index < 32);
-        self.0[index / 8] |= u32::from(v) << (28 - (index % 8) * 4);
+        self[index / 8] |= u32::from(v) << (28 - (index % 8) * 4);
         self
     }
 
-    pub fn octet(&self, index: usize) -> u8 {
+    fn octet(&self, index: usize) -> u8 {
         assert!(index < 16);
-        ((self.0[index / 4] >> (24 - (index % 4) * 8)) & 0xFF)
+        ((self[index / 4] >> (24 - (index % 4) * 8)) & 0xFF)
             .try_into()
             .unwrap()
     }
 
-    pub fn set_octet(&mut self, index: usize, v: u8) -> &mut Self {
+    fn set_octet(&mut self, index: usize, v: u8) -> &mut Self {
         assert!(index < 16);
-        self.0[index / 4] |= (v as u32) << (24 - (index % 4) * 8);
+        self[index / 4] |= (v as u32) << (24 - (index % 4) * 8);
         self
     }
 
-    pub fn octets<'a>(&self, begin: usize, data: &'a mut [u8]) -> &'a [u8] {
+    fn octets<'a>(&self, begin: usize, data: &'a mut [u8]) -> &'a [u8] {
         assert!(begin + data.len() < 17);
         for i in 0..data.len() {
             data[i] = self.octet((i + begin).into()); 
@@ -74,7 +83,7 @@ impl Packet {
         data
     }
 
-    pub fn set_octets(&mut self, begin: usize, data: &[u8]) -> &mut Self {
+    fn set_octets(&mut self, begin: usize, data: &[u8]) -> &mut Self {
         assert!(begin + data.len() < 17);
         for o in data.iter().enumerate() {
             self.set_octet(o.0 + begin, *o.1);
@@ -82,16 +91,16 @@ impl Packet {
         self
     }
 
-    pub fn word(&self, index: usize) -> u16 {
+    fn word(&self, index: usize) -> u16 {
         assert!(index < 8);
-        ((self.0[index / 2] >> (16 - (index % 2) * 16)) & 0xFFFF)
+        ((self[index / 2] >> (16 - (index % 2) * 16)) & 0xFFFF)
             .try_into()
             .unwrap()
     }
 
-    pub fn set_word(&mut self, index: usize, v: u16) -> &mut Self {
+    fn set_word(&mut self, index: usize, v: u16) -> &mut Self {
         assert!(index < 8);
-        self.0[index / 2] |= (v as u32) << (16 - (index % 2) * 16);
+        self[index / 2] |= (v as u32) << (16 - (index % 2) * 16);
         self
     }
 }
@@ -132,40 +141,6 @@ mod tests {
     #[should_panic]
     fn from_data_too_long() {
         let _ = Packet::from_data(&[0x0, 0x0, 0x0, 0x0, 0x0]);
-    }
-
-    #[test]
-    fn group_reported() {
-        let data_group_pairings:[([u32; 4], ux::u4); 16] = [
-            ([0x0000_0000, 0x0, 0x0, 0x0], ux::u4::new(0)),
-            ([0x0100_0000, 0x0, 0x0, 0x0], ux::u4::new(1)),
-            ([0x0200_0000, 0x0, 0x0, 0x0], ux::u4::new(2)),
-            ([0x0300_0000, 0x0, 0x0, 0x0], ux::u4::new(3)),
-            ([0x0400_0000, 0x0, 0x0, 0x0], ux::u4::new(4)),
-            ([0x0500_0000, 0x0, 0x0, 0x0], ux::u4::new(5)),
-            ([0x0600_0000, 0x0, 0x0, 0x0], ux::u4::new(6)),
-            ([0x0700_0000, 0x0, 0x0, 0x0], ux::u4::new(7)),
-            ([0x0800_0000, 0x0, 0x0, 0x0], ux::u4::new(8)),
-            ([0x0900_0000, 0x0, 0x0, 0x0], ux::u4::new(9)),
-            ([0x0A00_0000, 0x0, 0x0, 0x0], ux::u4::new(10)),
-            ([0x0B00_0000, 0x0, 0x0, 0x0], ux::u4::new(11)),
-            ([0x0C00_0000, 0x0, 0x0, 0x0], ux::u4::new(12)),
-            ([0x0D00_0000, 0x0, 0x0, 0x0], ux::u4::new(13)),
-            ([0x0E00_0000, 0x0, 0x0, 0x0], ux::u4::new(14)),
-            ([0x0F00_0000, 0x0, 0x0, 0x0], ux::u4::new(15)),
-        ];
-        for (d, g) in data_group_pairings {
-            assert_eq!(Packet(d).group(), g);
-        }
-    }
-
-    #[test]
-    fn set_group() {
-        assert_eq!(
-            Packet([0x0, 0x0, 0x0, 0x0])
-            .set_group(ux::u4::new(2)),
-            &Packet([0x0200_0000, 0x0, 0x0, 0x0]),
-        );
     }
 
     #[test]

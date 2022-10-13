@@ -1,6 +1,6 @@
 use crate::{
     error::Error,
-    packet::Packet,
+    packet::{Packet, PacketMethods},
 };
 
 pub mod channel_pressure;

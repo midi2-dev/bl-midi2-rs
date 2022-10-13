@@ -1,4 +1,4 @@
-use crate::packet::Packet;
+use crate::packet::{Packet, PacketMethods};
 
 pub mod midi1_channel_voice;
 pub mod midi2_channel_voice;

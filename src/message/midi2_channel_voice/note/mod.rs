@@ -1,7 +1,7 @@
 use crate::{
     error::Error,
     util::Numeric, 
-    packet::Packet,
+    packet::{Packet, PacketMethods},
 };
 use super::attribute;
 
