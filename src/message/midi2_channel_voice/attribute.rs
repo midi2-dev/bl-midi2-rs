@@ -1,7 +1,7 @@
 use crate::{
     packet::Packet,
     error::Error,
-    helpers::truncate,
+    util::truncate,
 };
 
 #[derive(

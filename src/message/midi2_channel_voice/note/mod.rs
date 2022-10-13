@@ -1,6 +1,6 @@
 use crate::{
     error::Error,
-    helpers::truncate, 
+    util::truncate, 
     packet::Packet,
 };
 use super::attribute;

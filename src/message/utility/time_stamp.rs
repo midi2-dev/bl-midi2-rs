@@ -1,6 +1,6 @@
 use crate::{
     error::Error,
-    helpers::truncate, 
+    util::truncate, 
     packet::Packet, 
 };
 
@@ -53,6 +53,9 @@ fn validate_packet(p: &Packet) -> Result<(), Error>  {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::util::message_traits_test;
+    
+    message_traits_test!(Message);
 
     #[test]
     fn deserialize() {

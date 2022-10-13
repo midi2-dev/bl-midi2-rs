@@ -1,6 +1,6 @@
 use super::*;
 use crate::{
-    helpers::truncate,
+    util::truncate,
     extended_system_exclusive as ext_sysex,
 };
 

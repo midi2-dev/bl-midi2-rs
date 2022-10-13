@@ -1,4 +1,4 @@
-use crate::{helpers::truncate, Packet};
+use crate::{util::truncate, Packet};
 
 #[derive(
     Clone,

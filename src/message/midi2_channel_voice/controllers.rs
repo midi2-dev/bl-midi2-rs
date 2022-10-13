@@ -1,5 +1,5 @@
 use crate::{
-    helpers::truncate,
+    util::truncate,
     error::Error,
 };
 

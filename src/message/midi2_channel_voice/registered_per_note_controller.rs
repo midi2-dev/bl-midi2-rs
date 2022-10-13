@@ -1,6 +1,6 @@
 use crate::{
     error::Error,
-    helpers::truncate, 
+    util::truncate, 
     packet::Packet,
 };
 use super::controllers;
@@ -50,6 +50,9 @@ impl From<Message> for Packet {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::util::message_traits_test;
+    
+    message_traits_test!(Message);
 
     #[test]
     fn deserialize() {

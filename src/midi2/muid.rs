@@ -1,4 +1,4 @@
-use crate::helpers::truncate;
+use crate::util::truncate;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Muid([u8; 4]);

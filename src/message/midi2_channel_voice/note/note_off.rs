@@ -6,8 +6,11 @@ mod tests {
     use crate::{
         error::Error,
         packet::Packet,
+        util::message_traits_test,
     };
     use super::super::attribute;
+    
+    message_traits_test!(Message);
 
     #[test]
     fn wrong_type() {

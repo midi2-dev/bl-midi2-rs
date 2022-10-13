@@ -6,6 +6,7 @@ use crate::{
 pub mod key_pressure;
 pub mod assignable_per_note_controller;
 pub mod registered_per_note_controller;
+pub mod per_note_management;
 
 mod attribute;
 mod controllers;
