@@ -24,29 +24,21 @@ impl Message {
 impl std::convert::TryFrom<Packet> for Message {
     type Error = Error;
     fn try_from(p: Packet) -> Result<Self, Self::Error> {
-        super::validate_packet(&p)?;
-        if p.nibble(2) == Message::OP_CODE {
-            Ok(Message {
-                group: p.nibble(1),
-                channel: p.nibble(3),
-                note: truncate(p.octet(2)),
-                data: p[1],
-            })
-        } else {
-            Err(Error::InvalidData)
-        }
+        super::validate_packet(&p, Message::OP_CODE)?;
+        Ok(Message {
+            group: super::group_from_packet(&p),
+            channel: super::channel_from_packet(&p),
+            note: truncate(p.octet(2)),
+            data: p[1],
+        })
     }
 }
 
 impl From<Message> for Packet {
     fn from(m: Message) -> Self {
-        let mut p = Packet::new()
-            .set_nibble(0, Message::TYPE_CODE)
-            .set_nibble(1, m.group)
-            .set_nibble(2, Message::OP_CODE)
-            .set_nibble(3, m.channel)
-            .set_octet(2, m.note.into())
-            .to_owned();
+        let mut p = Packet::new();
+        super::write_data_to_packet(m.group, Message::OP_CODE, m.channel, &mut p);
+        p.set_octet(2, m.note.into());
         p[1] = m.data;
         p
     }

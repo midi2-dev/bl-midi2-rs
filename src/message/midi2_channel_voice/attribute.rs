@@ -10,6 +10,7 @@ use crate::{
     Debug,
     PartialEq,
 )]
+#[non_exhaustive]
 pub enum Attribute {
     ManufacturerSpecific(u16),
     ProfileSpecific(u16),

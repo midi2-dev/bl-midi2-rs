@@ -29,10 +29,10 @@ impl<const OP: u8> Message<OP> {
 impl<const OP: u8> std::convert::TryFrom<Packet> for Message<OP> {
     type Error = Error;
     fn try_from(p: Packet) -> Result<Self, Self::Error> {
-        validate_packet::<OP>(&p)?;
+        super::validate_packet(&p, Message::<OP>::OP_CODE)?;
         Ok(Message{
-            group: p.nibble(1),
-            channel: p.nibble(3),
+            group: super::group_from_packet(&p),
+            channel: super::channel_from_packet(&p),
             note: truncate(p.octet(2)),
             velocity: p.word(2),
             attribute: attribute::from_packet(&p)?,
@@ -40,25 +40,13 @@ impl<const OP: u8> std::convert::TryFrom<Packet> for Message<OP> {
     }
 }
 
-fn validate_packet<const OP: u8>(p: &Packet) -> Result<(), Error> {
-    super::validate_packet(p)?;
-    if p.nibble(2) != Message::<OP>::OP_CODE {
-        Err(Error::InvalidData)
-    } else {
-        Ok(())
-    }
-}
-
 impl<const OP: u8> From<Message<OP>> for Packet {
     fn from(m: Message<OP>) -> Self {
-        let mut p = Packet::new()
-            .set_nibble(0, Message::<OP>::TYPE_CODE)
-            .set_nibble(1, m.group)
-            .set_nibble(2, Message::<OP>::OP_CODE)
-            .set_nibble(3, m.channel)
+        let mut p = Packet::new();
+        super::write_data_to_packet(m.group, Message::<OP>::OP_CODE, m.channel, &mut p);
+        p
             .set_octet(2, m.note.into())
-            .set_word(2, m.velocity)
-            .to_owned();
+            .set_word(2, m.velocity);
         attribute::write_attribute(&mut p, m.attribute);
         p
     }
