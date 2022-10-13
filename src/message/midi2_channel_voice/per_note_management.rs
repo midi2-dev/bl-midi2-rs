@@ -1,7 +1,7 @@
 use crate::{
     error::Error,
     packet::{Packet, PacketMethods},
-    util::Numeric,
+    util::Truncate,
 };
 use super::super::channel_voice_helpers;
 

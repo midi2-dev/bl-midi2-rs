@@ -1,5 +1,5 @@
 use crate::{
-    util::Numeric,
+    util::Truncate,
     error::Error,
 };
 

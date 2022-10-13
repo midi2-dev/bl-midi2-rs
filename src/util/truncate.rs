@@ -1,6 +1,6 @@
 use crate::util::Bounded;
 
-pub trait Numeric : 
+pub trait Truncate : 
     Sized +
     Clone +
     Bounded + 
@@ -18,7 +18,7 @@ pub trait Numeric :
     }
 }
 
-impl<T> Numeric for T where T: 
+impl<T> Truncate for T where T: 
     Sized +
     Clone +
     Bounded + 

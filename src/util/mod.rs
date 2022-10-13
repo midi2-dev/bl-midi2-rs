@@ -3,11 +3,11 @@ use crate::{
 };
 
 pub mod bounded;
-pub mod numeric;
+pub mod truncate;
 mod slice_data;
 
 pub use bounded::Bounded;
-pub use numeric::Numeric;
+pub use truncate::Truncate;
 
 pub trait MessageTraits {
     const DUMMY: u8 = 0;

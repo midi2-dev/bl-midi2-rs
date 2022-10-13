@@ -1,6 +1,6 @@
 use crate::{
     error::Error,
-    util::Numeric, 
+    util::Truncate, 
     packet::{Packet, PacketMethods}, 
 };
 
