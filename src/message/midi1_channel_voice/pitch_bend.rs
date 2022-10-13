@@ -1,6 +1,6 @@
 use crate::{
     error::Error,
-    util::truncate, 
+    util::Numeric, 
     packet::Packet,
 };
 
@@ -49,8 +49,8 @@ impl From<Message> for Packet {
             .set_nibble(1, m.group)
             .set_nibble(2, ux::u4::new(0b1110))
             .set_nibble(3, m.channel)
-            .set_octet(2, truncate(m.bend & ux::u14::new(0b0000000_0111111)))
-            .set_octet(3, truncate(m.bend >> 7))
+            .set_octet(2, (m.bend & ux::u14::new(0b0000000_0111111)).truncate())
+            .set_octet(3, (m.bend >> 7).truncate())
             .to_owned()
     }
 }

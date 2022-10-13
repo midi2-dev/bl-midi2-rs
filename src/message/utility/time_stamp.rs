@@ -1,6 +1,6 @@
 use crate::{
     error::Error,
-    util::truncate, 
+    util::Numeric, 
     packet::Packet, 
 };
 
@@ -29,7 +29,7 @@ impl std::convert::TryFrom<Packet> for Message {
     fn try_from(p: Packet) -> Result<Self, Self::Error> {
         match validate_packet(&p) {
             Ok(_) => Ok(Message {
-                time_stamp: truncate(p[0]),
+                time_stamp: p[0].truncate(),
                 group: p.nibble(1),
             }),
             Err(e) => Err(e),

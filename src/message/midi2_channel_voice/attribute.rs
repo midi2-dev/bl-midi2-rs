@@ -1,7 +1,7 @@
 use crate::{
     packet::Packet,
     error::Error,
-    util::truncate,
+    util::Numeric,
 };
 
 #[derive(
@@ -23,8 +23,8 @@ pub fn from_packet(p: &Packet) -> Result<Option<Attribute>, Error> {
         0x1 => Ok(Some(Attribute::ManufacturerSpecific(p.word(3)))),
         0x2 => Ok(Some(Attribute::ProfileSpecific(p.word(3)))),
         0x3 => Ok(Some(Attribute::Pitch7_9 {
-            note: truncate(p.word(3) >> 9),
-            pitch_up: truncate(p.word(3)),
+            note: (p.word(3) >> 9).truncate(),
+            pitch_up: (p.word(3)).truncate(),
         })),
         _ => Err(Error::InvalidData),
     }

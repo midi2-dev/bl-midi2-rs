@@ -1,5 +1,5 @@
 use crate::{
-    util::truncate,
+    util::Numeric,
     error::Error,
 };
 
@@ -48,7 +48,7 @@ pub fn try_from_index_and_data(index: u8, data: u32) -> Result<Controller, Error
         2 => Ok(Controller::Breath(data)),
         3 => Ok(Controller::Pitch7_25 { 
             note: ux::u7::try_from(data >> 25).unwrap(),
-            pitch_up: truncate(data),
+            pitch_up: data.truncate(),
         }),
         7 => Ok(Controller::Volume(data)),
         8 => Ok(Controller::Balance(data)),

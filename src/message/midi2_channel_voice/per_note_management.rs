@@ -1,7 +1,7 @@
 use crate::{
     error::Error,
     packet::Packet,
-    util::truncate,
+    util::Numeric,
 };
 
 #[derive(
@@ -29,7 +29,7 @@ impl core::convert::TryFrom<Packet> for Message {
         Ok(Message {
             group: super::group_from_packet(&p),
             channel: super::channel_from_packet(&p),
-            note: truncate(p.octet(2)),
+            note: p.octet(2).truncate(),
             detach: 0b0000_0010 & p.octet(3) == 0b0000_0010,
             reset: 0b0000_0001 & p.octet(3) == 0b0000_0001,
         })

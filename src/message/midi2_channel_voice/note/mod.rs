@@ -1,6 +1,6 @@
 use crate::{
     error::Error,
-    util::truncate, 
+    util::Numeric, 
     packet::Packet,
 };
 use super::attribute;
@@ -33,7 +33,7 @@ impl<const OP: u8> std::convert::TryFrom<Packet> for Message<OP> {
         Ok(Message{
             group: super::group_from_packet(&p),
             channel: super::channel_from_packet(&p),
-            note: truncate(p.octet(2)),
+            note: p.octet(2).truncate(),
             velocity: p.word(2),
             attribute: attribute::from_packet(&p)?,
         })

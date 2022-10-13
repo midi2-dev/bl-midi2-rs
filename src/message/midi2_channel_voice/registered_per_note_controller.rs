@@ -1,6 +1,6 @@
 use crate::{
     error::Error,
-    util::truncate, 
+    util::Numeric, 
     packet::Packet,
 };
 use super::controllers;
@@ -29,7 +29,7 @@ impl std::convert::TryFrom<Packet> for Message {
         Ok(Message {
             group: super::group_from_packet(&p),
             channel: super::channel_from_packet(&p),
-            note: truncate(p.octet(2)),
+            note: p.octet(2).truncate(),
             controller: controllers::try_from_index_and_data(p.octet(3), p[1])?,
         })
     }

@@ -1,6 +1,6 @@
 use crate::{
     error::Error,
-    util::truncate, 
+    util::Numeric, 
     packet::Packet,
 };
 
@@ -23,8 +23,8 @@ impl std::convert::TryFrom<Packet> for Message {
             Ok(_) => Ok(Message{
                 group: p.nibble(1),
                 channel: p.nibble(3),
-                note: truncate(p.octet(2)),
-                pressure: truncate(p.octet(3)),
+                note: p.octet(2).truncate(),
+                pressure: p.octet(3).truncate(),
             }),
             Err(e) => Err(e),
         }
