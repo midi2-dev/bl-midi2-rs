@@ -1,8 +1,11 @@
 use crate::{
-    bounded::Bounded,
     packet::Packet,
 };
 
+pub mod bounded;
+mod slice_data;
+
+pub use bounded::Bounded;
 
 pub fn truncate<U, T>(u: U) -> T
 where
