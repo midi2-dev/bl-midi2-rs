@@ -4,6 +4,7 @@ use crate::{
     packet::{Packet, PacketMethods},
 };
 use super::controllers;
+use super::super::channel_voice_helpers;
 
 #[derive(
     Clone,
@@ -25,10 +26,14 @@ impl Message {
 impl std::convert::TryFrom<Packet> for Message {
     type Error = Error;
     fn try_from(p: Packet) -> Result<Self, Self::Error> {
-        super::validate_packet(&p, Message::OP_CODE)?;
+        channel_voice_helpers::validate_packet(
+            &p, 
+            Message::TYPE_CODE, 
+            Message::OP_CODE,
+        )?;
         Ok(Message {
-            group: super::group_from_packet(&p),
-            channel: super::channel_from_packet(&p),
+            group: channel_voice_helpers::group_from_packet(&p),
+            channel: channel_voice_helpers::channel_from_packet(&p),
             note: p.octet(2).truncate(),
             controller: controllers::try_from_index_and_data(p.octet(3), p[1])?,
         })
@@ -38,7 +43,13 @@ impl std::convert::TryFrom<Packet> for Message {
 impl From<Message> for Packet {
     fn from(m: Message) -> Self {
         let mut p = Packet::new();
-        super::write_data_to_packet(m.group, Message::OP_CODE, m.channel, &mut p);
+        channel_voice_helpers::write_data_to_packet(
+            Message::TYPE_CODE, 
+            m.group, 
+            Message::OP_CODE, 
+            m.channel, 
+            &mut p
+        );
         p.set_octet(2, m.note.into());
         let (index, data) = controllers::to_index_and_data(m.controller);
         p.set_octet(3, index);

@@ -1,5 +1,5 @@
 use crate::{
-    packet::{Packet, PacketMethods},
+    packet::Packet,
 };
 
 pub mod bounded;

@@ -3,6 +3,7 @@ use crate::{
     util::Numeric, 
     packet::{Packet, PacketMethods},
 };
+use super::super::channel_voice_helpers;
 
 #[derive(
     Clone,
@@ -15,40 +16,38 @@ pub struct Message {
     bend: ux::u14,
 }
 
+impl Message {
+    pub const TYPE_CODE: ux::u4 = super::TYPE_CODE;
+    pub const OP_CODE: ux::u4 = ux::u4::new(0b1110);
+}
+
 impl std::convert::TryFrom<Packet> for Message {
     type Error = Error;
     fn try_from(p: Packet) -> Result<Self, Self::Error> {
-        match validate_packet(&p) {
-            Ok(_) => Ok(Message{
-                group: p.nibble(1),
-                channel: p.nibble(3),
-                bend: (ux::u14::from(p.octet(3)) << 7) | ux::u14::from(p.octet(2)),
-            }),
-            Err(e) => Err(e),
-        }
-    }
-}
-
-fn validate_packet(p: &Packet) -> Result<(), Error> {
-    match super::validate_packet(p) {
-        Ok(_) => {
-            if p.nibble(2) != ux::u4::new(0b1110) {
-                Err(Error::InvalidData)
-            } else {
-                Ok(())
-            }
-        },
-        Err(e) => Err(e),
+        channel_voice_helpers::validate_packet(
+            &p,
+            Message::TYPE_CODE,
+            Message::OP_CODE,
+        )?;
+        Ok(Message{
+            group: p.nibble(1),
+            channel: p.nibble(3),
+            bend: (ux::u14::from(p.octet(3)) << 7) | ux::u14::from(p.octet(2)),
+        })
     }
 }
 
 impl From<Message> for Packet {
     fn from(m: Message) -> Self {
-        Packet::new()
-            .set_nibble(0, ux::u4::new(0x2))
-            .set_nibble(1, m.group)
-            .set_nibble(2, ux::u4::new(0b1110))
-            .set_nibble(3, m.channel)
+        let mut p = Packet::new();
+        channel_voice_helpers::write_data_to_packet(
+            Message::TYPE_CODE,
+            m.group,
+            Message::OP_CODE,
+            m.channel,
+            &mut p,
+        );
+        p
             .set_octet(2, (m.bend & ux::u14::new(0b0000000_0111111)).truncate())
             .set_octet(3, (m.bend >> 7).truncate())
             .to_owned()

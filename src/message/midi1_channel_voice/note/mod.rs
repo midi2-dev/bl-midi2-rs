@@ -3,7 +3,6 @@ use crate::{
     util::Numeric, 
     packet::{Packet, PacketMethods},
 };
-use super::attribute;
 use super::super::channel_voice_helpers;
 
 pub mod note_on;
@@ -18,8 +17,7 @@ pub struct Message<const OP: u8> {
     group: ux::u4,
     channel: ux::u4,
     note: ux::u7,
-    velocity: u16,
-    attribute: Option<attribute::Attribute>,
+    velocity: ux::u7,
 }
 
 impl<const OP: u8> Message<OP> {
@@ -36,11 +34,10 @@ impl<const OP: u8> std::convert::TryFrom<Packet> for Message<OP> {
             Message::<OP>::OP_CODE,
         )?;
         Ok(Message{
-            group: channel_voice_helpers::group_from_packet(&p),
-            channel: channel_voice_helpers::channel_from_packet(&p),
+            group: p.nibble(1),
+            channel: p.nibble(3),
             note: p.octet(2).truncate(),
-            velocity: p.word(2),
-            attribute: attribute::from_packet(&p)?,
+            velocity: p.octet(3).truncate(),
         })
     }
 }
@@ -57,8 +54,7 @@ impl<const OP: u8> From<Message<OP>> for Packet {
         );
         p
             .set_octet(2, m.note.into())
-            .set_word(2, m.velocity);
-        attribute::write_attribute(&mut p, m.attribute);
-        p
+            .set_octet(3, m.velocity.into())
+            .to_owned()
     }
 }
