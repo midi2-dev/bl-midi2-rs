@@ -14,6 +14,11 @@ pub struct Message {
     group: ux::u4,
 }
 
+impl Message {
+    pub const TYPE_CODE: ux::u4 = super::TYPE_CODE;
+    pub const OP_CODE: ux::u4 = ux::u4::new(0b0010);
+}
+
 impl std::convert::From<Message> for Packet {
     fn from(m: Message) -> Self {
         Packet::from_data(
@@ -27,26 +32,11 @@ impl std::convert::From<Message> for Packet {
 impl std::convert::TryFrom<Packet> for Message {
     type Error = Error;
     fn try_from(p: Packet) -> Result<Self, Self::Error> {
-        match validate_packet(&p) {
-            Ok(_) => Ok(Message {
-                time_stamp: p[0].truncate(),
-                group: p.nibble(1),
-            }),
-            Err(e) => Err(e),
-        }
-    }
-}
-
-fn validate_packet(p: &Packet) -> Result<(), Error>  {
-    match super::validate_packet(&p) {
-        Ok(()) => {
-            if p.nibble(2) != ux::u4::new(0x1) && p.nibble(2) != ux::u4::new(0x2) {
-                Err(Error::InvalidData)
-            } else {
-                Ok(())
-            }
-        },
-        err => err,
+        super::validate_packet(&p, Message::OP_CODE)?;
+        Ok(Message {
+            time_stamp: p[0].truncate(),
+            group: p.nibble(1),
+        })
     }
 }
 
