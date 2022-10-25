@@ -3,7 +3,7 @@ use crate::{
     util::Truncate, 
     packet::{Packet, PacketMethods},
 };
-use super::super::channel_voice_helpers;
+use super::super::helpers;
 
 pub mod note_on;
 pub mod note_off;
@@ -28,7 +28,7 @@ impl<const OP: u8> Message<OP> {
 impl<const OP: u8> std::convert::TryFrom<Packet> for Message<OP> {
     type Error = Error;
     fn try_from(p: Packet) -> Result<Self, Self::Error> {
-        channel_voice_helpers::validate_packet(
+        helpers::validate_packet(
             &p,
             Message::<OP>::TYPE_CODE,
             Message::<OP>::OP_CODE,
@@ -45,7 +45,7 @@ impl<const OP: u8> std::convert::TryFrom<Packet> for Message<OP> {
 impl<const OP: u8> From<Message<OP>> for Packet {
     fn from(m: Message<OP>) -> Self {
         let mut p = Packet::new();
-        channel_voice_helpers::write_data_to_packet(
+        helpers::write_data_to_packet(
             Message::<OP>::TYPE_CODE,
             m.group,
             Message::<OP>::OP_CODE,

@@ -2,12 +2,13 @@ use crate::{
     packet::Packet,
 };
 
-pub mod bounded;
-pub mod truncate;
+mod bounded;
+mod truncate;
 mod slice_data;
 
 pub use bounded::Bounded;
 pub use truncate::Truncate;
+pub use slice_data::SliceData;
 
 pub trait MessageTraits {
     const DUMMY: u8 = 0;

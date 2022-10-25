@@ -3,7 +3,7 @@ use crate::{
     packet::{Packet, PacketMethods},
     util::Truncate,
 };
-use super::super::channel_voice_helpers;
+use super::super::helpers;
 
 #[derive(
     Clone,
@@ -26,14 +26,14 @@ impl Message {
 impl core::convert::TryFrom<Packet> for Message {
     type Error = Error;
     fn try_from(p: Packet) -> Result<Self, Self::Error> {
-        channel_voice_helpers::validate_packet(
+        helpers::validate_packet(
             &p, 
             Message::TYPE_CODE, 
             Message::OP_CODE,
         )?;
         Ok(Message {
-            group: channel_voice_helpers::group_from_packet(&p),
-            channel: channel_voice_helpers::channel_from_packet(&p),
+            group: helpers::group_from_packet(&p),
+            channel: helpers::channel_from_packet(&p),
             note: p.octet(2).truncate(),
             detach: 0b0000_0010 & p.octet(3) == 0b0000_0010,
             reset: 0b0000_0001 & p.octet(3) == 0b0000_0001,
@@ -44,7 +44,7 @@ impl core::convert::TryFrom<Packet> for Message {
 impl core::convert::From<Message> for Packet {
     fn from(m: Message) -> Packet {
         let mut p = Packet::new();
-        channel_voice_helpers::write_data_to_packet(
+        helpers::write_data_to_packet(
             Message::TYPE_CODE, 
             m.group, 
             Message::OP_CODE, 
