@@ -77,15 +77,12 @@ impl std::convert::From<Message> for Packet {
 fn message_packet(status: u8, byte1: Option<ux::u7>, byte2: Option<ux::u7>) -> Packet {
     let mut p = Packet::from_data(&[0x1000_0000])
         .set_octet(1, truncate(status));
-
     if let Some(b) = byte1 {
         p = p.set_octet(2, b.into());
     }
-
     if let Some(b) = byte2 {
         p = p.set_octet(3, b.into());
     }
-
     p
 }
 

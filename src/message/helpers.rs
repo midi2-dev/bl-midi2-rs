@@ -25,8 +25,8 @@ pub fn write_data_to_packet(
     p: &mut Packet,
 ) {
     super::write_type_to_packet(type_code, p);
+    super::write_group_to_packet(group, p);
     p
-        .set_nibble(1, group)
         .set_nibble(2, op_code)
         .set_nibble(3, channel);
 }
