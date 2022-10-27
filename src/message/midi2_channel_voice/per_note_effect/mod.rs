@@ -23,8 +23,8 @@ macro_rules! per_note_effect_message {
         }
 
         impl Message {
-            pub const TYPE_CODE: ux::u4 = crate::message::midi2_channel_voice::TYPE_CODE;
-            pub const OP_CODE: ux::u4 = ux::u4::new($op_code);
+            const TYPE_CODE: ux::u4 = crate::message::midi2_channel_voice::TYPE_CODE;
+            const OP_CODE: ux::u4 = ux::u4::new($op_code);
         }
 
         impl std::convert::TryFrom<Packet> for Message {

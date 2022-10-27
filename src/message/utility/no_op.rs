@@ -13,8 +13,7 @@ pub struct Message {
 }
 
 impl Message {
-    pub const TYPE_CODE: ux::u4 = super::TYPE_CODE;
-    pub const OP_CODE: ux::u4 = ux::u4::new(0x0);
+    const OP_CODE: ux::u4 = ux::u4::new(0x0);
 }
 
 impl std::convert::From<Message> for Packet {

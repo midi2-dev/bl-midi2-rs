@@ -16,8 +16,7 @@ pub struct Message {
 }
 
 impl Message {
-    pub const TYPE_CODE: ux::u4 = super::TYPE_CODE;
-    pub const STATUS_CODE: u8 = 0xF1;
+    const STATUS_CODE: u8 = 0xF1;
 }
 
 impl std::convert::TryFrom<Packet> for Message {

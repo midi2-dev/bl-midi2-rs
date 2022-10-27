@@ -18,7 +18,7 @@ pub struct Message {
 pub type Data = SliceData<ux::u7, 6>;
 
 impl Message {
-    pub const TYPE_CODE: ux::u4 = ux::u4::new(0x3);
+    const TYPE_CODE: ux::u4 = ux::u4::new(0x3);
 }
 
 #[derive(

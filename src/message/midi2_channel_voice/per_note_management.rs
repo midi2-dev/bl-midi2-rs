@@ -19,8 +19,8 @@ pub struct Message {
 }
 
 impl Message {
-    pub const TYPE_CODE: ux::u4 = super::TYPE_CODE;
-    pub const OP_CODE: ux::u4 = ux::u4::new(0b1111);
+    const TYPE_CODE: ux::u4 = super::TYPE_CODE;
+    const OP_CODE: ux::u4 = ux::u4::new(0b1111);
 }
 
 impl core::convert::TryFrom<Packet> for Message {

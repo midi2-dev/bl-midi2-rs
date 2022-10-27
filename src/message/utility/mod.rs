@@ -6,8 +6,6 @@ use crate::{
 pub mod time_stamp;
 pub mod no_op;
 
-const TYPE_CODE: ux::u4 = ux::u4::new(0x0);
-
 pub fn validate_packet(p: &Packet, op_code: ux::u4) -> Result<(), Error> {
     if p.nibble(0) != ux::u4::new(0x0) {
         Err(Error::InvalidData)

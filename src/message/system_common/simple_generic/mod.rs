@@ -15,8 +15,7 @@ macro_rules! simple_generic_message {
         }
 
         impl Message {
-            pub const TYPE_CODE: ux::u4 = crate::message::system_common::TYPE_CODE;
-            pub const STATUS_CODE: u8 = $op_code;
+            const STATUS_CODE: u8 = $op_code;
         }
 
         impl std::convert::TryFrom<Packet> for Message {
