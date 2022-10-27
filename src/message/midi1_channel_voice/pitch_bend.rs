@@ -32,7 +32,10 @@ impl std::convert::TryFrom<Packet> for Message {
         Ok(Message{
             group: p.nibble(1),
             channel: p.nibble(3),
-            bend: (ux::u14::from(p.octet(3)) << 7) | ux::u14::from(p.octet(2)),
+            bend: helpers::concatenate(
+                p.octet(2).truncate(), 
+                p.octet(3).truncate()
+            ),
         })
     }
 }
@@ -48,8 +51,8 @@ impl From<Message> for Packet {
             &mut p,
         );
         p
-            .set_octet(2, (m.bend & ux::u14::new(0b0000000_0111111)).truncate())
-            .set_octet(3, (m.bend >> 7).truncate())
+            .set_octet(2, helpers::least_significant_bit(m.bend).into())
+            .set_octet(3, helpers::most_significant_bit(m.bend).into())
             .to_owned()
     }
 }

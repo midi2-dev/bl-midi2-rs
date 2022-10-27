@@ -1,6 +1,7 @@
 use crate::{
     error::Error,
     packet::{Packet, PacketMethods},
+    util::Truncate,
 };
 
 pub fn validate_packet(
@@ -37,4 +38,16 @@ pub fn group_from_packet(p: &Packet) -> ux::u4 {
 
 pub fn channel_from_packet(p: &Packet) -> ux::u4 {
     p.nibble(3)
+}
+
+pub fn concatenate(lsb: ux::u7, msb: ux::u7) -> ux::u14 {
+    (ux::u14::from(msb) << 7) | ux::u14::from(lsb)
+}
+
+pub fn most_significant_bit(word_14: ux::u14) -> ux::u7 {
+    (word_14 >> 7).truncate()
+}
+
+pub fn least_significant_bit(word_14: ux::u14) -> ux::u7 {
+    (word_14 & ux::u14::new(0b0000000_0111111)).truncate()
 }

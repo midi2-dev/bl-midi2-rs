@@ -20,7 +20,7 @@ impl<const OP: u8> Message<OP> {
 impl<const OP: u8> std::convert::TryFrom<Packet> for Message<OP> {
     type Error = Error;
     fn try_from(p: Packet) -> Result<Self, Self::Error> {
-        super::validate_type(&p, Message::<OP>::STATUS_CODE)?;
+        super::validate_packet(&p, Message::<OP>::STATUS_CODE)?;
         Ok(Message::<OP> {
             group: super::super::helpers::group_from_packet(&p),
         })

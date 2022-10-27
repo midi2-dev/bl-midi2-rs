@@ -5,6 +5,9 @@ use crate::{
 
 const TYPE_CODE: ux::u4 = ux::u4::new(0x1);
 
+pub mod time_code;
+pub mod song_position_pointer;
+
 mod simple_generic;
 
 pub use simple_generic::tune_request;
@@ -15,7 +18,7 @@ pub use simple_generic::stop;
 pub use simple_generic::active_sensing;
 pub use simple_generic::reset;
 
-fn validate_type(p: &Packet, status: u8) -> Result<(), Error> {
+fn validate_packet(p: &Packet, status: u8) -> Result<(), Error> {
     if p.nibble(0) != TYPE_CODE {
         Err(Error::InvalidData)
     } else if p.octet(1) != status {
