@@ -1,4 +1,5 @@
-pub type Message = super::Message<0b1001>;
+use super::note_message;
+note_message!(0b1001);
 
 #[cfg(test)]
 mod tests {
@@ -8,7 +9,7 @@ mod tests {
         packet::Packet,
         util::message_traits_test,
     };
-    use super::super::attribute;
+    use crate::message::midi2_channel_voice::attribute;
 
     message_traits_test!(Message);
 

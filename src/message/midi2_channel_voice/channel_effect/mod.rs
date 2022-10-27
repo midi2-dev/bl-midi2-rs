@@ -1,67 +1,71 @@
-use crate::{
-    error::Error,
-    packet::Packet,
-};
-use super::super::helpers;
-
 pub mod pitch_bend;
 pub mod pressure;
 
-#[derive(
-    Clone,
-    Debug, 
-    PartialEq,
-)]
-pub struct Message<const OP: u8> {
-    group: ux::u4,
-    channel: ux::u4,
-    data: u32,
-}
+macro_rules! channel_effect_message {
+    ($op_code:expr) => {
+        use crate::{
+            error::Error,
+            packet::Packet,
+        };
+        use crate::message::helpers;
 
-impl<const OP: u8> Message<OP> {
-    pub const TYPE_CODE: ux::u4 = super::TYPE_CODE;
-    pub const OP_CODE: ux::u4 = ux::u4::new(OP);
-}
+        #[derive(
+            Clone,
+            Debug, 
+            PartialEq,
+        )]
+        pub struct Message {
+            group: ux::u4,
+            channel: ux::u4,
+            data: u32,
+        }
 
-impl<const OP: u8> std::convert::TryFrom<Packet> for Message<OP> {
-    type Error = Error;
-    fn try_from(p: Packet) -> Result<Self, Self::Error> {
-        helpers::validate_packet(
-            &p,
-            Message::<OP>::TYPE_CODE,
-            Message::<OP>::OP_CODE,
-        )?;
-        Ok(Message{
-            group: helpers::group_from_packet(&p),
-            channel: helpers::channel_from_packet(&p),
-            data: p[1],
-        })
+        impl Message {
+            pub const TYPE_CODE: ux::u4 = crate::message::midi2_channel_voice::TYPE_CODE;
+            pub const OP_CODE: ux::u4 = ux::u4::new($op_code);
+        }
+
+        impl std::convert::TryFrom<Packet> for Message {
+            type Error = Error;
+            fn try_from(p: Packet) -> Result<Self, Self::Error> {
+                helpers::validate_packet(
+                    &p,
+                    Message::TYPE_CODE,
+                    Message::OP_CODE,
+                )?;
+                Ok(Message{
+                    group: helpers::group_from_packet(&p),
+                    channel: helpers::channel_from_packet(&p),
+                    data: p[1],
+                })
+            }
+        }
+
+        impl From<Message> for Packet {
+            fn from(m: Message) -> Self {
+                let mut p = Packet::new();
+                helpers::write_data_to_packet(
+                    Message::TYPE_CODE,
+                    m.group,
+                    Message::OP_CODE,
+                    m.channel,
+                    &mut p,
+                );
+                p[1] = m.data;
+                p
+            }
+        }
     }
 }
 
-impl<const OP: u8> From<Message<OP>> for Packet {
-    fn from(m: Message<OP>) -> Self {
-        let mut p = Packet::new();
-        helpers::write_data_to_packet(
-            Message::<OP>::TYPE_CODE,
-            m.group,
-            Message::<OP>::OP_CODE,
-            m.channel,
-            &mut p,
-        );
-        p[1] = m.data;
-        p
-    }
-}
+pub(crate) use channel_effect_message;
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        util::message_traits_test,
-        packet::Packet,
-    };
+    use crate::util::message_traits_test;
+    use super::channel_effect_message;
 
-    type Message = super::Message<0b1111>;
+    channel_effect_message!(0b1111);
     
     message_traits_test!(Message);
     

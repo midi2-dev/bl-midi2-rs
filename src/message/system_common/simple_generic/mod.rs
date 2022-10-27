@@ -1,64 +1,92 @@
-use crate::{
-    packet::Packet,
-    error::Error,
-};
+macro_rules! simple_generic_message {
+    ($op_code:expr) => {
+        use crate::{
+            packet::Packet,
+            error::Error,
+        };
 
-#[derive(
-    Clone,
-    Debug,
-    PartialEq,
-)]
-pub struct Message<const OP: u8> {
-    group: ux::u4,
-}
+        #[derive(
+            Clone,
+            Debug,
+            PartialEq,
+        )]
+        pub struct Message {
+            group: ux::u4,
+        }
 
-impl<const OP: u8> Message<OP> {
-    pub const TYPE_CODE: ux::u4 = super::TYPE_CODE;
-    pub const STATUS_CODE: u8 = OP;
-}
+        impl Message {
+            pub const TYPE_CODE: ux::u4 = crate::message::system_common::TYPE_CODE;
+            pub const STATUS_CODE: u8 = $op_code;
+        }
 
-impl<const OP: u8> std::convert::TryFrom<Packet> for Message<OP> {
-    type Error = Error;
-    fn try_from(p: Packet) -> Result<Self, Self::Error> {
-        super::validate_packet(&p, Message::<OP>::STATUS_CODE)?;
-        Ok(Message::<OP> {
-            group: super::super::helpers::group_from_packet(&p),
-        })
+        impl std::convert::TryFrom<Packet> for Message {
+            type Error = Error;
+            fn try_from(p: Packet) -> Result<Self, Self::Error> {
+                crate::message::system_common::validate_packet(&p, Message::STATUS_CODE)?;
+                Ok(Message {
+                    group: crate::message::helpers::group_from_packet(&p),
+                })
+            }
+        }
+
+        impl std::convert::From<Message> for Packet {
+            fn from(m: Message) -> Self {
+                let mut p = Packet::new();
+                crate::message::system_common::write_data_to_packet(
+                    &mut p,
+                    m.group,
+                    Message::STATUS_CODE,
+                    None, 
+                    None
+                );
+                p
+            }
+        }
+
     }
 }
 
-impl<const OP: u8> std::convert::From<Message<OP>> for Packet {
-    fn from(m: Message<OP>) -> Self {
-        let mut p = Packet::new();
-        super::write_data_to_packet(
-            &mut p,
-            m.group,
-            Message::<OP>::STATUS_CODE,
-            None, 
-            None
-        );
-        p
-    }
-}
+pub(crate) use simple_generic_message;
 
-pub mod tune_request { pub type Message = super::Message<0xF6>; }
-pub mod timing_clock { pub type Message = super::Message<0xF8>; }
-pub mod start { pub type Message = super::Message<0xFA>; }
-pub mod cont { pub type Message = super::Message<0xFB>; }
-pub mod stop { pub type Message = super::Message<0xFC>; }
-pub mod active_sensing { pub type Message = super::Message<0xFE>; }
-pub mod reset { pub type Message = super::Message<0xFF>; }
+pub mod tune_request { 
+    use super::simple_generic_message;
+    simple_generic_message!(0xF6);
+}
+pub mod timing_clock { 
+    use super::simple_generic_message;
+    simple_generic_message!(0xF8);
+}
+pub mod start { 
+    use super::simple_generic_message;
+    simple_generic_message!(0xFA);
+}
+pub mod cont { 
+    use super::simple_generic_message;
+    simple_generic_message!(0xFB);
+}
+pub mod stop { 
+    use super::simple_generic_message;
+    simple_generic_message!(0xFC);
+}
+pub mod active_sensing { 
+    use super::simple_generic_message;
+    simple_generic_message!(0xFE);
+}
+pub mod reset { 
+    use super::simple_generic_message;
+    simple_generic_message!(0xFF);
+}
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::simple_generic_message;
     
-    type GenericMessage = Message<0xFF>;
+    simple_generic_message!(0xFF);
     
     #[test]
     fn serialize() {
         assert_eq!(
-            Packet::from(GenericMessage {
+            Packet::from(Message {
                 group: ux::u4::new(0x2),
             }),
             Packet::from_data(&[0x12FF_0000]),
@@ -68,8 +96,8 @@ mod tests {
     #[test]
     fn deserialize() {
         assert_eq!(
-            GenericMessage::try_from(Packet::from_data(&[0x1CFF_0000])),
-            Ok(GenericMessage { group: ux::u4::new(0xC) }),
+            Message::try_from(Packet::from_data(&[0x1CFF_0000])),
+            Ok(Message { group: ux::u4::new(0xC) }),
         )
 
     }

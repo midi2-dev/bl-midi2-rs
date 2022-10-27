@@ -1,1 +1,2 @@
-pub type Message = super::Message<0b0100>;
+use super::controller_message;
+controller_message!(0b0100);

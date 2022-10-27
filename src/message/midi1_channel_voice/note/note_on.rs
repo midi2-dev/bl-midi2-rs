@@ -1,4 +1,5 @@
-pub type Message = super::Message<0b1001>;
+use super::note_message;
+note_message!(0b1001);
 
 #[cfg(test)]
 mod tests {

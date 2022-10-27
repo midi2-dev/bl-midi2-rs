@@ -1,4 +1,5 @@
-pub type Message = super::Message<0b1010>;
+use super::per_note_effect_message;
+per_note_effect_message!(0b1010);
 
 #[cfg(test)]
 mod tests {

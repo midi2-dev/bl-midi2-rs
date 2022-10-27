@@ -1,1 +1,2 @@
-pub type Message = super::Message<0b1101>;
+use super::channel_effect_message;
+channel_effect_message!(0b1101);

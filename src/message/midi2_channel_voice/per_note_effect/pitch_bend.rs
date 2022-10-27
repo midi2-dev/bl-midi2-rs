@@ -1,1 +1,2 @@
-pub type Message = super::Message<0b0110>;
+use super::per_note_effect_message;
+per_note_effect_message!(0b0110);
