@@ -1,15 +1,11 @@
+use super::super::helpers;
 use crate::{
     error::Error,
-    util::Truncate, 
     packet::{Packet, PacketMethods},
+    util::Truncate,
 };
-use super::super::helpers;
 
-#[derive(
-    Clone,
-    Debug, 
-    PartialEq, Eq,
-)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Message {
     group: ux::u4,
     channel: ux::u4,
@@ -25,11 +21,7 @@ impl Message {
 impl core::convert::TryFrom<Packet> for Message {
     type Error = Error;
     fn try_from(p: Packet) -> Result<Self, Self::Error> {
-        helpers::validate_packet(
-            &p, 
-            Message::TYPE_CODE, 
-            Message::OP_CODE,
-        )?;
+        helpers::validate_packet(&p, Message::TYPE_CODE, Message::OP_CODE)?;
         Ok(Message {
             group: helpers::group_from_packet(&p),
             channel: helpers::channel_from_packet(&p),
@@ -46,11 +38,11 @@ impl From<Message> for Packet {
     fn from(m: Message) -> Self {
         let mut p = Packet::new();
         helpers::write_data_to_packet(
-            Message::TYPE_CODE, 
-            m.group, 
-            Message::OP_CODE, 
-            m.channel, 
-            &mut p
+            Message::TYPE_CODE,
+            m.group,
+            Message::OP_CODE,
+            m.channel,
+            &mut p,
         );
         p.set_octet(4, m.program.into());
         if let Some(v) = m.bank {
@@ -65,16 +57,13 @@ impl From<Message> for Packet {
 mod tests {
     use super::*;
     use crate::util::message_traits_test;
-    
+
     message_traits_test!(Message);
 
     #[test]
     fn deserialize() {
         assert_eq!(
-            Message::try_from(Packet::from_data(&[
-                0x42C0_0001, 
-                0x6600_7F7F,
-            ])),
+            Message::try_from(Packet::from_data(&[0x42C0_0001, 0x6600_7F7F,])),
             Ok(Message {
                 group: ux::u4::new(0x2),
                 channel: ux::u4::new(0x0),
@@ -93,10 +82,7 @@ mod tests {
                 program: ux::u7::new(0x7C),
                 bank: None,
             }),
-            Packet::from_data(&[
-                0x40CD_0000,
-                0x7C00_0000,
-            ])
+            Packet::from_data(&[0x40CD_0000, 0x7C00_0000,])
         )
     }
 }

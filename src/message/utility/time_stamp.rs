@@ -1,14 +1,10 @@
 use crate::{
     error::Error,
-    util::Truncate, 
-    packet::{Packet, PacketMethods}, 
+    packet::{Packet, PacketMethods},
+    util::Truncate,
 };
 
-#[derive(
-    Clone,
-    Debug,
-    PartialEq, Eq,
-)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Message {
     time_stamp: ux::u20,
     group: ux::u4,
@@ -20,9 +16,7 @@ impl Message {
 
 impl core::convert::From<Message> for Packet {
     fn from(m: Message) -> Self {
-        let mut p = Packet::from_data(
-            &[u32::from(m.time_stamp) |  0x0020_0000],
-        );
+        let mut p = Packet::from_data(&[u32::from(m.time_stamp) | 0x0020_0000]);
         p.set_nibble(1, m.group);
         p
     }
@@ -43,7 +37,7 @@ impl core::convert::TryFrom<Packet> for Message {
 mod tests {
     use super::*;
     use crate::util::message_traits_test;
-    
+
     message_traits_test!(Message);
 
     #[test]
@@ -71,10 +65,11 @@ mod tests {
     #[test]
     fn time_stamp() {
         assert_eq!(
-            Message { 
+            Message {
                 time_stamp: ux::u20::new(0x314),
                 group: Default::default(),
-            }.time_stamp,
+            }
+            .time_stamp,
             ux::u20::new(0x314),
         );
     }

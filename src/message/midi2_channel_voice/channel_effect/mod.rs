@@ -3,17 +3,10 @@ pub mod pressure;
 
 macro_rules! channel_effect_message {
     ($op_code:expr) => {
-        use crate::{
-            error::Error,
-            packet::Packet,
-        };
         use crate::message::helpers;
+        use crate::{error::Error, packet::Packet};
 
-        #[derive(
-            Clone,
-            Debug, 
-            PartialEq, Eq,
-        )]
+        #[derive(Clone, Debug, PartialEq, Eq)]
         pub struct Message {
             group: ux::u4,
             channel: ux::u4,
@@ -28,12 +21,8 @@ macro_rules! channel_effect_message {
         impl core::convert::TryFrom<Packet> for Message {
             type Error = Error;
             fn try_from(p: Packet) -> Result<Self, Self::Error> {
-                helpers::validate_packet(
-                    &p,
-                    Message::TYPE_CODE,
-                    Message::OP_CODE,
-                )?;
-                Ok(Message{
+                helpers::validate_packet(&p, Message::TYPE_CODE, Message::OP_CODE)?;
+                Ok(Message {
                     group: helpers::group_from_packet(&p),
                     channel: helpers::channel_from_packet(&p),
                     data: p[1],
@@ -55,20 +44,20 @@ macro_rules! channel_effect_message {
                 p
             }
         }
-    }
+    };
 }
 
 pub(crate) use channel_effect_message;
 
 #[cfg(test)]
 mod tests {
-    use crate::util::message_traits_test;
     use super::channel_effect_message;
+    use crate::util::message_traits_test;
 
     channel_effect_message!(0b1111);
-    
+
     message_traits_test!(Message);
-    
+
     #[test]
     fn serialize() {
         assert_eq!(
@@ -80,7 +69,7 @@ mod tests {
             Packet::from_data(&[0x46F6_0000, 0x8765_4321]),
         );
     }
-    
+
     #[test]
     fn deserialize() {
         assert_eq!(

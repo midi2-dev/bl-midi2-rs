@@ -11,10 +11,10 @@ impl Muid {
             .as_secs();
         let v = oorandom::Rand32::new(seed).rand_u32();
         Muid([
-            truncate(v >> 26), 
+            truncate(v >> 26),
             truncate((v & 0x00FF_0000) >> 16),
             truncate((v & 0x0000_FF00) >> 8),
-            truncate(v & 0x0000_00FF), 
+            truncate(v & 0x0000_00FF),
         ])
     }
 

@@ -1,15 +1,8 @@
 macro_rules! simple_generic_message {
     ($op_code:expr) => {
-        use crate::{
-            packet::Packet,
-            error::Error,
-        };
+        use crate::{error::Error, packet::Packet};
 
-        #[derive(
-            Clone,
-            Debug,
-            PartialEq, Eq,
-        )]
+        #[derive(Clone, Debug, PartialEq, Eq)]
         pub struct Message {
             group: ux::u4,
         }
@@ -35,43 +28,42 @@ macro_rules! simple_generic_message {
                     &mut p,
                     m.group,
                     Message::STATUS_CODE,
-                    None, 
-                    None
+                    None,
+                    None,
                 );
                 p
             }
         }
-
-    }
+    };
 }
 
 pub(crate) use simple_generic_message;
 
-pub mod tune_request { 
+pub mod tune_request {
     use super::simple_generic_message;
     simple_generic_message!(0xF6);
 }
-pub mod timing_clock { 
+pub mod timing_clock {
     use super::simple_generic_message;
     simple_generic_message!(0xF8);
 }
-pub mod start { 
+pub mod start {
     use super::simple_generic_message;
     simple_generic_message!(0xFA);
 }
-pub mod cont { 
+pub mod cont {
     use super::simple_generic_message;
     simple_generic_message!(0xFB);
 }
-pub mod stop { 
+pub mod stop {
     use super::simple_generic_message;
     simple_generic_message!(0xFC);
 }
-pub mod active_sensing { 
+pub mod active_sensing {
     use super::simple_generic_message;
     simple_generic_message!(0xFE);
 }
-pub mod reset { 
+pub mod reset {
     use super::simple_generic_message;
     simple_generic_message!(0xFF);
 }
@@ -79,9 +71,9 @@ pub mod reset {
 #[cfg(test)]
 mod tests {
     use super::simple_generic_message;
-    
+
     simple_generic_message!(0xFF);
-    
+
     #[test]
     fn serialize() {
         assert_eq!(
@@ -96,8 +88,9 @@ mod tests {
     fn deserialize() {
         assert_eq!(
             Message::try_from(Packet::from_data(&[0x1CFF_0000])),
-            Ok(Message { group: ux::u4::new(0xC) }),
+            Ok(Message {
+                group: ux::u4::new(0xC)
+            }),
         )
-
     }
 }

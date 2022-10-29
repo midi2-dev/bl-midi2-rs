@@ -4,12 +4,7 @@ use crate::{
     util::{SliceData, Truncate},
 };
 
-#[derive(
-    Clone,
-    Debug,
-    PartialEq,
-    Eq,
-)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Message {
     group: ux::u4,
     stream_id: u8,
@@ -23,12 +18,7 @@ impl Message {
     const TYPE_CODE: ux::u4 = ux::u4::new(0x5);
 }
 
-#[derive(
-    Copy, 
-    Clone, 
-    Debug, 
-    PartialEq, Eq,
-)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Status {
     Complete,
     Begin,
@@ -37,12 +27,7 @@ pub enum Status {
     UnexpectedEnd(Validity),
 }
 
-#[derive(
-    Copy, 
-    Clone, 
-    Debug, 
-    PartialEq, Eq,
-)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Validity {
     Valid,
     Invalid,
@@ -66,7 +51,7 @@ fn validate_packet(p: &Packet) -> Result<(), Error> {
     if p.nibble(0) != Message::TYPE_CODE {
         Err(Error::InvalidData)
     } else {
-        Ok(())        
+        Ok(())
     }
 }
 
@@ -76,9 +61,7 @@ fn status_from_packet(p: &Packet) -> Result<Status, Error> {
         0x1 => Ok(Status::Begin),
         0x2 => Ok(Status::Continue),
         0x3 => {
-            let all_data_set_to_zero = 
-                p[1..3].iter().all(|b| *b == 0) 
-                && p[0] & 0x0000_0011 == 0x0;
+            let all_data_set_to_zero = p[1..3].iter().all(|b| *b == 0) && p[0] & 0x0000_0011 == 0x0;
             if all_data_set_to_zero {
                 if number_of_bytes(p) == ux::u4::new(0x1) {
                     Ok(Status::UnexpectedEnd(Validity::Valid))
@@ -124,13 +107,16 @@ impl core::convert::From<Message> for Packet {
         let mut p = Packet::new();
         super::write_type_to_packet(Message::TYPE_CODE, &mut p);
         p.set_nibble(1, m.group);
-        p.set_nibble(2, match m.status {
-            Status::Complete => ux::u4::new(0x0),
-            Status::Begin => ux::u4::new(0x1),
-            Status::Continue => ux::u4::new(0x2),
-            Status::End => ux::u4::new(0x3),
-            Status::UnexpectedEnd(_) => ux::u4::new(0x3),
-        });
+        p.set_nibble(
+            2,
+            match m.status {
+                Status::Complete => ux::u4::new(0x0),
+                Status::Begin => ux::u4::new(0x1),
+                Status::Continue => ux::u4::new(0x2),
+                Status::End => ux::u4::new(0x3),
+                Status::UnexpectedEnd(_) => ux::u4::new(0x3),
+            },
+        );
         p.set_octet(2, m.stream_id);
         let n: ux::u4 = u8::try_from(m.data.len()).unwrap().truncate();
         p.set_nibble(3, n + ux::u4::new(1));
@@ -149,7 +135,7 @@ mod tests {
     fn deserialize() {
         assert_eq!(
             Message::try_from(Packet::from_data(&[
-                0x5B0C_AB01, 
+                0x5B0C_AB01,
                 0x0203_0405,
                 0x0607_0809,
                 0x1011_0000,
@@ -159,17 +145,7 @@ mod tests {
                 status: Status::Complete,
                 stream_id: 0xAB,
                 data: Data::from_data(&[
-                    0x01,
-                    0x02,
-                    0x03,
-                    0x04,
-                    0x05,
-                    0x06,
-                    0x07,
-                    0x08,
-                    0x09,
-                    0x10,
-                    0x11,
+                    0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10, 0x11,
                 ]),
             }),
         );
@@ -209,24 +185,10 @@ mod tests {
                 status: Status::End,
                 stream_id: 0xDA,
                 data: Data::from_data(&[
-                    0x01,
-                    0x02,
-                    0x03,
-                    0x04,
-                    0x05,
-                    0x06,
-                    0x07,
-                    0x08,
-                    0x09,
-                    0x0A,
+                    0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A,
                 ]),
             }),
-            Packet::from_data(&[
-                0x5F3B_DA01, 
-                0x0203_0405, 
-                0x0607_0809, 
-                0x0A00_0000
-            ]),
+            Packet::from_data(&[0x5F3B_DA01, 0x0203_0405, 0x0607_0809, 0x0A00_0000]),
         );
     }
 }

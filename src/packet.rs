@@ -14,7 +14,7 @@ impl Packet {
     }
 }
 
-pub trait PacketMethods : {
+pub trait PacketMethods {
     fn set_group(&mut self, g: ux::u4) -> &mut Self;
     fn bit(&self, index: usize) -> bool;
     fn set_bit(&mut self, index: usize, v: bool) -> &mut Self;
@@ -29,7 +29,6 @@ pub trait PacketMethods : {
 }
 
 impl PacketMethods for Packet {
-
     fn set_group(&mut self, g: ux::u4) -> &mut Self {
         self.set_nibble(1, g)
     }
@@ -78,7 +77,7 @@ impl PacketMethods for Packet {
     fn octets<'a>(&self, begin: usize, data: &'a mut [u8]) -> &'a [u8] {
         assert!(begin + data.len() < 17);
         for (i, d) in data.iter_mut().enumerate() {
-            *d = self.octet(i + begin); 
+            *d = self.octet(i + begin);
         }
         data
     }
@@ -239,16 +238,13 @@ mod tests {
             assert_eq!(
                 Packet([0x0012_3456, 0x7890_ABCD, 0xEF12_3456, 0x7890_ABCD]).octets(0, &mut data),
                 &[
-                    0x00, 0x12, 0x34, 0x56, 0x78, 0x90, 0xAB, 0xCD, 0xEF, 0x12, 0x34, 0x56, 0x78, 0x90,
-                    0xAB, 0xCD,
+                    0x00, 0x12, 0x34, 0x56, 0x78, 0x90, 0xAB, 0xCD, 0xEF, 0x12, 0x34, 0x56, 0x78,
+                    0x90, 0xAB, 0xCD,
                 ],
             );
         }
         {
-            assert_eq!(
-                Packet([0x0, 0x0, 0x0, 0x0]).octets(0, &mut []),
-                &[],
-            );
+            assert_eq!(Packet([0x0, 0x0, 0x0, 0x0]).octets(0, &mut []), &[],);
         }
     }
 

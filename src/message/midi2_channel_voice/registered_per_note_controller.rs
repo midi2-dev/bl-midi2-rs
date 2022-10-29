@@ -1,16 +1,12 @@
+use super::super::helpers;
+use super::controllers;
 use crate::{
     error::Error,
-    util::Truncate, 
     packet::{Packet, PacketMethods},
+    util::Truncate,
 };
-use super::controllers;
-use super::super::helpers;
 
-#[derive(
-    Clone,
-    Debug, 
-    PartialEq, Eq,
-)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Message {
     group: ux::u4,
     channel: ux::u4,
@@ -26,11 +22,7 @@ impl Message {
 impl core::convert::TryFrom<Packet> for Message {
     type Error = Error;
     fn try_from(p: Packet) -> Result<Self, Self::Error> {
-        helpers::validate_packet(
-            &p, 
-            Message::TYPE_CODE, 
-            Message::OP_CODE,
-        )?;
+        helpers::validate_packet(&p, Message::TYPE_CODE, Message::OP_CODE)?;
         Ok(Message {
             group: helpers::group_from_packet(&p),
             channel: helpers::channel_from_packet(&p),
@@ -44,11 +36,11 @@ impl From<Message> for Packet {
     fn from(m: Message) -> Self {
         let mut p = Packet::new();
         helpers::write_data_to_packet(
-            Message::TYPE_CODE, 
-            m.group, 
-            Message::OP_CODE, 
-            m.channel, 
-            &mut p
+            Message::TYPE_CODE,
+            m.group,
+            Message::OP_CODE,
+            m.channel,
+            &mut p,
         );
         p.set_octet(2, m.note.into());
         let (index, data) = controllers::to_index_and_data(m.controller);
@@ -62,14 +54,14 @@ impl From<Message> for Packet {
 mod tests {
     use super::*;
     use crate::util::message_traits_test;
-    
+
     message_traits_test!(Message);
 
     #[test]
     fn deserialize() {
         assert_eq!(
             Message::try_from(Packet::from_data(&[
-                0x4B06_7B03, 
+                0x4B06_7B03,
                 0b1011_0011_0010_1110_1111_1100_1011_1010,
             ])),
             Ok(Message {
@@ -83,7 +75,7 @@ mod tests {
             })
         );
     }
-    
+
     #[test]
     fn deserialize_invalid_controller() {
         assert_eq!(

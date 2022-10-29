@@ -5,18 +5,14 @@ pub mod relative_registered;
 
 macro_rules! controller_message {
     ($op_code:expr) => {
+        use crate::message::helpers;
         use crate::{
             error::Error,
-            util::Truncate, 
             packet::{Packet, PacketMethods},
+            util::Truncate,
         };
-        use crate::message::helpers;
 
-        #[derive(
-            Clone,
-            Debug, 
-            PartialEq, Eq,
-        )]
+        #[derive(Clone, Debug, PartialEq, Eq)]
         pub struct Message {
             group: ux::u4,
             channel: ux::u4,
@@ -33,12 +29,8 @@ macro_rules! controller_message {
         impl core::convert::TryFrom<Packet> for Message {
             type Error = Error;
             fn try_from(p: Packet) -> Result<Self, Self::Error> {
-                helpers::validate_packet(
-                    &p,
-                    Message::TYPE_CODE,
-                    Message::OP_CODE,
-                )?;
-                Ok(Message{
+                helpers::validate_packet(&p, Message::TYPE_CODE, Message::OP_CODE)?;
+                Ok(Message {
                     group: helpers::group_from_packet(&p),
                     channel: helpers::channel_from_packet(&p),
                     bank: p.octet(2).truncate(),
@@ -58,27 +50,25 @@ macro_rules! controller_message {
                     m.channel,
                     &mut p,
                 );
-                p
-                    .set_octet(2, m.bank.into())
-                    .set_octet(3, m.index.into());
+                p.set_octet(2, m.bank.into()).set_octet(3, m.index.into());
                 p[1] = m.data;
                 p
             }
         }
-    }
+    };
 }
 
 pub(crate) use controller_message;
 
 #[cfg(test)]
 mod tests {
-    use crate::util::message_traits_test;
     use super::controller_message;
-    
+    use crate::util::message_traits_test;
+
     controller_message!(0b1111);
-    
+
     message_traits_test!(Message);
-    
+
     #[test]
     fn serialize() {
         assert_eq!(
@@ -92,7 +82,7 @@ mod tests {
             Packet::from_data(&[0x43FC_513F, 0xF00F_F00F]),
         );
     }
-    
+
     #[test]
     fn deserialize() {
         assert_eq!(

@@ -4,11 +4,7 @@ use crate::{
     util::Truncate,
 };
 
-pub fn validate_packet(
-    p: &Packet, 
-    type_code: ux::u4,
-    op_code: ux::u4,
-) -> Result<(), Error> {
+pub fn validate_packet(p: &Packet, type_code: ux::u4, op_code: ux::u4) -> Result<(), Error> {
     if p.nibble(0) != type_code || p.nibble(2) != op_code {
         Err(Error::InvalidData)
     } else {
@@ -25,9 +21,7 @@ pub fn write_data_to_packet(
 ) {
     super::write_type_to_packet(type_code, p);
     super::write_group_to_packet(group, p);
-    p
-        .set_nibble(2, op_code)
-        .set_nibble(3, channel);
+    p.set_nibble(2, op_code).set_nibble(3, channel);
 }
 
 pub fn group_from_packet(p: &Packet) -> ux::u4 {

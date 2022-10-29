@@ -1,26 +1,25 @@
-use crate::{
-    packet::Packet,
-};
+use crate::packet::Packet;
 
 mod bounded;
-mod truncate;
 mod slice_data;
+mod truncate;
 
 pub use bounded::Bounded;
-pub use truncate::Truncate;
 pub use slice_data::SliceData;
+pub use truncate::Truncate;
 
 pub trait MessageTraits {
     const DUMMY: u8 = 0;
 }
 
-impl<T> MessageTraits for T where T:
-    Clone +
-    core::fmt::Debug +
-    PartialEq +
-    core::convert::TryFrom<Packet> +
-    core::convert::Into<Packet> +
-{}
+impl<T> MessageTraits for T where
+    T: Clone
+        + core::fmt::Debug
+        + PartialEq
+        + core::convert::TryFrom<Packet>
+        + core::convert::Into<Packet>
+{
+}
 
 #[cfg(test)]
 macro_rules! message_traits_test {

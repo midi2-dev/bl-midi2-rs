@@ -1,16 +1,11 @@
+use super::super::helpers;
 use crate::{
     error::Error,
-    util::Truncate, 
     packet::{Packet, PacketMethods},
+    util::Truncate,
 };
-use super::super::helpers;
 
-#[derive(
-    Clone,
-    Debug, 
-    PartialEq,
-    Eq,
-)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Message {
     group: ux::u4,
     channel: ux::u4,
@@ -25,18 +20,11 @@ impl Message {
 impl core::convert::TryFrom<Packet> for Message {
     type Error = Error;
     fn try_from(p: Packet) -> Result<Self, Self::Error> {
-        helpers::validate_packet(
-            &p,
-            Message::TYPE_CODE,
-            Message::OP_CODE,
-        )?;
-        Ok(Message{
+        helpers::validate_packet(&p, Message::TYPE_CODE, Message::OP_CODE)?;
+        Ok(Message {
             group: p.nibble(1),
             channel: p.nibble(3),
-            bend: helpers::concatenate(
-                p.octet(2).truncate(), 
-                p.octet(3).truncate()
-            ),
+            bend: helpers::concatenate(p.octet(2).truncate(), p.octet(3).truncate()),
         })
     }
 }
@@ -51,8 +39,7 @@ impl From<Message> for Packet {
             m.channel,
             &mut p,
         );
-        p
-            .set_octet(2, helpers::least_significant_bit(m.bend).into())
+        p.set_octet(2, helpers::least_significant_bit(m.bend).into())
             .set_octet(3, helpers::most_significant_bit(m.bend).into());
         p
     }
@@ -62,7 +49,7 @@ impl From<Message> for Packet {
 mod tests {
     use super::*;
     use crate::util::message_traits_test;
-    
+
     message_traits_test!(Message);
 
     #[test]
@@ -76,7 +63,9 @@ mod tests {
     #[test]
     fn deserialize() {
         assert_eq!(
-            Message::try_from(Packet::from_data(&[0b0010_1011_1110_0000_0110_1001_0011_0011])),
+            Message::try_from(Packet::from_data(&[
+                0b0010_1011_1110_0000_0110_1001_0011_0011
+            ])),
             Ok(Message {
                 group: ux::u4::new(0xB),
                 channel: ux::u4::new(0),

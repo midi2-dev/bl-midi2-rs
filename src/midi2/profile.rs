@@ -1,8 +1,4 @@
-#[derive(
-    Clone,
-    Debug,
-    PartialEq,
-)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Id {
     Standard {
         bank: u8,
@@ -16,15 +12,10 @@ pub enum Id {
     },
 }
 
-#[derive(
-    Clone,
-    Debug,
-    PartialEq,
-)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum SupportLevel {
     Partial,
     Minimum,
     Extended(ux::u7),
     Highest,
 }
-

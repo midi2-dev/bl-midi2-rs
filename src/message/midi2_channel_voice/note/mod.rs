@@ -1,23 +1,16 @@
-pub mod note_on;
 pub mod note_off;
+pub mod note_on;
 
 macro_rules! note_message {
     ($op_code:expr) => {
         use crate::{
             error::Error,
-            util::Truncate, 
+            message::{helpers, midi2_channel_voice::attribute},
             packet::{Packet, PacketMethods},
-            message::{
-                midi2_channel_voice::attribute,
-                helpers,
-            },
+            util::Truncate,
         };
 
-        #[derive(
-            Clone,
-            Debug, 
-            PartialEq, Eq,
-        )]
+        #[derive(Clone, Debug, PartialEq, Eq)]
         pub struct Message {
             group: ux::u4,
             channel: ux::u4,
@@ -34,12 +27,8 @@ macro_rules! note_message {
         impl core::convert::TryFrom<Packet> for Message {
             type Error = Error;
             fn try_from(p: Packet) -> Result<Self, Self::Error> {
-                helpers::validate_packet(
-                    &p,
-                    Message::TYPE_CODE,
-                    Message::OP_CODE,
-                )?;
-                Ok(Message{
+                helpers::validate_packet(&p, Message::TYPE_CODE, Message::OP_CODE)?;
+                Ok(Message {
                     group: helpers::group_from_packet(&p),
                     channel: helpers::channel_from_packet(&p),
                     note: p.octet(2).truncate(),
@@ -59,14 +48,12 @@ macro_rules! note_message {
                     m.channel,
                     &mut p,
                 );
-                p
-                    .set_octet(2, m.note.into())
-                    .set_word(2, m.velocity);
+                p.set_octet(2, m.note.into()).set_word(2, m.velocity);
                 attribute::write_attribute(&mut p, m.attribute);
                 p
             }
         }
-    }
+    };
 }
 
 pub(crate) use note_message;

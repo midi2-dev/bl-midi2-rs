@@ -4,11 +4,7 @@ use crate::{
     util::{SliceData, Truncate},
 };
 
-#[derive(
-    Clone,
-    Debug,
-    PartialEq, Eq,
-)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Message {
     group: ux::u4,
     status: Status,
@@ -21,12 +17,7 @@ impl Message {
     const TYPE_CODE: ux::u4 = ux::u4::new(0x3);
 }
 
-#[derive(
-    Copy, 
-    Clone, 
-    Debug, 
-    PartialEq, Eq,
-)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Status {
     Complete,
     Begin,
@@ -50,7 +41,7 @@ fn validate_type(p: &Packet) -> Result<(), Error> {
     if p.nibble(0) != Message::TYPE_CODE {
         Err(Error::InvalidData)
     } else {
-        Ok(())        
+        Ok(())
     }
 }
 
@@ -83,12 +74,15 @@ impl core::convert::From<Message> for Packet {
         let mut p = Packet::new();
         super::write_type_to_packet(Message::TYPE_CODE, &mut p);
         p.set_nibble(1, m.group);
-        p.set_nibble(2, match m.status {
-            Status::Complete => ux::u4::new(0x0),
-            Status::Begin => ux::u4::new(0x1),
-            Status::Continue => ux::u4::new(0x2),
-            Status::End => ux::u4::new(0x3),
-        });
+        p.set_nibble(
+            2,
+            match m.status {
+                Status::Complete => ux::u4::new(0x0),
+                Status::Begin => ux::u4::new(0x1),
+                Status::Continue => ux::u4::new(0x2),
+                Status::End => ux::u4::new(0x3),
+            },
+        );
         let n: ux::u4 = u8::try_from(m.data.len()).unwrap().truncate();
         p.set_nibble(3, n);
         for (i, d) in m.data.iter().enumerate() {
@@ -129,18 +123,11 @@ mod tests {
     #[test]
     fn deserialize() {
         assert_eq!(
-            Message::try_from(Packet::from_data(&[
-                0x3003_1234, 
-                0x5600_0000,
-            ])),
+            Message::try_from(Packet::from_data(&[0x3003_1234, 0x5600_0000,])),
             Ok(Message {
                 group: ux::u4::new(0x0),
                 status: Status::Complete,
-                data: Data::from_data(&[
-                    ux::u7::new(0x12), 
-                    ux::u7::new(0x34), 
-                    ux::u7::new(0x56),
-                ]),
+                data: Data::from_data(&[ux::u7::new(0x12), ux::u7::new(0x34), ux::u7::new(0x56),]),
             }),
         );
     }
@@ -151,11 +138,7 @@ mod tests {
             Packet::from(Message {
                 group: ux::u4::new(0x4),
                 status: Status::End,
-                data: Data::from_data(&[
-                    ux::u7::new(0x31),
-                    ux::u7::new(0x41),
-                    ux::u7::new(0x59),
-                ]),
+                data: Data::from_data(&[ux::u7::new(0x31), ux::u7::new(0x41), ux::u7::new(0x59),]),
             }),
             Packet::from_data(&[0x3433_3141, 0x5900_0000])
         );

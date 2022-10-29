@@ -4,12 +4,8 @@ note_message!(0b1001);
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        error::Error,
-        packet::Packet,
-        util::message_traits_test,
-    };
-    
+    use crate::{error::Error, packet::Packet, util::message_traits_test};
+
     message_traits_test!(Message);
 
     #[test]
@@ -32,7 +28,7 @@ mod tests {
     fn deserialize() {
         assert_eq!(
             Message::try_from(Packet::from_data(&[0x2A90_3C58])),
-            Ok(Message{
+            Ok(Message {
                 group: ux::u4::new(0xA),
                 channel: ux::u4::new(0),
                 note: ux::u7::new(0x3C),

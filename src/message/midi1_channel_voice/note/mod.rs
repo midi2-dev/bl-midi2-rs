@@ -1,20 +1,16 @@
-pub mod note_on;
 pub mod note_off;
+pub mod note_on;
 
 macro_rules! note_message {
     ($op_code:expr) => {
         use crate::{
             error::Error,
-            util::Truncate, 
-            packet::{Packet, PacketMethods},
             message::helpers,
+            packet::{Packet, PacketMethods},
+            util::Truncate,
         };
 
-        #[derive(
-            Clone,
-            Debug, 
-            PartialEq, Eq,
-        )]
+        #[derive(Clone, Debug, PartialEq, Eq)]
         pub struct Message {
             group: ux::u4,
             channel: ux::u4,
@@ -30,12 +26,8 @@ macro_rules! note_message {
         impl core::convert::TryFrom<Packet> for Message {
             type Error = Error;
             fn try_from(p: Packet) -> Result<Self, Self::Error> {
-                helpers::validate_packet(
-                    &p,
-                    Message::TYPE_CODE,
-                    Message::OP_CODE,
-                )?;
-                Ok(Message{
+                helpers::validate_packet(&p, Message::TYPE_CODE, Message::OP_CODE)?;
+                Ok(Message {
                     group: p.nibble(1),
                     channel: p.nibble(3),
                     note: p.octet(2).truncate(),
@@ -54,13 +46,12 @@ macro_rules! note_message {
                     m.channel,
                     &mut p,
                 );
-                p
-                    .set_octet(2, m.note.into())
+                p.set_octet(2, m.note.into())
                     .set_octet(3, m.velocity.into());
                 p
             }
         }
-    }
+    };
 }
 
 pub(crate) use note_message;

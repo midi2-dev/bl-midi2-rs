@@ -1,14 +1,7 @@
 use super::*;
-use crate::{
-    util::truncate,
-    extended_system_exclusive as ext_sysex,
-};
+use crate::{extended_system_exclusive as ext_sysex, util::truncate};
 
-#[derive(
-    Clone,
-    Debug,
-    PartialEq,
-)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Message {
     Discovery {
         source: muid::Muid,
@@ -221,10 +214,7 @@ impl core::convert::From<(Message, u8)> for ext_sysex::MessageGroup {
                 ),
                 stream_id,
             ),
-            Message::InvalidateMuid{
-                source,
-                target,
-            } => ext_sysex::MessageGroup::from_data(
+            Message::InvalidateMuid { source, target } => ext_sysex::MessageGroup::from_data(
                 &ci_data(
                     DeviceId::MidiPort,
                     0x7E,
@@ -252,7 +242,7 @@ impl core::convert::From<(Message, u8)> for ext_sysex::MessageGroup {
                     Vec::new(),
                 ),
                 stream_id,
-            ), 
+            ),
             Message::InitiateProtocolNegotiation {
                 source,
                 destination,
@@ -272,7 +262,7 @@ impl core::convert::From<(Message, u8)> for ext_sysex::MessageGroup {
                     ),
                 ),
                 stream_id,
-            ), 
+            ),
             Message::InitiateProtocolNegotiationReply {
                 source,
                 destination,
@@ -292,7 +282,7 @@ impl core::convert::From<(Message, u8)> for ext_sysex::MessageGroup {
                     ),
                 ),
                 stream_id,
-            ), 
+            ),
             Message::SetNewProtocol {
                 source,
                 destination,
@@ -304,13 +294,10 @@ impl core::convert::From<(Message, u8)> for ext_sysex::MessageGroup {
                     0x0C,
                     source.value().clone(),
                     destination.value().clone(),
-                    set_protocol_payload(
-                        authority_level,
-                        protocol,
-                    ),
+                    set_protocol_payload(authority_level, protocol),
                 ),
                 stream_id,
-            ), 
+            ),
             Message::TestNewProtocolInitiatorToResponder {
                 source,
                 destination,
@@ -324,7 +311,7 @@ impl core::convert::From<(Message, u8)> for ext_sysex::MessageGroup {
                     test_protocol_payload(authority_level),
                 ),
                 stream_id,
-            ), 
+            ),
             Message::TestNewProtocolResponderToInitiator {
                 source,
                 destination,
@@ -338,7 +325,7 @@ impl core::convert::From<(Message, u8)> for ext_sysex::MessageGroup {
                     test_protocol_payload(authority_level),
                 ),
                 stream_id,
-            ), 
+            ),
             Message::ConfirmNewProtocolEstablished {
                 source,
                 destination,
@@ -352,7 +339,7 @@ impl core::convert::From<(Message, u8)> for ext_sysex::MessageGroup {
                     vec![authority_level],
                 ),
                 stream_id,
-            ), 
+            ),
             Message::ProfileInquiry {
                 device_id,
                 source,
@@ -366,7 +353,7 @@ impl core::convert::From<(Message, u8)> for ext_sysex::MessageGroup {
                     Vec::new(),
                 ),
                 stream_id,
-            ), 
+            ),
             Message::ProfileInquiryReply {
                 device_id,
                 source,
@@ -379,13 +366,10 @@ impl core::convert::From<(Message, u8)> for ext_sysex::MessageGroup {
                     21,
                     source.value().clone(),
                     destination.value().clone(),
-                    profile_inquiry_reply_payload(
-                        enabled_profiles,
-                        disabled_profiles,
-                    ),
+                    profile_inquiry_reply_payload(enabled_profiles, disabled_profiles),
                 ),
                 stream_id,
-            ), 
+            ),
             Message::SetProfileOn {
                 device_id,
                 source,
@@ -400,7 +384,7 @@ impl core::convert::From<(Message, u8)> for ext_sysex::MessageGroup {
                     append_profile_id(profile, Vec::new()),
                 ),
                 stream_id,
-            ), 
+            ),
             Message::SetProfileOff {
                 device_id,
                 source,
@@ -415,7 +399,7 @@ impl core::convert::From<(Message, u8)> for ext_sysex::MessageGroup {
                     append_profile_id(profile, Vec::new()),
                 ),
                 stream_id,
-            ), 
+            ),
             Message::ProfileEnabledReport {
                 device_id,
                 source,
@@ -425,11 +409,11 @@ impl core::convert::From<(Message, u8)> for ext_sysex::MessageGroup {
                     device_id,
                     24,
                     source.value().clone(),
-                    [0x7F, 0x7F, 0x7F, 0x7F], 
+                    [0x7F, 0x7F, 0x7F, 0x7F],
                     append_profile_id(profile, Vec::new()),
                 ),
                 stream_id,
-            ), 
+            ),
             Message::ProfileDisabledReport {
                 device_id,
                 source,
@@ -439,11 +423,11 @@ impl core::convert::From<(Message, u8)> for ext_sysex::MessageGroup {
                     device_id,
                     25,
                     source.value().clone(),
-                    [0x7F, 0x7F, 0x7F, 0x7F], 
+                    [0x7F, 0x7F, 0x7F, 0x7F],
                     append_profile_id(profile, Vec::new()),
                 ),
                 stream_id,
-            ), 
+            ),
             Message::ProfileSpecificData {
                 device_id,
                 source,
@@ -459,7 +443,7 @@ impl core::convert::From<(Message, u8)> for ext_sysex::MessageGroup {
                     profile_specific_data_payload(profile, data),
                 ),
                 stream_id,
-            ), 
+            ),
             _ => todo!(),
         }
     }
@@ -467,12 +451,12 @@ impl core::convert::From<(Message, u8)> for ext_sysex::MessageGroup {
 
 fn append_protocol(p: Protocol, mut data: Vec<u8>) -> Vec<u8> {
     data.push(match p {
-        Protocol::Midi1{..} => 0x01,
-        Protocol::Midi2{..} => 0x02,
+        Protocol::Midi1 { .. } => 0x01,
+        Protocol::Midi2 { .. } => 0x02,
     });
     data.push(match p {
-        Protocol::Midi1{..} => Protocol::MIDI_1_VERSION,
-        Protocol::Midi2{..} => Protocol::MIDI_2_VERSION,
+        Protocol::Midi1 { .. } => Protocol::MIDI_1_VERSION,
+        Protocol::Midi2 { .. } => Protocol::MIDI_2_VERSION,
     });
     data.push(match p {
         Protocol::Midi1 {
@@ -484,9 +468,7 @@ fn append_protocol(p: Protocol, mut data: Vec<u8>) -> Vec<u8> {
         ]),
         Protocol::Midi2 {
             jitter_reduction_extension,
-        } => bitmap(vec![
-            (0, jitter_reduction_extension),
-        ]),
+        } => bitmap(vec![(0, jitter_reduction_extension)]),
     });
     data.push(0x0);
     data.push(0x0);
@@ -508,25 +490,26 @@ fn append_profile_id(p: profile::Id, mut data: Vec<u8>) -> Vec<u8> {
             match level {
                 profile::SupportLevel::Partial => {
                     data.push(0x0);
-                },
+                }
                 profile::SupportLevel::Minimum => {
                     data.push(0x1);
-                },
+                }
                 profile::SupportLevel::Extended(v) => {
                     data.push(v.into());
-                },
-                profile::SupportLevel::Highest=> {
+                }
+                profile::SupportLevel::Highest => {
                     data.push(0x7F);
-                },
+                }
             }
-        },
-        profile::Id::Manufacturer {
-            id,
-            data: d,
-        } => {
-            for b in id { data.push(b); }
-            for b in d { data.push(b); }
-        },
+        }
+        profile::Id::Manufacturer { id, data: d } => {
+            for b in id {
+                data.push(b);
+            }
+            for b in d {
+                data.push(b);
+            }
+        }
     }
     data
 }
@@ -541,10 +524,7 @@ fn append_profiles(profiles: Vec<profile::Id>, mut data: Vec<u8>) -> Vec<u8> {
     data
 }
 
-fn profile_specific_data_payload(
-    profile: profile::Id,
-    mut data: Vec<u8>,
-) -> Vec<u8> {
+fn profile_specific_data_payload(profile: profile::Id, mut data: Vec<u8>) -> Vec<u8> {
     let mut payload = append_profile_id(profile, Vec::new());
     payload.append(&mut data);
     payload
@@ -573,7 +553,9 @@ fn protocol_negotiation_payload(
 ) -> Vec<u8> {
     let mut payload = vec![
         authority_level,
-        (1 + additional_supported_protocols.len()).try_into().unwrap(),
+        (1 + additional_supported_protocols.len())
+            .try_into()
+            .unwrap(),
     ];
 
     payload = append_protocol(preferred_protocol, payload);
@@ -588,11 +570,7 @@ fn set_protocol_payload(authority_level: u8, protocol: Protocol) -> Vec<u8> {
     append_protocol(protocol, vec![authority_level])
 }
 
-#[derive(
-    Clone,
-    Debug,
-    PartialEq,
-)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Protocol {
     Midi1 {
         size_of_packet_extension: bool,
@@ -608,21 +586,13 @@ impl Protocol {
     const MIDI_2_VERSION: u8 = 0x0;
 }
 
-#[derive(
-    Clone,
-    Debug,
-    PartialEq,
-)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum ProtocolId {
     Midi1,
     Midi2,
 }
 
-#[derive(
-    Clone,
-    Debug,
-    PartialEq,
-)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum DeviceId {
     Channel(ux::u4),
     MidiPort,
@@ -643,7 +613,7 @@ fn ci_data(
     category: u8,
     source: [u8; 4],
     destination: [u8; 4],
-    mut payload: Vec<u8>
+    mut payload: Vec<u8>,
 ) -> Vec<u8> {
     let mut ret = Vec::with_capacity(16 + payload.len());
     ret.append(&mut vec![
@@ -676,22 +646,20 @@ mod to_extended_sysex {
     fn discovery() {
         let source = muid::Muid::new();
         assert_eq!(
-            ext_sysex::MessageGroup::from(
-                (
-                    Message::Discovery {
-                        source: source.clone(),
-                        device_manufacturer: [0x1, 0x2, 0x3],
-                        device_family: [0x4, 0x5],
-                        device_model_number: [0x5, 0x6],
-                        software_version: [0x7, 0x8, 0x9, 0xA],
-                        protocol_negotiation_supported: true,
-                        profile_configuration_supported: true,
-                        property_exchange_supported: true,
-                        max_sysex_message_size: [0xB, 0xC, 0xD, 0xE],
-                    },
-                    0xB,
-                ),
-            ),
+            ext_sysex::MessageGroup::from((
+                Message::Discovery {
+                    source: source.clone(),
+                    device_manufacturer: [0x1, 0x2, 0x3],
+                    device_family: [0x4, 0x5],
+                    device_model_number: [0x5, 0x6],
+                    software_version: [0x7, 0x8, 0x9, 0xA],
+                    protocol_negotiation_supported: true,
+                    profile_configuration_supported: true,
+                    property_exchange_supported: true,
+                    max_sysex_message_size: [0xB, 0xC, 0xD, 0xE],
+                },
+                0xB,
+            ),),
             ext_sysex::MessageGroup::from_data(
                 &vec![
                     0x7E,
@@ -699,15 +667,30 @@ mod to_extended_sysex {
                     0x0D,
                     0x70,
                     0x01,
-                    source[muid::Index::Byte1], source[muid::Index::Byte2], 
-                    source[muid::Index::Byte3], source[muid::Index::Byte4],
-                    0x7F, 0x7F, 0x7F, 0x7F, 
-                    0x1, 0x2, 0x3, // device manufacturer
-                    0x4, 0x5, // device family
-                    0x5, 0x6, // device model
-                    0x7, 0x8, 0x9, 0xA, // software version
+                    source[muid::Index::Byte1],
+                    source[muid::Index::Byte2],
+                    source[muid::Index::Byte3],
+                    source[muid::Index::Byte4],
+                    0x7F,
+                    0x7F,
+                    0x7F,
+                    0x7F,
+                    0x1,
+                    0x2,
+                    0x3, // device manufacturer
+                    0x4,
+                    0x5, // device family
+                    0x5,
+                    0x6, // device model
+                    0x7,
+                    0x8,
+                    0x9,
+                    0xA,         // software version
                     0b0000_1110, // ci support flags
-                    0xB, 0xC, 0xD, 0xE, // max message size
+                    0xB,
+                    0xC,
+                    0xD,
+                    0xE, // max message size
                 ],
                 0xB,
             ),
@@ -719,23 +702,21 @@ mod to_extended_sysex {
         let source = muid::Muid::new();
         let destination = muid::Muid::new();
         assert_eq!(
-            ext_sysex::MessageGroup::from(
-                (
-                    Message::DiscoveryReply {
-                        source: source.clone(),
-                        destination: destination.clone(),
-                        device_manufacturer: [0x1, 0x2, 0x3],
-                        device_family: [0x4, 0x5],
-                        device_model_number: [0x5, 0x6],
-                        software_version: [0x7, 0x8, 0x9, 0xA],
-                        protocol_negotiation_supported: true,
-                        profile_configuration_supported: false,
-                        property_exchange_supported: true,
-                        max_sysex_message_size: [0xB, 0xC, 0xD, 0xE],
-                    },
-                    0x1,
-                ),
-            ),
+            ext_sysex::MessageGroup::from((
+                Message::DiscoveryReply {
+                    source: source.clone(),
+                    destination: destination.clone(),
+                    device_manufacturer: [0x1, 0x2, 0x3],
+                    device_family: [0x4, 0x5],
+                    device_model_number: [0x5, 0x6],
+                    software_version: [0x7, 0x8, 0x9, 0xA],
+                    protocol_negotiation_supported: true,
+                    profile_configuration_supported: false,
+                    property_exchange_supported: true,
+                    max_sysex_message_size: [0xB, 0xC, 0xD, 0xE],
+                },
+                0x1,
+            ),),
             ext_sysex::MessageGroup::from_data(
                 &vec![
                     0x7E,
@@ -743,16 +724,30 @@ mod to_extended_sysex {
                     0x0D,
                     0x70,
                     0x01,
-                    source[muid::Index::Byte1], source[muid::Index::Byte2], 
-                    source[muid::Index::Byte3], source[muid::Index::Byte4],
-                    destination[muid::Index::Byte1], destination[muid::Index::Byte2], 
-                    destination[muid::Index::Byte3], destination[muid::Index::Byte4],
-                    0x1, 0x2, 0x3, // device manufacturer
-                    0x4, 0x5, // device family
-                    0x5, 0x6, // device model
-                    0x7, 0x8, 0x9, 0xA, // software version
+                    source[muid::Index::Byte1],
+                    source[muid::Index::Byte2],
+                    source[muid::Index::Byte3],
+                    source[muid::Index::Byte4],
+                    destination[muid::Index::Byte1],
+                    destination[muid::Index::Byte2],
+                    destination[muid::Index::Byte3],
+                    destination[muid::Index::Byte4],
+                    0x1,
+                    0x2,
+                    0x3, // device manufacturer
+                    0x4,
+                    0x5, // device family
+                    0x5,
+                    0x6, // device model
+                    0x7,
+                    0x8,
+                    0x9,
+                    0xA,         // software version
                     0b0000_1010, // ci support flags
-                    0xB, 0xC, 0xD, 0xE, // max message size
+                    0xB,
+                    0xC,
+                    0xD,
+                    0xE, // max message size
                 ],
                 0x1,
             )
@@ -764,15 +759,13 @@ mod to_extended_sysex {
         let source = muid::Muid::new();
         let target = muid::Muid::new();
         assert_eq!(
-            ext_sysex::MessageGroup::from(
-                (
-                    Message::InvalidateMuid {
-                        source: source.clone(),
-                        target: target.clone(),
-                    },
-                    0x4,
-                ),
-            ),
+            ext_sysex::MessageGroup::from((
+                Message::InvalidateMuid {
+                    source: source.clone(),
+                    target: target.clone(),
+                },
+                0x4,
+            ),),
             ext_sysex::MessageGroup::from_data(
                 &vec![
                     0x7E,
@@ -780,11 +773,18 @@ mod to_extended_sysex {
                     0x0D,
                     0x7E,
                     0x01,
-                    source[muid::Index::Byte1], source[muid::Index::Byte2], 
-                    source[muid::Index::Byte3], source[muid::Index::Byte4],
-                    0x7F, 0x7F, 0x7F, 0x7F, // destination
-                    target[muid::Index::Byte1], target[muid::Index::Byte2], 
-                    target[muid::Index::Byte3], target[muid::Index::Byte4],
+                    source[muid::Index::Byte1],
+                    source[muid::Index::Byte2],
+                    source[muid::Index::Byte3],
+                    source[muid::Index::Byte4],
+                    0x7F,
+                    0x7F,
+                    0x7F,
+                    0x7F, // destination
+                    target[muid::Index::Byte1],
+                    target[muid::Index::Byte2],
+                    target[muid::Index::Byte3],
+                    target[muid::Index::Byte4],
                 ],
                 0x4,
             )
@@ -796,16 +796,14 @@ mod to_extended_sysex {
         let source = muid::Muid::new();
         let destination = muid::Muid::new();
         assert_eq!(
-            ext_sysex::MessageGroup::from(
-                (
-                    Message::Nak {
-                        source: source.clone(),
-                        destination: destination.clone(),
-                        device_id: DeviceId::Channel(ux::u4::new(0xA)),
-                    },
-                    0x3,
-                ),
-            ),
+            ext_sysex::MessageGroup::from((
+                Message::Nak {
+                    source: source.clone(),
+                    destination: destination.clone(),
+                    device_id: DeviceId::Channel(ux::u4::new(0xA)),
+                },
+                0x3,
+            ),),
             ext_sysex::MessageGroup::from_data(
                 &vec![
                     0x7E,
@@ -813,10 +811,14 @@ mod to_extended_sysex {
                     0x0D,
                     0x7F,
                     Message::VERSION,
-                    source[muid::Index::Byte1], source[muid::Index::Byte2], 
-                    source[muid::Index::Byte3], source[muid::Index::Byte4],
-                    destination[muid::Index::Byte1], destination[muid::Index::Byte2], 
-                    destination[muid::Index::Byte3], destination[muid::Index::Byte4],
+                    source[muid::Index::Byte1],
+                    source[muid::Index::Byte2],
+                    source[muid::Index::Byte3],
+                    source[muid::Index::Byte4],
+                    destination[muid::Index::Byte1],
+                    destination[muid::Index::Byte2],
+                    destination[muid::Index::Byte3],
+                    destination[muid::Index::Byte4],
                 ],
                 0x3,
             ),
@@ -828,25 +830,21 @@ mod to_extended_sysex {
         let source = muid::Muid::new();
         let destination = muid::Muid::new();
         assert_eq!(
-            ext_sysex::MessageGroup::from(
-                (
-                    Message::InitiateProtocolNegotiation {
-                        source: source.clone(),
-                        destination: destination.clone(),
-                        authority_level: 0x2,
-                        preferred_protocol: Protocol::Midi1 {
-                            size_of_packet_extension: false,
-                            jitter_reduction_extension: true,
-                        },
-                        additional_supported_protocols: vec![
-                            Protocol::Midi2 {
-                                jitter_reduction_extension: true,
-                            },
-                        ],
+            ext_sysex::MessageGroup::from((
+                Message::InitiateProtocolNegotiation {
+                    source: source.clone(),
+                    destination: destination.clone(),
+                    authority_level: 0x2,
+                    preferred_protocol: Protocol::Midi1 {
+                        size_of_packet_extension: false,
+                        jitter_reduction_extension: true,
                     },
-                    0x3,
-                ),
-            ),
+                    additional_supported_protocols: vec![Protocol::Midi2 {
+                        jitter_reduction_extension: true,
+                    },],
+                },
+                0x3,
+            ),),
             ext_sysex::MessageGroup::from_data(
                 &vec![
                     0x7E, // universal sysex
@@ -854,22 +852,26 @@ mod to_extended_sysex {
                     0x0D, // midi ci
                     0x0A, // init protocol negotiation
                     Message::VERSION,
-                    source[muid::Index::Byte1], source[muid::Index::Byte2], 
-                    source[muid::Index::Byte3], source[muid::Index::Byte4],
-                    destination[muid::Index::Byte1], destination[muid::Index::Byte2], 
-                    destination[muid::Index::Byte3], destination[muid::Index::Byte4],
-                    0x2, // auth level
-                    2, // number supported protocols
-                    0x1,  // midi 1 protocol
-                    0x0, // version
+                    source[muid::Index::Byte1],
+                    source[muid::Index::Byte2],
+                    source[muid::Index::Byte3],
+                    source[muid::Index::Byte4],
+                    destination[muid::Index::Byte1],
+                    destination[muid::Index::Byte2],
+                    destination[muid::Index::Byte3],
+                    destination[muid::Index::Byte4],
+                    0x2,         // auth level
+                    2,           // number supported protocols
+                    0x1,         // midi 1 protocol
+                    0x0,         // version
                     0b0000_0001, // extension flags
-                    0x0, // reserved
-                    0x0, // reserved
-                    0x2,  // midi 1 protocol
-                    0x0, // version
+                    0x0,         // reserved
+                    0x0,         // reserved
+                    0x2,         // midi 1 protocol
+                    0x0,         // version
                     0b0000_0001, // extension flags
-                    0x0, // reserved
-                    0x0, // reserved
+                    0x0,         // reserved
+                    0x0,         // reserved
                 ],
                 0x3,
             ),
@@ -881,25 +883,21 @@ mod to_extended_sysex {
         let source = muid::Muid::new();
         let destination = muid::Muid::new();
         assert_eq!(
-            ext_sysex::MessageGroup::from(
-                (
-                    Message::InitiateProtocolNegotiationReply {
-                        source: source.clone(),
-                        destination: destination.clone(),
-                        authority_level: 0x5,
-                        preferred_protocol: Protocol::Midi1 {
-                            size_of_packet_extension: true,
-                            jitter_reduction_extension: false,
-                        },
-                        additional_supported_protocols: vec![
-                            Protocol::Midi2 {
-                                jitter_reduction_extension: false,
-                            },
-                        ],
+            ext_sysex::MessageGroup::from((
+                Message::InitiateProtocolNegotiationReply {
+                    source: source.clone(),
+                    destination: destination.clone(),
+                    authority_level: 0x5,
+                    preferred_protocol: Protocol::Midi1 {
+                        size_of_packet_extension: true,
+                        jitter_reduction_extension: false,
                     },
-                    0x1,
-                ),
-            ),
+                    additional_supported_protocols: vec![Protocol::Midi2 {
+                        jitter_reduction_extension: false,
+                    },],
+                },
+                0x1,
+            ),),
             ext_sysex::MessageGroup::from_data(
                 &vec![
                     0x7E, // universal sysex
@@ -907,22 +905,26 @@ mod to_extended_sysex {
                     0x0D, // midi ci
                     0x0B, // init protocol negotiation reply
                     Message::VERSION,
-                    source[muid::Index::Byte1], source[muid::Index::Byte2], 
-                    source[muid::Index::Byte3], source[muid::Index::Byte4],
-                    destination[muid::Index::Byte1], destination[muid::Index::Byte2], 
-                    destination[muid::Index::Byte3], destination[muid::Index::Byte4],
-                    0x5, // auth level
-                    2, // number supported protocols
-                    0x1,  // midi 1 protocol
-                    0x0, // version
+                    source[muid::Index::Byte1],
+                    source[muid::Index::Byte2],
+                    source[muid::Index::Byte3],
+                    source[muid::Index::Byte4],
+                    destination[muid::Index::Byte1],
+                    destination[muid::Index::Byte2],
+                    destination[muid::Index::Byte3],
+                    destination[muid::Index::Byte4],
+                    0x5,         // auth level
+                    2,           // number supported protocols
+                    0x1,         // midi 1 protocol
+                    0x0,         // version
                     0b0000_0010, // extension flags
-                    0x0, // reserved
-                    0x0, // reserved
-                    0x2,  // midi 1 protocol
-                    0x0, // version
+                    0x0,         // reserved
+                    0x0,         // reserved
+                    0x2,         // midi 1 protocol
+                    0x0,         // version
                     0b0000_0000, // extension flags
-                    0x0, // reserved
-                    0x0, // reserved
+                    0x0,         // reserved
+                    0x0,         // reserved
                 ],
                 0x1,
             ),
@@ -934,19 +936,17 @@ mod to_extended_sysex {
         let source = muid::Muid::new();
         let destination = muid::Muid::new();
         assert_eq!(
-            ext_sysex::MessageGroup::from(
-                (
-                    Message::SetNewProtocol {
-                        source: source.clone(),
-                        destination: destination.clone(),
-                        authority_level: 0x3,
-                        protocol: Protocol::Midi2 {
-                            jitter_reduction_extension: true,
-                        },
+            ext_sysex::MessageGroup::from((
+                Message::SetNewProtocol {
+                    source: source.clone(),
+                    destination: destination.clone(),
+                    authority_level: 0x3,
+                    protocol: Protocol::Midi2 {
+                        jitter_reduction_extension: true,
                     },
-                    0x2,
-                ),
-            ),
+                },
+                0x2,
+            ),),
             ext_sysex::MessageGroup::from_data(
                 &vec![
                     0x7E, // universal sysex
@@ -954,16 +954,20 @@ mod to_extended_sysex {
                     0x0D, // midi ci
                     0x0C, // set protocol
                     Message::VERSION,
-                    source[muid::Index::Byte1], source[muid::Index::Byte2], 
-                    source[muid::Index::Byte3], source[muid::Index::Byte4],
-                    destination[muid::Index::Byte1], destination[muid::Index::Byte2], 
-                    destination[muid::Index::Byte3], destination[muid::Index::Byte4],
-                    0x3, // auth level
-                    0x2,  // midi 2 protocol
-                    0x0, // version
+                    source[muid::Index::Byte1],
+                    source[muid::Index::Byte2],
+                    source[muid::Index::Byte3],
+                    source[muid::Index::Byte4],
+                    destination[muid::Index::Byte1],
+                    destination[muid::Index::Byte2],
+                    destination[muid::Index::Byte3],
+                    destination[muid::Index::Byte4],
+                    0x3,         // auth level
+                    0x2,         // midi 2 protocol
+                    0x0,         // version
                     0b0000_0001, // extension flags
-                    0x0, // reserved
-                    0x0, // reserved
+                    0x0,         // reserved
+                    0x0,         // reserved
                 ],
                 0x2,
             ),
@@ -975,16 +979,14 @@ mod to_extended_sysex {
         let source = muid::Muid::new();
         let destination = muid::Muid::new();
         assert_eq!(
-            ext_sysex::MessageGroup::from(
-                (
-                    Message::TestNewProtocolInitiatorToResponder {
-                        source: source.clone(),
-                        destination: destination.clone(),
-                        authority_level: 0x1,
-                    },
-                    0xA,
-                ),
-            ),
+            ext_sysex::MessageGroup::from((
+                Message::TestNewProtocolInitiatorToResponder {
+                    source: source.clone(),
+                    destination: destination.clone(),
+                    authority_level: 0x1,
+                },
+                0xA,
+            ),),
             ext_sysex::MessageGroup::from_data(
                 &vec![
                     0x7E, // universal sysex
@@ -992,17 +994,63 @@ mod to_extended_sysex {
                     0x0D, // midi ci
                     0x0D, // test protocol initiator to responder
                     Message::VERSION,
-                    source[muid::Index::Byte1], source[muid::Index::Byte2], 
-                    source[muid::Index::Byte3], source[muid::Index::Byte4],
-                    destination[muid::Index::Byte1], destination[muid::Index::Byte2], 
-                    destination[muid::Index::Byte3], destination[muid::Index::Byte4],
+                    source[muid::Index::Byte1],
+                    source[muid::Index::Byte2],
+                    source[muid::Index::Byte3],
+                    source[muid::Index::Byte4],
+                    destination[muid::Index::Byte1],
+                    destination[muid::Index::Byte2],
+                    destination[muid::Index::Byte3],
+                    destination[muid::Index::Byte4],
                     0x1, // auth level
-                    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
-                    0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 
-                    0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 
-                    0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 
-                    0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 
-                    0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, // test data
+                    0x00,
+                    0x01,
+                    0x02,
+                    0x03,
+                    0x04,
+                    0x05,
+                    0x06,
+                    0x07,
+                    0x08,
+                    0x09,
+                    0x0A,
+                    0x0B,
+                    0x0C,
+                    0x0D,
+                    0x0E,
+                    0x0F,
+                    0x10,
+                    0x11,
+                    0x12,
+                    0x13,
+                    0x14,
+                    0x15,
+                    0x16,
+                    0x17,
+                    0x18,
+                    0x19,
+                    0x1A,
+                    0x1B,
+                    0x1C,
+                    0x1D,
+                    0x1E,
+                    0x1F,
+                    0x20,
+                    0x21,
+                    0x22,
+                    0x23,
+                    0x24,
+                    0x25,
+                    0x26,
+                    0x27,
+                    0x28,
+                    0x29,
+                    0x2A,
+                    0x2B,
+                    0x2C,
+                    0x2D,
+                    0x2E,
+                    0x2F, // test data
                 ],
                 0xA,
             ),
@@ -1014,16 +1062,14 @@ mod to_extended_sysex {
         let source = muid::Muid::new();
         let destination = muid::Muid::new();
         assert_eq!(
-            ext_sysex::MessageGroup::from(
-                (
-                    Message::TestNewProtocolResponderToInitiator {
-                        source: source.clone(),
-                        destination: destination.clone(),
-                        authority_level: 0x2,
-                    },
-                    0xC,
-                ),
-            ),
+            ext_sysex::MessageGroup::from((
+                Message::TestNewProtocolResponderToInitiator {
+                    source: source.clone(),
+                    destination: destination.clone(),
+                    authority_level: 0x2,
+                },
+                0xC,
+            ),),
             ext_sysex::MessageGroup::from_data(
                 &vec![
                     0x7E, // universal sysex
@@ -1031,17 +1077,63 @@ mod to_extended_sysex {
                     0x0D, // midi ci
                     0x0E, // test protocol responder to initiator
                     Message::VERSION,
-                    source[muid::Index::Byte1], source[muid::Index::Byte2], 
-                    source[muid::Index::Byte3], source[muid::Index::Byte4],
-                    destination[muid::Index::Byte1], destination[muid::Index::Byte2], 
-                    destination[muid::Index::Byte3], destination[muid::Index::Byte4],
+                    source[muid::Index::Byte1],
+                    source[muid::Index::Byte2],
+                    source[muid::Index::Byte3],
+                    source[muid::Index::Byte4],
+                    destination[muid::Index::Byte1],
+                    destination[muid::Index::Byte2],
+                    destination[muid::Index::Byte3],
+                    destination[muid::Index::Byte4],
                     0x2, // auth level
-                    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
-                    0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 
-                    0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 
-                    0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 
-                    0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 
-                    0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, // test data
+                    0x00,
+                    0x01,
+                    0x02,
+                    0x03,
+                    0x04,
+                    0x05,
+                    0x06,
+                    0x07,
+                    0x08,
+                    0x09,
+                    0x0A,
+                    0x0B,
+                    0x0C,
+                    0x0D,
+                    0x0E,
+                    0x0F,
+                    0x10,
+                    0x11,
+                    0x12,
+                    0x13,
+                    0x14,
+                    0x15,
+                    0x16,
+                    0x17,
+                    0x18,
+                    0x19,
+                    0x1A,
+                    0x1B,
+                    0x1C,
+                    0x1D,
+                    0x1E,
+                    0x1F,
+                    0x20,
+                    0x21,
+                    0x22,
+                    0x23,
+                    0x24,
+                    0x25,
+                    0x26,
+                    0x27,
+                    0x28,
+                    0x29,
+                    0x2A,
+                    0x2B,
+                    0x2C,
+                    0x2D,
+                    0x2E,
+                    0x2F, // test data
                 ],
                 0xC,
             ),
@@ -1053,16 +1145,14 @@ mod to_extended_sysex {
         let source = muid::Muid::new();
         let destination = muid::Muid::new();
         assert_eq!(
-            ext_sysex::MessageGroup::from(
-                (
-                    Message::ConfirmNewProtocolEstablished {
-                        source: source.clone(),
-                        destination: destination.clone(),
-                        authority_level: 0x6,
-                    },
-                    0xD,
-                ),
-            ),
+            ext_sysex::MessageGroup::from((
+                Message::ConfirmNewProtocolEstablished {
+                    source: source.clone(),
+                    destination: destination.clone(),
+                    authority_level: 0x6,
+                },
+                0xD,
+            ),),
             ext_sysex::MessageGroup::from_data(
                 &vec![
                     0x7E, // universal sysex
@@ -1070,10 +1160,14 @@ mod to_extended_sysex {
                     0x0D, // midi ci
                     0x0F, // confirm new protocol
                     Message::VERSION,
-                    source[muid::Index::Byte1], source[muid::Index::Byte2], 
-                    source[muid::Index::Byte3], source[muid::Index::Byte4],
-                    destination[muid::Index::Byte1], destination[muid::Index::Byte2], 
-                    destination[muid::Index::Byte3], destination[muid::Index::Byte4],
+                    source[muid::Index::Byte1],
+                    source[muid::Index::Byte2],
+                    source[muid::Index::Byte3],
+                    source[muid::Index::Byte4],
+                    destination[muid::Index::Byte1],
+                    destination[muid::Index::Byte2],
+                    destination[muid::Index::Byte3],
+                    destination[muid::Index::Byte4],
                     0x6, // auth level
                 ],
                 0xD,
@@ -1086,27 +1180,29 @@ mod to_extended_sysex {
         let source = muid::Muid::new();
         let destination = muid::Muid::new();
         assert_eq!(
-            ext_sysex::MessageGroup::from(
-                (
-                    Message::ProfileInquiry {
-                        source: source.clone(),
-                        destination: destination.clone(),
-                        device_id: DeviceId::Channel(ux::u4::new(0xA)),
-                    },
-                    0x9,
-                ),
-            ),
+            ext_sysex::MessageGroup::from((
+                Message::ProfileInquiry {
+                    source: source.clone(),
+                    destination: destination.clone(),
+                    device_id: DeviceId::Channel(ux::u4::new(0xA)),
+                },
+                0x9,
+            ),),
             ext_sysex::MessageGroup::from_data(
                 &vec![
                     0x7E, // universal sysex
-                    0xA, // device id
+                    0xA,  // device id
                     0x0D, // midi ci
-                    20, // profile inquiry
+                    20,   // profile inquiry
                     Message::VERSION,
-                    source[muid::Index::Byte1], source[muid::Index::Byte2], 
-                    source[muid::Index::Byte3], source[muid::Index::Byte4],
-                    destination[muid::Index::Byte1], destination[muid::Index::Byte2], 
-                    destination[muid::Index::Byte3], destination[muid::Index::Byte4],
+                    source[muid::Index::Byte1],
+                    source[muid::Index::Byte2],
+                    source[muid::Index::Byte3],
+                    source[muid::Index::Byte4],
+                    destination[muid::Index::Byte1],
+                    destination[muid::Index::Byte2],
+                    destination[muid::Index::Byte3],
+                    destination[muid::Index::Byte4],
                 ],
                 0x9,
             ),
@@ -1118,52 +1214,66 @@ mod to_extended_sysex {
         let source = muid::Muid::new();
         let destination = muid::Muid::new();
         assert_eq!(
-            ext_sysex::MessageGroup::from(
-                (
-                    Message::ProfileInquiryReply {
-                        device_id: DeviceId::Channel(ux::u4::new(0x1)),
-                        source: source.clone(),
-                        destination: destination.clone(),
-                        enabled_profiles: vec![
-                            profile::Id::Standard {
-                                bank: 0x1,
-                                number: 0x2,
-                                version: 0x0,
-                                level: profile::SupportLevel::Minimum,
-                            },
-                        ],
-                        disabled_profiles: vec![
-                            profile::Id::Standard {
-                                bank: 0x1,
-                                number: 0x3,
-                                version: 0x0,
-                                level: profile::SupportLevel::Extended(ux::u7::new(0x5)),
-                            },
-                            profile::Id::Manufacturer {
-                                id: [0x0B, 0x0E, 0x09],
-                                data: [0x04, 0x02],
-                            },
-                        ],
-                    },
-                    0x2,
-                ),
-            ),
+            ext_sysex::MessageGroup::from((
+                Message::ProfileInquiryReply {
+                    device_id: DeviceId::Channel(ux::u4::new(0x1)),
+                    source: source.clone(),
+                    destination: destination.clone(),
+                    enabled_profiles: vec![profile::Id::Standard {
+                        bank: 0x1,
+                        number: 0x2,
+                        version: 0x0,
+                        level: profile::SupportLevel::Minimum,
+                    },],
+                    disabled_profiles: vec![
+                        profile::Id::Standard {
+                            bank: 0x1,
+                            number: 0x3,
+                            version: 0x0,
+                            level: profile::SupportLevel::Extended(ux::u7::new(0x5)),
+                        },
+                        profile::Id::Manufacturer {
+                            id: [0x0B, 0x0E, 0x09],
+                            data: [0x04, 0x02],
+                        },
+                    ],
+                },
+                0x2,
+            ),),
             ext_sysex::MessageGroup::from_data(
                 &vec![
                     0x7E, // universal sysex
-                    0x1, // device id
+                    0x1,  // device id
                     0x0D, // midi ci
-                    21, // profile inquiry reply
+                    21,   // profile inquiry reply
                     Message::VERSION,
-                    source[muid::Index::Byte1], source[muid::Index::Byte2], 
-                    source[muid::Index::Byte3], source[muid::Index::Byte4],
-                    destination[muid::Index::Byte1], destination[muid::Index::Byte2], 
-                    destination[muid::Index::Byte3], destination[muid::Index::Byte4],
-                    0x1, 0x0, // number of enabled profiles
-                    0x7E, 0x1, 0x2, 0x0, 0x1, // profile id
-                    0x2, 0x0, // number of disabled profiles
-                    0x7E, 0x1, 0x3, 0x0, 0x5, // profile id
-                    0x0B, 0x0E, 0x09, 0x04, 0x02, // profile id
+                    source[muid::Index::Byte1],
+                    source[muid::Index::Byte2],
+                    source[muid::Index::Byte3],
+                    source[muid::Index::Byte4],
+                    destination[muid::Index::Byte1],
+                    destination[muid::Index::Byte2],
+                    destination[muid::Index::Byte3],
+                    destination[muid::Index::Byte4],
+                    0x1,
+                    0x0, // number of enabled profiles
+                    0x7E,
+                    0x1,
+                    0x2,
+                    0x0,
+                    0x1, // profile id
+                    0x2,
+                    0x0, // number of disabled profiles
+                    0x7E,
+                    0x1,
+                    0x3,
+                    0x0,
+                    0x5, // profile id
+                    0x0B,
+                    0x0E,
+                    0x09,
+                    0x04,
+                    0x02, // profile id
                 ],
                 0x2,
             ),
@@ -1175,32 +1285,38 @@ mod to_extended_sysex {
         let source = muid::Muid::new();
         let destination = muid::Muid::new();
         assert_eq!(
-            ext_sysex::MessageGroup::from(
-                (
-                    Message::SetProfileOn {
-                        device_id: DeviceId::Channel(ux::u4::new(0x0)),
-                        source: source.clone(),
-                        destination: destination.clone(),
-                        profile: profile::Id::Manufacturer {
-                            id: [0x01, 0x02, 0x03],
-                            data: [0x04, 0x05],
-                        },
+            ext_sysex::MessageGroup::from((
+                Message::SetProfileOn {
+                    device_id: DeviceId::Channel(ux::u4::new(0x0)),
+                    source: source.clone(),
+                    destination: destination.clone(),
+                    profile: profile::Id::Manufacturer {
+                        id: [0x01, 0x02, 0x03],
+                        data: [0x04, 0x05],
                     },
-                    0xE,
-                ),
-            ),
+                },
+                0xE,
+            ),),
             ext_sysex::MessageGroup::from_data(
                 &vec![
                     0x7E, // universal sysex
-                    0x0, // device id
+                    0x0,  // device id
                     0x0D, // midi ci
-                    22, // set profile on
+                    22,   // set profile on
                     Message::VERSION,
-                    source[muid::Index::Byte1], source[muid::Index::Byte2], 
-                    source[muid::Index::Byte3], source[muid::Index::Byte4],
-                    destination[muid::Index::Byte1], destination[muid::Index::Byte2], 
-                    destination[muid::Index::Byte3], destination[muid::Index::Byte4],
-                    0x1, 0x2, 0x3, 0x4, 0x5, // profile id
+                    source[muid::Index::Byte1],
+                    source[muid::Index::Byte2],
+                    source[muid::Index::Byte3],
+                    source[muid::Index::Byte4],
+                    destination[muid::Index::Byte1],
+                    destination[muid::Index::Byte2],
+                    destination[muid::Index::Byte3],
+                    destination[muid::Index::Byte4],
+                    0x1,
+                    0x2,
+                    0x3,
+                    0x4,
+                    0x5, // profile id
                 ],
                 0xE,
             ),
@@ -1212,32 +1328,38 @@ mod to_extended_sysex {
         let source = muid::Muid::new();
         let destination = muid::Muid::new();
         assert_eq!(
-            ext_sysex::MessageGroup::from(
-                (
-                    Message::SetProfileOff {
-                        device_id: DeviceId::Channel(ux::u4::new(0x4)),
-                        source: source.clone(),
-                        destination: destination.clone(),
-                        profile: profile::Id::Manufacturer {
-                            id: [0x03, 0x01, 0x04],
-                            data: [0x01, 0x05],
-                        },
+            ext_sysex::MessageGroup::from((
+                Message::SetProfileOff {
+                    device_id: DeviceId::Channel(ux::u4::new(0x4)),
+                    source: source.clone(),
+                    destination: destination.clone(),
+                    profile: profile::Id::Manufacturer {
+                        id: [0x03, 0x01, 0x04],
+                        data: [0x01, 0x05],
                     },
-                    0x0,
-                ),
-            ),
+                },
+                0x0,
+            ),),
             ext_sysex::MessageGroup::from_data(
                 &vec![
                     0x7E, // universal sysex
-                    0x4, // device id
+                    0x4,  // device id
                     0x0D, // midi ci
-                    23, // set profile off
+                    23,   // set profile off
                     Message::VERSION,
-                    source[muid::Index::Byte1], source[muid::Index::Byte2], 
-                    source[muid::Index::Byte3], source[muid::Index::Byte4],
-                    destination[muid::Index::Byte1], destination[muid::Index::Byte2], 
-                    destination[muid::Index::Byte3], destination[muid::Index::Byte4],
-                    0x3, 0x1, 0x4, 0x1, 0x5, // profile id
+                    source[muid::Index::Byte1],
+                    source[muid::Index::Byte2],
+                    source[muid::Index::Byte3],
+                    source[muid::Index::Byte4],
+                    destination[muid::Index::Byte1],
+                    destination[muid::Index::Byte2],
+                    destination[muid::Index::Byte3],
+                    destination[muid::Index::Byte4],
+                    0x3,
+                    0x1,
+                    0x4,
+                    0x1,
+                    0x5, // profile id
                 ],
                 0x0,
             ),
@@ -1248,32 +1370,39 @@ mod to_extended_sysex {
     fn profile_enabled_report() {
         let source = muid::Muid::new();
         assert_eq!(
-            ext_sysex::MessageGroup::from(
-                (
-                    Message::ProfileEnabledReport {
-                        device_id: DeviceId::Channel(ux::u4::new(0x9)),
-                        source: source.clone(),
-                        profile: profile::Id::Standard {
-                            bank: 2,
-                            number: 101,
-                            version: 0x0,
-                            level: profile::SupportLevel::Highest,
-                        },
+            ext_sysex::MessageGroup::from((
+                Message::ProfileEnabledReport {
+                    device_id: DeviceId::Channel(ux::u4::new(0x9)),
+                    source: source.clone(),
+                    profile: profile::Id::Standard {
+                        bank: 2,
+                        number: 101,
+                        version: 0x0,
+                        level: profile::SupportLevel::Highest,
                     },
-                    0xB,
-                ),
-            ),
+                },
+                0xB,
+            ),),
             ext_sysex::MessageGroup::from_data(
                 &vec![
                     0x7E, // universal sysex
-                    0x9, // device id
+                    0x9,  // device id
                     0x0D, // midi ci
-                    24, // profile enabled
+                    24,   // profile enabled
                     Message::VERSION,
-                    source[muid::Index::Byte1], source[muid::Index::Byte2], 
-                    source[muid::Index::Byte3], source[muid::Index::Byte4],
-                    0x7F, 0x7F, 0x7F, 0x7F, // broadcast
-                    0x7E, 0x02, 0x65, 0x0, 0x7F, // profile id
+                    source[muid::Index::Byte1],
+                    source[muid::Index::Byte2],
+                    source[muid::Index::Byte3],
+                    source[muid::Index::Byte4],
+                    0x7F,
+                    0x7F,
+                    0x7F,
+                    0x7F, // broadcast
+                    0x7E,
+                    0x02,
+                    0x65,
+                    0x0,
+                    0x7F, // profile id
                 ],
                 0xB,
             ),
@@ -1284,32 +1413,39 @@ mod to_extended_sysex {
     fn profile_disabled_report() {
         let source = muid::Muid::new();
         assert_eq!(
-            ext_sysex::MessageGroup::from(
-                (
-                    Message::ProfileDisabledReport {
-                        device_id: DeviceId::Channel(ux::u4::new(0xB)),
-                        source: source.clone(),
-                        profile: profile::Id::Standard {
-                            bank: 0,
-                            number: 20,
-                            version: 0x0,
-                            level: profile::SupportLevel::Partial,
-                        },
+            ext_sysex::MessageGroup::from((
+                Message::ProfileDisabledReport {
+                    device_id: DeviceId::Channel(ux::u4::new(0xB)),
+                    source: source.clone(),
+                    profile: profile::Id::Standard {
+                        bank: 0,
+                        number: 20,
+                        version: 0x0,
+                        level: profile::SupportLevel::Partial,
                     },
-                    0x7,
-                ),
-            ),
+                },
+                0x7,
+            ),),
             ext_sysex::MessageGroup::from_data(
                 &vec![
                     0x7E, // universal sysex
-                    0xB, // device id
+                    0xB,  // device id
                     0x0D, // midi ci
-                    25, // profile disabled
+                    25,   // profile disabled
                     Message::VERSION,
-                    source[muid::Index::Byte1], source[muid::Index::Byte2], 
-                    source[muid::Index::Byte3], source[muid::Index::Byte4],
-                    0x7F, 0x7F, 0x7F, 0x7F, // broadcast
-                    0x7E, 0x00, 0x14, 0x00, 0x0, // profile id
+                    source[muid::Index::Byte1],
+                    source[muid::Index::Byte2],
+                    source[muid::Index::Byte3],
+                    source[muid::Index::Byte4],
+                    0x7F,
+                    0x7F,
+                    0x7F,
+                    0x7F, // broadcast
+                    0x7E,
+                    0x00,
+                    0x14,
+                    0x00,
+                    0x0, // profile id
                 ],
                 0x7,
             ),
@@ -1321,34 +1457,44 @@ mod to_extended_sysex {
         let source = muid::Muid::new();
         let destination = muid::Muid::new();
         assert_eq!(
-            ext_sysex::MessageGroup::from(
-                (
-                    Message::ProfileSpecificData {
-                        device_id: DeviceId::Channel(ux::u4::new(0xC)),
-                        source: source.clone(),
-                        destination: destination.clone(),
-                        profile: profile::Id::Manufacturer {
-                            id: [0x06, 0x06, 0x06],
-                            data: [0x06, 0x06],
-                        },
-                        data: vec![0x2, 0x3, 0x5, 0x7, 0xB],
+            ext_sysex::MessageGroup::from((
+                Message::ProfileSpecificData {
+                    device_id: DeviceId::Channel(ux::u4::new(0xC)),
+                    source: source.clone(),
+                    destination: destination.clone(),
+                    profile: profile::Id::Manufacturer {
+                        id: [0x06, 0x06, 0x06],
+                        data: [0x06, 0x06],
                     },
-                    0x0,
-                ),
-            ),
+                    data: vec![0x2, 0x3, 0x5, 0x7, 0xB],
+                },
+                0x0,
+            ),),
             ext_sysex::MessageGroup::from_data(
                 &vec![
                     0x7E, // universal sysex
-                    0xC, // device id
+                    0xC,  // device id
                     0x0D, // midi ci
                     0x2F, // profile data
                     Message::VERSION,
-                    source[muid::Index::Byte1], source[muid::Index::Byte2], 
-                    source[muid::Index::Byte3], source[muid::Index::Byte4],
-                    destination[muid::Index::Byte1], destination[muid::Index::Byte2], 
-                    destination[muid::Index::Byte3], destination[muid::Index::Byte4],
-                    0x06, 0x06, 0x06, 0x06, 0x06, // profile id
-                    0x2, 0x3, 0x5, 0x7, 0xB, // data
+                    source[muid::Index::Byte1],
+                    source[muid::Index::Byte2],
+                    source[muid::Index::Byte3],
+                    source[muid::Index::Byte4],
+                    destination[muid::Index::Byte1],
+                    destination[muid::Index::Byte2],
+                    destination[muid::Index::Byte3],
+                    destination[muid::Index::Byte4],
+                    0x06,
+                    0x06,
+                    0x06,
+                    0x06,
+                    0x06, // profile id
+                    0x2,
+                    0x3,
+                    0x5,
+                    0x7,
+                    0xB, // data
                 ],
                 0x0,
             ),

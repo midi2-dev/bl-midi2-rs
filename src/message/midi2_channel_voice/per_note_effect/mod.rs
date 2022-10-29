@@ -5,16 +5,12 @@ macro_rules! per_note_effect_message {
     ($op_code:expr) => {
         use crate::{
             error::Error,
-            util::Truncate,
-            packet::{Packet, PacketMethods},
             message::helpers,
+            packet::{Packet, PacketMethods},
+            util::Truncate,
         };
 
-        #[derive(
-            Clone,
-            Debug, 
-            PartialEq, Eq,
-        )]
+        #[derive(Clone, Debug, PartialEq, Eq)]
         pub struct Message {
             group: ux::u4,
             channel: ux::u4,
@@ -30,11 +26,7 @@ macro_rules! per_note_effect_message {
         impl core::convert::TryFrom<Packet> for Message {
             type Error = Error;
             fn try_from(p: Packet) -> Result<Self, Self::Error> {
-                helpers::validate_packet(
-                    &p, 
-                    Message::TYPE_CODE,
-                    Message::OP_CODE,
-                )?;
+                helpers::validate_packet(&p, Message::TYPE_CODE, Message::OP_CODE)?;
                 Ok(Message {
                     group: helpers::group_from_packet(&p),
                     channel: helpers::channel_from_packet(&p),
@@ -48,18 +40,18 @@ macro_rules! per_note_effect_message {
             fn from(m: Message) -> Self {
                 let mut p = Packet::new();
                 helpers::write_data_to_packet(
-                    Message::TYPE_CODE, 
-                    m.group, 
-                    Message::OP_CODE, 
-                    m.channel, 
-                    &mut p
+                    Message::TYPE_CODE,
+                    m.group,
+                    Message::OP_CODE,
+                    m.channel,
+                    &mut p,
                 );
                 p.set_octet(2, m.note.into());
                 p[1] = m.data;
                 p
             }
         }
-    }
+    };
 }
 
 pub(crate) use per_note_effect_message;

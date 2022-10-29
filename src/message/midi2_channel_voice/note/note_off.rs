@@ -4,13 +4,9 @@ note_message!(0b1000);
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        error::Error,
-        packet::Packet,
-        util::message_traits_test,
-    };
     use crate::message::midi2_channel_voice::attribute;
-    
+    use crate::{error::Error, packet::Packet, util::message_traits_test};
+
     message_traits_test!(Message);
 
     #[test]
@@ -32,10 +28,7 @@ mod tests {
     #[test]
     fn deserialize() {
         assert_eq!(
-            Message::try_from(Packet::from_data(&[
-                0x408A_6301, 
-                0xABCD_1234,
-            ])),
+            Message::try_from(Packet::from_data(&[0x408A_6301, 0xABCD_1234,])),
             Ok(Message {
                 group: ux::u4::new(0x0),
                 channel: ux::u4::new(0xA),

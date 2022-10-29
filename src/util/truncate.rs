@@ -1,11 +1,7 @@
 use crate::util::Bounded;
 
-pub trait Truncate : 
-    Sized +
-    Clone +
-    Bounded + 
-    core::ops::BitAnd<Self> + 
-    core::ops::BitOr<Self> + 
+pub trait Truncate:
+    Sized + Clone + Bounded + core::ops::BitAnd<Self> + core::ops::BitOr<Self>
 {
     fn truncate<T>(&self) -> T
     where
@@ -14,17 +10,16 @@ pub trait Truncate :
         T: Bounded,
         T: core::convert::Into<Self>,
     {
-        (self.clone() & T::absolute_max().into()).try_into().unwrap()
+        (self.clone() & T::absolute_max().into())
+            .try_into()
+            .unwrap()
     }
 }
 
-impl<T> Truncate for T where T: 
-    Sized +
-    Clone +
-    Bounded + 
-    core::ops::BitAnd<Self> + 
-    core::ops::BitOr<Self> + 
-{}
+impl<T> Truncate for T where
+    T: Sized + Clone + Bounded + core::ops::BitAnd<Self> + core::ops::BitOr<Self>
+{
+}
 
 #[cfg(test)]
 mod tests {

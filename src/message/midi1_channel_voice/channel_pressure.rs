@@ -1,15 +1,11 @@
+use super::super::helpers;
 use crate::{
     error::Error,
-    util::Truncate, 
     packet::{Packet, PacketMethods},
+    util::Truncate,
 };
-use super::super::helpers;
 
-#[derive(
-    Clone,
-    Debug, 
-    PartialEq, Eq,
-)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Message {
     group: ux::u4,
     channel: ux::u4,
@@ -24,12 +20,8 @@ impl Message {
 impl core::convert::TryFrom<Packet> for Message {
     type Error = Error;
     fn try_from(p: Packet) -> Result<Self, Self::Error> {
-        helpers::validate_packet(
-            &p,
-            Message::TYPE_CODE,
-            Message::OP_CODE,
-        )?;
-        Ok(Message{
+        helpers::validate_packet(&p, Message::TYPE_CODE, Message::OP_CODE)?;
+        Ok(Message {
             group: p.nibble(1),
             channel: p.nibble(3),
             pressure: p.octet(2).truncate(),
@@ -56,7 +48,7 @@ impl From<Message> for Packet {
 mod tests {
     use super::*;
     use crate::util::message_traits_test;
-    
+
     message_traits_test!(Message);
 
     #[test]
