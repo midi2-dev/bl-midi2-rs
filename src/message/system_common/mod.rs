@@ -5,8 +5,9 @@ use crate::{
 
 const TYPE_CODE: ux::u4 = ux::u4::new(0x1);
 
-pub mod time_code;
 pub mod song_position_pointer;
+pub mod song_select;
+pub mod time_code;
 
 mod simple_generic;
 
