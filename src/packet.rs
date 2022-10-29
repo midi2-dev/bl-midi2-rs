@@ -1,4 +1,4 @@
-#[derive(Clone, Default, PartialEq)]
+#[derive(Clone, Default, PartialEq, Eq)]
 pub struct Packet([u32; 4]);
 
 impl Packet {
@@ -77,8 +77,8 @@ impl PacketMethods for Packet {
 
     fn octets<'a>(&self, begin: usize, data: &'a mut [u8]) -> &'a [u8] {
         assert!(begin + data.len() < 17);
-        for i in 0..data.len() {
-            data[i] = self.octet((i + begin).into()); 
+        for (i, d) in data.iter_mut().enumerate() {
+            *d = self.octet(i + begin); 
         }
         data
     }
@@ -151,12 +151,12 @@ mod tests {
             0b0000_0010_0000_0000_0000_0000_0000_0000,
             0b1111_0111_1111_1111_1111_1111_1111_1111,
         ]);
-        assert_eq!(p.bit(0), true);
-        assert_eq!(p.bit(30), true);
-        assert_eq!(p.bit(32), false);
-        assert_eq!(p.bit(60), false);
-        assert_eq!(p.bit(70), true);
-        assert_eq!(p.bit(100), false);
+        assert!(p.bit(0));
+        assert!(p.bit(30));
+        assert!(!p.bit(32));
+        assert!(!p.bit(60));
+        assert!(p.bit(70));
+        assert!(!p.bit(100));
     }
 
     #[test]

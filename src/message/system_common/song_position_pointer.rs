@@ -8,7 +8,7 @@ use super::super::helpers;
 #[derive(
     Clone,
     Debug, 
-    PartialEq,
+    PartialEq, Eq,
 )]
 pub struct Message {
     group: ux::u4,
@@ -43,8 +43,8 @@ impl From<Message> for Packet {
             &mut p, 
             m.group, 
             Message::STATUS_CODE, 
-            Some(helpers::least_significant_bit(m.position).into()),
-            Some(helpers::most_significant_bit(m.position).into()),
+            Some(helpers::least_significant_bit(m.position)),
+            Some(helpers::most_significant_bit(m.position)),
         );
         p
     }
@@ -63,7 +63,7 @@ mod tests {
             Message::try_from(Packet::from_data(&[0x1FF2_0000 | 0b0101_1110_0011_0001])),
             Ok(Message {
                 group: ux::u4::new(0xF),
-                position: ux::u14::new(0b0110001_1011110),
+                position: ux::u14::new(0b01_1000_1101_1110),
             })
         );
     }
@@ -73,9 +73,9 @@ mod tests {
         assert_eq!(
             Packet::from(Message {
                 group: ux::u4::new(0x1),
-                position: ux::u14::new(0b0011001_0111001)
+                position: ux::u14::new(0b00_1100_1011_1001)
             }),
-            Packet::from_data(&[0x11F2_0000 | 0b00111001_00011001]),
+            Packet::from_data(&[0x11F2_0000 | 0b0011_1001_0001_1001]),
         );
     }
 }

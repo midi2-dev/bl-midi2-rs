@@ -7,7 +7,7 @@ use crate::{
 #[derive(
     Clone,
     Debug,
-    PartialEq,
+    PartialEq, Eq,
 )]
 pub struct Message {
     time_stamp: ux::u20,

@@ -6,7 +6,7 @@ use crate::{
 #[derive(
     Clone,
     Debug,
-    PartialEq,
+    PartialEq, Eq,
 )]
 pub struct Message {
     group: ux::u4,

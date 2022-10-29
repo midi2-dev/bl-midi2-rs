@@ -1,7 +1,7 @@
 #[derive(
     Clone,
     Debug,
-    PartialEq,
+    PartialEq, Eq,
 )]
 pub enum Error {
     InvalidData,

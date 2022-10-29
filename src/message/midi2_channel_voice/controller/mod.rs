@@ -15,7 +15,7 @@ macro_rules! controller_message {
         #[derive(
             Clone,
             Debug, 
-            PartialEq,
+            PartialEq, Eq,
         )]
         pub struct Message {
             group: ux::u4,

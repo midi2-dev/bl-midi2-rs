@@ -7,7 +7,7 @@ use crate::{
 #[derive(
     Clone,
     Debug,
-    PartialEq,
+    PartialEq, Eq,
 )]
 pub struct Message {
     group: ux::u4,
@@ -25,7 +25,7 @@ impl Message {
     Copy, 
     Clone, 
     Debug, 
-    PartialEq,
+    PartialEq, Eq,
 )]
 pub enum Status {
     Complete,

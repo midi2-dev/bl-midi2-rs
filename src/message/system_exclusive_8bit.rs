@@ -8,6 +8,7 @@ use crate::{
     Clone,
     Debug,
     PartialEq,
+    Eq,
 )]
 pub struct Message {
     group: ux::u4,
@@ -26,7 +27,7 @@ impl Message {
     Copy, 
     Clone, 
     Debug, 
-    PartialEq,
+    PartialEq, Eq,
 )]
 pub enum Status {
     Complete,
@@ -40,7 +41,7 @@ pub enum Status {
     Copy, 
     Clone, 
     Debug, 
-    PartialEq,
+    PartialEq, Eq,
 )]
 pub enum Validity {
     Valid,
@@ -100,10 +101,7 @@ fn number_of_bytes(p: &Packet) -> ux::u4 {
 
 fn data_from_packet(p: &Packet, status: Status) -> Result<Data, Error> {
     let n: usize = u8::from(number_of_bytes(p)).into();
-    let unexpected_end = match status {
-        Status::UnexpectedEnd(_) => true,
-        _ => false,
-    };
+    let unexpected_end = matches!(status, Status::UnexpectedEnd(_));
     if n == 0 {
         // we expect a stream id
         Err(Error::InvalidData)

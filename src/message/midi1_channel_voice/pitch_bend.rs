@@ -9,6 +9,7 @@ use super::super::helpers;
     Clone,
     Debug, 
     PartialEq,
+    Eq,
 )]
 pub struct Message {
     group: ux::u4,
@@ -75,11 +76,11 @@ mod tests {
     #[test]
     fn deserialize() {
         assert_eq!(
-            Message::try_from(Packet::from_data(&[0b0010_1011_1110_0000_01101001_00110011])),
+            Message::try_from(Packet::from_data(&[0b0010_1011_1110_0000_0110_1001_0011_0011])),
             Ok(Message {
                 group: ux::u4::new(0xB),
                 channel: ux::u4::new(0),
-                bend: ux::u14::new(0b0110011_1101001),
+                bend: ux::u14::new(0b01_1001_1110_1001),
             })
         );
     }
@@ -90,9 +91,9 @@ mod tests {
             Packet::from(Message {
                 group: ux::u4::new(0x5),
                 channel: ux::u4::new(0x0),
-                bend: ux::u14::new(0b0011011_0111001),
+                bend: ux::u14::new(0b00_1101_1011_1001),
             }),
-            Packet::from_data(&[0b0010_0101_1110_0000_00111001_00011011]),
+            Packet::from_data(&[0b0010_0101_1110_0000_0011_1001_0001_1011]),
         );
     }
 }

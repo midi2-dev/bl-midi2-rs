@@ -9,7 +9,7 @@ use super::super::helpers;
 #[derive(
     Clone,
     Debug, 
-    PartialEq,
+    PartialEq, Eq,
 )]
 pub struct Message {
     group: ux::u4,
@@ -70,7 +70,7 @@ mod tests {
         assert_eq!(
             Message::try_from(Packet::from_data(&[
                 0x4B06_7B03, 
-                0b1011001_1001011101111110010111010,
+                0b1011_0011_0010_1110_1111_1100_1011_1010,
             ])),
             Ok(Message {
                 group: ux::u4::new(0xB),

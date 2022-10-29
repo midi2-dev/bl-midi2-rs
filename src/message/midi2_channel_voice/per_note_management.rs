@@ -8,7 +8,7 @@ use super::super::helpers;
 #[derive(
     Clone,
     Debug, 
-    PartialEq,
+    PartialEq, Eq,
 )]
 pub struct Message {
     group: ux::u4,

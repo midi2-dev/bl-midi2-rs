@@ -1,4 +1,4 @@
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct SliceData<T, const N: usize>([T; N], usize)
 where
     T: Clone + core::fmt::Debug + Default + PartialEq,
@@ -16,8 +16,10 @@ where
     
     pub fn from_data(d: &[T]) -> Self {
         assert!(d.len() <= N);
-        let mut ret: Self = Default::default();
-        ret.1 = d.len();
+        let mut ret: Self = SliceData::<T, N> { 
+            1: d.len(),
+            ..Default::default()
+        };
         ret.0[0..d.len()].clone_from_slice(d);
         ret
     }

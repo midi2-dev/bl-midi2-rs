@@ -20,9 +20,7 @@ pub use simple_generic::active_sensing;
 pub use simple_generic::reset;
 
 fn validate_packet(p: &Packet, status: u8) -> Result<(), Error> {
-    if p.nibble(0) != TYPE_CODE {
-        Err(Error::InvalidData)
-    } else if p.octet(1) != status {
+    if p.nibble(0) != TYPE_CODE || p.octet(1) != status {
         Err(Error::InvalidData)
     } else {
         Ok(())

@@ -9,9 +9,7 @@ pub fn validate_packet(
     type_code: ux::u4,
     op_code: ux::u4,
 ) -> Result<(), Error> {
-    if p.nibble(0) != type_code {
-        Err(Error::InvalidData)
-    } else if p.nibble(2) != op_code {
+    if p.nibble(0) != type_code || p.nibble(2) != op_code {
         Err(Error::InvalidData)
     } else {
         Ok(())
@@ -49,5 +47,5 @@ pub fn most_significant_bit(word_14: ux::u14) -> ux::u7 {
 }
 
 pub fn least_significant_bit(word_14: ux::u14) -> ux::u7 {
-    (word_14 & ux::u14::new(0b0000000_0111111)).truncate()
+    (word_14 & ux::u14::new(0b00_0000_0011_1111)).truncate()
 }

@@ -6,7 +6,7 @@ use crate::{
 #[derive(
     Clone,
     Debug,
-    PartialEq,
+    PartialEq, Eq,
 )]
 #[non_exhaustive]
 pub enum Controller {

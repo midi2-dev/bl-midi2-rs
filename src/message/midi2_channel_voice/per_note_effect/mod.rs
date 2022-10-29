@@ -13,7 +13,7 @@ macro_rules! per_note_effect_message {
         #[derive(
             Clone,
             Debug, 
-            PartialEq,
+            PartialEq, Eq,
         )]
         pub struct Message {
             group: ux::u4,

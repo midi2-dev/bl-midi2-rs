@@ -8,7 +8,7 @@ use crate::{
     Clone,
     Copy,
     Debug,
-    PartialEq,
+    PartialEq, Eq,
 )]
 #[non_exhaustive]
 pub enum Attribute {

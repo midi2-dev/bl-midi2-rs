@@ -8,7 +8,7 @@ macro_rules! simple_generic_message {
         #[derive(
             Clone,
             Debug,
-            PartialEq,
+            PartialEq, Eq,
         )]
         pub struct Message {
             group: ux::u4,
