@@ -19,13 +19,31 @@ macro_rules! note_message {
             attribute: Option<attribute::Attribute>,
         }
 
-        builder::builder!(
-            group: ux::u4,
-            channel: ux::u4,
-            note: ux::u7,
-            velocity: u16,
+        pub struct Builder {
+            group: Option<ux::u4>,
+            channel: Option<ux::u4>,
+            note: Option<ux::u7>,
+            velocity: Option<u16>,
             attribute: Option<attribute::Attribute>
-        );
+        }
+
+        impl Builder {
+            builder::builder_setter!(group: ux::u4);
+            builder::builder_setter!(channel: ux::u4);
+            builder::builder_setter!(note: ux::u7);
+            builder::builder_setter!(velocity: u16);
+            builder::builder_setter!(attribute: attribute::Attribute);
+            
+            pub fn build(&self) -> Message {
+                Message {
+                    group: self.group.unwrap_or_else(|| panic!("Missing fields!")),
+                    channel: self.channel.unwrap_or_else(|| panic!("Missing fields!")),
+                    note: self.note.unwrap_or_else(|| panic!("Missing fields!")),
+                    velocity: self.velocity.unwrap_or_else(|| panic!("Missing fields!")),
+                    attribute: self.attribute,
+                }
+            }
+        }
 
         impl Message {
             const TYPE_CODE: ux::u4 = crate::message::midi2_channel_voice::TYPE_CODE;
@@ -35,6 +53,15 @@ macro_rules! note_message {
             getter::getter!(note, ux::u7);
             getter::getter!(velocity, u16);
             getter::getter!(attribute, Option<attribute::Attribute>);
+            pub fn builder() -> Builder {
+                Builder {
+                    group: None,
+                    channel: None,
+                    note: None,
+                    velocity: None,
+                    attribute: None,
+                }
+            }
         }
 
         impl core::convert::TryFrom<Packet> for Message {
