@@ -27,7 +27,7 @@ macro_rules! note_message {
             const OP_CODE: ux::u4 = ux::u4::new($op_code);
         }
 
-        impl std::convert::TryFrom<Packet> for Message {
+        impl core::convert::TryFrom<Packet> for Message {
             type Error = Error;
             fn try_from(p: Packet) -> Result<Self, Self::Error> {
                 helpers::validate_packet(
@@ -56,8 +56,8 @@ macro_rules! note_message {
                 );
                 p
                     .set_octet(2, m.note.into())
-                    .set_octet(3, m.velocity.into())
-                    .to_owned()
+                    .set_octet(3, m.velocity.into());
+                p
             }
         }
     }

@@ -22,7 +22,7 @@ impl Message {
     const OP_CODE: ux::u4 = ux::u4::new(0b1010);
 }
 
-impl std::convert::TryFrom<Packet> for Message {
+impl core::convert::TryFrom<Packet> for Message {
     type Error = Error;
     fn try_from(p: Packet) -> Result<Self, Self::Error> {
         helpers::validate_packet(
@@ -51,8 +51,8 @@ impl From<Message> for Packet {
         );
         p
             .set_octet(2, m.note.into())
-            .set_octet(3, m.pressure.into())
-            .to_owned()
+            .set_octet(3, m.pressure.into());
+        p
     }
 }
 

@@ -47,7 +47,7 @@ pub enum Validity {
     Invalid,
 }
 
-impl std::convert::TryFrom<Packet> for Message {
+impl core::convert::TryFrom<Packet> for Message {
     type Error = Error;
     fn try_from(p: Packet) -> Result<Self, Self::Error> {
         validate_packet(&p)?;
@@ -121,7 +121,7 @@ fn data_from_packet(p: &Packet, status: Status) -> Result<Data, Error> {
     }
 }
 
-impl std::convert::From<Message> for Packet {
+impl core::convert::From<Message> for Packet {
     fn from(m: Message) -> Self {
         let mut p = Packet::new();
         super::write_type_to_packet(Message::TYPE_CODE, &mut p);

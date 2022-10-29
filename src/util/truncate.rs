@@ -9,10 +9,10 @@ pub trait Truncate :
 {
     fn truncate<T>(&self) -> T
     where
-        T: std::convert::TryFrom<<Self as std::ops::BitAnd>::Output>,
-        <T as TryFrom<<Self as std::ops::BitAnd>::Output>>::Error: core::fmt::Debug,
+        T: core::convert::TryFrom<<Self as core::ops::BitAnd>::Output>,
+        <T as TryFrom<<Self as core::ops::BitAnd>::Output>>::Error: core::fmt::Debug,
         T: Bounded,
-        T: std::convert::Into<Self>,
+        T: core::convert::Into<Self>,
     {
         (self.clone() & T::absolute_max().into()).try_into().unwrap()
     }

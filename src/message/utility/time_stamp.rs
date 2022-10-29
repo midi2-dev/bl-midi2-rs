@@ -18,17 +18,17 @@ impl Message {
     const OP_CODE: ux::u4 = ux::u4::new(0b0010);
 }
 
-impl std::convert::From<Message> for Packet {
+impl core::convert::From<Message> for Packet {
     fn from(m: Message) -> Self {
-        Packet::from_data(
+        let mut p = Packet::from_data(
             &[u32::from(m.time_stamp) |  0x0020_0000],
-        )
-            .set_nibble(1, m.group)
-            .to_owned()
+        );
+        p.set_nibble(1, m.group);
+        p
     }
 }
 
-impl std::convert::TryFrom<Packet> for Message {
+impl core::convert::TryFrom<Packet> for Message {
     type Error = Error;
     fn try_from(p: Packet) -> Result<Self, Self::Error> {
         super::validate_packet(&p, Message::OP_CODE)?;

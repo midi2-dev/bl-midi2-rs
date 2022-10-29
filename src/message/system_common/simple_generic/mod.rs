@@ -18,7 +18,7 @@ macro_rules! simple_generic_message {
             const STATUS_CODE: u8 = $op_code;
         }
 
-        impl std::convert::TryFrom<Packet> for Message {
+        impl core::convert::TryFrom<Packet> for Message {
             type Error = Error;
             fn try_from(p: Packet) -> Result<Self, Self::Error> {
                 crate::message::system_common::validate_packet(&p, Message::STATUS_CODE)?;
@@ -28,7 +28,7 @@ macro_rules! simple_generic_message {
             }
         }
 
-        impl std::convert::From<Message> for Packet {
+        impl core::convert::From<Message> for Packet {
             fn from(m: Message) -> Self {
                 let mut p = Packet::new();
                 crate::message::system_common::write_data_to_packet(

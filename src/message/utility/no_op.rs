@@ -16,13 +16,15 @@ impl Message {
     const OP_CODE: ux::u4 = ux::u4::new(0x0);
 }
 
-impl std::convert::From<Message> for Packet {
+impl core::convert::From<Message> for Packet {
     fn from(m: Message) -> Self {
-        Packet::new().set_nibble(1, m.group).to_owned()
+        let mut p = Packet::new();
+        p.set_nibble(1, m.group);
+        p
     }
 }
 
-impl std::convert::TryFrom<Packet> for Message {
+impl core::convert::TryFrom<Packet> for Message {
     type Error = Error;
     fn try_from(p: Packet) -> Result<Self, Self::Error> {
         super::validate_packet(&p, Message::OP_CODE)?;

@@ -19,7 +19,7 @@ impl Message {
     const STATUS_CODE: u8 = 0xF1;
 }
 
-impl std::convert::TryFrom<Packet> for Message {
+impl core::convert::TryFrom<Packet> for Message {
     type Error = Error;
     fn try_from(p: Packet) -> Result<Self, Self::Error> {
         super::validate_packet(

@@ -22,7 +22,7 @@ impl Message {
     const OP_CODE: ux::u4 = ux::u4::new(0b1011);
 }
 
-impl std::convert::TryFrom<Packet> for Message {
+impl core::convert::TryFrom<Packet> for Message {
     type Error = Error;
     fn try_from(p: Packet) -> Result<Self, Self::Error> {
         helpers::validate_packet(

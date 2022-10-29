@@ -105,8 +105,8 @@ impl PacketMethods for Packet {
     }
 }
 
-impl std::fmt::Debug for Packet {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+impl core::fmt::Debug for Packet {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> Result<(), core::fmt::Error> {
         write!(
             f,
             "Packet ([ {:#010X}, {:#010X}, {:#010X}, {:#010X} ])",
@@ -230,7 +230,7 @@ mod tests {
         {
             let mut data: [u8; 4] = Default::default();
             assert_eq!(
-                &vec![0x12, 0x34, 0x56, 0x78],
+                &[0x12, 0x34, 0x56, 0x78],
                 Packet([0x0012_3456, 0x7800_0000, 0x0, 0x0]).octets(1, &mut data),
             );
         }
@@ -238,7 +238,7 @@ mod tests {
             let mut data: [u8; 16] = Default::default();
             assert_eq!(
                 Packet([0x0012_3456, 0x7890_ABCD, 0xEF12_3456, 0x7890_ABCD]).octets(0, &mut data),
-                &vec![
+                &[
                     0x00, 0x12, 0x34, 0x56, 0x78, 0x90, 0xAB, 0xCD, 0xEF, 0x12, 0x34, 0x56, 0x78, 0x90,
                     0xAB, 0xCD,
                 ],
@@ -247,7 +247,7 @@ mod tests {
         {
             assert_eq!(
                 Packet([0x0, 0x0, 0x0, 0x0]).octets(0, &mut []),
-                &vec![],
+                &[],
             );
         }
     }
@@ -255,11 +255,11 @@ mod tests {
     #[test]
     fn set_octets() {
         assert_eq!(
-            <Packet as Default>::default().set_octets(2, &vec![0xFF, 0xFF, 0xFF, 0xFF, 0xFF]),
+            <Packet as Default>::default().set_octets(2, &[0xFF, 0xFF, 0xFF, 0xFF, 0xFF]),
             &Packet([0x0000_FFFF, 0xFFFF_FF00, 0x0, 0x0]),
         );
         assert_eq!(
-            <Packet as Default>::default().set_octets(0, &Vec::new()),
+            <Packet as Default>::default().set_octets(0, &[]),
             &Packet([0x0, 0x0, 0x0, 0x0]),
         );
         assert_eq!(
@@ -294,8 +294,9 @@ mod tests {
 
     #[test]
     fn format() {
+        extern crate std;
         assert_eq!(
-            format!(
+            std::format!(
                 "{:?}",
                 Packet([0x0123_4567, 0x89AB_CDEF, 0x0123_4567, 0x89AB_CDEF,]),
             ),

@@ -135,7 +135,7 @@ impl Message {
     const VERSION: u8 = 0x01;
 }
 
-impl std::convert::From<(Message, u8)> for ext_sysex::MessageGroup {
+impl core::convert::From<(Message, u8)> for ext_sysex::MessageGroup {
     fn from((m, stream_id): (Message, u8)) -> Self {
         match m {
             Message::Discovery {
