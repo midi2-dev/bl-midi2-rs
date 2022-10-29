@@ -1,7 +1,7 @@
 use crate::{
     error::Error,
     packet::{Packet, PacketMethods},
-    util::{builder, SliceData, Truncate},
+    util::{builder, getter, SliceData, Truncate},
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -48,6 +48,22 @@ type Data = SliceData<u8, 13>;
 
 impl Message {
     const TYPE_CODE: ux::u4 = ux::u4::new(0x5);
+    getter::getter!(group, ux::u4);
+    getter::getter!(stream_id, u8);
+    getter::getter!(status, Status);
+    
+    pub fn data(&self) -> &[u8] {
+        &*self.data
+    }
+    
+    pub fn builder() -> Builder {
+        Builder {
+            group: None,
+            stream_id: None,
+            status: None,
+            data: Data::default(),
+        }
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]

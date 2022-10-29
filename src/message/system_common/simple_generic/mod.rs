@@ -3,7 +3,7 @@ macro_rules! simple_generic_message {
         use crate::{
             error::Error, 
             packet::Packet,
-            util::builder,
+            util::{builder, getter},
         };
 
         #[derive(Clone, Debug, PartialEq, Eq)]
@@ -17,6 +17,7 @@ macro_rules! simple_generic_message {
 
         impl Message {
             const STATUS_CODE: u8 = $op_code;
+            getter::getter!(group, ux::u4);
         }
 
         impl core::convert::TryFrom<Packet> for Message {

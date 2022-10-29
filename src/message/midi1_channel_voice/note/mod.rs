@@ -7,7 +7,7 @@ macro_rules! note_message {
             error::Error,
             message::helpers,
             packet::{Packet, PacketMethods},
-            util::{Truncate, builder},
+            util::{Truncate, builder, getter},
         };
 
         #[derive(Clone, Debug, PartialEq, Eq)]
@@ -28,6 +28,10 @@ macro_rules! note_message {
         impl Message {
             const TYPE_CODE: ux::u4 = crate::message::midi1_channel_voice::TYPE_CODE;
             const OP_CODE: ux::u4 = ux::u4::new($op_code);
+            getter::getter!(group, ux::u4);
+            getter::getter!(channel, ux::u4);
+            getter::getter!(note, ux::u7);
+            getter::getter!(velocity, ux::u7);
         }
 
         impl core::convert::TryFrom<Packet> for Message {

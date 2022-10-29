@@ -1,7 +1,7 @@
 use crate::{
     error::Error,
     packet::{Packet, PacketMethods},
-    util::{builder, SliceData, Truncate},
+    util::{builder, getter, SliceData, Truncate},
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -51,6 +51,13 @@ impl Message {
             status: None,
             data: Data::default(),
         }
+    }
+
+    getter::getter!(group, ux::u4);
+    getter::getter!(status, Status);
+    
+    pub fn data(&self) -> &[ux::u7] {
+        &*self.data
     }
 }
 

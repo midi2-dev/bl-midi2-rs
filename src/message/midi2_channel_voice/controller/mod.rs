@@ -9,7 +9,7 @@ macro_rules! controller_message {
         use crate::{
             error::Error,
             packet::{Packet, PacketMethods},
-            util::{builder, Truncate},
+            util::{builder, getter, Truncate},
         };
 
         #[derive(Clone, Debug, PartialEq, Eq)]
@@ -32,6 +32,11 @@ macro_rules! controller_message {
         impl Message {
             const TYPE_CODE: ux::u4 = crate::message::midi2_channel_voice::TYPE_CODE;
             const OP_CODE: ux::u4 = ux::u4::new($op_code);
+            getter::getter!(group, ux::u4);
+            getter::getter!(channel, ux::u4);
+            getter::getter!(bank, ux::u7);
+            getter::getter!(index, ux::u7);
+            getter::getter!(data, u32);
         }
 
         impl core::convert::TryFrom<Packet> for Message {

@@ -1,6 +1,7 @@
 use crate::packet::Packet;
 
 pub mod builder;
+pub mod getter;
 
 mod bounded;
 mod slice_data;

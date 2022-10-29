@@ -2,7 +2,7 @@ use super::super::helpers;
 use crate::{
     error::Error,
     packet::{Packet, PacketMethods},
-    util::{Truncate, builder},
+    util::{Truncate, getter, builder},
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -21,6 +21,9 @@ builder::builder!(
 impl Message {
     const TYPE_CODE: ux::u4 = super::TYPE_CODE;
     const OP_CODE: ux::u4 = ux::u4::new(0b1110);
+    getter::getter!(group, ux::u4);
+    getter::getter!(channel, ux::u4);
+    getter::getter!(bend, ux::u14);
 }
 
 impl core::convert::TryFrom<Packet> for Message {

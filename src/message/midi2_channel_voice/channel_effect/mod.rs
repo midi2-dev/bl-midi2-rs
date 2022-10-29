@@ -7,7 +7,7 @@ macro_rules! channel_effect_message {
         use crate::{
             error::Error, 
             packet::Packet,
-            util::builder,
+            util::{builder, getter},
         };
 
         #[derive(Clone, Debug, PartialEq, Eq)]
@@ -26,6 +26,9 @@ macro_rules! channel_effect_message {
         impl Message {
             const TYPE_CODE: ux::u4 = crate::message::midi2_channel_voice::TYPE_CODE;
             const OP_CODE: ux::u4 = ux::u4::new($op_code);
+            getter::getter!(group, ux::u4);
+            getter::getter!(channel, ux::u4);
+            getter::getter!(data, u32);
         }
 
         impl core::convert::TryFrom<Packet> for Message {

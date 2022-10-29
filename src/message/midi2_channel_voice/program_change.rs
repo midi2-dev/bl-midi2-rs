@@ -2,7 +2,7 @@ use super::super::helpers;
 use crate::{
     error::Error,
     packet::{Packet, PacketMethods},
-    util::{builder, Truncate},
+    util::{builder, getter, Truncate},
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -49,6 +49,10 @@ impl Message {
             bank: None,
         }
     }
+    getter::getter!(group, ux::u4);
+    getter::getter!(channel, ux::u4);
+    getter::getter!(program, ux::u7);
+    getter::getter!(bank, Option<ux::u14>);
 }
 
 impl core::convert::TryFrom<Packet> for Message {

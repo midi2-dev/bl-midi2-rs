@@ -2,7 +2,7 @@ use super::super::helpers;
 use crate::{
     error::Error,
     packet::{Packet, PacketMethods},
-    util::{builder, Truncate},
+    util::{builder, getter, Truncate},
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -18,6 +18,8 @@ builder::builder!(
 
 impl Message {
     const STATUS_CODE: u8 = 0xF1;
+    getter::getter!(group, ux::u4);
+    getter::getter!(time_code, ux::u7);
 }
 
 impl core::convert::TryFrom<Packet> for Message {
