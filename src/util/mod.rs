@@ -1,5 +1,7 @@
 use crate::packet::Packet;
 
+pub mod builder;
+
 mod bounded;
 mod slice_data;
 mod truncate;

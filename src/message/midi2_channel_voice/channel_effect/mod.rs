@@ -4,7 +4,11 @@ pub mod pressure;
 macro_rules! channel_effect_message {
     ($op_code:expr) => {
         use crate::message::helpers;
-        use crate::{error::Error, packet::Packet};
+        use crate::{
+            error::Error, 
+            packet::Packet,
+            util::builder,
+        };
 
         #[derive(Clone, Debug, PartialEq, Eq)]
         pub struct Message {
@@ -12,6 +16,12 @@ macro_rules! channel_effect_message {
             channel: ux::u4,
             data: u32,
         }
+
+        builder::builder!(
+            group: ux::u4,
+            channel: ux::u4,
+            data: u32
+        );
 
         impl Message {
             const TYPE_CODE: ux::u4 = crate::message::midi2_channel_voice::TYPE_CODE;

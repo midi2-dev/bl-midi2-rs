@@ -1,12 +1,15 @@
 use crate::{
     error::Error,
     packet::{Packet, PacketMethods},
+    util::builder,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Message {
     group: ux::u4,
 }
+
+builder::builder!(group: ux::u4);
 
 impl Message {
     const OP_CODE: ux::u4 = ux::u4::new(0x0);

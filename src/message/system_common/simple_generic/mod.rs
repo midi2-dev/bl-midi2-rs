@@ -1,11 +1,19 @@
 macro_rules! simple_generic_message {
     ($op_code:expr) => {
-        use crate::{error::Error, packet::Packet};
+        use crate::{
+            error::Error, 
+            packet::Packet,
+            util::builder,
+        };
 
         #[derive(Clone, Debug, PartialEq, Eq)]
         pub struct Message {
             group: ux::u4,
         }
+        
+        builder::builder!(
+            group: ux::u4
+        );
 
         impl Message {
             const STATUS_CODE: u8 = $op_code;

@@ -2,7 +2,7 @@ use super::super::helpers;
 use crate::{
     error::Error,
     packet::{Packet, PacketMethods},
-    util::Truncate,
+    util::{builder, Truncate},
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -13,9 +13,42 @@ pub struct Message {
     bank: Option<ux::u14>,
 }
 
+#[derive(Clone)]
+pub struct Builder {
+    group: Option<ux::u4>,
+    channel: Option<ux::u4>,
+    program: Option<ux::u7>,
+    bank: Option<ux::u14>,
+}
+
+impl Builder {
+    builder::builder_setter!(group: ux::u4);
+    builder::builder_setter!(channel: ux::u4);
+    builder::builder_setter!(program: ux::u7);
+    builder::builder_setter!(bank: ux::u14);
+    
+    pub fn build(&self) -> Message {
+        Message {
+            group: self.group.unwrap_or_else(|| panic!("Missing fields!")),
+            channel: self.channel.unwrap_or_else(|| panic!("Missing fields!")),
+            program: self.program.unwrap_or_else(|| panic!("Missing fields!")),
+            bank: self.bank,
+        }
+    }
+}
+
 impl Message {
     const TYPE_CODE: ux::u4 = super::TYPE_CODE;
     const OP_CODE: ux::u4 = ux::u4::new(0b1100);
+    
+    pub fn builder() -> Builder {
+        Builder {
+            group: None,
+            channel: None,
+            program: None,
+            bank: None,
+        }
+    }
 }
 
 impl core::convert::TryFrom<Packet> for Message {

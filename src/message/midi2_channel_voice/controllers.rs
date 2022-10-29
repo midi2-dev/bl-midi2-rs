@@ -1,6 +1,6 @@
 use crate::{error::Error, util::Truncate};
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum Controller {
     Modulation(u32),

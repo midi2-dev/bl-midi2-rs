@@ -7,7 +7,7 @@ macro_rules! note_message {
             error::Error,
             message::helpers,
             packet::{Packet, PacketMethods},
-            util::Truncate,
+            util::{Truncate, builder},
         };
 
         #[derive(Clone, Debug, PartialEq, Eq)]
@@ -17,6 +17,13 @@ macro_rules! note_message {
             note: ux::u7,
             velocity: ux::u7,
         }
+        
+        builder::builder!(
+            group: ux::u4,
+            channel: ux::u4,
+            note: ux::u7,
+            velocity: ux::u7
+        );
 
         impl Message {
             const TYPE_CODE: ux::u4 = crate::message::midi1_channel_voice::TYPE_CODE;

@@ -1,7 +1,7 @@
 use crate::{
     error::Error,
     packet::{Packet, PacketMethods},
-    util::Truncate,
+    util::{Truncate, builder},
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -9,6 +9,11 @@ pub struct Message {
     time_stamp: ux::u20,
     group: ux::u4,
 }
+
+builder::builder!(
+    time_stamp: ux::u20,
+    group: ux::u4
+);
 
 impl Message {
     const OP_CODE: ux::u4 = ux::u4::new(0b0010);

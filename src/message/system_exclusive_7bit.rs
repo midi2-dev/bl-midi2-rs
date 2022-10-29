@@ -1,7 +1,7 @@
 use crate::{
     error::Error,
     packet::{Packet, PacketMethods},
-    util::{SliceData, Truncate},
+    util::{builder, SliceData, Truncate},
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -11,10 +11,47 @@ pub struct Message {
     data: Data,
 }
 
-pub type Data = SliceData<ux::u7, 6>;
+#[derive(Clone)]
+pub struct Builder {
+    group: Option<ux::u4>,
+    status: Option<Status>,
+    data: Data,
+}
+
+impl Builder {
+    builder::builder_setter!(group: ux::u4);
+    builder::builder_setter!(status: Status);
+
+    pub fn data(&mut self, v: &[ux::u7]) -> Result<&mut Self, Error> {
+        if v.len() > 6 {
+            Err(Error::BufferOverflow)
+        } else {
+            self.data = Data::from_data(v);
+            Ok(self)
+        }
+    }
+    
+    pub fn build(&self) -> Message {
+        Message {
+            group: self.group.unwrap_or_else(|| panic!("Missing fields!")),
+            status: self.status.unwrap_or_else(|| panic!("Missing fields!")),
+            data: self.data.clone(),
+        }
+    }
+}
+
+type Data = SliceData<ux::u7, 6>;
 
 impl Message {
     const TYPE_CODE: ux::u4 = ux::u4::new(0x3);
+    
+    pub fn builder() -> Builder {
+        Builder {
+            group: None,
+            status: None,
+            data: Data::default(),
+        }
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -144,8 +181,3 @@ mod tests {
         );
     }
 }
-
-// ux missing From usize impls:
-//
-// the ux crate does note imlement From<usize> on its types :-/
-// Should be forthcoming in a future release.

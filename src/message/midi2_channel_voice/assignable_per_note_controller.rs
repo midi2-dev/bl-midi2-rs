@@ -2,7 +2,7 @@ use super::super::helpers;
 use crate::{
     error::Error,
     packet::{Packet, PacketMethods},
-    util::Truncate,
+    util::{builder, Truncate},
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -13,6 +13,14 @@ pub struct Message {
     index: u8,
     data: u32,
 }
+
+builder::builder!(
+    group: ux::u4,
+    channel: ux::u4,
+    note: ux::u7,
+    index: u8,
+    data: u32
+);
 
 impl Message {
     const TYPE_CODE: ux::u4 = super::TYPE_CODE;
