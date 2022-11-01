@@ -1,7 +1,7 @@
 use crate::{
     error::Error,
-    packet::{Packet, PacketMethods},
-    util::builder,
+    message::Midi2Message,
+    util::{builder, getter, BitOps},
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -13,21 +13,21 @@ builder::builder!(group: ux::u4);
 
 impl Message {
     const OP_CODE: ux::u4 = ux::u4::new(0x0);
+    getter::getter!(group, ux::u4);
 }
 
-impl core::convert::From<Message> for Packet {
-    fn from(m: Message) -> Self {
-        let mut p = Packet::new();
-        p.set_nibble(1, m.group);
-        p
+impl Midi2Message for Message {
+    fn validate_ump(bytes: &[u32]) -> Result<(), Error> {
+        super::validate_packet(bytes, Message::OP_CODE)
     }
-}
-
-impl core::convert::TryFrom<Packet> for Message {
-    type Error = Error;
-    fn try_from(p: Packet) -> Result<Self, Self::Error> {
-        super::validate_packet(&p, Message::OP_CODE)?;
-        Ok(Message { group: p.nibble(1) })
+    fn from_ump(bytes: &[u32]) -> Self {
+        Message {
+            group: bytes[0].nibble(1),
+        }
+    }
+    fn to_ump<'a>(&self, bytes: &'a mut [u32]) -> &'a [u32] {
+        bytes[0].set_nibble(1, self.group);
+        &bytes[..1]
     }
 }
 
@@ -41,7 +41,7 @@ mod tests {
     #[test]
     fn deserialize() {
         assert_eq!(
-            Message::try_from(Packet::from_data(&[0x0700_0000])),
+            Message::try_from_ump(&[0x0700_0000]),
             Ok(Message {
                 group: ux::u4::new(0x7)
             }),
@@ -51,10 +51,11 @@ mod tests {
     #[test]
     fn serialize() {
         assert_eq!(
-            Packet::from(Message {
+            Message {
                 group: ux::u4::new(0x2)
-            }),
-            Packet::from_data(&[0x0200_0000]),
+            }
+            .to_ump(&mut [0x0]),
+            &[0x0200_0000],
         );
     }
 }

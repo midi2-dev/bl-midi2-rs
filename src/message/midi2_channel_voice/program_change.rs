@@ -1,8 +1,7 @@
-use super::super::helpers;
 use crate::{
     error::Error,
-    packet::{Packet, PacketMethods},
-    util::{builder, getter, Truncate},
+    message::{helpers as message_helpers, midi2_channel_voice::helpers, Midi2Message},
+    util::{builder, getter, BitOps, Truncate},
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -26,7 +25,7 @@ impl Builder {
     builder::builder_setter!(channel: ux::u4);
     builder::builder_setter!(program: ux::u7);
     builder::builder_setter!(bank: ux::u14);
-    
+
     pub fn build(&self) -> Message {
         Message {
             group: self.group.unwrap_or_else(|| panic!("Missing fields!")),
@@ -40,7 +39,7 @@ impl Builder {
 impl Message {
     const TYPE_CODE: ux::u4 = super::TYPE_CODE;
     const OP_CODE: ux::u4 = ux::u4::new(0b1100);
-    
+
     pub fn builder() -> Builder {
         Builder {
             group: None,
@@ -55,38 +54,35 @@ impl Message {
     getter::getter!(bank, Option<ux::u14>);
 }
 
-impl core::convert::TryFrom<Packet> for Message {
-    type Error = Error;
-    fn try_from(p: Packet) -> Result<Self, Self::Error> {
-        helpers::validate_packet(&p, Message::TYPE_CODE, Message::OP_CODE)?;
-        Ok(Message {
-            group: helpers::group_from_packet(&p),
-            channel: helpers::channel_from_packet(&p),
-            program: p.octet(4).truncate(),
-            bank: match p.octet(3) & 0b0000_0001 {
-                1 => Some(ux::u14::from(p.octet(6)) << 7 | ux::u14::from(p.octet(7))),
+impl Midi2Message for Message {
+    fn validate_ump(bytes: &[u32]) -> Result<(), Error> {
+        helpers::validate_packet(bytes, Message::TYPE_CODE, Message::OP_CODE)
+    }
+    fn from_ump(bytes: &[u32]) -> Self {
+        Message {
+            group: message_helpers::group_from_packet(bytes),
+            channel: message_helpers::channel_from_packet(bytes),
+            program: bytes[1].octet(0).truncate(),
+            bank: match bytes[0].octet(3) & 0b0000_0001 {
+                1 => Some(ux::u14::from(bytes[1].octet(2)) << 7 | ux::u14::from(bytes[1].octet(3))),
                 _ => None,
             },
-        })
-    }
-}
-
-impl From<Message> for Packet {
-    fn from(m: Message) -> Self {
-        let mut p = Packet::new();
-        helpers::write_data_to_packet(
-            Message::TYPE_CODE,
-            m.group,
-            Message::OP_CODE,
-            m.channel,
-            &mut p,
-        );
-        p.set_octet(4, m.program.into());
-        if let Some(v) = m.bank {
-            p.set_octet(6, (v >> 7).truncate());
-            p.set_octet(7, v.truncate());
         }
-        p
+    }
+    fn to_ump<'a>(&self, bytes: &'a mut [u32]) -> &'a [u32] {
+        message_helpers::write_data(
+            Message::TYPE_CODE,
+            self.group,
+            Message::OP_CODE,
+            self.channel,
+            bytes,
+        );
+        bytes[1].set_octet(0, self.program.into());
+        if let Some(v) = self.bank {
+            bytes[1].set_octet(2, (v >> 7).truncate());
+            bytes[1].set_octet(3, v.truncate());
+        }
+        &bytes[..2]
     }
 }
 
@@ -100,7 +96,7 @@ mod tests {
     #[test]
     fn deserialize() {
         assert_eq!(
-            Message::try_from(Packet::from_data(&[0x42C0_0001, 0x6600_7F7F,])),
+            Message::try_from_ump(&[0x42C0_0001, 0x6600_7F7F,]),
             Ok(Message {
                 group: ux::u4::new(0x2),
                 channel: ux::u4::new(0x0),
@@ -113,13 +109,14 @@ mod tests {
     #[test]
     fn serialize() {
         assert_eq!(
-            Packet::from(Message {
+            Message {
                 group: ux::u4::new(0x0),
                 channel: ux::u4::new(0xD),
                 program: ux::u7::new(0x7C),
                 bank: None,
-            }),
-            Packet::from_data(&[0x40CD_0000, 0x7C00_0000,])
+            }
+            .to_ump(&mut [0x0, 0x0]),
+            &[0x40CD_0000, 0x7C00_0000,],
         )
     }
 }

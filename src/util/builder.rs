@@ -4,7 +4,7 @@ macro_rules! builder_setter {
             self.$member = Some(v);
             self
         }
-    }
+    };
 }
 
 macro_rules! builder {
@@ -15,10 +15,10 @@ macro_rules! builder {
         pub struct Builder {
             $($member: Option<$t>),*
         }
-        
+
         impl Builder {
             $(builder_internal::builder_setter!($member: $t);)*
-                
+
             /// Creates a new message instance.
             /// Panics if any required fields are missing!
             pub fn build(&self) -> Message {
@@ -29,7 +29,7 @@ macro_rules! builder {
                 }
             }
         }
-        
+
         impl Message {
             pub fn builder() -> Builder {
                 Builder {
@@ -46,18 +46,15 @@ pub(crate) use builder_setter;
 #[cfg(test)]
 mod tests {
     use super::builder;
-    
+
     #[derive(Debug, PartialEq, Eq)]
     pub struct Message {
         note: ux::u7,
-        group: ux::u4
+        group: ux::u4,
     }
 
-    builder!(
-        note: ux::u7,
-        group: ux::u4
-    );
-    
+    builder!(note: ux::u7, group: ux::u4);
+
     #[test]
     fn call_build() {
         assert_eq!(
@@ -65,7 +62,7 @@ mod tests {
                 .note(ux::u7::new(0x54))
                 .group(ux::u4::new(0xA))
                 .build(),
-            Message { 
+            Message {
                 note: ux::u7::new(0x54),
                 group: ux::u4::new(0xA),
             },
@@ -75,8 +72,6 @@ mod tests {
     #[test]
     #[should_panic]
     fn call_build_fail() {
-        Message::builder()
-            .note(ux::u7::new(0x54))
-            .build();
+        Message::builder().note(ux::u7::new(0x54)).build();
     }
 }

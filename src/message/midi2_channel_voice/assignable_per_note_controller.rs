@@ -1,8 +1,7 @@
-use super::super::helpers;
 use crate::{
     error::Error,
-    packet::{Packet, PacketMethods},
-    util::{builder, getter, Truncate},
+    message::{helpers as message_helpers, midi2_channel_voice::helpers, Midi2Message},
+    util::{builder, getter, BitOps, Truncate},
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -32,34 +31,31 @@ impl Message {
     getter::getter!(data, u32);
 }
 
-impl core::convert::TryFrom<Packet> for Message {
-    type Error = Error;
-    fn try_from(p: Packet) -> Result<Self, Self::Error> {
-        helpers::validate_packet(&p, Message::TYPE_CODE, Message::OP_CODE)?;
-        Ok(Message {
-            group: helpers::group_from_packet(&p),
-            channel: helpers::channel_from_packet(&p),
-            note: p.octet(2).truncate(),
-            index: p.octet(3),
-            data: p[1],
-        })
+impl Midi2Message for Message {
+    fn validate_ump(bytes: &[u32]) -> Result<(), Error> {
+        helpers::validate_packet(bytes, Message::TYPE_CODE, Message::OP_CODE)
     }
-}
-
-impl From<Message> for Packet {
-    fn from(m: Message) -> Self {
-        let mut p = Packet::new();
-        helpers::write_data_to_packet(
+    fn from_ump(bytes: &[u32]) -> Self {
+        Message {
+            group: message_helpers::group_from_packet(bytes),
+            channel: message_helpers::channel_from_packet(bytes),
+            note: bytes[0].octet(2).truncate(),
+            index: bytes[0].octet(3),
+            data: bytes[1],
+        }
+    }
+    fn to_ump<'a>(&self, bytes: &'a mut [u32]) -> &'a [u32] {
+        message_helpers::write_data(
             Message::TYPE_CODE,
-            m.group,
+            self.group,
             Message::OP_CODE,
-            m.channel,
-            &mut p,
+            self.channel,
+            bytes,
         );
-        p.set_octet(2, m.note.into());
-        p.set_octet(3, m.index);
-        p[1] = m.data;
-        p
+        bytes[0].set_octet(2, self.note.into());
+        bytes[0].set_octet(3, self.index);
+        bytes[1] = self.data;
+        &bytes[..2]
     }
 }
 
@@ -73,7 +69,7 @@ mod tests {
     #[test]
     fn deserialize() {
         assert_eq!(
-            Message::try_from(Packet::from_data(&[0x4410_2A05, 0x3691_2151])),
+            Message::try_from_ump(&[0x4410_2A05, 0x3691_2151]),
             Ok(Message {
                 group: ux::u4::new(0x4),
                 channel: ux::u4::new(0x0),
@@ -87,14 +83,15 @@ mod tests {
     #[test]
     fn serialize() {
         assert_eq!(
-            Packet::from(Message {
+            Message {
                 group: ux::u4::new(0x8),
                 channel: ux::u4::new(0xE),
                 note: ux::u7::new(0x1A),
                 index: 0xF6,
                 data: 0xBE90_8008,
-            }),
-            Packet::from_data(&[0x481E_1AF6, 0xBE90_8008]),
+            }
+            .to_ump(&mut [0x0, 0x0]),
+            &[0x481E_1AF6, 0xBE90_8008],
         );
     }
 }

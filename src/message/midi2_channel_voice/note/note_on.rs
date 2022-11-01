@@ -5,14 +5,14 @@ note_message!(0b1001);
 mod tests {
     use super::*;
     use crate::message::midi2_channel_voice::attribute;
-    use crate::{error::Error, packet::Packet, util::message_traits_test};
+    use crate::{error::Error, util::message_traits_test};
 
     message_traits_test!(Message);
 
     #[test]
     fn wrong_type() {
         assert_eq!(
-            Message::try_from(Packet::from_data(&[0x1000_0000])),
+            Message::try_from_ump(&[0x1000_0000, 0x0]),
             Err(Error::InvalidData),
         );
     }
@@ -20,7 +20,7 @@ mod tests {
     #[test]
     fn wrong_status() {
         assert_eq!(
-            Message::try_from(Packet::from_data(&[0x4080_0000])),
+            Message::try_from_ump(&[0x4080_0000, 0x0]),
             Err(Error::InvalidData),
         );
     }
@@ -28,7 +28,7 @@ mod tests {
     #[test]
     fn deserialize() {
         assert_eq!(
-            Message::try_from(Packet::from_data(&[0x4393_5000, 0x6666_0000,])),
+            Message::try_from_ump(&[0x4393_5000, 0x6666_0000,]),
             Ok(Message {
                 group: ux::u4::new(0x3),
                 channel: ux::u4::new(0x3),
@@ -42,7 +42,7 @@ mod tests {
     #[test]
     fn deserialize_attribute() {
         assert_eq!(
-            Message::try_from(Packet::from_data(&[0x4895_6A01, 0xFFFF_3141,])),
+            Message::try_from_ump(&[0x4895_6A01, 0xFFFF_3141,]),
             Ok(Message {
                 group: ux::u4::new(0x8),
                 channel: ux::u4::new(0x5),
@@ -56,28 +56,30 @@ mod tests {
     #[test]
     fn serialize() {
         assert_eq!(
-            Packet::from(Message {
+            Message {
                 group: ux::u4::new(0x6),
                 channel: ux::u4::new(0x0),
                 note: ux::u7::new(0x12),
                 velocity: 0x00BA,
                 attribute: None
-            }),
-            Packet::from_data(&[0x4690_1200, 0x00BA_0000]),
+            }
+            .to_ump(&mut [0x0, 0x0]),
+            &[0x4690_1200, 0x00BA_0000],
         );
     }
 
     #[test]
     fn serialize_attribute() {
         assert_eq!(
-            Packet::from(Message {
+            Message {
                 group: ux::u4::new(0x0),
                 channel: ux::u4::new(0x2),
                 note: ux::u7::new(0x5D),
                 velocity: 0x429B,
                 attribute: Some(attribute::Attribute::ProfileSpecific(0x0101))
-            }),
-            Packet::from_data(&[0x4092_5D02, 0x429B_0101]),
+            }
+            .to_ump(&mut [0x0, 0x0]),
+            &[0x4092_5D02, 0x429B_0101],
         );
     }
 }

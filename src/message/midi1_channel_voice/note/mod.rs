@@ -5,9 +5,8 @@ macro_rules! note_message {
     ($op_code:expr) => {
         use crate::{
             error::Error,
-            message::helpers,
-            packet::{Packet, PacketMethods},
-            util::{Truncate, builder, getter},
+            message::{helpers, Midi2Message},
+            util::{builder, getter, BitOps, Truncate},
         };
 
         #[derive(Clone, Debug, PartialEq, Eq)]
@@ -17,7 +16,7 @@ macro_rules! note_message {
             note: ux::u7,
             velocity: ux::u7,
         }
-        
+
         builder::builder!(
             group: ux::u4,
             channel: ux::u4,
@@ -34,32 +33,32 @@ macro_rules! note_message {
             getter::getter!(velocity, ux::u7);
         }
 
-        impl core::convert::TryFrom<Packet> for Message {
-            type Error = Error;
-            fn try_from(p: Packet) -> Result<Self, Self::Error> {
-                helpers::validate_packet(&p, Message::TYPE_CODE, Message::OP_CODE)?;
-                Ok(Message {
-                    group: p.nibble(1),
-                    channel: p.nibble(3),
-                    note: p.octet(2).truncate(),
-                    velocity: p.octet(3).truncate(),
-                })
-            }
-        }
-
-        impl From<Message> for Packet {
-            fn from(m: Message) -> Self {
-                let mut p = Packet::new();
-                helpers::write_data_to_packet(
+        impl Midi2Message for Message {
+            fn to_ump<'a>(&self, bytes: &'a mut [u32]) -> &'a [u32] {
+                helpers::write_data(
                     Message::TYPE_CODE,
-                    m.group,
+                    self.group,
                     Message::OP_CODE,
-                    m.channel,
-                    &mut p,
+                    self.channel,
+                    bytes,
                 );
-                p.set_octet(2, m.note.into())
-                    .set_octet(3, m.velocity.into());
-                p
+                bytes[0]
+                    .set_octet(2, self.note.into())
+                    .set_octet(3, self.velocity.into());
+                &bytes[0..1]
+            }
+
+            fn validate_ump(bytes: &[u32]) -> Result<(), Error> {
+                helpers::validate_packet(bytes, Message::TYPE_CODE, Message::OP_CODE)
+            }
+
+            fn from_ump(p: &[u32]) -> Message {
+                Message {
+                    group: p[0].nibble(1),
+                    channel: p[0].nibble(3),
+                    note: p[0].octet(2).truncate(),
+                    velocity: p[0].octet(3).truncate(),
+                }
             }
         }
     };

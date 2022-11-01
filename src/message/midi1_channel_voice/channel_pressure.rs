@@ -1,8 +1,8 @@
 use super::super::helpers;
 use crate::{
     error::Error,
-    packet::{Packet, PacketMethods},
-    util::{Truncate, builder, getter},
+    message::Midi2Message,
+    util::{builder, getter, BitOps, Truncate},
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -12,11 +12,7 @@ pub struct Message {
     pressure: ux::u7,
 }
 
-builder::builder!(
-    group: ux::u4,
-    channel: ux::u4,
-    pressure: ux::u7
-);
+builder::builder!(group: ux::u4, channel: ux::u4, pressure: ux::u7);
 
 impl Message {
     const TYPE_CODE: ux::u4 = super::TYPE_CODE;
@@ -27,30 +23,29 @@ impl Message {
     getter::getter!(pressure, ux::u7);
 }
 
-impl core::convert::TryFrom<Packet> for Message {
-    type Error = Error;
-    fn try_from(p: Packet) -> Result<Self, Self::Error> {
-        helpers::validate_packet(&p, Message::TYPE_CODE, Message::OP_CODE)?;
-        Ok(Message {
-            group: p.nibble(1),
-            channel: p.nibble(3),
-            pressure: p.octet(2).truncate(),
-        })
+impl Midi2Message for Message {
+    fn validate_ump(bytes: &[u32]) -> Result<(), Error> {
+        helpers::validate_packet(bytes, Message::TYPE_CODE, Message::OP_CODE)
     }
-}
 
-impl From<Message> for Packet {
-    fn from(m: Message) -> Self {
-        let mut p = Packet::new();
-        helpers::write_data_to_packet(
+    fn from_ump(bytes: &[u32]) -> Self {
+        Message {
+            group: bytes[0].nibble(1),
+            channel: bytes[0].nibble(3),
+            pressure: bytes[0].octet(2).truncate(),
+        }
+    }
+
+    fn to_ump<'a>(&self, bytes: &'a mut [u32]) -> &'a [u32] {
+        helpers::write_data(
             Message::TYPE_CODE,
-            m.group,
+            self.group,
             Message::OP_CODE,
-            m.channel,
-            &mut p,
+            self.channel,
+            bytes,
         );
-        p.set_octet(2, m.pressure.into());
-        p
+        bytes[0].set_octet(2, self.pressure.into());
+        &bytes[..1]
     }
 }
 
@@ -64,7 +59,7 @@ mod tests {
     #[test]
     fn wrong_status() {
         assert_eq!(
-            Message::try_from(Packet::from_data(&[0x2000_0000])),
+            Message::try_from_ump(&[0x2000_0000]),
             Err(Error::InvalidData),
         );
     }
@@ -72,7 +67,7 @@ mod tests {
     #[test]
     fn deserialize() {
         assert_eq!(
-            Message::try_from(Packet::from_data(&[0x24D4_5300])),
+            Message::try_from_ump(&[0x24D4_5300]),
             Ok(Message {
                 group: ux::u4::new(0x4),
                 channel: ux::u4::new(4),
@@ -84,12 +79,13 @@ mod tests {
     #[test]
     fn serialize() {
         assert_eq!(
-            Packet::from(Message {
+            Message {
                 group: ux::u4::new(0x5),
                 channel: ux::u4::new(0xF),
                 pressure: ux::u7::new(0x02),
-            }),
-            Packet::from_data(&[0x25DF_0200]),
+            }
+            .to_ump(&mut [0x0]),
+            &[0x25DF_0200],
         );
     }
 }

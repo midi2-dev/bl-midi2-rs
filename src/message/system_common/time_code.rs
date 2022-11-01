@@ -1,8 +1,8 @@
 use super::super::helpers;
 use crate::{
     error::Error,
-    packet::{Packet, PacketMethods},
-    util::{builder, getter, Truncate},
+    message::Midi2Message,
+    util::{builder, getter, BitOps, Truncate},
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -11,10 +11,7 @@ pub struct Message {
     time_code: ux::u7,
 }
 
-builder::builder!(
-    group: ux::u4,
-    time_code: ux::u7
-);
+builder::builder!(group: ux::u4, time_code: ux::u7);
 
 impl Message {
     const STATUS_CODE: u8 = 0xF1;
@@ -22,28 +19,25 @@ impl Message {
     getter::getter!(time_code, ux::u7);
 }
 
-impl core::convert::TryFrom<Packet> for Message {
-    type Error = Error;
-    fn try_from(p: Packet) -> Result<Self, Self::Error> {
-        super::validate_packet(&p, Message::STATUS_CODE)?;
-        Ok(Message {
-            group: helpers::group_from_packet(&p),
-            time_code: p.octet(2).truncate(),
-        })
+impl Midi2Message for Message {
+    fn validate_ump(bytes: &[u32]) -> Result<(), Error> {
+        super::validate_packet(bytes, Message::STATUS_CODE)
     }
-}
-
-impl From<Message> for Packet {
-    fn from(m: Message) -> Self {
-        let mut p = Packet::new();
+    fn from_ump(bytes: &[u32]) -> Self {
+        Message {
+            group: helpers::group_from_packet(bytes),
+            time_code: bytes[0].octet(2).truncate(),
+        }
+    }
+    fn to_ump<'a>(&self, bytes: &'a mut [u32]) -> &'a [u32] {
         super::write_data_to_packet(
-            &mut p,
-            m.group,
+            bytes,
+            self.group,
             Message::STATUS_CODE,
-            Some(m.time_code),
+            Some(self.time_code),
             None,
         );
-        p
+        &bytes[..1]
     }
 }
 
@@ -57,7 +51,7 @@ mod tests {
     #[test]
     fn deserialize() {
         assert_eq!(
-            Message::try_from(Packet::from_data(&[0x14F1_5300])),
+            Message::try_from_ump(&[0x14F1_5300]),
             Ok(Message {
                 group: ux::u4::new(0x4),
                 time_code: ux::u7::new(0x53),
@@ -68,11 +62,12 @@ mod tests {
     #[test]
     fn serialize() {
         assert_eq!(
-            Packet::from(Message {
+            Message {
                 group: ux::u4::new(0x5),
                 time_code: ux::u7::new(0x2A),
-            }),
-            Packet::from_data(&[0x15F1_2A00]),
+            }
+            .to_ump(&mut [0x0]),
+            &[0x15F1_2A00],
         );
     }
 }

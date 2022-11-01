@@ -5,9 +5,12 @@ macro_rules! note_message {
     ($op_code:expr) => {
         use crate::{
             error::Error,
-            message::{helpers, midi2_channel_voice::attribute},
-            packet::{Packet, PacketMethods},
-            util::{builder, getter, Truncate},
+            message::{
+                helpers as message_helpers,
+                midi2_channel_voice::{attribute, helpers},
+                Midi2Message,
+            },
+            util::{builder, getter, BitOps, Truncate},
         };
 
         #[derive(Clone, Debug, PartialEq, Eq)]
@@ -24,7 +27,7 @@ macro_rules! note_message {
             channel: Option<ux::u4>,
             note: Option<ux::u7>,
             velocity: Option<u16>,
-            attribute: Option<attribute::Attribute>
+            attribute: Option<attribute::Attribute>,
         }
 
         impl Builder {
@@ -33,7 +36,7 @@ macro_rules! note_message {
             builder::builder_setter!(note: ux::u7);
             builder::builder_setter!(velocity: u16);
             builder::builder_setter!(attribute: attribute::Attribute);
-            
+
             pub fn build(&self) -> Message {
                 Message {
                     group: self.group.unwrap_or_else(|| panic!("Missing fields!")),
@@ -64,33 +67,32 @@ macro_rules! note_message {
             }
         }
 
-        impl core::convert::TryFrom<Packet> for Message {
-            type Error = Error;
-            fn try_from(p: Packet) -> Result<Self, Self::Error> {
-                helpers::validate_packet(&p, Message::TYPE_CODE, Message::OP_CODE)?;
-                Ok(Message {
-                    group: helpers::group_from_packet(&p),
-                    channel: helpers::channel_from_packet(&p),
-                    note: p.octet(2).truncate(),
-                    velocity: p.word(2),
-                    attribute: attribute::from_packet(&p)?,
-                })
+        impl Midi2Message for Message {
+            fn validate_ump(bytes: &[u32]) -> Result<(), Error> {
+                attribute::validate_ump(bytes)?;
+                helpers::validate_packet(bytes, Message::TYPE_CODE, Message::OP_CODE)
             }
-        }
-
-        impl From<Message> for Packet {
-            fn from(m: Message) -> Self {
-                let mut p = Packet::new();
-                helpers::write_data_to_packet(
+            fn from_ump(bytes: &[u32]) -> Self {
+                Message {
+                    group: message_helpers::group_from_packet(bytes),
+                    channel: message_helpers::channel_from_packet(bytes),
+                    note: bytes[0].octet(2).truncate(),
+                    velocity: bytes[1].word(0),
+                    attribute: attribute::from_ump(bytes),
+                }
+            }
+            fn to_ump<'a>(&self, bytes: &'a mut [u32]) -> &'a [u32] {
+                message_helpers::write_data(
                     Message::TYPE_CODE,
-                    m.group,
+                    self.group,
                     Message::OP_CODE,
-                    m.channel,
-                    &mut p,
+                    self.channel,
+                    bytes,
                 );
-                p.set_octet(2, m.note.into()).set_word(2, m.velocity);
-                attribute::write_attribute(&mut p, m.attribute);
-                p
+                bytes[0].set_octet(2, self.note.into());
+                bytes[1].set_word(0, self.velocity);
+                attribute::write_attribute(bytes, self.attribute);
+                &bytes[..2]
             }
         }
     };

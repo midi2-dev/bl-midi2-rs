@@ -1,7 +1,7 @@
 use crate::{
     error::Error,
-    packet::{Packet, PacketMethods},
-    util::{builder, getter, SliceData, Truncate},
+    message::{helpers, Midi2Message},
+    util::{builder, getter, BitOps, SliceData, Truncate},
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -30,7 +30,7 @@ impl Builder {
             Ok(self)
         }
     }
-    
+
     pub fn build(&self) -> Message {
         Message {
             group: self.group.unwrap_or_else(|| panic!("Missing fields!")),
@@ -44,7 +44,7 @@ type Data = SliceData<ux::u7, 6>;
 
 impl Message {
     const TYPE_CODE: ux::u4 = ux::u4::new(0x3);
-    
+
     pub fn builder() -> Builder {
         Builder {
             group: None,
@@ -55,7 +55,7 @@ impl Message {
 
     getter::getter!(group, ux::u4);
     getter::getter!(status, Status);
-    
+
     pub fn data(&self) -> &[ux::u7] {
         &*self.data
     }
@@ -69,70 +69,86 @@ pub enum Status {
     End,
 }
 
-impl core::convert::TryFrom<Packet> for Message {
-    type Error = Error;
-    fn try_from(p: Packet) -> Result<Self, Self::Error> {
-        validate_type(&p)?;
-        Ok(Message {
-            group: super::helpers::group_from_packet(&p),
-            status: status_from_packet(&p)?,
-            data: data_from_packet(&p)?,
-        })
+impl Midi2Message for Message {
+    fn validate_ump(bytes: &[u32]) -> Result<(), Error> {
+        validate_data(bytes)?;
+        validate_status(bytes)?;
+        validate_type(bytes)
     }
-}
-
-fn validate_type(p: &Packet) -> Result<(), Error> {
-    if p.nibble(0) != Message::TYPE_CODE {
-        Err(Error::InvalidData)
-    } else {
-        Ok(())
-    }
-}
-
-fn status_from_packet(p: &Packet) -> Result<Status, Error> {
-    match u8::from(p.nibble(2)) {
-        0x0 => Ok(Status::Complete),
-        0x1 => Ok(Status::Begin),
-        0x2 => Ok(Status::Continue),
-        0x3 => Ok(Status::End),
-        _ => Err(Error::InvalidData),
-    }
-}
-
-fn data_from_packet(p: &Packet) -> Result<Data, Error> {
-    let n: usize = u8::from(p.nibble(3)).into();
-    if n > 6 {
-        Err(Error::InvalidData)
-    } else {
-        let mut data = SliceData::default();
-        data.resize(n);
-        for i in 0..n {
-            data[i] = ux::u7::new(p.octet(2 + i));
+    fn from_ump(bytes: &[u32]) -> Self {
+        Message {
+            group: super::helpers::group_from_packet(bytes),
+            status: status_from_packet(bytes),
+            data: data_from_packet(bytes),
         }
-        Ok(data)
     }
-}
-
-impl core::convert::From<Message> for Packet {
-    fn from(m: Message) -> Self {
-        let mut p = Packet::new();
-        super::write_type_to_packet(Message::TYPE_CODE, &mut p);
-        p.set_nibble(1, m.group);
-        p.set_nibble(
+    fn to_ump<'a>(&self, bytes: &'a mut [u32]) -> &'a [u32] {
+        helpers::write_type_to_packet(Message::TYPE_CODE, bytes);
+        bytes[0].set_nibble(1, self.group);
+        bytes[0].set_nibble(
             2,
-            match m.status {
+            match self.status {
                 Status::Complete => ux::u4::new(0x0),
                 Status::Begin => ux::u4::new(0x1),
                 Status::Continue => ux::u4::new(0x2),
                 Status::End => ux::u4::new(0x3),
             },
         );
-        let n: ux::u4 = u8::try_from(m.data.len()).unwrap().truncate();
-        p.set_nibble(3, n);
-        for (i, d) in m.data.iter().enumerate() {
-            p.set_octet(i + 2, (*d).into());
+        let n: ux::u4 = u8::try_from(self.data.len()).unwrap().truncate();
+        bytes[0].set_nibble(3, n);
+        for (d, i) in self.data.iter().zip(2_usize..) {
+            bytes[i / 4].set_octet(i % 4, (*d).into());
         }
-        p
+        &bytes[..2]
+    }
+}
+
+fn validate_type(p: &[u32]) -> Result<(), Error> {
+    if p[0].nibble(0) != Message::TYPE_CODE {
+        Err(Error::InvalidData)
+    } else {
+        Ok(())
+    }
+}
+
+fn status_from_packet(p: &[u32]) -> Status {
+    match u8::from(p[0].nibble(2)) {
+        0x0 => Status::Complete,
+        0x1 => Status::Begin,
+        0x2 => Status::Continue,
+        0x3 => Status::End,
+        _ => panic!("Invalid status"),
+    }
+}
+
+fn validate_status(p: &[u32]) -> Result<(), Error> {
+    match u8::from(p[0].nibble(2)) {
+        0x0 => Ok(()),
+        0x1 => Ok(()),
+        0x2 => Ok(()),
+        0x3 => Ok(()),
+        _ => Err(Error::InvalidData),
+    }
+}
+
+fn data_from_packet(p: &[u32]) -> Data {
+    let n: usize = u8::from(p[0].nibble(3)).into();
+    let mut data = SliceData::default();
+    data.resize(n);
+    for i in 0..n {
+        data[i] = ux::u7::new(p[(i + 2) / 4].octet((2 + i) % 4));
+    }
+    data
+}
+
+fn validate_data(p: &[u32]) -> Result<(), Error> {
+    let n: usize = u8::from(p[0].nibble(3)).into();
+    if n > 6 {
+        Err(Error::InvalidData)
+    } else if n > 2 && p.len() < 2 {
+        Err(Error::BufferOverflow)
+    } else {
+        Ok(())
     }
 }
 
@@ -143,7 +159,7 @@ mod tests {
     #[test]
     fn incorrect_message_type() {
         assert_eq!(
-            Message::try_from(Packet::from_data(&[0x2000_0000])),
+            Message::try_from_ump(&[0x2000_0000]),
             Err(Error::InvalidData),
         );
     }
@@ -151,7 +167,7 @@ mod tests {
     #[test]
     fn invalid_status_bit() {
         assert_eq!(
-            Message::try_from(Packet::from_data(&[0x30A0_0000])),
+            Message::try_from_ump(&[0x30A0_0000]),
             Err(Error::InvalidData),
         );
     }
@@ -159,7 +175,7 @@ mod tests {
     #[test]
     fn data_overflow() {
         assert_eq!(
-            Message::try_from(Packet::from_data(&[0x3009_0000])),
+            Message::try_from_ump(&[0x3009_0000]),
             Err(Error::InvalidData),
         );
     }
@@ -167,7 +183,7 @@ mod tests {
     #[test]
     fn deserialize() {
         assert_eq!(
-            Message::try_from(Packet::from_data(&[0x3003_1234, 0x5600_0000,])),
+            Message::try_from_ump(&[0x3003_1234, 0x5600_0000,]),
             Ok(Message {
                 group: ux::u4::new(0x0),
                 status: Status::Complete,
@@ -179,12 +195,46 @@ mod tests {
     #[test]
     fn serialize() {
         assert_eq!(
-            Packet::from(Message {
+            Message {
                 group: ux::u4::new(0x4),
                 status: Status::End,
                 data: Data::from_data(&[ux::u7::new(0x31), ux::u7::new(0x41), ux::u7::new(0x59),]),
-            }),
-            Packet::from_data(&[0x3433_3141, 0x5900_0000])
+            }
+            .to_ump(&mut [0x0, 0x0]),
+            &[0x3433_3141, 0x5900_0000],
+        );
+    }
+
+    #[test]
+    fn serialize_small_data() {
+        assert_eq!(
+            Message {
+                group: ux::u4::new(0x4),
+                status: Status::End,
+                data: Data::from_data(&[ux::u7::new(0x31)]),
+            }
+            .to_ump(&mut [0x0, 0x0]),
+            &[0x3431_3100, 0x0],
+        );
+    }
+
+    #[test]
+    fn serialize_big_data() {
+        assert_eq!(
+            Message {
+                group: ux::u4::new(0x4),
+                status: Status::Begin,
+                data: Data::from_data(&[
+                    ux::u7::new(0x31),
+                    ux::u7::new(0x31),
+                    ux::u7::new(0x31),
+                    ux::u7::new(0x31),
+                    ux::u7::new(0x31),
+                    ux::u7::new(0x31),
+                ]),
+            }
+            .to_ump(&mut [0x0, 0x0]),
+            &[0x3416_3131, 0x3131_3131],
         );
     }
 }

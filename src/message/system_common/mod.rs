@@ -1,7 +1,4 @@
-use crate::{
-    error::Error,
-    packet::{Packet, PacketMethods},
-};
+use crate::{error::Error, util::BitOps};
 
 const TYPE_CODE: ux::u4 = ux::u4::new(0x1);
 
@@ -39,8 +36,10 @@ pub use timing_clock::Message as TimingClockMessage;
 pub use tune_request::Builder as TuneRequestBuilder;
 pub use tune_request::Message as TuneRequestMessage;
 
-fn validate_packet(p: &Packet, status: u8) -> Result<(), Error> {
-    if p.nibble(0) != TYPE_CODE || p.octet(1) != status {
+fn validate_packet(p: &[u32], status: u8) -> Result<(), Error> {
+    if p.is_empty() {
+        Err(Error::BufferOverflow)
+    } else if p[0].nibble(0) != TYPE_CODE || p[0].octet(1) != status {
         Err(Error::InvalidData)
     } else {
         Ok(())
@@ -48,19 +47,19 @@ fn validate_packet(p: &Packet, status: u8) -> Result<(), Error> {
 }
 
 fn write_data_to_packet(
-    p: &mut Packet,
+    p: &mut [u32],
     group: ux::u4,
     status: u8,
     byte1: Option<ux::u7>,
     byte2: Option<ux::u7>,
 ) {
-    super::write_type_to_packet(TYPE_CODE, p);
-    super::write_group_to_packet(group, p);
-    p.set_octet(1, status);
+    super::helpers::write_type_to_packet(TYPE_CODE, p);
+    super::helpers::write_group_to_packet(group, p);
+    p[0].set_octet(1, status);
     if let Some(b) = byte1 {
-        p.set_octet(2, b.into());
+        p[0].set_octet(2, b.into());
     }
     if let Some(b) = byte2 {
-        p.set_octet(3, b.into());
+        p[0].set_octet(3, b.into());
     }
 }

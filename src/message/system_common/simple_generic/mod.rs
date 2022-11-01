@@ -1,8 +1,8 @@
 macro_rules! simple_generic_message {
     ($op_code:expr) => {
         use crate::{
-            error::Error, 
-            packet::Packet,
+            error::Error,
+            message::Midi2Message,
             util::{builder, getter},
         };
 
@@ -10,37 +10,32 @@ macro_rules! simple_generic_message {
         pub struct Message {
             group: ux::u4,
         }
-        
-        builder::builder!(
-            group: ux::u4
-        );
+
+        builder::builder!(group: ux::u4);
 
         impl Message {
             const STATUS_CODE: u8 = $op_code;
             getter::getter!(group, ux::u4);
         }
 
-        impl core::convert::TryFrom<Packet> for Message {
-            type Error = Error;
-            fn try_from(p: Packet) -> Result<Self, Self::Error> {
-                crate::message::system_common::validate_packet(&p, Message::STATUS_CODE)?;
-                Ok(Message {
-                    group: crate::message::helpers::group_from_packet(&p),
-                })
+        impl Midi2Message for Message {
+            fn validate_ump(bytes: &[u32]) -> Result<(), Error> {
+                crate::message::system_common::validate_packet(bytes, Message::STATUS_CODE)
             }
-        }
-
-        impl core::convert::From<Message> for Packet {
-            fn from(m: Message) -> Self {
-                let mut p = Packet::new();
+            fn from_ump(bytes: &[u32]) -> Self {
+                Message {
+                    group: crate::message::helpers::group_from_packet(bytes),
+                }
+            }
+            fn to_ump<'a>(&self, bytes: &'a mut [u32]) -> &'a [u32] {
                 crate::message::system_common::write_data_to_packet(
-                    &mut p,
-                    m.group,
+                    bytes,
+                    self.group,
                     Message::STATUS_CODE,
                     None,
                     None,
                 );
-                p
+                &bytes[..1]
             }
         }
     };
@@ -86,20 +81,42 @@ mod tests {
     #[test]
     fn serialize() {
         assert_eq!(
-            Packet::from(Message {
+            Message {
                 group: ux::u4::new(0x2),
-            }),
-            Packet::from_data(&[0x12FF_0000]),
+            }
+            .to_ump(&mut [0x0]),
+            &[0x12FF_0000],
         )
     }
 
     #[test]
     fn deserialize() {
         assert_eq!(
-            Message::try_from(Packet::from_data(&[0x1CFF_0000])),
+            Message::try_from_ump(&[0x1CFF_0000]),
             Ok(Message {
                 group: ux::u4::new(0xC)
             }),
         )
+    }
+
+    #[test]
+    fn build() {
+        assert_eq!(
+            Message::builder().group(ux::u4::new(0xA)).build(),
+            Message {
+                group: ux::u4::new(0xA)
+            },
+        );
+    }
+
+    #[test]
+    fn getters() {
+        assert_eq!(
+            Message {
+                group: ux::u4::new(0x5)
+            }
+            .group(),
+            ux::u4::new(0x5),
+        );
     }
 }
