@@ -22,13 +22,17 @@ impl Builder {
     builder::builder_setter!(group: ux::u4);
     builder::builder_setter!(status: Status);
 
-    pub fn data(&mut self, v: &[ux::u7]) -> Result<&mut Self, Error> {
+    pub fn try_data(&mut self, v: &[ux::u7]) -> Result<&mut Self, Error> {
         if v.len() > 6 {
             Err(Error::BufferOverflow)
         } else {
-            self.data = Data::from_data(v);
-            Ok(self)
+            Ok(self.data(v))
         }
+    }
+
+    pub fn data(&mut self, v: &[ux::u7]) -> &mut Self {
+        self.data = Data::from_data(v);
+        self
     }
 
     pub fn build(&self) -> Message {

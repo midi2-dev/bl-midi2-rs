@@ -23,15 +23,26 @@ pub struct Builder {
 impl Builder {
     builder::builder_setter!(group: ux::u4);
     builder::builder_setter!(stream_id: u8);
-    builder::builder_setter!(status: Status);
 
-    pub fn data(&mut self, v: &[u8]) -> Result<&mut Self, Error> {
+    pub fn status(&mut self, status: Status) -> &mut Self {
+        if let Status::UnexpectedEnd(_) = status {
+            self.data.resize(0);
+        }
+        self.status = Some(status);
+        self
+    }
+
+    pub fn try_data(&mut self, v: &[u8]) -> Result<&mut Self, Error> {
         if v.len() > 6 {
             Err(Error::BufferOverflow)
         } else {
-            self.data = Data::from_data(v);
-            Ok(self)
+            Ok(self.data(v))
         }
+    }
+
+    pub fn data(&mut self, v: &[u8]) -> &mut Self {
+        self.data = Data::from_data(v);
+        self
     }
 
     pub fn build(&self) -> Message {
@@ -113,11 +124,24 @@ impl Midi2Message for Message {
                 Status::UnexpectedEnd(_) => ux::u4::new(0x3),
             },
         );
-        bytes[0].set_octet(2, self.stream_id);
-        let n: ux::u4 = u8::try_from(self.data.len()).unwrap().truncate();
-        bytes[0].set_nibble(3, n + ux::u4::new(1));
-        for (d, i) in self.data.iter().zip(3_usize..) {
-            bytes[i / 4].set_octet(i % 4, *d);
+        if let Status::UnexpectedEnd(validity) = self.status {
+            bytes[0] &= 0xFFFF_FF00;
+            bytes[1..4].copy_from_slice(&[0x0, 0x0, 0x0]);
+            match validity {
+                Validity::Valid => {
+                    bytes[0].set_nibble(3, ux::u4::new(0x1));
+                }
+                Validity::Invalid => {
+                    bytes[0].set_nibble(3, ux::u4::new(0xF));
+                }
+            }
+        } else {
+            bytes[0].set_octet(2, self.stream_id);
+            let n: ux::u4 = u8::try_from(self.data.len()).unwrap().truncate();
+            bytes[0].set_nibble(3, n + ux::u4::new(1));
+            for (d, i) in self.data.iter().zip(3_usize..) {
+                bytes[i / 4].set_octet(i % 4, *d);
+            }
         }
         &bytes[..4]
     }
@@ -256,6 +280,20 @@ mod tests {
             }
             .to_ump(&mut [0x0, 0x0, 0x0, 0x0]),
             &[0x5F3B_DA01, 0x0203_0405, 0x0607_0809, 0x0A00_0000],
+        );
+    }
+
+    #[test]
+    fn serialize_unexpected_end_invalid() {
+        assert_eq!(
+            Message {
+                group: ux::u4::new(0xF),
+                status: Status::UnexpectedEnd(Validity::Invalid),
+                stream_id: 0xDA,
+                data: Default::default(),
+            }
+            .to_ump(&mut [0x0, 0x0, 0x0, 0x0]),
+            &[0x5F3F_0000, 0x0, 0x0, 0x0],
         );
     }
 }
