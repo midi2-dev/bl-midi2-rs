@@ -4,7 +4,7 @@ use crate::{
     util::{builder, getter, BitOps, SliceData, Truncate},
 };
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Message {
     group: ux::u4,
     stream_id: u8,
@@ -66,6 +66,14 @@ impl Message {
     pub fn data(&self) -> &[u8] {
         &*self.data
     }
+    
+    pub(crate) fn data_mut(&mut self) -> &mut [u8] {
+        &mut self.data
+    }
+    
+    pub(crate) fn stream_id_mut(&mut self) -> &mut u8 {
+        &mut self.stream_id
+    }
 
     pub fn builder() -> Builder {
         Builder {
@@ -84,6 +92,12 @@ pub enum Status {
     Continue,
     End,
     UnexpectedEnd(Validity),
+}
+
+impl core::default::Default for Status {
+    fn default() -> Self {
+        Status::Complete
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
