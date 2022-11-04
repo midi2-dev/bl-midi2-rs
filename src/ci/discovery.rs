@@ -10,7 +10,7 @@ pub struct Message {
     device_manufacturer: ux::u21,
     device_family: ux::u14,
     device_model_number: ux::u14,
-    software_version: [u8; 4],
+    software_version: [ux::u7; 4],
     protocol_negotiation_supported: bool,
     profile_configuration_supported: bool,
     property_exchange_supported: bool,
@@ -22,7 +22,7 @@ impl Message {
     getter::getter!(device_manufacturer, ux::u21);
     getter::getter!(device_family, ux::u14);
     getter::getter!(device_model_number, ux::u14);
-    getter::getter!(software_version, [u8; 4]);
+    getter::getter!(software_version, [ux::u7; 4]);
     getter::getter!(protocol_negotiation_supported, bool);
     getter::getter!(profile_configuration_supported, bool);
     getter::getter!(property_exchange_supported, bool);
@@ -53,7 +53,7 @@ impl CiMessage for Message {
                         .set_bit(6, self.protocol_negotiation_supported)
                         .set_bit(5, self.profile_configuration_supported)
                         .set_bit(4, self.property_exchange_supported);
-                    flags
+                    ux::u7::new(flags)
                 },
                 self.max_sysex_message_size.truncate(),
                 (self.max_sysex_message_size >> 7).truncate(),
@@ -71,5 +71,28 @@ impl CiMessage for Message {
     }
     fn validate_sysex_8(_message: &[Sysex8Message]) -> Result<(), Error> {
         todo!()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn to_sysex_8() {
+        assert_eq!(
+            Message {
+                source: ux::u28::new(0x123_1000_2000),
+                device_manufacturer: ux::u21,
+                device_family: ux::u14,
+                device_model_number: ux::u14,
+                software_version: [ux::u7; 4],
+                protocol_negotiation_supported: bool,
+                profile_configuration_supported: bool,
+                property_exchange_supported: bool,
+                max_sysex_message_size: ux::u28,
+            }.to_sysex_8(&mut [Default::default(); 1], 0x31),
+            &[],
+        );
     }
 }

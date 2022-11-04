@@ -12,15 +12,15 @@ pub fn write_ci_data<'a, M> (
     category: u8,
     source: ux::u28,
     destination: ux::u28,
-    payload: &[u8],
+    payload: &[ux::u7],
     messages: &'a mut [M],
 ) -> &'a mut [M] where M : SysexMessage {
     let mut messages = SysexMessages::new(messages);
     messages.set_datum(0x7E);
     messages.set_datum(
         match device_id {
-        DeviceId::MidiPort => 0x7F,
-        DeviceId::Channel(v) => v.into(),
+            DeviceId::MidiPort => 0x7F,
+            DeviceId::Channel(v) => v.into(),
     });
     messages.set_datum(0x0D);
     messages.set_datum(category);
@@ -34,7 +34,7 @@ pub fn write_ci_data<'a, M> (
     messages.set_datum((destination >> 14).truncate());
     messages.set_datum((destination >> 21).truncate());
     for byte in payload {
-        messages.set_datum(*byte);
+        messages.set_datum((*byte).into());
     }
     messages.messages()
 }
