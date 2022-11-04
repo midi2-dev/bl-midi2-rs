@@ -1,12 +1,7 @@
-pub mod extended_system_exclusive;
-pub mod midi1;
-pub mod midi2;
-pub mod packet;
-pub mod system_common;
-pub mod system_exclusive;
-pub mod utility;
+#![no_std]
 
-mod bounded;
-mod helpers;
+pub mod ci;
+pub mod error;
+pub mod message;
 
-pub use packet::Packet;
+mod util;
