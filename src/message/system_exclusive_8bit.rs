@@ -1,7 +1,7 @@
 use crate::{
     error::Error,
     message::{helpers, Midi2Message},
-    util::{builder, getter, BitOps, SliceData, Truncate},
+    util::{builder, getter, BitOps, SliceData, SysexMessage, Truncate},
 };
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -65,6 +65,10 @@ impl Message {
 
     pub fn data(&self) -> &[u8] {
         &*self.data
+    }
+    
+    pub(crate) fn resize(&mut self, sz: usize) {
+        self.data.resize(sz);
     }
     
     pub(crate) fn data_mut(&mut self) -> &mut [u8] {
@@ -235,6 +239,37 @@ fn validate_data(p: &[u32], status: Status) -> Result<(), Error> {
         Ok(())
     }
 }
+
+impl SysexMessage for Message {
+    fn set_group(&mut self, group: ux::u4) {
+        self.group = group;
+    }
+    fn set_datum(&mut self, d: u8, i: usize) {
+        if i <= self.data().len() {
+            self.resize(i + 1);
+        }
+        self.data_mut()[i] = d;
+    }
+    fn max_len() -> usize {
+        12
+    }
+    fn is_complete(&self) -> bool {
+        self.status == Status::Complete
+    }
+    fn set_complete(&mut self) {
+        self.status = Status::Complete;
+    }
+    fn set_start(&mut self) {
+        self.status = Status::Begin;
+    }
+    fn set_continue(&mut self) {
+        self.status = Status::Continue;
+    }
+    fn set_end(&mut self) {
+        self.status = Status::End;
+    }
+}
+
 
 #[cfg(test)]
 mod tests {

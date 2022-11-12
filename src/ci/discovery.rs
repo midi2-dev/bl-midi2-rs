@@ -1,11 +1,12 @@
 use crate::{
     util::{BitOps, getter, Truncate},
     ci::{DeviceId, helpers, CiMessage},
-    message::system_exclusive_8bit::Message as Sysex8Message,
+    message::system_exclusive_8bit,
     error::Error,
 };
 
 pub struct Message {
+    group: ux::u4,
     source: ux::u28,
     device_manufacturer: ux::u21,
     device_family: ux::u14,
@@ -30,8 +31,9 @@ impl Message {
 }
 
 impl CiMessage for Message {
-    fn to_sysex_8<'a>(&self, messages: &'a mut [Sysex8Message], stream_id: u8) -> &'a [Sysex8Message] {
+    fn to_sysex_8<'a>(&self, messages: &'a mut [system_exclusive_8bit::Message], stream_id: u8) -> &'a [system_exclusive_8bit::Message] {
         let ret = helpers::write_ci_data(
+            self.group,
             DeviceId::MidiPort, 
             0x70, 
             self.source, 
@@ -66,10 +68,13 @@ impl CiMessage for Message {
         ret
     }
 
-    fn from_sysex_8(_messages: &[Sysex8Message]) -> Self {
+    fn from_sysex_8(_messages: &[system_exclusive_8bit::Message]) -> Self {
         todo!()
     }
-    fn validate_sysex_8(_message: &[Sysex8Message]) -> Result<(), Error> {
+    fn validate_sysex_8(_message: &[system_exclusive_8bit::Message]) -> Result<(), Error> {
+        todo!()
+    }
+    fn validate_to_sysex_8_buffer(&self, _messages: &[system_exclusive_8bit::Message]) -> Result<(), Error> {
         todo!()
     }
 }
@@ -77,22 +82,74 @@ impl CiMessage for Message {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ci::VERSION;
     
     #[test]
     fn to_sysex_8() {
         assert_eq!(
             Message {
-                source: ux::u28::new(0x123_1000_2000),
-                device_manufacturer: ux::u21,
-                device_family: ux::u14,
-                device_model_number: ux::u14,
-                software_version: [ux::u7; 4],
-                protocol_negotiation_supported: bool,
-                profile_configuration_supported: bool,
-                property_exchange_supported: bool,
-                max_sysex_message_size: ux::u28,
-            }.to_sysex_8(&mut [Default::default(); 1], 0x31),
-            &[],
+                group: ux::u4::new(0x8),
+                source: ux::u28::new(0x123_1000),
+                device_manufacturer: ux::u21::new(0x13_8800),
+                device_family: ux::u14::new(0x3999),
+                device_model_number: ux::u14::new(0x1990),
+                software_version: [
+                    ux::u7::new(0x1),
+                    ux::u7::new(0x6),
+                    ux::u7::new(0x5),
+                    ux::u7::new(0x31),
+                ],
+                protocol_negotiation_supported: true,
+                profile_configuration_supported: true,
+                property_exchange_supported: false,
+                max_sysex_message_size: ux::u28::new(0x10_0000),
+            }.to_sysex_8(
+                &mut [
+                    Default::default(),
+                    Default::default(),
+                    Default::default(),
+                ],
+                0x31
+            ),
+            &[
+                system_exclusive_8bit::Message::builder()
+                    .stream_id(0x31)
+                    .group(ux::u4::new(0x8))
+                    .status(system_exclusive_8bit::Status::Begin)
+                    .data(&[
+                        0xF0, // sysex start
+                        0x7E, // universal sysex
+                        0x7F, // Device ID
+                        0x0D, // universal sysex sub-id 1: midi ci
+                        0x70, // universal sysex sub-id 2
+                        VERSION,
+                        0b0000000, 0b0100000, 0b0001100, 0b0001001, // source muid
+                        0x7F, 0x7F,  // destination muid
+                    ])
+                    .build(),
+                system_exclusive_8bit::Message::builder()
+                    .stream_id(0x31)
+                    .group(ux::u4::new(0x8))
+                    .status(system_exclusive_8bit::Status::Continue)
+                    .data(&[
+                        0x7F, 0x7F, // destination muid
+                        0b0000000, 0b0010000, 0b1001110, // device manufacturer
+                        0b0011001, 0b1110011, // device family
+                        0b0010000, 0b0110011, // device model number
+                        0x1, 0x6, 0x5, // software version
+                    ])
+                    .build(),
+                system_exclusive_8bit::Message::builder()
+                    .stream_id(0x31)
+                    .group(ux::u4::new(0x8))
+                    .status(system_exclusive_8bit::Status::End)
+                    .data(&[ 
+                        0x31, // software version
+                        0b0000_0110, // support flags
+                        0x0, 0x0, 0b1000000, 0x0, // max sysex size
+                    ])
+                    .build(),
+            ],
         );
     }
 }
