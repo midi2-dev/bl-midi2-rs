@@ -110,14 +110,8 @@ mod tests_u8 {
 
     #[test]
     fn set_bit() {
-        assert_eq!(
-            0x0_u8.set_bit(0, true),
-            &0b1000_0000,
-        );
-        assert_eq!(
-            0x0_u8.set_bit(4, true),
-            &0b0000_1000,
-        );
+        assert_eq!(0x0_u8.set_bit(0, true), &0b1000_0000,);
+        assert_eq!(0x0_u8.set_bit(4, true), &0b0000_1000,);
     }
 
     #[test]

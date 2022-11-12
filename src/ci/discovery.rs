@@ -1,8 +1,8 @@
 use crate::{
-    util::{BitOps, getter, Truncate, sysex_message},
-    ci::{DeviceId, helpers, CiMessage},
-    message::system_exclusive_8bit,
+    ci::{helpers, CiMessage, DeviceId},
     error::Error,
+    message::system_exclusive_8bit,
+    util::{getter, sysex_message, BitOps, Truncate},
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -32,12 +32,16 @@ impl Message {
 }
 
 impl CiMessage for Message {
-    fn to_sysex_8<'a>(&self, messages: &'a mut [system_exclusive_8bit::Message], stream_id: u8) -> &'a [system_exclusive_8bit::Message] {
+    fn to_sysex_8<'a>(
+        &self,
+        messages: &'a mut [system_exclusive_8bit::Message],
+        stream_id: u8,
+    ) -> &'a [system_exclusive_8bit::Message] {
         let ret = helpers::write_ci_data(
             self.group,
-            DeviceId::MidiPort, 
-            0x70, 
-            self.source, 
+            DeviceId::MidiPort,
+            0x70,
+            self.source,
             ux::u28::new(0xFFF_FFFF),
             &[
                 self.device_manufacturer.truncate(),
@@ -76,15 +80,12 @@ impl CiMessage for Message {
         Message {
             group: messages.group(),
             source: standard_data.source,
-            device_manufacturer:
-                ux::u21::from(messages.datum(14) & 0b0111_1111)
+            device_manufacturer: ux::u21::from(messages.datum(14) & 0b0111_1111)
                 | ux::u21::from(messages.datum(15) & 0b0111_1111) << 7
                 | ux::u21::from(messages.datum(16) & 0b0111_1111) << 14,
-            device_family: 
-                ux::u14::from(messages.datum(17) & 0b0111_1111)
+            device_family: ux::u14::from(messages.datum(17) & 0b0111_1111)
                 | ux::u14::from(messages.datum(18) & 0b0111_1111) << 7,
-            device_model_number:
-                ux::u14::from(messages.datum(19) & 0b0111_1111)
+            device_model_number: ux::u14::from(messages.datum(19) & 0b0111_1111)
                 | ux::u14::from(messages.datum(20) & 0b0111_1111) << 7,
             software_version: [
                 messages.datum(21).truncate(),
@@ -95,8 +96,7 @@ impl CiMessage for Message {
             protocol_negotiation_supported: support_flags.bit(6),
             profile_configuration_supported: support_flags.bit(5),
             property_exchange_supported: support_flags.bit(4),
-            max_sysex_message_size:
-                ux::u28::from(messages.datum(26) & 0b0111_1111)
+            max_sysex_message_size: ux::u28::from(messages.datum(26) & 0b0111_1111)
                 | ux::u28::from(messages.datum(27) & 0b0111_1111) << 7
                 | ux::u28::from(messages.datum(28) & 0b0111_1111) << 14
                 | ux::u28::from(messages.datum(29) & 0b0111_1111) << 21,
@@ -105,17 +105,16 @@ impl CiMessage for Message {
     fn validate_sysex_8(messages: &[system_exclusive_8bit::Message]) -> Result<(), Error> {
         helpers::validate_sysex(messages)?;
         let messages = sysex_message::SysexMessages(messages);
-        if 
-            messages.len() != 31  
-            || messages.datum(2) != 0x7F
-            || messages.datum(4) != 0x70
-        {
+        if messages.len() != 31 || messages.datum(2) != 0x7F || messages.datum(4) != 0x70 {
             Err(Error::InvalidData)
         } else {
             Ok(())
         }
     }
-    fn validate_to_sysex_8_buffer(&self, _messages: &[system_exclusive_8bit::Message]) -> Result<(), Error> {
+    fn validate_to_sysex_8_buffer(
+        &self,
+        _messages: &[system_exclusive_8bit::Message],
+    ) -> Result<(), Error> {
         todo!()
     }
 }
@@ -124,8 +123,9 @@ impl CiMessage for Message {
 mod tests {
     use super::*;
     use crate::ci::VERSION;
-    
+
     #[test]
+    #[rustfmt::skip]
     fn to_sysex_8() {
         assert_eq!(
             Message {
@@ -194,8 +194,9 @@ mod tests {
             ],
         );
     }
-    
+
     #[test]
+    #[rustfmt::skip]
     fn try_from_sysex_8() {
         assert_eq!(
             Message::try_from_sysex_8(&[

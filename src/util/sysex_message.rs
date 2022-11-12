@@ -1,4 +1,4 @@
-pub trait SysexMessage : Sized {
+pub trait SysexMessage: Sized {
     fn group(&self) -> ux::u4;
     fn set_group(&mut self, group: ux::u4);
     fn datum(&self, i: usize) -> u8;
@@ -61,13 +61,11 @@ impl<'a, M: SysexMessage> SysexMessagesMut<'a, M> {
 fn messages_valid<M: SysexMessage>(messages: &[M]) -> bool {
     let statuses_correct = match messages.len() {
         0 => true,
-        1 => {
-            messages[0].status() == Status::Complete
-        },
+        1 => messages[0].status() == Status::Complete,
         l => {
             let mut ret = true;
             ret &= messages[0].status() == Status::Begin;
-            for m in &messages[1..l-1] {
+            for m in &messages[1..l - 1] {
                 ret &= m.status() == Status::Continue;
             }
             ret &= messages[l - 1].status() == Status::End;
@@ -78,7 +76,7 @@ fn messages_valid<M: SysexMessage>(messages: &[M]) -> bool {
     groups_consistent && statuses_correct
 }
 
-pub struct SysexMessagesMutBuilder<'a, M: SysexMessage>{
+pub struct SysexMessagesMutBuilder<'a, M: SysexMessage> {
     group: ux::u4,
     buffer: &'a mut [M],
     message_index: usize,
@@ -87,7 +85,7 @@ pub struct SysexMessagesMutBuilder<'a, M: SysexMessage>{
 
 impl<'a, M: SysexMessage> SysexMessagesMutBuilder<'a, M> {
     pub fn new(buffer: &'a mut [M], group: ux::u4) -> Self {
-        SysexMessagesMutBuilder { 
+        SysexMessagesMutBuilder {
             group,
             buffer,
             message_index: 0,
@@ -109,7 +107,7 @@ impl<'a, M: SysexMessage> SysexMessagesMutBuilder<'a, M> {
             self.data_index = 0;
             self.buffer[self.message_index].set_status(Status::End);
             self.buffer[self.message_index].set_group(self.group);
-        } 
+        }
         self.buffer[self.message_index].set_datum(d, self.data_index);
         self.data_index += 1;
     }
@@ -122,7 +120,7 @@ impl<'a, M: SysexMessage> SysexMessagesMutBuilder<'a, M> {
 mod tests {
     use super::*;
     use crate::message::system_exclusive_8bit as sysex8;
-    
+
     #[test]
     fn len() {
         assert_eq!(
@@ -132,24 +130,25 @@ mod tests {
                     .stream_id(0x0)
                     .data(&[0x0, 0x0, 0x0])
                     .status(sysex8::Status::Begin)
-                    .build(),                
+                    .build(),
                 sysex8::Message::builder()
                     .group(ux::u4::new(0x0))
                     .stream_id(0x0)
                     .data(&[0x0, 0x0, 0x0, 0x0])
                     .status(sysex8::Status::Continue)
-                    .build(),                
+                    .build(),
                 sysex8::Message::builder()
                     .group(ux::u4::new(0x0))
                     .stream_id(0x0)
                     .data(&[0x0])
                     .status(sysex8::Status::End)
-                    .build(),                
-            ]).len(),
+                    .build(),
+            ])
+            .len(),
             8,
         );
     }
-    
+
     #[test]
     fn datum() {
         let messages = [
@@ -158,19 +157,19 @@ mod tests {
                 .stream_id(0x0)
                 .data(&[0x0, 0x0, 0x1])
                 .status(sysex8::Status::Begin)
-                .build(),                
+                .build(),
             sysex8::Message::builder()
                 .group(ux::u4::new(0x0))
                 .stream_id(0x0)
                 .data(&[0x0, 0x2, 0x0, 0x0])
                 .status(sysex8::Status::Continue)
-                .build(),                
+                .build(),
             sysex8::Message::builder()
                 .group(ux::u4::new(0x0))
                 .stream_id(0x0)
                 .data(&[0x3])
                 .status(sysex8::Status::End)
-                .build(),                
+                .build(),
         ];
         let messages = SysexMessages(&messages);
         assert_eq!(messages.datum(2), 0x1);

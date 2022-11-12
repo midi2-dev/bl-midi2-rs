@@ -1,14 +1,11 @@
 use crate::{
     ci::DeviceId,
-    util::{
-        sysex_message,
-        Truncate,
-    },
-    message::system_exclusive_8bit::Message as Sysex8Message,
     error::Error,
+    message::system_exclusive_8bit::Message as Sysex8Message,
+    util::{sysex_message, Truncate},
 };
 
-pub fn write_ci_data<'a, M> (
+pub fn write_ci_data<'a, M>(
     group: ux::u4,
     device_id: DeviceId,
     category: u8,
@@ -16,14 +13,16 @@ pub fn write_ci_data<'a, M> (
     destination: ux::u28,
     payload: &[ux::u7],
     messages: &'a mut [M],
-) -> &'a mut [M] where M : sysex_message::SysexMessage {
+) -> &'a mut [M]
+where
+    M: sysex_message::SysexMessage,
+{
     let mut messages_builder = sysex_message::SysexMessagesMut::builder(messages, group);
     messages_builder.datum(0xF0);
     messages_builder.datum(0x7E);
-    messages_builder.datum(
-        match device_id {
-            DeviceId::MidiPort => 0x7F,
-            DeviceId::Channel(v) => v.into(),
+    messages_builder.datum(match device_id {
+        DeviceId::MidiPort => 0x7F,
+        DeviceId::Channel(v) => v.into(),
     });
     messages_builder.datum(0x0D);
     messages_builder.datum(category);
@@ -62,13 +61,11 @@ pub fn read_standard_data<M: sysex_message::SysexMessage>(messages: &[M]) -> Sta
             0x7F => DeviceId::MidiPort,
             v => DeviceId::Channel(v.truncate()),
         },
-        source: 
-            ux::u28::from(messages.datum(6) & 0b0111_1111)
+        source: ux::u28::from(messages.datum(6) & 0b0111_1111)
             | ux::u28::from(messages.datum(7) & 0b0111_1111) << 7
             | ux::u28::from(messages.datum(8) & 0b0111_1111) << 14
             | ux::u28::from(messages.datum(9) & 0b0111_1111) << 21,
-        destination:
-            ux::u28::from(messages.datum(10) & 0b0111_1111)
+        destination: ux::u28::from(messages.datum(10) & 0b0111_1111)
             | ux::u28::from(messages.datum(11) & 0b0111_1111) << 7
             | ux::u28::from(messages.datum(12) & 0b0111_1111) << 14
             | ux::u28::from(messages.datum(13) & 0b0111_1111) << 21,
@@ -78,8 +75,7 @@ pub fn read_standard_data<M: sysex_message::SysexMessage>(messages: &[M]) -> Sta
 pub fn validate_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Result<(), Error> {
     let messages = sysex_message::SysexMessages(messages);
     let l = messages.len();
-    if
-        !messages.valid() 
+    if !messages.valid()
         || l < 15
         || messages.datum(0) != 0xF0
         || messages.datum(1) != 0x7E

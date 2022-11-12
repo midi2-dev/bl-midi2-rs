@@ -1,7 +1,7 @@
 use crate::{
     error::Error,
     message::{helpers, Midi2Message},
-    util::{builder, getter, BitOps, SliceData, sysex_message, Truncate},
+    util::{builder, getter, sysex_message, BitOps, SliceData, Truncate},
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -182,7 +182,6 @@ impl sysex_message::SysexMessage for Message {
         todo!()
     }
 }
-
 
 #[cfg(test)]
 mod tests {

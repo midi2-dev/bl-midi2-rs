@@ -1,7 +1,7 @@
 use crate::{
     error::Error,
     message::{helpers, Midi2Message},
-    util::{builder, getter, BitOps, SliceData, sysex_message, Truncate},
+    util::{builder, getter, sysex_message, BitOps, SliceData, Truncate},
 };
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -66,15 +66,15 @@ impl Message {
     pub fn data(&self) -> &[u8] {
         &*self.data
     }
-    
+
     pub(crate) fn resize(&mut self, sz: usize) {
         self.data.resize(sz);
     }
-    
+
     pub(crate) fn data_mut(&mut self) -> &mut [u8] {
         &mut self.data
     }
-    
+
     pub(crate) fn stream_id_mut(&mut self) -> &mut u8 {
         &mut self.stream_id
     }
@@ -279,7 +279,6 @@ impl sysex_message::SysexMessage for Message {
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {
