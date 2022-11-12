@@ -1,7 +1,7 @@
 use crate::{
     error::Error,
     message::{helpers, Midi2Message},
-    util::{builder, getter, BitOps, SliceData, SysexMessage, Truncate},
+    util::{builder, getter, BitOps, SliceData, sysex_message, Truncate},
 };
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -240,7 +240,10 @@ fn validate_data(p: &[u32], status: Status) -> Result<(), Error> {
     }
 }
 
-impl SysexMessage for Message {
+impl sysex_message::SysexMessage for Message {
+    fn group(&self) -> ux::u4 {
+        self.group
+    }
     fn set_group(&mut self, group: ux::u4) {
         self.group = group;
     }
@@ -250,23 +253,30 @@ impl SysexMessage for Message {
         }
         self.data_mut()[i] = d;
     }
+    fn datum(&self, i: usize) -> u8 {
+        self.data[i]
+    }
+    fn len(&self) -> usize {
+        self.data.len()
+    }
     fn max_len() -> usize {
         12
     }
-    fn is_complete(&self) -> bool {
-        self.status == Status::Complete
+    fn status(&self) -> sysex_message::Status {
+        match self.status {
+            Status::Complete => sysex_message::Status::Complete,
+            Status::Begin => sysex_message::Status::Begin,
+            Status::Continue => sysex_message::Status::Continue,
+            _ => sysex_message::Status::End,
+        }
     }
-    fn set_complete(&mut self) {
-        self.status = Status::Complete;
-    }
-    fn set_start(&mut self) {
-        self.status = Status::Begin;
-    }
-    fn set_continue(&mut self) {
-        self.status = Status::Continue;
-    }
-    fn set_end(&mut self) {
-        self.status = Status::End;
+    fn set_status(&mut self, status: sysex_message::Status) {
+        match status {
+            sysex_message::Status::Complete => self.status = Status::Complete,
+            sysex_message::Status::Begin => self.status = Status::Begin,
+            sysex_message::Status::Continue => self.status = Status::Continue,
+            sysex_message::Status::End => self.status = Status::End,
+        }
     }
 }
 

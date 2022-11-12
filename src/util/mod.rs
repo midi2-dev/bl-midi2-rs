@@ -10,7 +10,6 @@ mod truncate;
 pub use bit_ops::BitOps;
 pub use bounded::Bounded;
 pub use slice_data::SliceData;
-pub use sysex_message::SysexMessage;
 pub use truncate::Truncate;
 
 pub trait MessageTraits {

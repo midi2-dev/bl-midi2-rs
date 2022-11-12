@@ -1,7 +1,7 @@
 use crate::{
     error::Error,
     message::{helpers, Midi2Message},
-    util::{builder, getter, BitOps, SliceData, Truncate},
+    util::{builder, getter, BitOps, SliceData, sysex_message, Truncate},
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -155,6 +155,34 @@ fn validate_data(p: &[u32]) -> Result<(), Error> {
         Ok(())
     }
 }
+
+impl sysex_message::SysexMessage for Message {
+    fn group(&self) -> ux::u4 {
+        self.group
+    }
+    fn set_group(&mut self, _group: ux::u4) {
+        todo!()
+    }
+    fn datum(&self, _i: usize) -> u8 {
+        todo!()
+    }
+    fn set_datum(&mut self, _d: u8, _i: usize) {
+        todo!()
+    }
+    fn len(&self) -> usize {
+        todo!()
+    }
+    fn max_len() -> usize {
+        6
+    }
+    fn status(&self) -> sysex_message::Status {
+        todo!()
+    }
+    fn set_status(&mut self, _status: sysex_message::Status) {
+        todo!()
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
