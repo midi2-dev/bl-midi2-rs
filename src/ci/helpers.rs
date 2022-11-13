@@ -18,7 +18,6 @@ where
     M: sysex_message::SysexMessage,
 {
     let mut messages_builder = sysex_message::SysexMessagesMut::builder(messages, group);
-    messages_builder.datum(0xF0);
     messages_builder.datum(0x7E);
     messages_builder.datum(match device_id {
         DeviceId::MidiPort => 0x7F,
@@ -38,7 +37,6 @@ where
     for byte in payload {
         messages_builder.datum((*byte).into());
     }
-    messages_builder.datum(0xF7);
     messages_builder.build().0
 }
 
@@ -57,18 +55,18 @@ pub struct StandardData {
 pub fn read_standard_data<M: sysex_message::SysexMessage>(messages: &[M]) -> StandardData {
     let messages = sysex_message::SysexMessages(messages);
     StandardData {
-        device_id: match messages.datum(2) {
+        device_id: match messages.datum(1) {
             0x7F => DeviceId::MidiPort,
             v => DeviceId::Channel(v.truncate()),
         },
-        source: ux::u28::from(messages.datum(6) & 0b0111_1111)
-            | ux::u28::from(messages.datum(7) & 0b0111_1111) << 7
-            | ux::u28::from(messages.datum(8) & 0b0111_1111) << 14
-            | ux::u28::from(messages.datum(9) & 0b0111_1111) << 21,
+        source: ux::u28::from(messages.datum(5) & 0b0111_1111)
+            | ux::u28::from(messages.datum(6) & 0b0111_1111) << 7
+            | ux::u28::from(messages.datum(7) & 0b0111_1111) << 14
+            | ux::u28::from(messages.datum(8) & 0b0111_1111) << 21,
         destination: ux::u28::from(messages.datum(10) & 0b0111_1111)
-            | ux::u28::from(messages.datum(11) & 0b0111_1111) << 7
-            | ux::u28::from(messages.datum(12) & 0b0111_1111) << 14
-            | ux::u28::from(messages.datum(13) & 0b0111_1111) << 21,
+            | ux::u28::from(messages.datum(10) & 0b0111_1111) << 7
+            | ux::u28::from(messages.datum(11) & 0b0111_1111) << 14
+            | ux::u28::from(messages.datum(12) & 0b0111_1111) << 21,
     }
 }
 
@@ -77,10 +75,8 @@ pub fn validate_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Result<
     let l = messages.len();
     if !messages.valid()
         || l < 15
-        || messages.datum(0) != 0xF0
-        || messages.datum(1) != 0x7E
-        || messages.datum(3) != 0x0D
-        || messages.datum(l - 1) != 0xF7
+        || messages.datum(0) != 0x7E
+        || messages.datum(2) != 0x0D
     {
         Err(Error::InvalidData)
     } else {

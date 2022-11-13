@@ -67,14 +67,6 @@ impl Message {
         &*self.data
     }
 
-    pub(crate) fn resize(&mut self, sz: usize) {
-        self.data.resize(sz);
-    }
-
-    pub(crate) fn data_mut(&mut self) -> &mut [u8] {
-        &mut self.data
-    }
-
     pub(crate) fn stream_id_mut(&mut self) -> &mut u8 {
         &mut self.stream_id
     }
@@ -249,9 +241,9 @@ impl sysex_message::SysexMessage for Message {
     }
     fn set_datum(&mut self, d: u8, i: usize) {
         if i <= self.data().len() {
-            self.resize(i + 1);
+            self.data.resize(i + 1);
         }
-        self.data_mut()[i] = d;
+        self.data[i] = d;
     }
     fn datum(&self, i: usize) -> u8 {
         self.data[i]

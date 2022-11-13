@@ -26,6 +26,9 @@ impl<'a, M: SysexMessage> SysexMessages<'a, M> {
     pub fn len(&self) -> usize {
         self.0.iter().fold(0, |sum, m| sum + m.len())
     }
+    pub fn max_len(&self) -> usize {
+        M::max_len() * self.0.len()
+    }
     pub fn group(&self) -> ux::u4 {
         if self.0.is_empty() {
             panic!()

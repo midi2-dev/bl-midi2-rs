@@ -4,7 +4,7 @@ use crate::{
     util::{builder, getter, sysex_message, BitOps, SliceData, Truncate},
 };
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Default, Debug, PartialEq, Eq)]
 pub struct Message {
     group: ux::u4,
     status: Status,
@@ -71,6 +71,12 @@ pub enum Status {
     Begin,
     Continue,
     End,
+}
+
+impl core::default::Default for Status {
+    fn default() -> Self {
+        Status::Complete
+    }
 }
 
 impl Midi2Message for Message {
@@ -160,26 +166,39 @@ impl sysex_message::SysexMessage for Message {
     fn group(&self) -> ux::u4 {
         self.group
     }
-    fn set_group(&mut self, _group: ux::u4) {
-        todo!()
+    fn set_group(&mut self, group: ux::u4) {
+        self.group = group;
     }
-    fn datum(&self, _i: usize) -> u8 {
-        todo!()
+    fn datum(&self, i: usize) -> u8 {
+        self.data[i].into()
     }
-    fn set_datum(&mut self, _d: u8, _i: usize) {
-        todo!()
+    fn set_datum(&mut self, d: u8, i: usize) {
+        if i >= self.data.len() {
+            self.data.resize(i + 1);
+        }
+        self.data[i] = d.truncate();
     }
     fn len(&self) -> usize {
-        todo!()
+        self.data.len()
     }
     fn max_len() -> usize {
         6
     }
     fn status(&self) -> sysex_message::Status {
-        todo!()
+        match self.status {
+            Status::Complete => sysex_message::Status::Complete,
+            Status::Begin => sysex_message::Status::Begin,
+            Status::Continue => sysex_message::Status::Continue,
+            Status::End => sysex_message::Status::End,
+        }
     }
-    fn set_status(&mut self, _status: sysex_message::Status) {
-        todo!()
+    fn set_status(&mut self, status: sysex_message::Status) {
+        match status {
+            sysex_message::Status::Complete => { self.status = Status::Complete },
+            sysex_message::Status::Begin => { self.status = Status::Begin },
+            sysex_message::Status::Continue => { self.status = Status::Continue },
+            sysex_message::Status::End => { self.status = Status::End },
+        }
     }
 }
 
