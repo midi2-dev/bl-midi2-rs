@@ -32,7 +32,7 @@ impl Message {
 }
 
 impl CiMessage for Message {
-    fn to_sysex_8<'a>(
+    fn to_sysex8<'a>(
         &self,
         messages: &'a mut [system_exclusive_8bit::Message],
         stream_id: u8,
@@ -73,7 +73,7 @@ impl CiMessage for Message {
         ret
     }
 
-    fn from_sysex_8(messages: &[system_exclusive_8bit::Message]) -> Self {
+    fn from_sysex8(messages: &[system_exclusive_8bit::Message]) -> Self {
         let standard_data = helpers::read_standard_data(messages);
         let messages = sysex_message::SysexMessages(messages);
         let support_flags = messages.datum(25);
@@ -102,7 +102,7 @@ impl CiMessage for Message {
                 | ux::u28::from(messages.datum(29) & 0b0111_1111) << 21,
         }
     }
-    fn validate_sysex_8(messages: &[system_exclusive_8bit::Message]) -> Result<(), Error> {
+    fn validate_sysex8(messages: &[system_exclusive_8bit::Message]) -> Result<(), Error> {
         helpers::validate_sysex(messages)?;
         let messages = sysex_message::SysexMessages(messages);
         if messages.len() != 31 || messages.datum(2) != 0x7F || messages.datum(4) != 0x70 {
@@ -111,11 +111,15 @@ impl CiMessage for Message {
             Ok(())
         }
     }
-    fn validate_to_sysex_8_buffer(
+    fn validate_to_sysex8_buffer(
         &self,
-        _messages: &[system_exclusive_8bit::Message],
+        messages: &[system_exclusive_8bit::Message],
     ) -> Result<(), Error> {
-        todo!()
+        if messages.len() < 3 {
+            Err(Error::BufferOverflow)
+        } else {
+            Ok(())
+        }
     }
 }
 
@@ -126,7 +130,7 @@ mod tests {
 
     #[test]
     #[rustfmt::skip]
-    fn to_sysex_8() {
+    fn to_sysex8() {
         assert_eq!(
             Message {
                 group: ux::u4::new(0x8),
@@ -144,14 +148,14 @@ mod tests {
                 profile_configuration_supported: true,
                 property_exchange_supported: false,
                 max_sysex_message_size: ux::u28::new(0x10_0000),
-            }.to_sysex_8(
+            }.try_to_sysex8(
                 &mut [
                     Default::default(),
                     Default::default(),
                     Default::default(),
                 ],
                 0x31
-            ),
+            ).unwrap(),
             &[
                 system_exclusive_8bit::Message::builder()
                     .stream_id(0x31)
@@ -197,9 +201,9 @@ mod tests {
 
     #[test]
     #[rustfmt::skip]
-    fn try_from_sysex_8() {
+    fn try_from_sysex8() {
         assert_eq!(
-            Message::try_from_sysex_8(&[
+            Message::try_from_sysex8(&[
                 system_exclusive_8bit::Message::builder()
                     .stream_id(0x31)
                     .group(ux::u4::new(0x8))
