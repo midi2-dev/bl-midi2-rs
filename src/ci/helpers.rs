@@ -70,13 +70,14 @@ pub fn read_standard_data<M: sysex_message::SysexMessage>(messages: &[M]) -> Sta
     }
 }
 
-pub fn validate_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Result<(), Error> {
+pub fn validate_sysex<M: sysex_message::SysexMessage>(messages: &[M], status: u8) -> Result<(), Error> {
     let messages = sysex_message::SysexMessages(messages);
     let l = messages.len();
     if !messages.valid()
         || l < 15
         || messages.datum(0) != 0x7E
         || messages.datum(2) != 0x0D
+        || messages.datum(3) != status
     {
         Err(Error::InvalidData)
     } else {

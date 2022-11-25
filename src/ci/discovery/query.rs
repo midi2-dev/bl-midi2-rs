@@ -1,7 +1,7 @@
 use crate::{
-    ci::{helpers, CiMessageDetail, DeviceId},
+    ci::{helpers, CiMessageDetail},
     error::Error,
-    util::{getter, sysex_message, BitOps, Truncate},
+    util::{builder, getter, sysex_message},
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -18,8 +18,22 @@ pub struct Message {
     max_sysex_message_size: ux::u28,
 }
 
+builder::builder!(
+    group: ux::u4,
+    source: ux::u28,
+    device_manufacturer: ux::u21,
+    device_family: ux::u14,
+    device_model_number: ux::u14,
+    software_version: [ux::u7; 4],
+    protocol_negotiation_supported: bool,
+    profile_configuration_supported: bool,
+    property_exchange_supported: bool,
+    max_sysex_message_size: ux::u28
+);
+
 impl Message {
-    const DATA_SIZE: usize = 29;
+    const STATUS: u8 = 0x70;
+    getter::getter!(group, ux::u4);
     getter::getter!(source, ux::u28);
     getter::getter!(device_manufacturer, ux::u21);
     getter::getter!(device_family, ux::u14);
@@ -36,86 +50,48 @@ impl CiMessageDetail for Message {
         &self,
         messages: &'a mut [M],
     ) -> &'a mut [M] {
-        let ret = helpers::write_ci_data(
-            self.group,
-            DeviceId::MidiPort,
-            0x70,
-            self.source,
-            ux::u28::new(0xFFF_FFFF),
-            &[
-                self.device_manufacturer.truncate(),
-                (self.device_manufacturer >> 7).truncate(),
-                (self.device_manufacturer >> 14).truncate(),
-                self.device_family.truncate(),
-                (self.device_family >> 7).truncate(),
-                self.device_model_number.truncate(),
-                (self.device_model_number >> 7).truncate(),
-                self.software_version[0],
-                self.software_version[1],
-                self.software_version[2],
-                self.software_version[3],
-                {
-                    let flags = *0x0_u8
-                        .set_bit(6, self.protocol_negotiation_supported)
-                        .set_bit(5, self.profile_configuration_supported)
-                        .set_bit(4, self.property_exchange_supported);
-                    ux::u7::new(flags)
-                },
-                self.max_sysex_message_size.truncate(),
-                (self.max_sysex_message_size >> 7).truncate(),
-                (self.max_sysex_message_size >> 14).truncate(),
-                (self.max_sysex_message_size >> 21).truncate(),
-            ],
+        super::helpers::write_discovery_data(
             messages,
-        );
-        ret
+            &super::helpers::DiscoveryData {
+                group: self.group,
+                category: Message::STATUS,
+                source: self.source,
+                destination: ux::u28::new(0xFFF_FFFF),
+                device_manufacturer: self.device_manufacturer,
+                device_family: self.device_family,
+                device_model_number: self.device_model_number,
+                software_version: self.software_version,
+                protocol_negotiation_supported: self.protocol_negotiation_supported,
+                profile_configuration_supported: self.profile_configuration_supported,
+                property_exchange_supported: self.property_exchange_supported,
+                max_sysex_message_size: self.max_sysex_message_size,
+            }
+        )
     }
 
     fn from_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Self {
         let standard_data = helpers::read_standard_data(messages);
         let messages = sysex_message::SysexMessages(messages);
-        let support_flags = messages.datum(24);
+        let support_flags = super::helpers::support_flags(&messages);
         Message {
             group: messages.group(),
             source: standard_data.source,
-            device_manufacturer: ux::u21::from(messages.datum(13) & 0b0111_1111)
-                | ux::u21::from(messages.datum(14) & 0b0111_1111) << 7
-                | ux::u21::from(messages.datum(15) & 0b0111_1111) << 14,
-            device_family: ux::u14::from(messages.datum(16) & 0b0111_1111)
-                | ux::u14::from(messages.datum(17) & 0b0111_1111) << 7,
-            device_model_number: ux::u14::from(messages.datum(18) & 0b0111_1111)
-                | ux::u14::from(messages.datum(19) & 0b0111_1111) << 7,
-            software_version: [
-                messages.datum(20).truncate(),
-                messages.datum(21).truncate(),
-                messages.datum(22).truncate(),
-                messages.datum(23).truncate(),
-            ],
-            protocol_negotiation_supported: support_flags.bit(6),
-            profile_configuration_supported: support_flags.bit(5),
-            property_exchange_supported: support_flags.bit(4),
-            max_sysex_message_size: ux::u28::from(messages.datum(25) & 0b0111_1111)
-                | ux::u28::from(messages.datum(26) & 0b0111_1111) << 7
-                | ux::u28::from(messages.datum(27) & 0b0111_1111) << 14
-                | ux::u28::from(messages.datum(28) & 0b0111_1111) << 21,
+            device_manufacturer: super::helpers::device_manufacturer(&messages),
+            device_family: super::helpers::device_family(&messages),
+            device_model_number: super::helpers::device_model_number(&messages),
+            software_version: super::helpers::software_version(&messages),
+            max_sysex_message_size: super::helpers::max_sysex_message_size(&messages),
+            protocol_negotiation_supported: support_flags.protocol_negotiation_supported,
+            profile_configuration_supported: support_flags.profile_configuration_supported,
+            property_exchange_supported: support_flags.property_exchange_supported,
         }
     }
     fn validate_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Result<(), Error> {
-        helpers::validate_sysex(messages)?;
-        let messages = sysex_message::SysexMessages(messages);
-        if messages.len() != Message::DATA_SIZE || messages.datum(1) != 0x7F || messages.datum(3) != 0x70 {
-            Err(Error::InvalidData)
-        } else {
-            Ok(())
-        }
+        helpers::validate_sysex(messages, Message::STATUS)?;
+        super::helpers::validate_sysex(messages, super::DATA_SIZE)
     }
     fn validate_to_sysex_buffer<M: sysex_message::SysexMessage>(messages: &[M]) -> Result<(), Error> {
-        let messages = sysex_message::SysexMessages(messages);
-        if messages.max_len() < Message::DATA_SIZE {
-            Err(Error::BufferOverflow)
-        } else {
-            Ok(())
-        }
+        super::helpers::validate_to_sysex_buffer(messages, super::DATA_SIZE)
     }
 }
 
