@@ -61,7 +61,7 @@ impl Message {
     getter::getter!(status, Status);
 
     pub fn data(&self) -> &[ux::u7] {
-        &*self.data
+        &self.data
     }
 }
 

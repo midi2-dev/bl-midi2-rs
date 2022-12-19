@@ -64,7 +64,7 @@ impl Message {
     getter::getter!(status, Status);
 
     pub fn data(&self) -> &[u8] {
-        &*self.data
+        &self.data
     }
 
     pub(crate) fn stream_id_mut(&mut self) -> &mut u8 {

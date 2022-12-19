@@ -66,6 +66,7 @@ impl BitOps for u8 {
     }
     fn set_bit(&mut self, index: usize, v: bool) -> &mut Self {
         assert!(index < 8);
+        #[allow(clippy::bool_to_int_with_if)] // clippy bug?
         let v: u8 = if v { 1 } else { 0 };
         *self |= v << (7 - index);
         self
