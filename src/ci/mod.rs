@@ -1,4 +1,6 @@
 pub mod discovery;
+pub mod invalidate_muid;
+
 mod helpers;
 mod message_trait;
 

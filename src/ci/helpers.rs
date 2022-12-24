@@ -2,7 +2,7 @@ use crate::{
     ci::DeviceId,
     error::Error,
     message::system_exclusive_8bit::Message as Sysex8Message,
-    util::{sysex_message, Truncate},
+    util::{sysex_message, Encode7Bit, Truncate},
 };
 
 pub fn write_ci_data<'a, M>(
@@ -59,14 +59,18 @@ pub fn read_standard_data<M: sysex_message::SysexMessage>(messages: &[M]) -> Sta
             0x7F => DeviceId::MidiPort,
             v => DeviceId::Channel(v.truncate()),
         },
-        source: ux::u28::from(messages.datum(5) & 0b0111_1111)
-            | ux::u28::from(messages.datum(6) & 0b0111_1111) << 7
-            | ux::u28::from(messages.datum(7) & 0b0111_1111) << 14
-            | ux::u28::from(messages.datum(8) & 0b0111_1111) << 21,
-        destination: ux::u28::from(messages.datum(10) & 0b0111_1111)
-            | ux::u28::from(messages.datum(10) & 0b0111_1111) << 7
-            | ux::u28::from(messages.datum(11) & 0b0111_1111) << 14
-            | ux::u28::from(messages.datum(12) & 0b0111_1111) << 21,
+        source: ux::u28::from_u7s(&[
+            messages.datum(5),
+            messages.datum(6),
+            messages.datum(7),
+            messages.datum(8),
+        ]),
+        destination: ux::u28::from_u7s(&[
+            messages.datum(10),
+            messages.datum(10),
+            messages.datum(11),
+            messages.datum(12),
+        ]),
     }
 }
 
@@ -80,6 +84,15 @@ pub fn validate_sysex<M: sysex_message::SysexMessage>(messages: &[M], status: u8
         || messages.datum(3) != status
     {
         Err(Error::InvalidData)
+    } else {
+        Ok(())
+    }
+}
+
+pub fn validate_buffer_size<M: sysex_message::SysexMessage>(messages: &[M], min_size: usize) -> Result<(), Error> {
+    let messages = sysex_message::SysexMessages(messages);
+    if messages.max_len() < min_size {
+        Err(Error::BufferOverflow)
     } else {
         Ok(())
     }

@@ -4,6 +4,7 @@ use crate::{
         sysex_message,
         Truncate,
         BitOps,
+        Encode7Bit,
     },
     ci::{helpers, DeviceId}, 
 };
@@ -62,19 +63,25 @@ pub fn write_discovery_data<'a, M: sysex_message::SysexMessage>(
 }
 
 pub fn device_manufacturer<M: sysex_message::SysexMessage>(messages: &sysex_message::SysexMessages<M>) -> ux::u21 {
-    ux::u21::from(messages.datum(13) & 0b0111_1111)
-    | ux::u21::from(messages.datum(14) & 0b0111_1111) << 7
-    | ux::u21::from(messages.datum(15) & 0b0111_1111) << 14
+    ux::u21::from_u7s(&[
+        messages.datum(13),
+        messages.datum(14),
+        messages.datum(15),
+    ])
 }
 
 pub fn device_family<M: sysex_message::SysexMessage>(messages: &sysex_message::SysexMessages<M>) -> ux::u14 {
-    ux::u14::from(messages.datum(16) & 0b0111_1111)
-    | ux::u14::from(messages.datum(17) & 0b0111_1111) << 7
+    ux::u14::from_u7s(&[
+        messages.datum(16),
+        messages.datum(17),
+    ])
 }
 
 pub fn device_model_number<M: sysex_message::SysexMessage>(messages: &sysex_message::SysexMessages<M>) -> ux::u14 {
-    ux::u14::from(messages.datum(18) & 0b0111_1111)
-    | ux::u14::from(messages.datum(19) & 0b0111_1111) << 7
+    ux::u14::from_u7s(&[
+        messages.datum(18),
+        messages.datum(19),
+    ])
 }
 
 pub fn software_version<M: sysex_message::SysexMessage>(messages: &sysex_message::SysexMessages<M>) -> [ux::u7; 4] {
@@ -86,10 +93,12 @@ pub fn software_version<M: sysex_message::SysexMessage>(messages: &sysex_message
     ]
 }
 pub fn max_sysex_message_size<M: sysex_message::SysexMessage>(messages: &sysex_message::SysexMessages<M>) -> ux::u28 {
-    ux::u28::from(messages.datum(25) & 0b0111_1111)
-    | ux::u28::from(messages.datum(26) & 0b0111_1111) << 7
-    | ux::u28::from(messages.datum(27) & 0b0111_1111) << 14
-    | ux::u28::from(messages.datum(28) & 0b0111_1111) << 21
+    ux::u28::from_u7s(&[
+        messages.datum(25),
+        messages.datum(26),
+        messages.datum(27),
+        messages.datum(28),
+    ])
 }
 
 pub struct SupportFlags {
@@ -111,15 +120,6 @@ pub fn validate_sysex<M: sysex_message::SysexMessage>(messages: &[M], size: usiz
     let messages = sysex_message::SysexMessages(messages);
     if messages.len() != size || messages.datum(1) != 0x7F {
         Err(Error::InvalidData)
-    } else {
-        Ok(())
-    }
-}
-
-pub fn validate_to_sysex_buffer<M: sysex_message::SysexMessage>(messages: &[M], size: usize) -> Result<(), Error> {
-    let messages = sysex_message::SysexMessages(messages);
-    if messages.max_len() < size {
-        Err(Error::BufferOverflow)
     } else {
         Ok(())
     }
