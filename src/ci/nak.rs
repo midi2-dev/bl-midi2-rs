@@ -5,66 +5,60 @@ use crate::{
         DeviceId,
     },
     error::Error,
-    util::{
-        builder, 
-        getter,
-        sysex_message::{self, SysexMessage},
-        Encode7Bit,
-    },
+    util::{builder, getter, sysex_message},
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Message {
     group: ux::u4,
+    device_id: DeviceId,
     source: ux::u28,
-    target: ux::u28,
+    destination: ux::u28,
 }
 
 builder::builder!(
     group: ux::u4,
+    device_id: DeviceId,
     source: ux::u28,
-    target: ux::u28
+    destination: ux::u28
 );
 
 impl Message {
-    const STATUS: u8 = 0x7E;
-    const DATA_SIZE: usize = 17;
+    const STATUS: u8 = 0x7F;
+    const DATA_SIZE: usize = 13;
     getter::getter!(group, ux::u4);
+    getter::getter!(device_id, DeviceId);
     getter::getter!(source, ux::u28);
-    getter::getter!(target, ux::u28);
+    getter::getter!(destination, ux::u28);
 }
 
 impl CiMessageDetail for Message {
-    fn to_sysex<'a, M: SysexMessage>(&self, messages: &'a mut [M]) -> &'a mut [M] {
+    fn to_sysex<'a, M: sysex_message::SysexMessage>(&self, messages: &'a mut [M]) -> &'a mut [M] {
         ci_helpers::write_ci_data(
             self.group,
-            DeviceId::MidiPort,
+            self.device_id,
             Message::STATUS,
             self.source,
-            ux::u28::new(0xFFF_FFFF),
-            &self.target.to_u7s(),
+            self.destination,
+            &[],
             messages,
         )
     }
-    fn from_sysex<M: SysexMessage>(messages: &[M]) -> Self {
+    fn from_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Self {
         let standard_data = ci_helpers::read_standard_data(messages);
         let messages = sysex_message::SysexMessages(messages);
         Message {
             group: messages.group(),
+            device_id: standard_data.device_id,
             source: standard_data.source,
-            target: ux::u28::from_u7s(&[
-                messages.datum(13),
-                messages.datum(14),
-                messages.datum(15),
-                messages.datum(16),
-            ]),
+            destination: standard_data.destination,
         }
     }
-    fn validate_sysex<M: SysexMessage>(messages: &[M]) -> Result<(), Error> {
+    fn validate_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Result<(), Error> {
         ci_helpers::validate_sysex(messages, Message::STATUS)?;
         ci_helpers::validate_buffer_size(messages, Message::DATA_SIZE)
     }
-    fn validate_to_sysex_buffer<M: SysexMessage>(messages: &[M]) -> Result<(), Error> {
+    fn validate_to_sysex_buffer<M: sysex_message::SysexMessage>(messages: &[M]) -> Result<(), Error> {
         ci_helpers::validate_buffer_size(messages, Message::DATA_SIZE)
     }
 }
@@ -83,43 +77,44 @@ mod tests {
     fn try_to_sysex8() {
         assert_eq!(
             Message {
-                group: ux::u4::new(0x5),
-                source: ux::u28::new(0xFABF0D5),
-                target: ux::u28::new(0xBA55B05),
-            }.try_to_sysex8(&mut [
+                group: ux::u4::new(0x9),
+                device_id: DeviceId::Channel(ux::u4::new(0xC)),
+                source: ux::u28::new(126343486),
+                destination: ux::u28::new(69631782),
+            }.try_to_sysex8(
+                &mut [
                     Default::default(),
                     Default::default(),
-                ], 
-                0x33,
+                ],
+                0xF2
             ).unwrap(),
             &[
                 sysex8::Message::builder()
-                    .stream_id(0x33)
-                    .group(ux::u4::new(0x5))
+                    .stream_id(0xF2)
+                    .group(ux::u4::new(0x9))
                     .status(sysex8::Status::Begin)
                     .data(&[
                         0x7E, // universal sysex
-                        0x7F, // Device ID
+                        0xC, // Device ID
                         0x0D, // universal sysex sub-id 1: midi ci
-                        0x7E, // universal sysex sub-id 2: invalidate muid
+                        0x7F, // universal sysex sub-id 2: nak
                         VERSION,
-                        0b01010101, 0b01100001, 0b00101111, 0b01111101, // source muid
-                        0x7F, 0x7F, 0x7F,  // destination muid
+                        0b00111110, 0b00110010, 0b00011111, 0b00111100, 
+                        0b00100110, 0b01111110, 0b00011001, // destination muid
                     ])
                     .build(),
                 sysex8::Message::builder()
-                    .stream_id(0x33)
-                    .group(ux::u4::new(0x5))
+                    .stream_id(0xF2)
+                    .group(ux::u4::new(0x9))
                     .status(sysex8::Status::End)
                     .data(&[
-                        0x7F, // destination muid
-                        0b0000101, 0b0110110, 0b0010101, 0b1011101, // target muid
+                        0b00100001, // destination muid
                     ])
                     .build(),
-            ],
-        );
+            ]
+        )
     }
-
+    
     #[test]
     #[rustfmt::skip]
     fn try_from_sysex8() {
@@ -127,34 +122,34 @@ mod tests {
             Message::try_from_sysex8(
                 &[
                     sysex8::Message::builder()
-                        .stream_id(0x33)
-                        .group(ux::u4::new(0x5))
+                        .stream_id(0xF2)
+                        .group(ux::u4::new(0x9))
                         .status(sysex8::Status::Begin)
                         .data(&[
                             0x7E, // universal sysex
-                            0x7F, // Device ID
+                            0xC, // Device ID
                             0x0D, // universal sysex sub-id 1: midi ci
-                            0x7E, // universal sysex sub-id 2: invalidate muid
+                            0x7F, // universal sysex sub-id 2: nak
                             VERSION,
-                            0b01010101, 0b01100001, 0b00101111, 0b01111101, // source muid
-                            0x7F, 0x7F, 0x7F,  // destination muid
+                            0b00111110, 0b00110010, 0b00011111, 0b00111100, // source muid
+                            0b00100110, 0b01111110, 0b00011001, // destination muid
                         ])
                         .build(),
                     sysex8::Message::builder()
-                        .stream_id(0x33)
-                        .group(ux::u4::new(0x5))
+                        .stream_id(0xF2)
+                        .group(ux::u4::new(0x9))
                         .status(sysex8::Status::End)
                         .data(&[
-                            0x7F, // destination muid
-                            0b0000101, 0b0110110, 0b0010101, 0b1011101, // target muid
+                            0b00100001, // destination muid
                         ])
                         .build(),
                 ],
             ),
             Ok(Message {
-                group: ux::u4::new(0x5),
-                source: ux::u28::new(0xFABF0D5),
-                target: ux::u28::new(0xBA55B05),
+                group: ux::u4::new(0x9),
+                device_id: DeviceId::Channel(ux::u4::new(0xC)),
+                source: ux::u28::new(126343486),
+                destination: ux::u28::new(69631782),
             })
         );
     }
@@ -164,9 +159,10 @@ mod tests {
     fn try_to_sysex7() {
         assert_eq!(
             Message {
-                group: ux::u4::new(0x5),
-                source: ux::u28::new(0xFABF0D5),
-                target: ux::u28::new(0xBA55B05),
+                group: ux::u4::new(0x9),
+                device_id: DeviceId::Channel(ux::u4::new(0xC)),
+                source: ux::u28::new(126343486),
+                destination: ux::u28::new(69631782),
             }.try_to_sysex7(&mut [
                     Default::default(),
                     Default::default(),
@@ -174,37 +170,36 @@ mod tests {
             ]).unwrap(),
             &[
                 sysex7::Message::builder()
-                    .group(ux::u4::new(0x5))
+                    .group(ux::u4::new(0x9))
                     .status(sysex7::Status::Begin)
                     .data(&[
                         ux::u7::new(0x7E), // universal sysex
-                        ux::u7::new(0x7F), // Device ID
+                        ux::u7::new(0xC), // Device ID
                         ux::u7::new(0x0D), // universal sysex sub-id 1: midi ci
-                        ux::u7::new(0x7E), // universal sysex sub-id 2: invalidate muid
+                        ux::u7::new(0x7F), // universal sysex sub-id 2: nak
                         ux::u7::new(VERSION),
-                        ux::u7::new(0b01010101), // source muid
+                        ux::u7::new(0b00111110), // source muid
                     ])
                     .build(),
                 sysex7::Message::builder()
-                    .group(ux::u4::new(0x5))
+                    .group(ux::u4::new(0x9))
                     .status(sysex7::Status::Continue)
                     .data(&[
-                        ux::u7::new(0b01100001),
-                        ux::u7::new(0b00101111), ux::u7::new(0b01111101), // source muid
-                        ux::u7::new(0x7F), ux::u7::new(0x7F), ux::u7::new(0x7F),  // destination muid
+                        ux::u7::new(0b00110010),
+                        ux::u7::new(0b00011111), ux::u7::new(0b00111100), // source muid
+                        ux::u7::new(0b00100110), ux::u7::new(0b01111110),
+                        ux::u7::new(0b00011001), // destination muid
                     ])
                     .build(),
                 sysex7::Message::builder()
-                    .group(ux::u4::new(0x5))
+                    .group(ux::u4::new(0x9))
                     .status(sysex7::Status::End)
                     .data(&[
-                        ux::u7::new(0x7F), // destination muid
-                        ux::u7::new(0b0000101), ux::u7::new(0b0110110),
-                        ux::u7::new(0b0010101), ux::u7::new(0b1011101), // target muid
+                        ux::u7::new(0b00100001), // destination muid
                     ])
                     .build(),
-            ],
-        );
+            ]
+        )
     }
 
     #[test]
@@ -214,41 +209,41 @@ mod tests {
             Message::try_from_sysex7(
                 &[
                     sysex7::Message::builder()
-                        .group(ux::u4::new(0x5))
+                        .group(ux::u4::new(0x9))
                         .status(sysex7::Status::Begin)
                         .data(&[
                             ux::u7::new(0x7E), // universal sysex
-                            ux::u7::new(0x7F), // Device ID
+                            ux::u7::new(0xC), // Device ID
                             ux::u7::new(0x0D), // universal sysex sub-id 1: midi ci
-                            ux::u7::new(0x7E), // universal sysex sub-id 2: invalidate muid
+                            ux::u7::new(0x7F), // universal sysex sub-id 2: nak
                             ux::u7::new(VERSION),
-                            ux::u7::new(0b01010101), // source muid
+                            ux::u7::new(0b00111110), // source muid
                         ])
                         .build(),
                     sysex7::Message::builder()
-                        .group(ux::u4::new(0x5))
+                        .group(ux::u4::new(0x9))
                         .status(sysex7::Status::Continue)
                         .data(&[
-                            ux::u7::new(0b01100001),
-                            ux::u7::new(0b00101111), ux::u7::new(0b01111101), // source muid
-                            ux::u7::new(0x7F), ux::u7::new(0x7F), ux::u7::new(0x7F),  // destination muid
+                            ux::u7::new(0b00110010),
+                            ux::u7::new(0b00011111), ux::u7::new(0b00111100), // source muid
+                            ux::u7::new(0b00100110), ux::u7::new(0b01111110),
+                            ux::u7::new(0b00011001), // destination muid
                         ])
                         .build(),
                     sysex7::Message::builder()
-                        .group(ux::u4::new(0x5))
+                        .group(ux::u4::new(0x9))
                         .status(sysex7::Status::End)
                         .data(&[
-                            ux::u7::new(0x7F), // destination muid
-                            ux::u7::new(0b0000101), ux::u7::new(0b0110110),
-                            ux::u7::new(0b0010101), ux::u7::new(0b1011101), // target muid
+                            ux::u7::new(0b00100001), // destination muid
                         ])
                         .build(),
                 ],
             ),
             Ok(Message {
-                group: ux::u4::new(0x5),
-                source: ux::u28::new(0xFABF0D5),
-                target: ux::u28::new(0xBA55B05),
+                group: ux::u4::new(0x9),
+                device_id: DeviceId::Channel(ux::u4::new(0xC)),
+                source: ux::u28::new(126343486),
+                destination: ux::u28::new(69631782),
             })
         );
     }

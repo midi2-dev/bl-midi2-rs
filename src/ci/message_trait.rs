@@ -78,6 +78,6 @@ impl<M: CiMessageDetail> CiMessage for M {
 pub trait CiMessageDetail {
     fn to_sysex<'a, M: SysexMessage>(&self, messages: &'a mut [M]) -> &'a mut [M];
     fn from_sysex<M: SysexMessage>(messages: &[M]) -> Self;
-    fn validate_sysex<M: SysexMessage>(message: &[M]) -> Result<(), Error>;
+    fn validate_sysex<M: SysexMessage>(messages: &[M]) -> Result<(), Error>;
     fn validate_to_sysex_buffer<M: SysexMessage>(messages: &[M]) -> Result<(), Error>;
 }
