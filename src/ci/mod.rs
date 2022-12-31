@@ -1,4 +1,5 @@
 pub mod discovery;
+pub mod initiate_protocol_negotiation;
 pub mod invalidate_muid;
 pub mod nak;
 

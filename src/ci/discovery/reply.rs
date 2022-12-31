@@ -93,7 +93,7 @@ impl CiMessageDetail for Message {
         helpers::validate_sysex(messages, Message::STATUS)?;
         super::helpers::validate_sysex(messages, super::DATA_SIZE)
     }
-    fn validate_to_sysex_buffer<M: sysex_message::SysexMessage>(messages: &[M]) -> Result<(), Error> {
+    fn validate_to_sysex_buffer<M: sysex_message::SysexMessage>(&self, messages: &[M]) -> Result<(), Error> {
         helpers::validate_buffer_size(messages, super::DATA_SIZE)
     }
 }

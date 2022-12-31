@@ -94,7 +94,7 @@ impl BitOps for u8 {
     fn set_word(&mut self, _index: usize, _v: u16) -> &mut Self {
         panic!()
     }
-}
+    }
 
 #[cfg(test)]
 mod tests_u8 {

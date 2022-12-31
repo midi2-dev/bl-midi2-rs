@@ -59,7 +59,7 @@ impl<M: CiMessageDetail> CiMessage for M {
         <Self as CiMessageDetail>::validate_sysex(message)
     }
     fn validate_to_sysex8_buffer(&self, messages: &[Sysex8Message]) -> Result<(), Error> {
-        <Self as CiMessageDetail>::validate_to_sysex_buffer(messages)
+        <Self as CiMessageDetail>::validate_to_sysex_buffer(self, messages)
     }
     fn to_sysex7<'a>(&self, messages: &'a mut [Sysex7Message]) -> &'a [Sysex7Message] {
         self.to_sysex(messages)
@@ -71,7 +71,7 @@ impl<M: CiMessageDetail> CiMessage for M {
         <Self as CiMessageDetail>::validate_sysex(message)
     }
     fn validate_to_sysex7_buffer(&self, messages: &[Sysex7Message]) -> Result<(), Error> {
-        <Self as CiMessageDetail>::validate_to_sysex_buffer(messages)
+        <Self as CiMessageDetail>::validate_to_sysex_buffer(self, messages)
     }
 }
 
@@ -79,5 +79,5 @@ pub trait CiMessageDetail {
     fn to_sysex<'a, M: SysexMessage>(&self, messages: &'a mut [M]) -> &'a mut [M];
     fn from_sysex<M: SysexMessage>(messages: &[M]) -> Self;
     fn validate_sysex<M: SysexMessage>(messages: &[M]) -> Result<(), Error>;
-    fn validate_to_sysex_buffer<M: SysexMessage>(messages: &[M]) -> Result<(), Error>;
+    fn validate_to_sysex_buffer<M: SysexMessage>(&self, messages: &[M]) -> Result<(), Error>;
 }

@@ -9,6 +9,8 @@ where
     T: Clone + core::fmt::Debug + Default + PartialEq,
     [T; N]: Default,
 {
+    pub const LEN: usize = N;
+
     pub fn resize(&mut self, sz: usize) {
         assert!(sz <= N);
         self.1 = sz;
@@ -22,6 +24,11 @@ where
         };
         ret.0[0..d.len()].clone_from_slice(d);
         ret
+    }
+    
+    pub fn push(&mut self, value: T) {
+        self.resize(self.1 + 1);
+        self.0[self.1 - 1] = value;
     }
 }
 
