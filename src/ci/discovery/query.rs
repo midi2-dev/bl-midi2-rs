@@ -46,10 +46,7 @@ impl Message {
 }
 
 impl CiMessageDetail for Message {
-    fn to_sysex<'a, M: sysex_message::SysexMessage>(
-        &self,
-        messages: &'a mut [M],
-    ) -> &'a mut [M] {
+    fn to_sysex<'a, M: sysex_message::SysexMessage>(&self, messages: &'a mut [M]) -> &'a mut [M] {
         super::helpers::write_discovery_data(
             messages,
             &super::helpers::DiscoveryData {
@@ -65,7 +62,7 @@ impl CiMessageDetail for Message {
                 profile_configuration_supported: self.profile_configuration_supported,
                 property_exchange_supported: self.property_exchange_supported,
                 max_sysex_message_size: self.max_sysex_message_size,
-            }
+            },
         )
     }
 
@@ -90,7 +87,10 @@ impl CiMessageDetail for Message {
         helpers::validate_sysex(messages, Message::STATUS)?;
         super::helpers::validate_sysex(messages, super::DATA_SIZE)
     }
-    fn validate_to_sysex_buffer<M: sysex_message::SysexMessage>(&self, messages: &[M]) -> Result<(), Error> {
+    fn validate_to_sysex_buffer<M: sysex_message::SysexMessage>(
+        &self,
+        messages: &[M],
+    ) -> Result<(), Error> {
         helpers::validate_buffer_size(messages, super::DATA_SIZE)
     }
 }
@@ -99,9 +99,9 @@ impl CiMessageDetail for Message {
 mod tests {
     use super::*;
     use crate::{
-        ci::{VERSION, CiMessage},
-        message::system_exclusive_8bit as sysex8,
+        ci::{CiMessage, VERSION},
         message::system_exclusive_7bit as sysex7,
+        message::system_exclusive_8bit as sysex8,
     };
 
     #[test]

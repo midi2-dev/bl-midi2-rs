@@ -194,10 +194,10 @@ impl sysex_message::SysexMessage for Message {
     }
     fn set_status(&mut self, status: sysex_message::Status) {
         match status {
-            sysex_message::Status::Complete => { self.status = Status::Complete },
-            sysex_message::Status::Begin => { self.status = Status::Begin },
-            sysex_message::Status::Continue => { self.status = Status::Continue },
-            sysex_message::Status::End => { self.status = Status::End },
+            sysex_message::Status::Complete => self.status = Status::Complete,
+            sysex_message::Status::Begin => self.status = Status::Begin,
+            sysex_message::Status::Continue => self.status = Status::Continue,
+            sysex_message::Status::End => self.status = Status::End,
         }
     }
 }

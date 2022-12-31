@@ -25,7 +25,7 @@ where
         ret.0[0..d.len()].clone_from_slice(d);
         ret
     }
-    
+
     pub fn push(&mut self, value: T) {
         self.resize(self.1 + 1);
         self.0[self.1 - 1] = value;

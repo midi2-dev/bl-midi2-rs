@@ -74,7 +74,10 @@ pub fn read_standard_data<M: sysex_message::SysexMessage>(messages: &[M]) -> Sta
     }
 }
 
-pub fn validate_sysex<M: sysex_message::SysexMessage>(messages: &[M], status: u8) -> Result<(), Error> {
+pub fn validate_sysex<M: sysex_message::SysexMessage>(
+    messages: &[M],
+    status: u8,
+) -> Result<(), Error> {
     let messages = sysex_message::SysexMessages(messages);
     let l = messages.len();
     if !messages.valid()
@@ -89,7 +92,10 @@ pub fn validate_sysex<M: sysex_message::SysexMessage>(messages: &[M], status: u8
     }
 }
 
-pub fn validate_buffer_size<M: sysex_message::SysexMessage>(messages: &[M], min_size: usize) -> Result<(), Error> {
+pub fn validate_buffer_size<M: sysex_message::SysexMessage>(
+    messages: &[M],
+    min_size: usize,
+) -> Result<(), Error> {
     let messages = sysex_message::SysexMessages(messages);
     if messages.max_len() < min_size {
         Err(Error::BufferOverflow)

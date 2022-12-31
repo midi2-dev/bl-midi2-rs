@@ -1,9 +1,5 @@
 use crate::{
-    ci::{
-        helpers as ci_helpers,
-        CiMessageDetail,
-        DeviceId,
-    },
+    ci::{helpers as ci_helpers, CiMessageDetail, DeviceId},
     error::Error,
     util::{builder, getter, sysex_message},
 };
@@ -58,7 +54,10 @@ impl CiMessageDetail for Message {
         ci_helpers::validate_sysex(messages, Message::STATUS)?;
         ci_helpers::validate_buffer_size(messages, Message::DATA_SIZE)
     }
-    fn validate_to_sysex_buffer<M: sysex_message::SysexMessage>(&self, messages: &[M]) -> Result<(), Error> {
+    fn validate_to_sysex_buffer<M: sysex_message::SysexMessage>(
+        &self,
+        messages: &[M],
+    ) -> Result<(), Error> {
         ci_helpers::validate_buffer_size(messages, Message::DATA_SIZE)
     }
 }
@@ -67,11 +66,11 @@ impl CiMessageDetail for Message {
 mod tests {
     use super::*;
     use crate::{
-        ci::{VERSION, CiMessage},
-        message::system_exclusive_8bit as sysex8,
+        ci::{CiMessage, VERSION},
         message::system_exclusive_7bit as sysex7,
+        message::system_exclusive_8bit as sysex8,
     };
-    
+
     #[test]
     #[rustfmt::skip]
     fn try_to_sysex8() {
@@ -114,7 +113,7 @@ mod tests {
             ]
         )
     }
-    
+
     #[test]
     #[rustfmt::skip]
     fn try_from_sysex8() {

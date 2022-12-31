@@ -1,7 +1,7 @@
 use crate::{
     ci::{helpers, CiMessageDetail},
     error::Error,
-    util::{builder, getter, sysex_message}
+    util::{builder, getter, sysex_message},
 };
 
 pub struct Message {
@@ -48,10 +48,7 @@ impl Message {
 }
 
 impl CiMessageDetail for Message {
-    fn to_sysex<'a, M: sysex_message::SysexMessage>(
-        &self,
-        messages: &'a mut [M],
-    ) -> &'a mut [M] {
+    fn to_sysex<'a, M: sysex_message::SysexMessage>(&self, messages: &'a mut [M]) -> &'a mut [M] {
         super::helpers::write_discovery_data(
             messages,
             &super::helpers::DiscoveryData {
@@ -93,7 +90,10 @@ impl CiMessageDetail for Message {
         helpers::validate_sysex(messages, Message::STATUS)?;
         super::helpers::validate_sysex(messages, super::DATA_SIZE)
     }
-    fn validate_to_sysex_buffer<M: sysex_message::SysexMessage>(&self, messages: &[M]) -> Result<(), Error> {
+    fn validate_to_sysex_buffer<M: sysex_message::SysexMessage>(
+        &self,
+        messages: &[M],
+    ) -> Result<(), Error> {
         helpers::validate_buffer_size(messages, super::DATA_SIZE)
     }
 }

@@ -1,8 +1,8 @@
 use crate::{
-    error::Error, 
+    error::Error,
     message::{
-        system_exclusive_8bit::Message as Sysex8Message,
         system_exclusive_7bit::Message as Sysex7Message,
+        system_exclusive_8bit::Message as Sysex8Message,
     },
     util::sysex_message::SysexMessage,
 };
@@ -36,7 +36,10 @@ pub trait CiMessage: Sized + CiMessageDetail {
         <Self as CiMessage>::validate_sysex7(messages)?;
         Ok(<Self as CiMessage>::from_sysex7(messages))
     }
-    fn try_to_sysex7<'a>(&self, messages: &'a mut [Sysex7Message]) -> Result<&'a [Sysex7Message], Error> {
+    fn try_to_sysex7<'a>(
+        &self,
+        messages: &'a mut [Sysex7Message],
+    ) -> Result<&'a [Sysex7Message], Error> {
         self.validate_to_sysex7_buffer(messages)?;
         Ok(self.to_sysex7(messages))
     }

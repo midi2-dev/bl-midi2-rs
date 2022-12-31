@@ -1,19 +1,19 @@
 use crate::util::Truncate;
 
-pub trait Encode7Bit<const N: usize> : 
-    Sized 
-    + core::default::Default 
+pub trait Encode7Bit<const N: usize>:
+    Sized
+    + core::default::Default
     + core::convert::From<u8>
     + core::convert::From<ux::u7>
-    + core::ops::BitOrAssign<Self> 
-    + core::ops::BitAnd<Self, Output = Self> 
-    + core::ops::Shl<usize, Output = Self> 
-    + core::ops::Shr<usize, Output = Self> 
+    + core::ops::BitOrAssign<Self>
+    + core::ops::BitAnd<Self, Output = Self>
+    + core::ops::Shl<usize, Output = Self>
+    + core::ops::Shr<usize, Output = Self>
     + Truncate
     + core::marker::Copy
-    where  
-        ux::u7: core::convert::TryFrom<Self>,
-        <ux::u7 as core::convert::TryFrom<Self>>::Error: core::fmt::Debug
+where
+    ux::u7: core::convert::TryFrom<Self>,
+    <ux::u7 as core::convert::TryFrom<Self>>::Error: core::fmt::Debug,
 {
     fn from_u7s(u7s: &[u8; N]) -> Self {
         let mut ret: Self = Default::default();
@@ -22,7 +22,7 @@ pub trait Encode7Bit<const N: usize> :
         }
         ret
     }
-    
+
     fn to_u7s(&self) -> [ux::u7; N] {
         let mut ret = [ux::u7::default(); N];
         for (i, v) in ret.iter_mut().enumerate() {

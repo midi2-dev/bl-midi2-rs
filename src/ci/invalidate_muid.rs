@@ -1,13 +1,8 @@
 use crate::{
-    ci::{
-        helpers as ci_helpers,
-        CiMessageDetail,
-        DeviceId,
-    },
+    ci::{helpers as ci_helpers, CiMessageDetail, DeviceId},
     error::Error,
     util::{
-        builder, 
-        getter,
+        builder, getter,
         sysex_message::{self, SysexMessage},
         Encode7Bit,
     },
@@ -20,11 +15,7 @@ pub struct Message {
     target: ux::u28,
 }
 
-builder::builder!(
-    group: ux::u4,
-    source: ux::u28,
-    target: ux::u28
-);
+builder::builder!(group: ux::u4, source: ux::u28, target: ux::u28);
 
 impl Message {
     const STATUS: u8 = 0x7E;
@@ -73,11 +64,11 @@ impl CiMessageDetail for Message {
 mod tests {
     use super::*;
     use crate::{
-        ci::{VERSION, CiMessage},
-        message::system_exclusive_8bit as sysex8,
+        ci::{CiMessage, VERSION},
         message::system_exclusive_7bit as sysex7,
+        message::system_exclusive_8bit as sysex8,
     };
-    
+
     #[test]
     #[rustfmt::skip]
     fn try_to_sysex8() {
