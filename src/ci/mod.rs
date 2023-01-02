@@ -3,6 +3,7 @@ pub mod initiate_protocol_negotiation;
 pub mod invalidate_muid;
 pub mod nak;
 pub mod protocol;
+pub mod set_protocol;
 
 mod helpers;
 mod message_trait;

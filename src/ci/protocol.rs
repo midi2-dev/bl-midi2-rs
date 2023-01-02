@@ -1,9 +1,5 @@
-use crate::util::SliceData;
-
-pub type Protocols = SliceData<Option<Protocol>, 2>;
-
 #[non_exhaustive]
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Protocol {
     Midi1 {
         size_of_packet_extension: bool,

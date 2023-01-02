@@ -1,8 +1,8 @@
 use crate::{
-    ci::DeviceId,
+    ci::{DeviceId, protocol::Protocol},
     error::Error,
     message::system_exclusive_8bit::Message as Sysex8Message,
-    util::{sysex_message, Encode7Bit, Truncate},
+    util::{sysex_message, BitOps, Encode7Bit, Truncate},
 };
 
 pub fn write_ci_data<'a, M>(
@@ -102,4 +102,67 @@ pub fn validate_buffer_size<M: sysex_message::SysexMessage>(
     } else {
         Ok(())
     }
+}
+
+pub fn read_protocol<M>(messages: &sysex_message::SysexMessages<M>, first_byte: usize) -> Protocol
+where
+    M: sysex_message::SysexMessage,
+{
+    match messages.datum(first_byte) {
+        0x1 => {
+            let flags = messages.datum(first_byte + 2);
+            Protocol::Midi1 {
+                size_of_packet_extension: flags.bit(6),
+                jitter_reduction_extension: flags.bit(7),
+                version: messages.datum(first_byte + 1).truncate(),
+            }
+        },
+        0x2 => {
+            Protocol::Midi2 {
+                jitter_reduction_extension: messages.datum(first_byte + 2).bit(7),
+                version: messages.datum(first_byte + 1).truncate(),
+            }
+        }
+        _ => panic!(),
+    }
+}
+
+pub fn validate_protocol_data(data: &[u8]) -> Result<(), Error> {
+    // todo: version assertion?
+    if ![1u8, 2u8].iter().any(|&v| v == data[0]) {
+        Err(Error::InvalidData)
+    } else {
+        Ok(())
+    }
+}
+
+pub fn protocol_data<'a, 'b>(protocol: &'a Protocol, buff: &'b mut [ux::u7]) -> &'b [ux::u7] {
+    match protocol {
+        Protocol::Midi1 {
+            size_of_packet_extension,
+            jitter_reduction_extension,
+            version,
+        } => {
+            buff[0] = ux::u7::new(0x1);
+            buff[1] = *version;
+            buff[2] = ux::u7::new(
+                *0x0_u8
+                    .set_bit(6, *size_of_packet_extension)
+                    .set_bit(7, *jitter_reduction_extension),
+            );
+            buff[3] = ux::u7::default();
+            buff[4] = ux::u7::default();
+        }
+        Protocol::Midi2 {
+            jitter_reduction_extension,
+            version,
+        } => {
+            buff[0] = ux::u7::new(0x2);
+            buff[1] = *version;
+            buff[2] = ux::u7::new(*0x0_u8.set_bit(7, *jitter_reduction_extension));
+            buff[3] = ux::u7::default();
+            buff[4] = ux::u7::default();
+        }
+    }
+    buff
 }

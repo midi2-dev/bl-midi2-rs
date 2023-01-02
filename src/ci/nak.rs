@@ -40,6 +40,7 @@ impl CiMessageDetail for Message {
             messages,
         )
     }
+
     fn from_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Self {
         let standard_data = ci_helpers::read_standard_data(messages);
         let messages = sysex_message::SysexMessages(messages);
@@ -50,10 +51,12 @@ impl CiMessageDetail for Message {
             destination: standard_data.destination,
         }
     }
+
     fn validate_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Result<(), Error> {
         ci_helpers::validate_sysex(messages, Message::STATUS)?;
         ci_helpers::validate_buffer_size(messages, Message::DATA_SIZE)
     }
+
     fn validate_to_sysex_buffer<M: sysex_message::SysexMessage>(
         &self,
         messages: &[M],

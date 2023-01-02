@@ -3,9 +3,10 @@ macro_rules! initiate_protocol_negotiation_message {
         use crate::{
             ci::{helpers as ci_helpers, protocol::*, CiMessageDetail, DeviceId},
             error::Error,
-            util::{builder, getter, sysex_message, BitOps, Truncate},
+            util::{builder, getter, sysex_message, SliceData, Truncate},
         };
 
+        type Protocols = SliceData<Option<Protocol>, 2>;
         
         #[derive(Clone, Debug, PartialEq, Eq)]
         pub struct Message {
@@ -36,35 +37,10 @@ macro_rules! initiate_protocol_negotiation_message {
             }
 
             fn protocol_data<'a>(&self, buff: &'a mut [ux::u7]) -> &'a [ux::u7] {
-                for (i, protocol) in self.protocols.iter().enumerate() {
-                    match protocol {
-                        Some(Protocol::Midi1 {
-                            size_of_packet_extension,
-                            jitter_reduction_extension,
-                            version,
-                        }) => {
-                            buff[5 * i] = ux::u7::new(0x1);
-                            buff[5 * i + 1] = *version;
-                            buff[5 * i + 2] = ux::u7::new(
-                                *0x0_u8
-                                    .set_bit(6, *size_of_packet_extension)
-                                    .set_bit(7, *jitter_reduction_extension),
-                            );
-                            buff[5 * i + 3] = ux::u7::default();
-                            buff[5 * i + 4] = ux::u7::default();
-                        }
-                        Some(Protocol::Midi2 {
-                            jitter_reduction_extension,
-                            version,
-                        }) => {
-                            buff[5 * i] = ux::u7::new(0x2);
-                            buff[5 * i + 1] = *version;
-                            buff[5 * i + 2] = ux::u7::new(*0x0_u8.set_bit(7, *jitter_reduction_extension));
-                            buff[5 * i + 3] = ux::u7::default();
-                            buff[5 * i + 4] = ux::u7::default();
-                        }
-                        None => {}
-                    }
+                for (i, protocol) in self.protocols.iter()
+                        .filter_map(|v| v.as_ref())
+                        .enumerate() {
+                    ci_helpers::protocol_data(protocol, &mut buff[5*i..5*i + 5]);
                 }
                 &buff[0..5 * self.protocols.len()]
             }
@@ -147,6 +123,7 @@ macro_rules! initiate_protocol_negotiation_message {
                     messages,
                 )
             }
+
             fn from_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Self {
                 let standard_data = ci_helpers::read_standard_data(messages);
                 let messages = sysex_message::SysexMessages(messages);
@@ -180,7 +157,7 @@ macro_rules! initiate_protocol_negotiation_message {
                 ci_helpers::validate_buffer_size(messages, 15 + 5 * protocol_count)?;
 
                 for i in 0..protocol_count {
-                    validate_protocol_data(&[
+                    ci_helpers::validate_protocol_data(&[
                         messages_wrapper.datum(15 + i * 5),
                         messages_wrapper.datum(16 + i * 5),
                         messages_wrapper.datum(17 + i * 5),
@@ -206,36 +183,10 @@ macro_rules! initiate_protocol_negotiation_message {
         {
             let mut protocols = Protocols::default();
             for i in 0..(messages.datum(14) as usize) {
-                match messages.datum(15 + i * 5) {
-                    0x1 => {
-                        let flags = messages.datum(17 + i * 5);
-                        protocols.push(Some(Protocol::Midi1 {
-                            size_of_packet_extension: flags.bit(6),
-                            jitter_reduction_extension: flags.bit(7),
-                            version: messages.datum(16 + i * 5).truncate(),
-                        }));
-                    }
-                    0x2 => {
-                        protocols.push(Some(Protocol::Midi2 {
-                            jitter_reduction_extension: messages.datum(17 + i * 5).bit(7),
-                            version: messages.datum(16 + i * 5).truncate(),
-                        }));
-                    }
-                    _ => panic!(),
-                }
+                protocols.push(Some(ci_helpers::read_protocol(messages, 15 + i*5)));
             }
             protocols
         }
-
-        fn validate_protocol_data(data: &[u8]) -> Result<(), Error> {
-            // todo: version assertion?
-            if ![1u8, 2u8].iter().any(|&v| v == data[0]) {
-                Err(Error::InvalidData)
-            } else {
-                Ok(())
-            }
-        }
-
     }
 }
 
