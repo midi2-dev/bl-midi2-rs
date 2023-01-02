@@ -1,296 +1,290 @@
-use crate::{
-    ci::{helpers as ci_helpers, CiMessageDetail, DeviceId},
-    error::Error,
-    util::{builder, getter, sysex_message, BitOps, SliceData, Truncate},
-};
+macro_rules! initiate_protocol_negotiation_message {
+    ($op_code:expr) => {
+        use crate::{
+            ci::{helpers as ci_helpers, protocol::*, CiMessageDetail, DeviceId},
+            error::Error,
+            util::{builder, getter, sysex_message, BitOps, Truncate},
+        };
 
-type Protocols = SliceData<Option<Protocol>, 2>;
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Message {
-    group: ux::u4,
-    source: ux::u28,
-    destination: ux::u28,
-    authority_level: ux::u7,
-    protocols: Protocols,
-}
-
-impl Message {
-    const STATUS: u8 = 0x10;
-
-    getter::getter!(group, ux::u4);
-    getter::getter!(source, ux::u28);
-    getter::getter!(destination, ux::u28);
-    getter::getter!(authority_level, ux::u7);
-
-    pub fn protocol(&self, index: usize) -> Option<&Protocol> {
-        match index {
-            0 | 1 => self.protocols[index].as_ref(),
-            _ => None,
+        
+        #[derive(Clone, Debug, PartialEq, Eq)]
+        pub struct Message {
+            group: ux::u4,
+            source: ux::u28,
+            destination: ux::u28,
+            authority_level: ux::u7,
+            protocols: Protocols,
         }
-    }
 
-    pub fn preferred_protocol(&self) -> &Protocol {
-        self.protocols[0].as_ref().unwrap()
-    }
+        impl Message {
+            const STATUS: u8 = 0x10;
 
-    fn protocol_data<'a>(&self, buff: &'a mut [ux::u7]) -> &'a [ux::u7] {
-        for (i, protocol) in self.protocols.iter().enumerate() {
-            match protocol {
-                Some(Protocol::Midi1 {
-                    size_of_packet_extension,
-                    jitter_reduction_extension,
-                    version,
-                }) => {
-                    buff[5 * i] = ux::u7::new(0x1);
-                    buff[5 * i + 1] = *version;
-                    buff[5 * i + 2] = ux::u7::new(
-                        *0x0_u8
-                            .set_bit(6, *size_of_packet_extension)
-                            .set_bit(7, *jitter_reduction_extension),
-                    );
-                    buff[5 * i + 3] = ux::u7::default();
-                    buff[5 * i + 4] = ux::u7::default();
+            getter::getter!(group, ux::u4);
+            getter::getter!(source, ux::u28);
+            getter::getter!(destination, ux::u28);
+            getter::getter!(authority_level, ux::u7);
+
+            pub fn protocol(&self, index: usize) -> Option<&Protocol> {
+                match index {
+                    0 | 1 => self.protocols[index].as_ref(),
+                    _ => None,
                 }
-                Some(Protocol::Midi2 {
-                    jitter_reduction_extension,
-                    version,
-                }) => {
-                    buff[5 * i] = ux::u7::new(0x2);
-                    buff[5 * i + 1] = *version;
-                    buff[5 * i + 2] = ux::u7::new(*0x0_u8.set_bit(7, *jitter_reduction_extension));
-                    buff[5 * i + 3] = ux::u7::default();
-                    buff[5 * i + 4] = ux::u7::default();
+            }
+
+            pub fn preferred_protocol(&self) -> &Protocol {
+                self.protocols[0].as_ref().unwrap()
+            }
+
+            fn protocol_data<'a>(&self, buff: &'a mut [ux::u7]) -> &'a [ux::u7] {
+                for (i, protocol) in self.protocols.iter().enumerate() {
+                    match protocol {
+                        Some(Protocol::Midi1 {
+                            size_of_packet_extension,
+                            jitter_reduction_extension,
+                            version,
+                        }) => {
+                            buff[5 * i] = ux::u7::new(0x1);
+                            buff[5 * i + 1] = *version;
+                            buff[5 * i + 2] = ux::u7::new(
+                                *0x0_u8
+                                    .set_bit(6, *size_of_packet_extension)
+                                    .set_bit(7, *jitter_reduction_extension),
+                            );
+                            buff[5 * i + 3] = ux::u7::default();
+                            buff[5 * i + 4] = ux::u7::default();
+                        }
+                        Some(Protocol::Midi2 {
+                            jitter_reduction_extension,
+                            version,
+                        }) => {
+                            buff[5 * i] = ux::u7::new(0x2);
+                            buff[5 * i + 1] = *version;
+                            buff[5 * i + 2] = ux::u7::new(*0x0_u8.set_bit(7, *jitter_reduction_extension));
+                            buff[5 * i + 3] = ux::u7::default();
+                            buff[5 * i + 4] = ux::u7::default();
+                        }
+                        None => {}
+                    }
                 }
-                None => {}
+                &buff[0..5 * self.protocols.len()]
+            }
+
+            pub fn builder() -> Builder {
+                Builder {
+                    group: None,
+                    source: None,
+                    destination: None,
+                    authority_level: None,
+                    protocols: Default::default(),
+                }
             }
         }
-        &buff[0..5 * self.protocols.len()]
-    }
 
-    pub fn builder() -> Builder {
-        Builder {
-            group: None,
-            source: None,
-            destination: None,
-            authority_level: None,
-            protocols: Default::default(),
+        pub struct Builder {
+            group: Option<ux::u4>,
+            source: Option<ux::u28>,
+            destination: Option<ux::u28>,
+            authority_level: Option<ux::u7>,
+            protocols: Protocols,
         }
-    }
-}
 
-pub struct Builder {
-    group: Option<ux::u4>,
-    source: Option<ux::u28>,
-    destination: Option<ux::u28>,
-    authority_level: Option<ux::u7>,
-    protocols: Protocols,
-}
+        impl Builder {
+            builder::builder_setter!(group: ux::u4);
+            builder::builder_setter!(source: ux::u28);
+            builder::builder_setter!(destination: ux::u28);
+            builder::builder_setter!(authority_level: ux::u7);
 
-impl Builder {
-    builder::builder_setter!(group: ux::u4);
-    builder::builder_setter!(source: ux::u28);
-    builder::builder_setter!(destination: ux::u28);
-    builder::builder_setter!(authority_level: ux::u7);
+            /// Append an additional protocol to the list of
+            /// supported protocols.
+            ///
+            /// **Warning**: only two supported protocols can be added.
+            /// This function will panic if called more than
+            /// twice on the same builder.
+            pub fn protocol(&mut self, p: Protocol) -> &mut Self {
+                self.protocols.push(Some(p));
+                self
+            }
 
-    /// Append an additional protocol to the list of
-    /// supported protocols.
-    ///
-    /// **Warning**: only two supported protocols can be added.
-    /// This function will panic if called more than
-    /// twice on the same builder.
-    pub fn protocol(&mut self, p: Protocol) -> &mut Self {
-        self.protocols.push(Some(p));
-        self
-    }
-
-    pub fn build(&self) -> Message {
-        Message {
-            group: self.group.unwrap_or_else(|| panic!("Missing fields")),
-            source: self.source.unwrap_or_else(|| panic!("Missing fields")),
-            destination: self.destination.unwrap_or_else(|| panic!("Missing fields")),
-            authority_level: self
-                .authority_level
-                .unwrap_or_else(|| panic!("Missing fields")),
-            protocols: {
-                if self.protocols.is_empty() {
-                    panic!("Missing fields");
-                }
-                self.protocols.clone()
-            },
-        }
-    }
-}
-
-#[non_exhaustive]
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Protocol {
-    Midi1 {
-        size_of_packet_extension: bool,
-        jitter_reduction_extension: bool,
-        version: ux::u7,
-    },
-    Midi2 {
-        jitter_reduction_extension: bool,
-        version: ux::u7,
-    },
-}
-
-impl Protocol {
-    pub const MIDI_1_VERSION: ux::u7 = ux::u7::new(0x0);
-    pub const MIDI_2_VERSION: ux::u7 = ux::u7::new(0x0);
-}
-
-impl CiMessageDetail for Message {
-    fn to_sysex<'a, M: sysex_message::SysexMessage>(&self, messages: &'a mut [M]) -> &'a mut [M] {
-        let mut protocol_data_buffer = [ux::u7::default(); 5 * Protocols::LEN];
-        ci_helpers::write_ci_data(
-            self.group,
-            DeviceId::MidiPort,
-            Message::STATUS,
-            self.source,
-            self.destination,
-            &[
-                &[
-                    self.authority_level,
-                    match self.protocols.len() {
-                        1 => ux::u7::new(0x1),
-                        2 => ux::u7::new(0x2),
-                        _ => unreachable!(),
+            pub fn build(&self) -> Message {
+                Message {
+                    group: self.group.unwrap_or_else(|| panic!("Missing fields")),
+                    source: self.source.unwrap_or_else(|| panic!("Missing fields")),
+                    destination: self.destination.unwrap_or_else(|| panic!("Missing fields")),
+                    authority_level: self
+                        .authority_level
+                        .unwrap_or_else(|| panic!("Missing fields")),
+                    protocols: {
+                        if self.protocols.is_empty() {
+                            panic!("Missing fields");
+                        }
+                        self.protocols.clone()
                     },
-                ],
-                self.protocol_data(&mut protocol_data_buffer),
-            ]
-            .concat(),
-            messages,
-        )
-    }
-    fn from_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Self {
-        let standard_data = ci_helpers::read_standard_data(messages);
-        let messages = sysex_message::SysexMessages(messages);
-        Message {
-            group: messages.group(),
-            source: standard_data.source,
-            destination: standard_data.destination,
-            authority_level: messages.datum(13).truncate(),
-            protocols: read_protocols(&messages),
-        }
-    }
-
-    fn validate_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Result<(), Error> {
-        let messages_wrapper = sysex_message::SysexMessages(messages);
-
-        if messages_wrapper.len() < 15 {
-            return Err(Error::InvalidData);
-        }
-        let protocol_count = messages_wrapper.datum(14) as usize;
-
-        // do we need to support more than two
-        // protocols at this point?
-        let protocol_count_supported = [1_usize, 2_usize].iter().any(|&v| v == protocol_count);
-        if !protocol_count_supported {
-            // todo
-            // maybe better not to fail at this point
-            // could just pick the first two supported protocols?
-            return Err(Error::InvalidData);
+                }
+            }
         }
 
-        ci_helpers::validate_buffer_size(messages, 15 + 5 * protocol_count)?;
+        impl CiMessageDetail for Message {
+            fn to_sysex<'a, M: sysex_message::SysexMessage>(&self, messages: &'a mut [M]) -> &'a mut [M] {
+                let mut protocol_data_buffer = [ux::u7::default(); 5 * Protocols::LEN];
+                ci_helpers::write_ci_data(
+                    self.group,
+                    DeviceId::MidiPort,
+                    Message::STATUS,
+                    self.source,
+                    self.destination,
+                    &[
+                        &[
+                            self.authority_level,
+                            match self.protocols.len() {
+                                1 => ux::u7::new(0x1),
+                                2 => ux::u7::new(0x2),
+                                _ => unreachable!(),
+                            },
+                        ],
+                        self.protocol_data(&mut protocol_data_buffer),
+                    ]
+                    .concat(),
+                    messages,
+                )
+            }
+            fn from_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Self {
+                let standard_data = ci_helpers::read_standard_data(messages);
+                let messages = sysex_message::SysexMessages(messages);
+                Message {
+                    group: messages.group(),
+                    source: standard_data.source,
+                    destination: standard_data.destination,
+                    authority_level: messages.datum(13).truncate(),
+                    protocols: read_protocols(&messages),
+                }
+            }
 
-        for i in 0..protocol_count {
-            validate_protocol_data(&[
-                messages_wrapper.datum(15 + i * 5),
-                messages_wrapper.datum(16 + i * 5),
-                messages_wrapper.datum(17 + i * 5),
-                messages_wrapper.datum(18 + i * 5),
-                messages_wrapper.datum(19 + i * 5),
-            ])?;
+            fn validate_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Result<(), Error> {
+                let messages_wrapper = sysex_message::SysexMessages(messages);
+
+                if messages_wrapper.len() < 15 {
+                    return Err(Error::InvalidData);
+                }
+                let protocol_count = messages_wrapper.datum(14) as usize;
+
+                // do we need to support more than two
+                // protocols at this point?
+                let protocol_count_supported = [1_usize, 2_usize].iter().any(|&v| v == protocol_count);
+                if !protocol_count_supported {
+                    // todo
+                    // maybe better not to fail at this point
+                    // could just pick the first two supported protocols?
+                    return Err(Error::InvalidData);
+                }
+
+                ci_helpers::validate_buffer_size(messages, 15 + 5 * protocol_count)?;
+
+                for i in 0..protocol_count {
+                    validate_protocol_data(&[
+                        messages_wrapper.datum(15 + i * 5),
+                        messages_wrapper.datum(16 + i * 5),
+                        messages_wrapper.datum(17 + i * 5),
+                        messages_wrapper.datum(18 + i * 5),
+                        messages_wrapper.datum(19 + i * 5),
+                    ])?;
+                }
+
+                Ok(())
+            }
+
+            fn validate_to_sysex_buffer<M: sysex_message::SysexMessage>(
+                &self,
+                messages: &[M],
+            ) -> Result<(), Error> {
+                ci_helpers::validate_buffer_size(messages, 15 + 5 * self.protocols.len())
+            }
         }
 
-        Ok(())
-    }
+        fn read_protocols<M>(messages: &sysex_message::SysexMessages<M>) -> Protocols
+        where
+            M: sysex_message::SysexMessage,
+        {
+            let mut protocols = Protocols::default();
+            for i in 0..(messages.datum(14) as usize) {
+                match messages.datum(15 + i * 5) {
+                    0x1 => {
+                        let flags = messages.datum(17 + i * 5);
+                        protocols.push(Some(Protocol::Midi1 {
+                            size_of_packet_extension: flags.bit(6),
+                            jitter_reduction_extension: flags.bit(7),
+                            version: messages.datum(16 + i * 5).truncate(),
+                        }));
+                    }
+                    0x2 => {
+                        protocols.push(Some(Protocol::Midi2 {
+                            jitter_reduction_extension: messages.datum(17 + i * 5).bit(7),
+                            version: messages.datum(16 + i * 5).truncate(),
+                        }));
+                    }
+                    _ => panic!(),
+                }
+            }
+            protocols
+        }
 
-    fn validate_to_sysex_buffer<M: sysex_message::SysexMessage>(
-        &self,
-        messages: &[M],
-    ) -> Result<(), Error> {
-        ci_helpers::validate_buffer_size(messages, 15 + 5 * self.protocols.len())
+        fn validate_protocol_data(data: &[u8]) -> Result<(), Error> {
+            // todo: version assertion?
+            if ![1u8, 2u8].iter().any(|&v| v == data[0]) {
+                Err(Error::InvalidData)
+            } else {
+                Ok(())
+            }
+        }
+
     }
 }
 
-fn read_protocols<M>(messages: &sysex_message::SysexMessages<M>) -> Protocols
-where
-    M: sysex_message::SysexMessage,
-{
-    let mut protocols = Protocols::default();
-    for i in 0..(messages.datum(14) as usize) {
-        match messages.datum(15 + i * 5) {
-            0x1 => {
-                let flags = messages.datum(17 + i * 5);
-                protocols.push(Some(Protocol::Midi1 {
-                    size_of_packet_extension: flags.bit(6),
-                    jitter_reduction_extension: flags.bit(7),
-                    version: messages.datum(16 + i * 5).truncate(),
-                }));
-            }
-            0x2 => {
-                protocols.push(Some(Protocol::Midi2 {
-                    jitter_reduction_extension: messages.datum(17 + i * 5).bit(7),
-                    version: messages.datum(16 + i * 5).truncate(),
-                }));
-            }
-            _ => panic!(),
-        }
-    }
-    protocols
+pub mod query {
+    initiate_protocol_negotiation_message!(0x10);
 }
 
-fn validate_protocol_data(data: &[u8]) -> Result<(), Error> {
-    // todo: version assertion?
-    if ![1u8, 2u8].iter().any(|&v| v == data[0]) {
-        Err(Error::InvalidData)
-    } else {
-        Ok(())
-    }
+pub mod reply {
+    initiate_protocol_negotiation_message!(0x11);
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::{
         ci::{CiMessage, VERSION},
         message::system_exclusive_7bit as sysex7,
         message::system_exclusive_8bit as sysex8,
     };
+    
+    use super::query::*;
+    use crate::ci::protocol::*;
 
     #[test]
     #[rustfmt::skip]
     fn try_to_sysex8() {
         assert_eq!(
-            Message {
-                group: ux::u4::new(0x3),
-                source: ux::u28::new(14973326),
-                destination: ux::u28::new(89757246),
-                authority_level: ux::u7::new(0x2D),
-                protocols: Protocols::from_data(&[
-                    Some(Protocol::Midi1 {
+            Message::builder()
+                .group(ux::u4::new(0x3))
+                .source(ux::u28::new(14973326))
+                .destination(ux::u28::new(89757246))
+                .authority_level(ux::u7::new(0x2D))
+                .protocol(Protocol::Midi1 {
                         size_of_packet_extension: true,
                         jitter_reduction_extension: false,
                         version: Protocol::MIDI_1_VERSION,
-                    }),
-                    Some(Protocol::Midi2 {
+                })
+                .protocol(Protocol::Midi2 {
                         jitter_reduction_extension: false,
                         version: Protocol::MIDI_2_VERSION,
-                    }),
-                ]),
-            }.try_to_sysex8(
-                &mut [
-                    Default::default(),
-                    Default::default(),
-                    Default::default(),
-                ],
-                0x5C,
-            ).unwrap(),
+                })
+                .build()
+                .try_to_sysex8(
+                    &mut [
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                    ],
+                    0x5C,
+                ).unwrap(),
             &[
                 sysex8::Message::builder()
                     .stream_id(0x5C)
@@ -388,23 +382,22 @@ mod tests {
                         .build(),
                 ],
             ),
-            Ok(Message {
-                group: ux::u4::new(0x3),
-                source: ux::u28::new(14973326),
-                destination: ux::u28::new(89757246),
-                authority_level: ux::u7::new(0x2D),
-                protocols: Protocols::from_data(&[
-                    Some(Protocol::Midi1 {
+            Ok(Message::builder()
+                .group(ux::u4::new(0x3))
+                .source(ux::u28::new(14973326))
+                .destination(ux::u28::new(89757246))
+                .authority_level(ux::u7::new(0x2D))
+                .protocol(Protocol::Midi1 {
                         size_of_packet_extension: true,
                         jitter_reduction_extension: false,
                         version: Protocol::MIDI_1_VERSION,
-                    }),
-                    Some(Protocol::Midi2 {
+                })
+                .protocol(Protocol::Midi2 {
                         jitter_reduction_extension: false,
                         version: Protocol::MIDI_2_VERSION,
-                    }),
-                ]),
-            })
+                })
+                .build()
+            ),
         );
     }
 
@@ -412,29 +405,28 @@ mod tests {
     #[rustfmt::skip]
     fn try_to_sysex7() {
         assert_eq!(
-            Message {
-                group: ux::u4::new(0x3),
-                source: ux::u28::new(14973326),
-                destination: ux::u28::new(89757246),
-                authority_level: ux::u7::new(0x2D),
-                protocols: Protocols::from_data(&[
-                    Some(Protocol::Midi1 {
+            Message::builder()
+                .group(ux::u4::new(0x3))
+                .source(ux::u28::new(14973326))
+                .destination(ux::u28::new(89757246))
+                .authority_level(ux::u7::new(0x2D))
+                .protocol(Protocol::Midi1 {
                         size_of_packet_extension: true,
                         jitter_reduction_extension: false,
                         version: Protocol::MIDI_1_VERSION,
-                    }),
-                    Some(Protocol::Midi2 {
+                })
+                .protocol(Protocol::Midi2 {
                         jitter_reduction_extension: false,
                         version: Protocol::MIDI_2_VERSION,
-                    }),
-                ]),
-            }.try_to_sysex7(&mut [
+                })
+                .build()
+                .try_to_sysex7(&mut [
                     Default::default(),
                     Default::default(),
                     Default::default(),
                     Default::default(),
                     Default::default(),
-            ]).unwrap(),
+                ]).unwrap(),
             &[
                 sysex7::Message::builder()
                     .group(ux::u4::new(0x3))
@@ -552,94 +544,22 @@ mod tests {
                         .build(),
                 ],
             ),
-            Ok(Message {
-                group: ux::u4::new(0x3),
-                source: ux::u28::new(14973326),
-                destination: ux::u28::new(89757246),
-                authority_level: ux::u7::new(0x2D),
-                protocols: Protocols::from_data(&[
-                    Some(Protocol::Midi1 {
+            Ok(Message::builder()
+                .group(ux::u4::new(0x3))
+                .source(ux::u28::new(14973326))
+                .destination(ux::u28::new(89757246))
+                .authority_level(ux::u7::new(0x2D))
+                .protocol(Protocol::Midi1 {
                         size_of_packet_extension: true,
                         jitter_reduction_extension: false,
                         version: Protocol::MIDI_1_VERSION,
-                    }),
-                    Some(Protocol::Midi2 {
-                        jitter_reduction_extension: false,
-                        version: Protocol::MIDI_2_VERSION,
-                    }),
-                ]),
-            })
-        );
-    }
-}
-
-#[cfg(test)]
-mod builder_tests {
-    use super::*;
-
-    #[test]
-    pub fn protocol() {
-        assert_eq!(
-            Message::builder()
-                .group(Default::default())
-                .source(Default::default())
-                .destination(Default::default())
-                .authority_level(Default::default())
-                .protocol(Protocol::Midi1 {
-                    size_of_packet_extension: false,
-                    jitter_reduction_extension: false,
-                    version: Protocol::MIDI_1_VERSION,
-                })
-                .build(),
-            Message {
-                group: Default::default(),
-                source: Default::default(),
-                destination: Default::default(),
-                authority_level: Default::default(),
-                protocols: Protocols::from_data(&[Some(Protocol::Midi1 {
-                    size_of_packet_extension: false,
-                    jitter_reduction_extension: false,
-                    version: Protocol::MIDI_1_VERSION,
-                }),]),
-            }
-        )
-    }
-
-    #[test]
-    pub fn two_protocols() {
-        assert_eq!(
-            Message::builder()
-                .group(Default::default())
-                .source(Default::default())
-                .destination(Default::default())
-                .authority_level(Default::default())
-                .protocol(Protocol::Midi1 {
-                    size_of_packet_extension: false,
-                    jitter_reduction_extension: false,
-                    version: Protocol::MIDI_1_VERSION,
                 })
                 .protocol(Protocol::Midi2 {
-                    jitter_reduction_extension: false,
-                    version: Protocol::MIDI_1_VERSION,
-                })
-                .build(),
-            Message {
-                group: Default::default(),
-                source: Default::default(),
-                destination: Default::default(),
-                authority_level: Default::default(),
-                protocols: Protocols::from_data(&[
-                    Some(Protocol::Midi1 {
-                        size_of_packet_extension: false,
-                        jitter_reduction_extension: false,
-                        version: Protocol::MIDI_1_VERSION,
-                    }),
-                    Some(Protocol::Midi2 {
                         jitter_reduction_extension: false,
                         version: Protocol::MIDI_2_VERSION,
-                    }),
-                ]),
-            }
-        )
+                })
+                .build()
+            ),
+        );
     }
 }
