@@ -61,6 +61,7 @@ impl CiMessageDetail for Message {
     }
 
     fn validate_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Result<(), Error> {
+        ci_helpers::validate_sysex(messages, Message::STATUS)?;
         ci_helpers::validate_buffer_size(messages, 19)?;
         let messages = sysex_message::SysexMessages(messages);
         ci_helpers::validate_protocol_data(&[

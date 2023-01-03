@@ -4,6 +4,7 @@ pub mod invalidate_muid;
 pub mod nak;
 pub mod protocol;
 pub mod set_protocol;
+pub mod test_protocol;
 
 mod helpers;
 mod message_trait;
