@@ -1,10 +1,10 @@
 use crate::{
     error::Error,
     message::{helpers, Midi2Message},
-    util::{builder, getter, BitOps, SliceData, Truncate},
+    util::{builder, getter, sysex_message, BitOps, SliceData, Truncate},
 };
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Default, Debug, PartialEq, Eq)]
 pub struct Message {
     group: ux::u4,
     status: Status,
@@ -61,7 +61,7 @@ impl Message {
     getter::getter!(status, Status);
 
     pub fn data(&self) -> &[ux::u7] {
-        &*self.data
+        &self.data
     }
 }
 
@@ -71,6 +71,12 @@ pub enum Status {
     Begin,
     Continue,
     End,
+}
+
+impl core::default::Default for Status {
+    fn default() -> Self {
+        Status::Complete
+    }
 }
 
 impl Midi2Message for Message {
@@ -153,6 +159,46 @@ fn validate_data(p: &[u32]) -> Result<(), Error> {
         Err(Error::BufferOverflow)
     } else {
         Ok(())
+    }
+}
+
+impl sysex_message::SysexMessage for Message {
+    fn group(&self) -> ux::u4 {
+        self.group
+    }
+    fn set_group(&mut self, group: ux::u4) {
+        self.group = group;
+    }
+    fn datum(&self, i: usize) -> u8 {
+        self.data[i].into()
+    }
+    fn set_datum(&mut self, d: u8, i: usize) {
+        if i >= self.data.len() {
+            self.data.resize(i + 1);
+        }
+        self.data[i] = d.truncate();
+    }
+    fn len(&self) -> usize {
+        self.data.len()
+    }
+    fn max_len() -> usize {
+        6
+    }
+    fn status(&self) -> sysex_message::Status {
+        match self.status {
+            Status::Complete => sysex_message::Status::Complete,
+            Status::Begin => sysex_message::Status::Begin,
+            Status::Continue => sysex_message::Status::Continue,
+            Status::End => sysex_message::Status::End,
+        }
+    }
+    fn set_status(&mut self, status: sysex_message::Status) {
+        match status {
+            sysex_message::Status::Complete => self.status = Status::Complete,
+            sysex_message::Status::Begin => self.status = Status::Begin,
+            sysex_message::Status::Continue => self.status = Status::Continue,
+            sysex_message::Status::End => self.status = Status::End,
+        }
     }
 }
 

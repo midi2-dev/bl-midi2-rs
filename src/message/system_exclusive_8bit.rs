@@ -1,7 +1,7 @@
 use crate::{
     error::Error,
     message::{helpers, Midi2Message},
-    util::{builder, getter, BitOps, SliceData, Truncate},
+    util::{builder, getter, sysex_message, BitOps, SliceData, Truncate},
 };
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -64,13 +64,9 @@ impl Message {
     getter::getter!(status, Status);
 
     pub fn data(&self) -> &[u8] {
-        &*self.data
+        &self.data
     }
-    
-    pub(crate) fn data_mut(&mut self) -> &mut [u8] {
-        &mut self.data
-    }
-    
+
     pub(crate) fn stream_id_mut(&mut self) -> &mut u8 {
         &mut self.stream_id
     }
@@ -233,6 +229,46 @@ fn validate_data(p: &[u32], status: Status) -> Result<(), Error> {
         Err(Error::BufferOverflow)
     } else {
         Ok(())
+    }
+}
+
+impl sysex_message::SysexMessage for Message {
+    fn group(&self) -> ux::u4 {
+        self.group
+    }
+    fn set_group(&mut self, group: ux::u4) {
+        self.group = group;
+    }
+    fn set_datum(&mut self, d: u8, i: usize) {
+        if i <= self.data().len() {
+            self.data.resize(i + 1);
+        }
+        self.data[i] = d;
+    }
+    fn datum(&self, i: usize) -> u8 {
+        self.data[i]
+    }
+    fn len(&self) -> usize {
+        self.data.len()
+    }
+    fn max_len() -> usize {
+        12
+    }
+    fn status(&self) -> sysex_message::Status {
+        match self.status {
+            Status::Complete => sysex_message::Status::Complete,
+            Status::Begin => sysex_message::Status::Begin,
+            Status::Continue => sysex_message::Status::Continue,
+            _ => sysex_message::Status::End,
+        }
+    }
+    fn set_status(&mut self, status: sysex_message::Status) {
+        match status {
+            sysex_message::Status::Complete => self.status = Status::Complete,
+            sysex_message::Status::Begin => self.status = Status::Begin,
+            sysex_message::Status::Continue => self.status = Status::Continue,
+            sysex_message::Status::End => self.status = Status::End,
+        }
     }
 }
 
