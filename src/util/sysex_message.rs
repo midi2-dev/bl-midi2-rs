@@ -17,14 +17,20 @@ pub enum Status {
     End,
 }
 
-pub struct SysexMessages<'a, M: SysexMessage>(pub &'a [M]);
+pub struct SysexMessages<'a, M: SysexMessage>(&'a [M], usize);
 
 impl<'a, M: SysexMessage> SysexMessages<'a, M> {
+    pub fn new(messages: &'a [M]) -> Self {
+        SysexMessages(
+            messages,
+            messages.iter().fold(0, |sum, m| sum + m.len()),
+        )
+    }
     pub fn valid(&self) -> bool {
         messages_valid(self.0)
     }
     pub fn len(&self) -> usize {
-        self.0.iter().fold(0, |sum, m| sum + m.len())
+        self.1
     }
     pub fn max_len(&self) -> usize {
         M::max_len() * self.0.len()
@@ -38,6 +44,7 @@ impl<'a, M: SysexMessage> SysexMessages<'a, M> {
     pub fn datum(&self, i: usize) -> u8 {
         // todo
         // optimise this index function
+        debug_assert!(i < self.1);
         let mut running_index = 0_usize;
         for m in self.0 {
             if running_index + m.len() > i {
@@ -127,7 +134,7 @@ mod tests {
     #[test]
     fn len() {
         assert_eq!(
-            SysexMessages(&[
+            SysexMessages::new(&[
                 sysex8::Message::builder()
                     .group(ux::u4::new(0x0))
                     .stream_id(0x0)
@@ -174,7 +181,7 @@ mod tests {
                 .status(sysex8::Status::End)
                 .build(),
         ];
-        let messages = SysexMessages(&messages);
+        let messages = SysexMessages::new(&messages);
         assert_eq!(messages.datum(2), 0x1);
         assert_eq!(messages.datum(4), 0x2);
         assert_eq!(messages.datum(7), 0x3);

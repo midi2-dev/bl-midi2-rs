@@ -53,7 +53,7 @@ pub struct StandardData {
 }
 
 pub fn read_standard_data<M: sysex_message::SysexMessage>(messages: &[M]) -> StandardData {
-    let messages = sysex_message::SysexMessages(messages);
+    let messages = sysex_message::SysexMessages::new(messages);
     StandardData {
         device_id: match messages.datum(1) {
             0x7F => DeviceId::MidiPort,
@@ -78,7 +78,7 @@ pub fn validate_sysex<M: sysex_message::SysexMessage>(
     messages: &[M],
     status: u8,
 ) -> Result<(), Error> {
-    let messages = sysex_message::SysexMessages(messages);
+    let messages = sysex_message::SysexMessages::new(messages);
     let l = messages.len();
     if !messages.valid()
         || l < 13
@@ -96,7 +96,7 @@ pub fn validate_buffer_size<M: sysex_message::SysexMessage>(
     messages: &[M],
     min_size: usize,
 ) -> Result<(), Error> {
-    let messages = sysex_message::SysexMessages(messages);
+    let messages = sysex_message::SysexMessages::new(messages);
     if messages.max_len() < min_size {
         Err(Error::BufferOverflow)
     } else {

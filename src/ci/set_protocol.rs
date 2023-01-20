@@ -50,7 +50,7 @@ impl CiMessageDetail for Message {
 
     fn from_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Self {
         let standard_data = ci_helpers::read_standard_data(messages);
-        let messages = sysex_message::SysexMessages(messages);
+        let messages = sysex_message::SysexMessages::new(messages);
         Message {
             group: messages.group(),
             source: standard_data.source,
@@ -63,7 +63,7 @@ impl CiMessageDetail for Message {
     fn validate_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Result<(), Error> {
         ci_helpers::validate_sysex(messages, Message::STATUS)?;
         ci_helpers::validate_buffer_size(messages, 19)?;
-        let messages = sysex_message::SysexMessages(messages);
+        let messages = sysex_message::SysexMessages::new(messages);
         ci_helpers::validate_protocol_data(&[
             messages.datum(14),
             messages.datum(15),

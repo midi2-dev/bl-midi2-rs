@@ -126,7 +126,7 @@ macro_rules! initiate_protocol_negotiation_message {
 
             fn from_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Self {
                 let standard_data = ci_helpers::read_standard_data(messages);
-                let messages = sysex_message::SysexMessages(messages);
+                let messages = sysex_message::SysexMessages::new(messages);
                 Message {
                     group: messages.group(),
                     source: standard_data.source,
@@ -137,7 +137,7 @@ macro_rules! initiate_protocol_negotiation_message {
             }
 
             fn validate_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Result<(), Error> {
-                let messages_wrapper = sysex_message::SysexMessages(messages);
+                let messages_wrapper = sysex_message::SysexMessages::new(messages);
 
                 if messages_wrapper.len() < 15 {
                     return Err(Error::InvalidData);

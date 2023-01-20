@@ -117,7 +117,7 @@ pub fn validate_sysex<M: sysex_message::SysexMessage>(
     messages: &[M],
     size: usize,
 ) -> Result<(), Error> {
-    let messages = sysex_message::SysexMessages(messages);
+    let messages = sysex_message::SysexMessages::new(messages);
     if messages.len() != size || messages.datum(1) != 0x7F {
         Err(Error::InvalidData)
     } else {
