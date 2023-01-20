@@ -12,7 +12,7 @@ pub struct Message {
     bank: Option<ux::u14>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Builder {
     group: Option<ux::u4>,
     channel: Option<ux::u4>,
@@ -40,18 +40,11 @@ impl Message {
     const TYPE_CODE: ux::u4 = super::TYPE_CODE;
     const OP_CODE: ux::u4 = ux::u4::new(0b1100);
 
-    pub fn builder() -> Builder {
-        Builder {
-            group: None,
-            channel: None,
-            program: None,
-            bank: None,
-        }
-    }
     getter::getter!(group, ux::u4);
     getter::getter!(channel, ux::u4);
     getter::getter!(program, ux::u7);
     getter::getter!(bank, Option<ux::u14>);
+    builder::builder_method!();
 }
 
 impl Midi2Message for Message {

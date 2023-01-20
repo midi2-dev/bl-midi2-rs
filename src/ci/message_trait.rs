@@ -4,10 +4,9 @@ use crate::{
         system_exclusive_7bit::Message as Sysex7Message,
         system_exclusive_8bit::Message as Sysex8Message,
     },
-    util::sysex_message::SysexMessage,
 };
 
-pub trait CiMessage: Sized + CiMessageDetail {
+pub trait CiMessage: Sized {
     fn to_sysex8<'a>(
         &self,
         messages: &'a mut [Sysex8Message],
@@ -45,42 +44,57 @@ pub trait CiMessage: Sized + CiMessageDetail {
     }
 }
 
-impl<M: CiMessageDetail> CiMessage for M {
-    fn to_sysex8<'a>(
-        &self,
-        messages: &'a mut [Sysex8Message],
-        stream_id: u8,
-    ) -> &'a [Sysex8Message] {
-        let ret = self.to_sysex(messages);
-        super::helpers::write_stream_id(ret, stream_id);
-        ret
-    }
-    fn from_sysex8(messages: &[Sysex8Message]) -> Self {
-        <Self as CiMessageDetail>::from_sysex(messages)
-    }
-    fn validate_sysex8(message: &[Sysex8Message]) -> Result<(), Error> {
-        <Self as CiMessageDetail>::validate_sysex(message)
-    }
-    fn validate_to_sysex8_buffer(&self, messages: &[Sysex8Message]) -> Result<(), Error> {
-        <Self as CiMessageDetail>::validate_to_sysex_buffer(self, messages)
-    }
-    fn to_sysex7<'a>(&self, messages: &'a mut [Sysex7Message]) -> &'a [Sysex7Message] {
-        self.to_sysex(messages)
-    }
-    fn from_sysex7(messages: &[Sysex7Message]) -> Self {
-        <Self as CiMessageDetail>::from_sysex(messages)
-    }
-    fn validate_sysex7(message: &[Sysex7Message]) -> Result<(), Error> {
-        <Self as CiMessageDetail>::validate_sysex(message)
-    }
-    fn validate_to_sysex7_buffer(&self, messages: &[Sysex7Message]) -> Result<(), Error> {
-        <Self as CiMessageDetail>::validate_to_sysex_buffer(self, messages)
-    }
+
+macro_rules! ci_message_impl {
+    () => {
+        mod ci_message_impl {
+            use super::*;
+            use crate::{
+                ci::{
+                    helpers as ci_helpers,
+                    CiMessage,
+                },
+                error::Error,
+                message::{
+                    system_exclusive_7bit::Message as Sysex7Message,
+                    system_exclusive_8bit::Message as Sysex8Message,
+                },
+            };
+
+            impl CiMessage for Message {
+                fn to_sysex8<'a>(
+                    &self,
+                    messages: &'a mut [Sysex8Message],
+                    stream_id: u8,
+                ) -> &'a [Sysex8Message] {
+                    let ret = to_sysex(self, messages);
+                    ci_helpers::write_stream_id(ret, stream_id);
+                    ret
+                }
+                fn from_sysex8(messages: &[Sysex8Message]) -> Self {
+                    from_sysex(messages)
+                }
+                fn validate_sysex8(message: &[Sysex8Message]) -> Result<(), Error> {
+                    validate_sysex(message)
+                }
+                fn validate_to_sysex8_buffer(&self, messages: &[Sysex8Message]) -> Result<(), Error> {
+                    validate_to_sysex_buffer(self, messages)
+                }
+                fn to_sysex7<'a>(&self, messages: &'a mut [Sysex7Message]) -> &'a [Sysex7Message] {
+                    to_sysex(self, messages)
+                }
+                fn from_sysex7(messages: &[Sysex7Message]) -> Self {
+                    from_sysex(messages)
+                }
+                fn validate_sysex7(message: &[Sysex7Message]) -> Result<(), Error> {
+                    validate_sysex(message)
+                }
+                fn validate_to_sysex7_buffer(&self, messages: &[Sysex7Message]) -> Result<(), Error> {
+                    validate_to_sysex_buffer(self, messages)
+                }
+            }
+        }
+    };
 }
 
-pub trait CiMessageDetail {
-    fn to_sysex<'a, M: SysexMessage>(&self, messages: &'a mut [M]) -> &'a mut [M];
-    fn from_sysex<M: SysexMessage>(messages: &[M]) -> Self;
-    fn validate_sysex<M: SysexMessage>(messages: &[M]) -> Result<(), Error>;
-    fn validate_to_sysex_buffer<M: SysexMessage>(&self, messages: &[M]) -> Result<(), Error>;
-}
+pub(crate) use ci_message_impl;

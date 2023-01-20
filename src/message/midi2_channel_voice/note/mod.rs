@@ -22,6 +22,7 @@ macro_rules! note_message {
             attribute: Option<attribute::Attribute>,
         }
 
+        #[derive(Clone, Default)]
         pub struct Builder {
             group: Option<ux::u4>,
             channel: Option<ux::u4>,
@@ -56,15 +57,7 @@ macro_rules! note_message {
             getter::getter!(note, ux::u7);
             getter::getter!(velocity, u16);
             getter::getter!(attribute, Option<attribute::Attribute>);
-            pub fn builder() -> Builder {
-                Builder {
-                    group: None,
-                    channel: None,
-                    note: None,
-                    velocity: None,
-                    attribute: None,
-                }
-            }
+            builder::builder_method!();
         }
 
         impl Midi2Message for Message {

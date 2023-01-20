@@ -1,5 +1,5 @@
 use crate::{
-    ci::{helpers as ci_helpers, CiMessageDetail, DeviceId},
+    ci::{helpers as ci_helpers, DeviceId, ci_message_impl},
     error::Error,
     util::{builder, getter, sysex_message},
 };
@@ -26,44 +26,45 @@ impl Message {
     getter::getter!(device_id, DeviceId);
     getter::getter!(source, ux::u28);
     getter::getter!(destination, ux::u28);
+    builder::builder_method!();
 }
 
-impl CiMessageDetail for Message {
-    fn to_sysex<'a, M: sysex_message::SysexMessage>(&self, messages: &'a mut [M]) -> &'a mut [M] {
-        ci_helpers::write_ci_data(
-            self.group,
-            self.device_id,
-            Message::STATUS,
-            self.source,
-            self.destination,
-            &[],
-            messages,
-        )
-    }
+fn to_sysex<'a, M: sysex_message::SysexMessage>(message: &Message, messages: &'a mut [M]) -> &'a mut [M] {
+    ci_helpers::write_ci_data(
+        message.group,
+        message.device_id,
+        Message::STATUS,
+        message.source,
+        message.destination,
+        &[],
+        messages,
+    )
+}
 
-    fn from_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Self {
-        let standard_data = ci_helpers::read_standard_data(messages);
-        let messages = sysex_message::SysexMessages::new(messages);
-        Message {
-            group: messages.group(),
-            device_id: standard_data.device_id,
-            source: standard_data.source,
-            destination: standard_data.destination,
-        }
-    }
-
-    fn validate_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Result<(), Error> {
-        ci_helpers::validate_sysex(messages, Message::STATUS)?;
-        ci_helpers::validate_buffer_size(messages, Message::DATA_SIZE)
-    }
-
-    fn validate_to_sysex_buffer<M: sysex_message::SysexMessage>(
-        &self,
-        messages: &[M],
-    ) -> Result<(), Error> {
-        ci_helpers::validate_buffer_size(messages, Message::DATA_SIZE)
+fn from_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Message {
+    let standard_data = ci_helpers::read_standard_data(messages);
+    let messages = sysex_message::SysexMessages::new(messages);
+    Message {
+        group: messages.group(),
+        device_id: standard_data.device_id,
+        source: standard_data.source,
+        destination: standard_data.destination,
     }
 }
+
+fn validate_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Result<(), Error> {
+    ci_helpers::validate_sysex(messages, Message::STATUS)?;
+    ci_helpers::validate_buffer_size(messages, Message::DATA_SIZE)
+}
+
+fn validate_to_sysex_buffer<M: sysex_message::SysexMessage>(
+    _message: &Message,
+    messages: &[M],
+) -> Result<(), Error> {
+    ci_helpers::validate_buffer_size(messages, Message::DATA_SIZE)
+}
+
+ci_message_impl!();
 
 #[cfg(test)]
 mod tests {

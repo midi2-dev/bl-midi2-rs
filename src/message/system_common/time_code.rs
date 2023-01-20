@@ -17,6 +17,7 @@ impl Message {
     const STATUS_CODE: u8 = 0xF1;
     getter::getter!(group, ux::u4);
     getter::getter!(time_code, ux::u7);
+    builder::builder_method!();
 }
 
 impl Midi2Message for Message {

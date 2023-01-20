@@ -26,6 +26,7 @@ macro_rules! per_note_effect_message {
             getter::getter!(channel, ux::u4);
             getter::getter!(note, ux::u7);
             getter::getter!(data, u32);
+            builder::builder_method!();
         }
 
         impl Midi2Message for Message {

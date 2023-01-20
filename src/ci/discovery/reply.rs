@@ -1,5 +1,5 @@
 use crate::{
-    ci::{helpers, CiMessageDetail},
+    ci::{ci_message_impl, helpers,},
     error::Error,
     util::{builder, getter, sysex_message},
 };
@@ -45,55 +45,56 @@ impl Message {
     getter::getter!(profile_configuration_supported, bool);
     getter::getter!(property_exchange_supported, bool);
     getter::getter!(max_sysex_message_size, ux::u28);
+    builder::builder_method!();
 }
 
-impl CiMessageDetail for Message {
-    fn to_sysex<'a, M: sysex_message::SysexMessage>(&self, messages: &'a mut [M]) -> &'a mut [M] {
-        super::helpers::write_discovery_data(
-            messages,
-            &super::helpers::DiscoveryData {
-                group: self.group,
-                category: Message::STATUS,
-                source: self.source,
-                destination: self.destination,
-                device_manufacturer: self.device_manufacturer,
-                device_family: self.device_family,
-                device_model_number: self.device_model_number,
-                software_version: self.software_version,
-                protocol_negotiation_supported: self.protocol_negotiation_supported,
-                profile_configuration_supported: self.profile_configuration_supported,
-                property_exchange_supported: self.property_exchange_supported,
-                max_sysex_message_size: self.max_sysex_message_size,
-            },
-        )
-    }
+fn to_sysex<'a, M: sysex_message::SysexMessage>(message: &Message, messages: &'a mut [M]) -> &'a mut [M] {
+    super::helpers::write_discovery_data(
+        messages,
+        &super::helpers::DiscoveryData {
+            group: message.group,
+            category: Message::STATUS,
+            source: message.source,
+            destination: message.destination,
+            device_manufacturer: message.device_manufacturer,
+            device_family: message.device_family,
+            device_model_number: message.device_model_number,
+            software_version: message.software_version,
+            protocol_negotiation_supported: message.protocol_negotiation_supported,
+            profile_configuration_supported: message.profile_configuration_supported,
+            property_exchange_supported: message.property_exchange_supported,
+            max_sysex_message_size: message.max_sysex_message_size,
+        },
+    )
+}
 
-    fn from_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Self {
-        let standard_data = helpers::read_standard_data(messages);
-        let messages = sysex_message::SysexMessages::new(messages);
-        let support_flags = super::helpers::support_flags(&messages);
-        Message {
-            group: messages.group(),
-            source: standard_data.source,
-            destination: standard_data.destination,
-            device_manufacturer: super::helpers::device_manufacturer(&messages),
-            device_family: super::helpers::device_family(&messages),
-            device_model_number: super::helpers::device_model_number(&messages),
-            software_version: super::helpers::software_version(&messages),
-            max_sysex_message_size: super::helpers::max_sysex_message_size(&messages),
-            protocol_negotiation_supported: support_flags.protocol_negotiation_supported,
-            profile_configuration_supported: support_flags.profile_configuration_supported,
-            property_exchange_supported: support_flags.property_exchange_supported,
-        }
-    }
-    fn validate_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Result<(), Error> {
-        helpers::validate_sysex(messages, Message::STATUS)?;
-        super::helpers::validate_sysex(messages, super::DATA_SIZE)
-    }
-    fn validate_to_sysex_buffer<M: sysex_message::SysexMessage>(
-        &self,
-        messages: &[M],
-    ) -> Result<(), Error> {
-        helpers::validate_buffer_size(messages, super::DATA_SIZE)
+fn from_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Message {
+    let standard_data = helpers::read_standard_data(messages);
+    let messages = sysex_message::SysexMessages::new(messages);
+    let support_flags = super::helpers::support_flags(&messages);
+    Message {
+        group: messages.group(),
+        source: standard_data.source,
+        destination: standard_data.destination,
+        device_manufacturer: super::helpers::device_manufacturer(&messages),
+        device_family: super::helpers::device_family(&messages),
+        device_model_number: super::helpers::device_model_number(&messages),
+        software_version: super::helpers::software_version(&messages),
+        max_sysex_message_size: super::helpers::max_sysex_message_size(&messages),
+        protocol_negotiation_supported: support_flags.protocol_negotiation_supported,
+        profile_configuration_supported: support_flags.profile_configuration_supported,
+        property_exchange_supported: support_flags.property_exchange_supported,
     }
 }
+fn validate_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Result<(), Error> {
+    helpers::validate_sysex(messages, Message::STATUS)?;
+    super::helpers::validate_sysex(messages, super::DATA_SIZE)
+}
+fn validate_to_sysex_buffer<M: sysex_message::SysexMessage>(
+    _message: &Message,
+    messages: &[M],
+) -> Result<(), Error> {
+    helpers::validate_buffer_size(messages, super::DATA_SIZE)
+}
+
+ci_message_impl!();

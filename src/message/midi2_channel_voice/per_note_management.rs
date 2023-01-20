@@ -29,6 +29,7 @@ impl Message {
     getter::getter!(note, ux::u7);
     getter::getter!(detach, bool);
     getter::getter!(reset, bool);
+    builder::builder_method!();
 }
 
 impl Midi2Message for Message {

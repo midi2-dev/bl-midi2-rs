@@ -11,7 +11,7 @@ mod helpers;
 mod message_trait;
 
 pub use message_trait::CiMessage;
-use message_trait::CiMessageDetail;
+use message_trait::ci_message_impl;
 
 const VERSION: u8 = 0x01;
 
