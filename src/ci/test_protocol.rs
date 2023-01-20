@@ -51,7 +51,7 @@ macro_rules! test_protocol_message {
 
             fn from_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Self {
                 let standard_data = ci_helpers::read_standard_data(messages);
-                let messages = sysex_message::SysexMessages(messages);
+                let messages = sysex_message::SysexMessages::new(messages);
                 Message {
                     group: messages.group(),
                     source: standard_data.source,
@@ -63,7 +63,7 @@ macro_rules! test_protocol_message {
             fn validate_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Result<(), Error> {
                 ci_helpers::validate_sysex(messages, Message::STATUS)?;
                 ci_helpers::validate_buffer_size(messages, Message::DATA_SIZE)?;
-                let messages = sysex_message::SysexMessages(messages);
+                let messages = sysex_message::SysexMessages::new(messages);
                 validate_test_data(&[
                     messages.datum(14),
                     messages.datum(15),

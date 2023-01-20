@@ -43,7 +43,7 @@ impl CiMessageDetail for Message {
 
     fn from_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Self {
         let standard_data = ci_helpers::read_standard_data(messages);
-        let messages = sysex_message::SysexMessages(messages);
+        let messages = sysex_message::SysexMessages::new(messages);
         Message {
             group: messages.group(),
             device_id: standard_data.device_id,

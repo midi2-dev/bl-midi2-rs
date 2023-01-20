@@ -39,7 +39,7 @@ impl CiMessageDetail for Message {
     }
     fn from_sysex<M: SysexMessage>(messages: &[M]) -> Self {
         let standard_data = ci_helpers::read_standard_data(messages);
-        let messages = sysex_message::SysexMessages(messages);
+        let messages = sysex_message::SysexMessages::new(messages);
         Message {
             group: messages.group(),
             source: standard_data.source,
