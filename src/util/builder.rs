@@ -7,6 +7,14 @@ macro_rules! builder_setter {
     };
 }
 
+macro_rules! builder_method {
+    () => {
+        pub fn builder() -> Builder {
+            Builder::default()
+        }
+    };
+}
+
 macro_rules! builder {
     ($($member:ident: $t:ty),*) => {
         use crate::util::builder as builder_internal;
@@ -29,23 +37,16 @@ macro_rules! builder {
                 }
             }
         }
-
-        impl Message {
-            pub fn builder() -> Builder {
-                Builder {
-                    $($member: None),*
-                }
-            }
-        }
     }
 }
 
 pub(crate) use builder;
 pub(crate) use builder_setter;
+pub(crate) use builder_method;
 
 #[cfg(test)]
 mod tests {
-    use super::builder;
+    use super::{builder, builder_method};
 
     #[derive(Debug, PartialEq, Eq)]
     pub struct Message {
@@ -54,6 +55,10 @@ mod tests {
     }
 
     builder!(note: ux::u7, group: ux::u4);
+    
+    impl Message {
+        builder_method!();
+    }
 
     #[test]
     fn call_build() {

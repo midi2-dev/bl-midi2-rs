@@ -31,6 +31,7 @@ macro_rules! note_message {
             getter::getter!(channel, ux::u4);
             getter::getter!(note, ux::u7);
             getter::getter!(velocity, ux::u7);
+            builder::builder_method!();
         }
 
         impl Midi2Message for Message {

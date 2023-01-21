@@ -30,6 +30,7 @@ impl Message {
     getter::getter!(channel, ux::u4);
     getter::getter!(note, ux::u7);
     getter::getter!(controller, controllers::Controller);
+    builder::builder_method!();
 }
 
 impl Midi2Message for Message {

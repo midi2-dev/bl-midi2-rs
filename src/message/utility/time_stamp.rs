@@ -16,6 +16,7 @@ impl Message {
     const OP_CODE: ux::u4 = ux::u4::new(0b0010);
     getter::getter!(time_stamp, ux::u20);
     getter::getter!(group, ux::u4);
+    builder::builder_method!();
 }
 
 impl Midi2Message for Message {

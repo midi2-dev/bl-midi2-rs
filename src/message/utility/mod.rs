@@ -3,9 +3,9 @@ use crate::{error::Error, util::BitOps};
 pub mod no_op;
 pub mod time_stamp;
 
-pub use no_op::Builder as NoOpBuilder;
+pub use no_op::Builder as NoOpMessageBuilder;
 pub use no_op::Message as NoOpMessage;
-pub use time_stamp::Builder as TimeStampBuilder;
+pub use time_stamp::Builder as TimeStampMessageBuilder;
 pub use time_stamp::Message as TimeStampMessage;
 
 pub fn validate_packet(p: &[u32], op_code: ux::u4) -> Result<(), Error> {

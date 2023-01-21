@@ -14,6 +14,7 @@ builder::builder!(group: ux::u4);
 impl Message {
     const OP_CODE: ux::u4 = ux::u4::new(0x0);
     getter::getter!(group, ux::u4);
+    builder::builder_method!();
 }
 
 impl Midi2Message for Message {

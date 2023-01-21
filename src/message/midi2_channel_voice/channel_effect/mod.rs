@@ -25,6 +25,7 @@ macro_rules! channel_effect_message {
             getter::getter!(group, ux::u4);
             getter::getter!(channel, ux::u4);
             getter::getter!(data, u32);
+            builder::builder_method!();
         }
 
         impl Midi2Message for Message {

@@ -1,7 +1,7 @@
 macro_rules! initiate_protocol_negotiation_message {
     ($op_code:expr) => {
         use crate::{
-            ci::{helpers as ci_helpers, protocol::*, CiMessageDetail, DeviceId},
+            ci::{ci_message_impl, helpers as ci_helpers, protocol::*, DeviceId},
             error::Error,
             util::{builder, getter, sysex_message, SliceData, Truncate},
         };
@@ -24,6 +24,7 @@ macro_rules! initiate_protocol_negotiation_message {
             getter::getter!(source, ux::u28);
             getter::getter!(destination, ux::u28);
             getter::getter!(authority_level, ux::u7);
+            builder::builder_method!();
 
             pub fn protocol(&self, index: usize) -> Option<&Protocol> {
                 match index {
@@ -44,18 +45,9 @@ macro_rules! initiate_protocol_negotiation_message {
                 }
                 &buff[0..5 * self.protocols.len()]
             }
-
-            pub fn builder() -> Builder {
-                Builder {
-                    group: None,
-                    source: None,
-                    destination: None,
-                    authority_level: None,
-                    protocols: Default::default(),
-                }
-            }
         }
 
+        #[derive(Clone, Default)]
         pub struct Builder {
             group: Option<ux::u4>,
             source: Option<ux::u28>,
@@ -99,82 +91,80 @@ macro_rules! initiate_protocol_negotiation_message {
             }
         }
 
-        impl CiMessageDetail for Message {
-            fn to_sysex<'a, M: sysex_message::SysexMessage>(&self, messages: &'a mut [M]) -> &'a mut [M] {
-                let mut protocol_data_buffer = [ux::u7::default(); 5 * Protocols::LEN];
-                ci_helpers::write_ci_data(
-                    self.group,
-                    DeviceId::MidiPort,
-                    Message::STATUS,
-                    self.source,
-                    self.destination,
+        fn to_sysex<'a, M: sysex_message::SysexMessage>(message: &Message, messages: &'a mut [M]) -> &'a mut [M] {
+            let mut protocol_data_buffer = [ux::u7::default(); 5 * Protocols::LEN];
+            ci_helpers::write_ci_data(
+                message.group,
+                DeviceId::MidiPort,
+                Message::STATUS,
+                message.source,
+                message.destination,
+                &[
                     &[
-                        &[
-                            self.authority_level,
-                            match self.protocols.len() {
-                                1 => ux::u7::new(0x1),
-                                2 => ux::u7::new(0x2),
-                                _ => unreachable!(),
-                            },
-                        ],
-                        self.protocol_data(&mut protocol_data_buffer),
-                    ]
-                    .concat(),
-                    messages,
-                )
+                        message.authority_level,
+                        match message.protocols.len() {
+                            1 => ux::u7::new(0x1),
+                            2 => ux::u7::new(0x2),
+                            _ => unreachable!(),
+                        },
+                    ],
+                    message.protocol_data(&mut protocol_data_buffer),
+                ]
+                .concat(),
+                messages,
+            )
+        }
+
+        fn from_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Message {
+            let standard_data = ci_helpers::read_standard_data(messages);
+            let messages = sysex_message::SysexMessages::new(messages);
+            Message {
+                group: messages.group(),
+                source: standard_data.source,
+                destination: standard_data.destination,
+                authority_level: messages.datum(13).truncate(),
+                protocols: read_protocols(&messages),
+            }
+        }
+
+        fn validate_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Result<(), Error> {
+            let messages_wrapper = sysex_message::SysexMessages::new(messages);
+
+            if messages_wrapper.len() < 15 {
+                return Err(Error::InvalidData);
+            }
+            let protocol_count = messages_wrapper.datum(14) as usize;
+
+            // do we need to support more than two
+            // protocols at this point?
+            let protocol_count_supported = [1_usize, 2_usize].iter().any(|&v| v == protocol_count);
+            if !protocol_count_supported {
+                // todo
+                // maybe better not to fail at this point
+                // could just pick the first two supported protocols?
+                return Err(Error::InvalidData);
             }
 
-            fn from_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Self {
-                let standard_data = ci_helpers::read_standard_data(messages);
-                let messages = sysex_message::SysexMessages::new(messages);
-                Message {
-                    group: messages.group(),
-                    source: standard_data.source,
-                    destination: standard_data.destination,
-                    authority_level: messages.datum(13).truncate(),
-                    protocols: read_protocols(&messages),
-                }
+            ci_helpers::validate_buffer_size(messages, 15 + 5 * protocol_count)?;
+
+            for i in 0..protocol_count {
+                ci_helpers::validate_protocol_data(&[
+                    messages_wrapper.datum(15 + i * 5),
+                    messages_wrapper.datum(16 + i * 5),
+                    messages_wrapper.datum(17 + i * 5),
+                    messages_wrapper.datum(18 + i * 5),
+                    messages_wrapper.datum(19 + i * 5),
+                ])?;
             }
 
-            fn validate_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Result<(), Error> {
-                let messages_wrapper = sysex_message::SysexMessages::new(messages);
+            Ok(())
+        }
 
-                if messages_wrapper.len() < 15 {
-                    return Err(Error::InvalidData);
-                }
-                let protocol_count = messages_wrapper.datum(14) as usize;
-
-                // do we need to support more than two
-                // protocols at this point?
-                let protocol_count_supported = [1_usize, 2_usize].iter().any(|&v| v == protocol_count);
-                if !protocol_count_supported {
-                    // todo
-                    // maybe better not to fail at this point
-                    // could just pick the first two supported protocols?
-                    return Err(Error::InvalidData);
-                }
-
-                ci_helpers::validate_buffer_size(messages, 15 + 5 * protocol_count)?;
-
-                for i in 0..protocol_count {
-                    ci_helpers::validate_protocol_data(&[
-                        messages_wrapper.datum(15 + i * 5),
-                        messages_wrapper.datum(16 + i * 5),
-                        messages_wrapper.datum(17 + i * 5),
-                        messages_wrapper.datum(18 + i * 5),
-                        messages_wrapper.datum(19 + i * 5),
-                    ])?;
-                }
-
-                Ok(())
-            }
-
-            fn validate_to_sysex_buffer<M: sysex_message::SysexMessage>(
-                &self,
-                messages: &[M],
-            ) -> Result<(), Error> {
-                ci_helpers::validate_buffer_size(messages, 15 + 5 * self.protocols.len())
-            }
+        fn validate_to_sysex_buffer<M: sysex_message::SysexMessage>(
+            message: &Message,
+            messages: &[M],
+        ) -> Result<(), Error> {
+            ci_helpers::validate_buffer_size(messages, 15 + 5 * message.protocols.len())
         }
 
         fn read_protocols<M>(messages: &sysex_message::SysexMessages<M>) -> Protocols
@@ -187,6 +177,8 @@ macro_rules! initiate_protocol_negotiation_message {
             }
             protocols
         }
+        
+        ci_message_impl!();
     }
 }
 

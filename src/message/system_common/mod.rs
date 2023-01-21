@@ -15,25 +15,25 @@ use simple_generic::stop;
 use simple_generic::timing_clock;
 use simple_generic::tune_request;
 
-pub use active_sensing::Builder as ActiveSensingBuilder;
+pub use active_sensing::Builder as ActiveSensingMessageBuilder;
 pub use active_sensing::Message as ActiveSensingMessage;
-pub use cont::Builder as ContinueBuilder;
+pub use cont::Builder as ContinueMessageBuilder;
 pub use cont::Message as ContinueMessage;
-pub use reset::Builder as ResetBuilder;
+pub use reset::Builder as ResetMessageBuilder;
 pub use reset::Message as ResetMessage;
-pub use song_position_pointer::Builder as SongPositionPointerBuilder;
+pub use song_position_pointer::Builder as SongPositionPointerMessageBuilder;
 pub use song_position_pointer::Message as SongPositionPointerMessage;
-pub use song_select::Builder as SongSelectBuilder;
+pub use song_select::Builder as SongSelectMessageBuilder;
 pub use song_select::Message as SongSelectMessage;
-pub use start::Builder as StartBuilder;
+pub use start::Builder as StartMessageBuilder;
 pub use start::Message as StartMessage;
-pub use stop::Builder as StopBuilder;
+pub use stop::Builder as StopMessageBuilder;
 pub use stop::Message as StopMessage;
-pub use time_code::Builder as TimeCodeBuilder;
+pub use time_code::Builder as TimeCodeMessageBuilder;
 pub use time_code::Message as TimeCodeMessage;
-pub use timing_clock::Builder as TimingClockBuilder;
+pub use timing_clock::Builder as TimingClockMessageBuilder;
 pub use timing_clock::Message as TimingClockMessage;
-pub use tune_request::Builder as TuneRequestBuilder;
+pub use tune_request::Builder as TuneRequestMessageBuilder;
 pub use tune_request::Message as TuneRequestMessage;
 
 fn validate_packet(p: &[u32], status: u8) -> Result<(), Error> {

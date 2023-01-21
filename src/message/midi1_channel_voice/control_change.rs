@@ -27,6 +27,7 @@ impl Message {
     getter::getter!(channel, ux::u4);
     getter::getter!(controller, ux::u7);
     getter::getter!(value, ux::u7);
+    builder::builder_method!();
 }
 
 impl Midi2Message for Message {

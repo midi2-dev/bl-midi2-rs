@@ -2,9 +2,9 @@ macro_rules! test_protocol_message {
     ($op_code:expr) => {
         use crate::{
             ci::{
+                ci_message_impl,
                 helpers as ci_helpers,
                 test_protocol::{validate_test_data, test_data},
-                CiMessageDetail,
                 DeviceId
             },
             error::Error,
@@ -33,96 +33,97 @@ macro_rules! test_protocol_message {
             getter::getter!(source, ux::u28);
             getter::getter!(destination, ux::u28);
             getter::getter!(authority_level, ux::u7);
+            builder::builder_method!();
         }
 
-        impl CiMessageDetail for Message {
-            fn to_sysex<'a, M: sysex_message::SysexMessage>(&self, messages: &'a mut [M]) -> &'a mut [M] {
-                let mut test_data_buffer = [ux::u7::default(); 48];
-                ci_helpers::write_ci_data(
-                    self.group,
-                    DeviceId::MidiPort,
-                    Message::STATUS,
-                    self.source,
-                    self.destination,
-                    &[&[self.authority_level], test_data(&mut test_data_buffer)].concat(),
-                    messages,
-                )
-            }
+        fn to_sysex<'a, M: sysex_message::SysexMessage>(message: &Message, messages: &'a mut [M]) -> &'a mut [M] {
+            let mut test_data_buffer = [ux::u7::default(); 48];
+            ci_helpers::write_ci_data(
+                message.group,
+                DeviceId::MidiPort,
+                Message::STATUS,
+                message.source,
+                message.destination,
+                &[&[message.authority_level], test_data(&mut test_data_buffer)].concat(),
+                messages,
+            )
+        }
 
-            fn from_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Self {
-                let standard_data = ci_helpers::read_standard_data(messages);
-                let messages = sysex_message::SysexMessages::new(messages);
-                Message {
-                    group: messages.group(),
-                    source: standard_data.source,
-                    destination: standard_data.destination,
-                    authority_level: messages.datum(13).truncate(),
-                }
-            }
-
-            fn validate_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Result<(), Error> {
-                ci_helpers::validate_sysex(messages, Message::STATUS)?;
-                ci_helpers::validate_buffer_size(messages, Message::DATA_SIZE)?;
-                let messages = sysex_message::SysexMessages::new(messages);
-                validate_test_data(&[
-                    messages.datum(14),
-                    messages.datum(15),
-                    messages.datum(16),
-                    messages.datum(17),
-                    messages.datum(18),
-                    messages.datum(19),
-                    messages.datum(20),
-                    messages.datum(21),
-                    messages.datum(22),
-                    messages.datum(23),
-                    messages.datum(24),
-                    messages.datum(25),
-                    messages.datum(26),
-                    messages.datum(27),
-                    messages.datum(28),
-                    messages.datum(29),
-                    messages.datum(30),
-                    messages.datum(31),
-                    messages.datum(32),
-                    messages.datum(33),
-                    messages.datum(34),
-                    messages.datum(35),
-                    messages.datum(36),
-                    messages.datum(37),
-                    messages.datum(38),
-                    messages.datum(39),
-                    messages.datum(40),
-                    messages.datum(41),
-                    messages.datum(42),
-                    messages.datum(43),
-                    messages.datum(44),
-                    messages.datum(45),
-                    messages.datum(46),
-                    messages.datum(47),
-                    messages.datum(48),
-                    messages.datum(49),
-                    messages.datum(50),
-                    messages.datum(51),
-                    messages.datum(52),
-                    messages.datum(53),
-                    messages.datum(54),
-                    messages.datum(55),
-                    messages.datum(56),
-                    messages.datum(57),
-                    messages.datum(58),
-                    messages.datum(59),
-                    messages.datum(60),
-                    messages.datum(61),
-                ])
-            }
-
-            fn validate_to_sysex_buffer<M: sysex_message::SysexMessage>(
-                &self,
-                messages: &[M],
-            ) -> Result<(), Error> {
-                ci_helpers::validate_buffer_size(messages, Message::DATA_SIZE)
+        fn from_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Message {
+            let standard_data = ci_helpers::read_standard_data(messages);
+            let messages = sysex_message::SysexMessages::new(messages);
+            Message {
+                group: messages.group(),
+                source: standard_data.source,
+                destination: standard_data.destination,
+                authority_level: messages.datum(13).truncate(),
             }
         }
+
+        fn validate_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Result<(), Error> {
+            ci_helpers::validate_sysex(messages, Message::STATUS)?;
+            ci_helpers::validate_buffer_size(messages, Message::DATA_SIZE)?;
+            let messages = sysex_message::SysexMessages::new(messages);
+            validate_test_data(&[
+                messages.datum(14),
+                messages.datum(15),
+                messages.datum(16),
+                messages.datum(17),
+                messages.datum(18),
+                messages.datum(19),
+                messages.datum(20),
+                messages.datum(21),
+                messages.datum(22),
+                messages.datum(23),
+                messages.datum(24),
+                messages.datum(25),
+                messages.datum(26),
+                messages.datum(27),
+                messages.datum(28),
+                messages.datum(29),
+                messages.datum(30),
+                messages.datum(31),
+                messages.datum(32),
+                messages.datum(33),
+                messages.datum(34),
+                messages.datum(35),
+                messages.datum(36),
+                messages.datum(37),
+                messages.datum(38),
+                messages.datum(39),
+                messages.datum(40),
+                messages.datum(41),
+                messages.datum(42),
+                messages.datum(43),
+                messages.datum(44),
+                messages.datum(45),
+                messages.datum(46),
+                messages.datum(47),
+                messages.datum(48),
+                messages.datum(49),
+                messages.datum(50),
+                messages.datum(51),
+                messages.datum(52),
+                messages.datum(53),
+                messages.datum(54),
+                messages.datum(55),
+                messages.datum(56),
+                messages.datum(57),
+                messages.datum(58),
+                messages.datum(59),
+                messages.datum(60),
+                messages.datum(61),
+            ])
+        }
+
+        fn validate_to_sysex_buffer<M: sysex_message::SysexMessage>(
+            _message: &Message,
+            messages: &[M],
+        ) -> Result<(), Error> {
+            ci_helpers::validate_buffer_size(messages, Message::DATA_SIZE)
+        }
+        
+        ci_message_impl!();
     }
 }
 

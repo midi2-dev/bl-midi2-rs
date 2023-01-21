@@ -16,6 +16,7 @@ macro_rules! simple_generic_message {
         impl Message {
             const STATUS_CODE: u8 = $op_code;
             getter::getter!(group, ux::u4);
+            builder::builder_method!();
         }
 
         impl Midi2Message for Message {

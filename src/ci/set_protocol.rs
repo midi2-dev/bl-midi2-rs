@@ -1,8 +1,10 @@
 use crate::{
     util::{builder, getter, sysex_message, Truncate},
-    ci::{helpers as ci_helpers, protocol::*, CiMessageDetail, DeviceId},
+    ci::{helpers as ci_helpers, protocol::*, DeviceId},
     error::Error,
 };
+
+use super::message_trait::ci_message_impl;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Message {
@@ -20,6 +22,7 @@ impl Message {
     getter::getter!(destination, ux::u28);
     getter::getter!(authority_level, ux::u7);
     getter::getter!(protocol, Protocol); // todo get by ref
+    builder::builder_method!();
 }
 
 builder::builder!(
@@ -30,53 +33,53 @@ builder::builder!(
     protocol: Protocol
 );
 
-impl CiMessageDetail for Message {
-    fn to_sysex<'a, M: sysex_message::SysexMessage>(&self, messages: &'a mut [M]) -> &'a mut [M] {
-        let mut protocol_data_buffer = [ux::u7::default(); 5];
-        ci_helpers::write_ci_data(
-            self.group,
-            DeviceId::MidiPort,
-            Message::STATUS,
-            self.source,
-            self.destination,
-            &[
-                &[self.authority_level],
-                ci_helpers::protocol_data(&self.protocol, &mut protocol_data_buffer),
-            ]
-            .concat(),
-            messages,
-        )
-    }
+fn to_sysex<'a, M: sysex_message::SysexMessage>(message: &Message, messages: &'a mut [M]) -> &'a mut [M] {
+    let mut protocol_data_buffer = [ux::u7::default(); 5];
+    ci_helpers::write_ci_data(
+        message.group,
+        DeviceId::MidiPort,
+        Message::STATUS,
+        message.source,
+        message.destination,
+        &[
+            &[message.authority_level],
+            ci_helpers::protocol_data(&message.protocol, &mut protocol_data_buffer),
+        ]
+        .concat(),
+        messages,
+    )
+}
 
-    fn from_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Self {
-        let standard_data = ci_helpers::read_standard_data(messages);
-        let messages = sysex_message::SysexMessages::new(messages);
-        Message {
-            group: messages.group(),
-            source: standard_data.source,
-            destination: standard_data.destination,
-            authority_level: messages.datum(13).truncate(),
-            protocol: ci_helpers::read_protocol(&messages, 14),
-        }
-    }
-
-    fn validate_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Result<(), Error> {
-        ci_helpers::validate_sysex(messages, Message::STATUS)?;
-        ci_helpers::validate_buffer_size(messages, 19)?;
-        let messages = sysex_message::SysexMessages::new(messages);
-        ci_helpers::validate_protocol_data(&[
-            messages.datum(14),
-            messages.datum(15),
-            messages.datum(16),
-            messages.datum(17),
-            messages.datum(18),
-        ])
-    }
-
-    fn validate_to_sysex_buffer<M: sysex_message::SysexMessage>(&self, messages: &[M]) -> Result<(), Error> {
-        ci_helpers::validate_buffer_size(messages, 19)
+fn from_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Message {
+    let standard_data = ci_helpers::read_standard_data(messages);
+    let messages = sysex_message::SysexMessages::new(messages);
+    Message {
+        group: messages.group(),
+        source: standard_data.source,
+        destination: standard_data.destination,
+        authority_level: messages.datum(13).truncate(),
+        protocol: ci_helpers::read_protocol(&messages, 14),
     }
 }
+
+fn validate_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Result<(), Error> {
+    ci_helpers::validate_sysex(messages, Message::STATUS)?;
+    ci_helpers::validate_buffer_size(messages, 19)?;
+    let messages = sysex_message::SysexMessages::new(messages);
+    ci_helpers::validate_protocol_data(&[
+        messages.datum(14),
+        messages.datum(15),
+        messages.datum(16),
+        messages.datum(17),
+        messages.datum(18),
+    ])
+}
+
+fn validate_to_sysex_buffer<M: sysex_message::SysexMessage>(_message: &Message, messages: &[M]) -> Result<(), Error> {
+    ci_helpers::validate_buffer_size(messages, 19)
+}
+
+ci_message_impl!();
 
 #[cfg(test)]
 mod tests {

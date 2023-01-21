@@ -20,6 +20,7 @@ impl Message {
     getter::getter!(group, ux::u4);
     getter::getter!(channel, ux::u4);
     getter::getter!(bend, ux::u14);
+    builder::builder_method!();
 }
 
 impl Midi2Message for Message {
