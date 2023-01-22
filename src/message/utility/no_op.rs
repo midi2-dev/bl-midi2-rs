@@ -1,62 +1,74 @@
-use crate::{
-    error::Error,
-    message::Midi2Message,
-    util::{builder, getter, BitOps},
-};
+use crate::util::{self, BitOps};
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Message {
-    group: ux::u4,
+impl<'a> util::message::MessagePrivate<'a, 4> for NoOpMessage<'a> {
+    type Owned<'b: 'a> = NoOpMessage<'b>;
+    fn new(message_impl: util::message::MessageImpl<'a, 4>) -> Self {
+        NoOpMessage(message_impl)
+    }
+    fn message_impl(&self) -> &util::message::MessageImpl<'a, 4> {
+        &self.0
+    }
+    fn message_impl_mut(&mut self) -> &mut util::message::MessageImpl<'a, 4> {
+        &mut self.0
+    }
+    fn default_data() -> [u32; 4] {
+        [0; 4]
+    }
 }
 
-builder::builder!(group: ux::u4);
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NoOpMessage<'a>(util::message::MessageImpl<'a, 4>);
 
-impl Message {
+impl<'a> util::message::Message<'a, 4> for NoOpMessage<'a> {
+    fn validate(data: &[u32]) -> Result<(), crate::error::InvalidData> {
+        super::validate_packet_2(data, NoOpMessage::OP_CODE)
+    }
+}
+
+impl<'a> NoOpMessage<'a> {
     const OP_CODE: ux::u4 = ux::u4::new(0x0);
-    getter::getter!(group, ux::u4);
-    builder::builder_method!();
-}
-
-impl Midi2Message for Message {
-    fn validate_ump(bytes: &[u32]) -> Result<(), Error> {
-        super::validate_packet(bytes, Message::OP_CODE)
+    pub fn group(&self) -> ux::u4 {
+        self.0[0].nibble(1)
     }
-    fn from_ump(bytes: &[u32]) -> Self {
-        Message {
-            group: bytes[0].nibble(1),
-        }
-    }
-    fn to_ump<'a>(&self, bytes: &'a mut [u32]) -> &'a [u32] {
-        bytes[0].set_nibble(1, self.group);
-        &bytes[..1]
+    pub fn set_group(&mut self, g: ux::u4) -> &mut Self {
+        self.0[0].set_nibble(1, g);
+        self
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::message_traits_test;
-
-    message_traits_test!(Message);
+    use crate::{error, util::message::Message};
 
     #[test]
-    fn deserialize() {
+    fn validate() {
+        assert_eq!(NoOpMessage::validate(&[0x0700_0000]), Ok(()));
+    }
+
+    #[test]
+    fn validate_fail() {
         assert_eq!(
-            Message::try_from_ump(&[0x0700_0000]),
-            Ok(Message {
-                group: ux::u4::new(0x7)
-            }),
+            NoOpMessage::validate(&[0x1700_0000]),
+            Err(error::InvalidData {})
         );
     }
 
     #[test]
-    fn serialize() {
+    fn set_group() {
         assert_eq!(
-            Message {
-                group: ux::u4::new(0x2)
-            }
-            .to_ump(&mut [0x0]),
-            &[0x0200_0000],
+            NoOpMessage::default().set_group(ux::u4::new(0x2)),
+            &mut NoOpMessage::try_new_owned(&[0x0200_0000, 0x0, 0x0, 0x0]).unwrap(),
+        );
+    }
+
+    #[test]
+    fn group() {
+        assert_eq!(
+            NoOpMessage::try_new_borrowed(&[0x0200_0000])
+                .unwrap()
+                .group(),
+            ux::u4::new(0x2),
         );
     }
 }
