@@ -1,7 +1,6 @@
 pub mod builder;
 pub mod getter;
 pub mod sysex_message;
-pub mod message;
 
 mod bit_ops;
 mod bounded;

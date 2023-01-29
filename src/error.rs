@@ -4,6 +4,3 @@ pub enum Error {
     MissingFields,
     BufferOverflow,
 }
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct InvalidData();

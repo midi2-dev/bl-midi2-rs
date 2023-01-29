@@ -1,25 +1,18 @@
-use crate::{error, util::BitOps};
+use crate::{error::Error, util::BitOps};
 
-mod no_op;
+pub mod no_op;
 pub mod time_stamp;
 
-pub use no_op::NoOpMessage;
+pub use no_op::Builder as NoOpMessageBuilder;
+pub use no_op::Message as NoOpMessage;
 pub use time_stamp::Builder as TimeStampMessageBuilder;
 pub use time_stamp::Message as TimeStampMessage;
 
-pub fn validate_packet(p: &[u32], op_code: ux::u4) -> Result<(), error::Error> {
+pub fn validate_packet(p: &[u32], op_code: ux::u4) -> Result<(), Error> {
     if p.is_empty() {
-        Err(error::Error::BufferOverflow)
+        Err(Error::BufferOverflow)
     } else if p[0].nibble(0) != ux::u4::new(0x0) || p[0].nibble(2) != op_code {
-        Err(error::Error::InvalidData)
-    } else {
-        Ok(())
-    }
-}
-
-pub fn validate_packet_2(p: &[u32], op_code: ux::u4) -> Result<(), error::InvalidData> {
-    if p.is_empty() || p[0].nibble(0) != ux::u4::new(0x0) || p[0].nibble(2) != op_code {
-        Err(error::InvalidData {})
+        Err(Error::InvalidData)
     } else {
         Ok(())
     }
