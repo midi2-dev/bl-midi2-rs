@@ -1,62 +1,90 @@
 use crate::{
     error::Error,
-    message::Midi2Message,
-    util::{builder, getter, BitOps},
+    result::Result,
+    util::BitOps,
 };
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Message {
-    group: ux::u4,
-}
+#[derive(Clone, PartialEq, Eq)]
+pub struct NoOpMessage<'a>(&'a [u32]);
 
-builder::builder!(group: ux::u4);
-
-impl Message {
+impl<'a> NoOpMessage<'a> {
     const OP_CODE: ux::u4 = ux::u4::new(0x0);
-    getter::getter!(group, ux::u4);
-    builder::builder_method!();
+    pub fn builder(buffer: &'a mut [u32]) -> NoOpMessageBuilder<'a> {
+        NoOpMessageBuilder::new(buffer)
+    }
+    pub fn group(&self) -> ux::u4 {
+        self.0[0].nibble(1)
+    }
+    pub fn from_data(data: &'a [u32]) -> Result<Self> {
+        super::validate_packet(data, NoOpMessage::OP_CODE)?;
+        Ok(NoOpMessage(&data[..1]))
+    }
+    pub fn data(&self) -> &[u32] {
+        self.0
+    }
 }
 
-impl Midi2Message for Message {
-    fn validate_ump(bytes: &[u32]) -> Result<(), Error> {
-        super::validate_packet(bytes, Message::OP_CODE)
+impl core::fmt::Debug for NoOpMessage<'_> {
+    fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
+        fmt.write_str("NoOpMessage(")?;
+        for v in self.0.iter() {
+            fmt.write_fmt(format_args!("{v:#010X}, "))?;
+        }
+        fmt.write_str(")")
     }
-    fn from_ump(bytes: &[u32]) -> Self {
-        Message {
-            group: bytes[0].nibble(1),
+}
+
+pub struct NoOpMessageBuilder<'a>(Option<&'a mut [u32]>);
+
+impl<'a> NoOpMessageBuilder<'a> {
+    pub fn group(&mut self, g: ux::u4) -> &mut Self {
+        if let Some(buffer) = &mut self.0 {
+            buffer[0].set_nibble(1, g);
+        }
+        self
+    }
+    fn new(buffer: &'a mut [u32]) -> Self {
+        if !buffer.is_empty() {
+            let buffer = &mut buffer[..1];
+            for v in buffer.iter_mut() {
+                *v = 0;
+            }
+            Self(Some(buffer))
+        } else {
+            Self(None)
         }
     }
-    fn to_ump<'a>(&self, bytes: &'a mut [u32]) -> &'a [u32] {
-        bytes[0].set_nibble(1, self.group);
-        &bytes[..1]
+    pub fn build(&'a self) -> Result<NoOpMessage<'a>> {
+        if let Some(buffer) = &self.0 {
+            Ok(NoOpMessage(buffer))
+        } else {
+            Err(Error::BufferOverflow)
+        }
     }
 }
+
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::message_traits_test;
-
-    message_traits_test!(Message);
 
     #[test]
-    fn deserialize() {
+    fn builder() {
         assert_eq!(
-            Message::try_from_ump(&[0x0700_0000]),
-            Ok(Message {
-                group: ux::u4::new(0x7)
-            }),
-        );
+            NoOpMessage::builder(&mut [0x0])
+                .group(ux::u4::new(0xB))
+                .build(),
+            Ok(NoOpMessage(&[0x0B00_0000])),
+        )
     }
-
+    
     #[test]
-    fn serialize() {
+    fn group() {
         assert_eq!(
-            Message {
-                group: ux::u4::new(0x2)
-            }
-            .to_ump(&mut [0x0]),
-            &[0x0200_0000],
+            NoOpMessage::from_data(&[0x0900_0000])
+                .unwrap()
+                .group(),
+            ux::u4::new(0x9),
         );
     }
 }

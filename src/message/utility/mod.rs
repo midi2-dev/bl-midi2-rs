@@ -3,8 +3,8 @@ use crate::{error::Error, util::BitOps};
 pub mod no_op;
 pub mod time_stamp;
 
-pub use no_op::Builder as NoOpMessageBuilder;
-pub use no_op::Message as NoOpMessage;
+pub use no_op::NoOpMessageBuilder;
+pub use no_op::NoOpMessage;
 pub use time_stamp::Builder as TimeStampMessageBuilder;
 pub use time_stamp::Message as TimeStampMessage;
 

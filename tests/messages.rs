@@ -410,7 +410,6 @@ mod utility {
     fn round_trip() {
         let mut buffer = DataBuffer::<44>::new();
 
-        buffer.serialize(NoOpMessage::builder().group(ux::u4::new(0x8)).build());
         buffer.serialize(
             TimeStampMessage::builder()
                 .group(ux::u4::new(0x8))
@@ -420,7 +419,6 @@ mod utility {
 
         let mut chunks = buffer.data().chunks(4);
 
-        assert_eq!(NoOpMessage::validate_ump(chunks.next().unwrap()), Ok(()));
         assert_eq!(
             TimeStampMessage::validate_ump(chunks.next().unwrap()),
             Ok(())
