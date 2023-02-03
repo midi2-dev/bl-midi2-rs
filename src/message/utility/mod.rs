@@ -5,8 +5,8 @@ pub mod time_stamp;
 
 pub use no_op::NoOpMessageBuilder;
 pub use no_op::NoOpMessage;
-pub use time_stamp::Builder as TimeStampMessageBuilder;
-pub use time_stamp::Message as TimeStampMessage;
+pub use time_stamp::TimeStampMessageBuilder;
+pub use time_stamp::TimeStampMessage;
 
 pub fn validate_packet(p: &[u32], op_code: ux::u4) -> Result<(), Error> {
     if p.is_empty() {

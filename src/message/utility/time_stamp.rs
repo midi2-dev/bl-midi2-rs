@@ -1,68 +1,122 @@
 use crate::{
     error::Error,
-    message::Midi2Message,
-    util::{builder, getter, BitOps, Truncate},
+    result::Result,
+    util::{BitOps, Truncate, debug},
 };
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Message {
-    time_stamp: ux::u20,
-    group: ux::u4,
-}
+#[derive(Clone, PartialEq, Eq)]
+pub struct TimeStampMessage<'a>(&'a [u32]);
 
-builder::builder!(time_stamp: ux::u20, group: ux::u4);
-
-impl Message {
+impl<'a> TimeStampMessage<'a> {
     const OP_CODE: ux::u4 = ux::u4::new(0b0010);
-    getter::getter!(time_stamp, ux::u20);
-    getter::getter!(group, ux::u4);
-    builder::builder_method!();
+    pub fn builder(buffer: &'a mut [u32]) -> TimeStampMessageBuilder<'a> {
+        TimeStampMessageBuilder::new(buffer)
+    }
+    pub fn group(&self) -> ux::u4 {
+        self.0[0].nibble(1)
+    }
+    pub fn time_stamp(&self) -> ux::u20 {
+        self.0[0].truncate()
+    }
+    pub fn from_data(data: &'a [u32]) -> Result<Self> {
+        super::validate_packet(data, TimeStampMessage::OP_CODE)?;
+        Ok(TimeStampMessage(&data[..1]))
+    }
+    pub fn data(&self) -> &[u32] {
+        self.0
+    }
 }
 
-impl Midi2Message for Message {
-    fn validate_ump(bytes: &[u32]) -> Result<(), Error> {
-        super::validate_packet(bytes, Message::OP_CODE)
-    }
-    fn from_ump(bytes: &[u32]) -> Self {
-        Message {
-            time_stamp: bytes[0].truncate(),
-            group: bytes[0].nibble(1),
+debug::message_debug_impl!(TimeStampMessage);
+
+pub struct TimeStampMessageBuilder<'a>(Option<&'a mut [u32]>);
+
+impl<'a> TimeStampMessageBuilder<'a> {
+    pub fn group(&mut self, g: ux::u4) -> &mut Self {
+        if let Some(buffer) = &mut self.0 {
+            buffer[0].set_nibble(1, g);
         }
+        self
     }
-    fn to_ump<'a>(&self, bytes: &'a mut [u32]) -> &'a [u32] {
-        bytes[0] = u32::from(self.time_stamp) | 0x0020_0000;
-        bytes[0].set_nibble(1, self.group);
-        &bytes[..1]
+    pub fn time_stamp(&mut self, time_stamp: ux::u20) -> &mut Self {
+        if let Some(buffer) = &mut self.0 {
+            buffer[0] |= u32::from(time_stamp);
+        }
+        self
+    }
+    fn new(buffer: &'a mut [u32]) -> Self {
+        if !buffer.is_empty() {
+            let buffer = &mut buffer[..1];
+            for v in buffer.iter_mut() {
+                *v = 0;
+            }
+            buffer[0].set_nibble(2, ux::u4::new(2));
+            Self(Some(buffer))
+        } else {
+            Self(None)            
+        }        
+    }
+    pub fn build(&'a self) -> Result<TimeStampMessage<'a>> {
+        if let Some(buffer) = &self.0 {
+            Ok(TimeStampMessage(buffer))
+        } else {
+            Err(Error::BufferOverflow)
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::message_traits_test;
-
-    message_traits_test!(Message);
 
     #[test]
-    fn deserialize() {
+    fn builder() {
         assert_eq!(
-            Message::try_from_ump(&[0x0A22_ABCD]),
-            Ok(Message {
-                time_stamp: ux::u20::new(0x2ABCD),
-                group: ux::u4::new(0xA),
-            }),
+            TimeStampMessage::builder(&mut [0x0])
+                .group(ux::u4::new(0x4))
+                .time_stamp(ux::u20::new(0xE_69AE))
+                .build(),
+            Ok(TimeStampMessage(&[0x042E_69AE])),
         );
     }
 
     #[test]
-    fn serialize() {
+    fn builder_default() {
         assert_eq!(
-            Message {
-                time_stamp: ux::u20::new(0x2ABCD),
-                group: ux::u4::new(0xB),
-            }
-            .to_ump(&mut [0x0]),
-            &[0x0B22_ABCD],
+            TimeStampMessage::builder(&mut [0x0]).build(),
+            Ok(TimeStampMessage(&[0x0020_0000])),
         );
+    }
+
+    #[test]
+    fn builder_oversized_buffer() {
+        assert_eq!(
+            TimeStampMessage::builder(&mut [0x0, 0x0]).build(),
+            Ok(TimeStampMessage(&[0x0020_0000])),
+        );
+    }
+
+    #[test]
+    fn builder_overflow() {
+        assert_eq!(
+            TimeStampMessage::builder(&mut []).build(),
+            Err(Error::BufferOverflow),
+        );
+    }
+    
+    #[test]
+    fn group() {
+        assert_eq!(
+            TimeStampMessage::from_data(&[0x0F20_0000]).unwrap().group(),
+            ux::u4::new(0xF),
+        )
+    }
+
+    #[test]
+    fn time_stamp() {
+        assert_eq!(
+            TimeStampMessage::from_data(&[0x0021_2345]).unwrap().time_stamp(),
+            ux::u20::new(0x12345),
+        )
     }
 }

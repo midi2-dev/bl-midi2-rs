@@ -1,7 +1,7 @@
 use crate::{
     error::Error,
     result::Result,
-    util::BitOps,
+    util::{BitOps, debug},
 };
 
 #[derive(Clone, PartialEq, Eq)]
@@ -24,15 +24,7 @@ impl<'a> NoOpMessage<'a> {
     }
 }
 
-impl core::fmt::Debug for NoOpMessage<'_> {
-    fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
-        fmt.write_str("NoOpMessage(")?;
-        for v in self.0.iter() {
-            fmt.write_fmt(format_args!("{v:#010X}, "))?;
-        }
-        fmt.write_str(")")
-    }
-}
+debug::message_debug_impl!(NoOpMessage);
 
 pub struct NoOpMessageBuilder<'a>(Option<&'a mut [u32]>);
 
