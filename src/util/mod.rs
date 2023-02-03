@@ -1,5 +1,6 @@
 pub mod builder;
 pub mod getter;
+pub mod message;
 pub mod sysex_message;
 
 mod bit_ops;
