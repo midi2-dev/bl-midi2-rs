@@ -63,17 +63,22 @@ impl<'a> Sysex7Message<'a> {
 
 debug::message_debug_impl!(Sysex7Message);
 
-pub struct Sysex7MessageBuilder<'a>(Option<&'a mut [u32]>);
+enum BuilderImpl<'a> {
+    Ok(&'a mut [u32]),
+    Err(Error),
+}
+
+pub struct Sysex7MessageBuilder<'a>(BuilderImpl<'a>);
 
 impl<'a> Sysex7MessageBuilder<'a> {
     pub fn group(&mut self, g: ux::u4) -> &mut Self {
-        if let Some(buffer) = &mut self.0 {
+        if let BuilderImpl::Ok(buffer) = &mut self.0 {
             buffer[0].set_nibble(1, g);
         }
         self
     }
     pub fn status(&mut self, s: Status) -> &mut Self {
-        if let Some(buffer) = &mut self.0 {
+        if let BuilderImpl::Ok(buffer) = &mut self.0 {
             buffer[0].set_nibble(
                 2,
                 match s {
@@ -87,7 +92,7 @@ impl<'a> Sysex7MessageBuilder<'a> {
         self
     }
     pub fn payload<'b, I: core::iter::Iterator<Item = &'b ux::u7>>(&mut self, mut data: I) -> &mut Self {
-        if let Some(buffer) = &mut self.0 {
+        if let BuilderImpl::Ok(buffer) = &mut self.0 {
             let mut count = 0_u8;
             for i in 0_usize..2_usize {
                 if let Some(&v) = data.next() {
@@ -102,7 +107,7 @@ impl<'a> Sysex7MessageBuilder<'a> {
                 }
             }
             if data.next().is_some() {
-                self.0 = None;
+                self.0 = BuilderImpl::Err(Error::InvalidData);
             } else {
                 buffer[0].set_nibble(3, count.truncate());
             }
@@ -116,16 +121,15 @@ impl<'a> Sysex7MessageBuilder<'a> {
                 *v = 0;
             }
             message_helpers::write_type_to_packet(Sysex7Message::OP_CODE, buffer);
-            Self(Some(buffer))
+            Self(BuilderImpl::Ok(buffer))
         } else {
-            Self(None)
+            Self(BuilderImpl::Err(Error::BufferOverflow))
         }
     }
     pub fn build(&'a self) -> Result<Sysex7Message<'a>> {
-        if let Some(buffer) = &self.0 {
-            Ok(Sysex7Message(buffer))
-        } else {
-            Err(Error::BufferOverflow)
+        match &self.0 {
+            BuilderImpl::Ok(buffer) => Ok(Sysex7Message(buffer)),
+            BuilderImpl::Err(e) => Err(e.clone()),
         }
     }
 }
@@ -227,6 +231,16 @@ mod tests {
                 .payload([ux::u7::new(0x12), ux::u7::new(0x34), ux::u7::new(0x56),].iter())
                 .build(),
             Ok(Sysex7Message(&[0x3113_1234, 0x5600_0000,])),
+        );
+    }
+
+    #[test]
+    fn builder_invalid_payload() {
+        assert_eq!(
+            Sysex7Message::builder(&mut [0x0, 0x0])
+                .payload([ux::u7::default(); 7].iter())
+                .build(),
+            Err(Error::InvalidData),
         );
     }
 

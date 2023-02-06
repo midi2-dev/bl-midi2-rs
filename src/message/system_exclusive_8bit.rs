@@ -1,82 +1,150 @@
 use crate::{
     error::Error,
-    message::{helpers, Midi2Message},
-    util::{builder, getter, sysex_message, BitOps, SliceData, Truncate},
+    result::Result,
+    message::helpers as message_helpers,
+    util::{BitOps, Truncate, debug},
 };
 
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct Message {
-    group: ux::u4,
-    stream_id: u8,
-    status: Status,
-    data: Data,
+pub struct PayloadIterator<'a> {
+    data: &'a [u32],
+    index: u8,
+    total: u8,
 }
 
-#[derive(Clone)]
-pub struct Builder {
-    group: Option<ux::u4>,
-    stream_id: Option<u8>,
-    status: Option<Status>,
-    data: Data,
+impl<'a> core::iter::Iterator for PayloadIterator<'a> {
+    type Item = u8;
+    fn next(&mut self) -> Option<Self::Item> {
+        todo!()
+    }
 }
 
-impl Builder {
-    builder::builder_setter!(group: ux::u4);
-    builder::builder_setter!(stream_id: u8);
+#[derive(Clone, PartialEq, Eq)]
+pub struct Sysex8Message<'a>(&'a [u32]);
 
-    pub fn status(&mut self, status: Status) -> &mut Self {
-        if let Status::UnexpectedEnd(_) = status {
-            self.data.resize(0);
+impl<'a> Sysex8Message<'a> {
+    const OP_CODE: ux::u4 = ux::u4::new(0x5);
+    pub fn builder(buffer: &'a mut [u32]) -> Sysex8MessageBuilder<'a> {
+        Sysex8MessageBuilder::new(buffer)
+    }
+    pub fn group(&self) -> ux::u4 {
+        message_helpers::group_from_packet(self.0)
+    }
+    pub fn status(&self) -> Status {
+        try_status_from_packet(self.0).expect("Valid status")
+    }
+    pub fn stream_id(&self) -> u8 {
+        self.0[0].octet(2)
+    }
+    pub fn payload(&self) -> PayloadIterator {
+        PayloadIterator{
+            data: self.0,
+            index: 0,
+            total: self.0[0].nibble(3).into(),
         }
-        self.status = Some(status);
+    }
+    pub fn from_data(data: &'a [u32]) -> Result<Self> {
+        validate_buffer(data)?;
+        match try_status_from_packet(data) {
+            Ok(status) => {
+                validate_data(data, status)?;
+                validate_packet(data)?;
+                Ok(Sysex8Message(&data[..4]))
+            }
+            Err(e) => Err(e),
+        }
+    }
+    pub fn data(&self) -> &[u32] {
+        self.0
+    }
+}
+
+debug::message_debug_impl!(Sysex8Message);
+
+enum BuilderImpl<'a> {
+    Ok(&'a mut [u32]),
+    Err(Error),
+}
+
+pub struct Sysex8MessageBuilder<'a>(BuilderImpl<'a>);
+
+impl<'a> Sysex8MessageBuilder<'a> {
+    pub fn group(&mut self, g: ux::u4) -> &mut Self {
+        if let BuilderImpl::Ok(buffer) = &mut self.0 {
+            buffer[0].set_nibble(1, g);
+        }
         self
     }
-
-    pub fn try_data(&mut self, v: &[u8]) -> Result<&mut Self, Error> {
-        if v.len() > 6 {
-            Err(Error::BufferOverflow)
+    /// When called with `Status::UnexpectedEnd(_)` the payload buffer
+    /// will be filled with zeros accordingly.
+    pub fn status(&mut self, s: Status) -> &mut Self {
+        if let BuilderImpl::Ok(buffer) = &mut self.0 {
+            buffer[0].set_nibble(
+                2,
+                match s {
+                    Status::Complete => ux::u4::new(0x0),
+                    Status::Begin => ux::u4::new(0x1),
+                    Status::Continue => ux::u4::new(0x2),
+                    Status::End => ux::u4::new(0x3),
+                    Status::UnexpectedEnd(_) => ux::u4::new(0x3),
+                },
+            );
+            if let Status::UnexpectedEnd(validity) = s {
+                buffer[0] &= 0xFFFF_FF00;
+                buffer[1..4].copy_from_slice(&[0x0, 0x0, 0x0]);
+                match validity {
+                    Validity::Valid => {
+                        buffer[0].set_nibble(3, ux::u4::new(0x1));
+                    }
+                    Validity::Invalid => {
+                        buffer[0].set_nibble(3, ux::u4::new(0xF));
+                    }
+                }
+            }
+        }
+        self
+    }
+    pub fn stream_id(&mut self, id: u8) -> &mut Self {
+        if let BuilderImpl::Ok(buffer) = &mut self.0 {
+            buffer[0].set_octet(2, id);
+        }
+        self
+    }
+    pub fn payload<'b, I: core::iter::Iterator<Item = &'b u8>>(&mut self, mut data: I) -> &mut Self {
+        if let BuilderImpl::Ok(buffer) = &mut self.0 {
+            let mut count = 1_u8;
+            for i in 0_usize..13_usize {
+                if let Some(&v) = data.next() {
+                    buffer[(i + 3) / 4].set_octet((i + 3) % 4, v);
+                    count += 1;
+                } else {
+                    break;
+                }
+            }
+            if data.next().is_some() {
+                self.0 = BuilderImpl::Err(Error::InvalidData);
+            } else {
+                buffer[0].set_nibble(3, count.truncate());
+            }
+        }
+        self
+    }
+    fn new(buffer: &'a mut [u32]) -> Self {
+        if buffer.len() >= 4 {
+            let buffer = &mut buffer[..4];
+            for v in buffer.iter_mut() {
+                *v = 0;
+            }
+            message_helpers::write_type_to_packet(Sysex8Message::OP_CODE, buffer);
+            buffer[0].set_nibble(3, ux::u4::new(0x1)); // stream id
+            Self(BuilderImpl::Ok(buffer))
         } else {
-            Ok(self.data(v))
+            Self(BuilderImpl::Err(Error::BufferOverflow))
         }
     }
-
-    pub fn data(&mut self, v: &[u8]) -> &mut Self {
-        self.data = Data::from_data(v);
-        self
-    }
-
-    pub fn build(&self) -> Message {
-        Message {
-            group: self.group.unwrap_or_else(|| panic!("Missing fields!")),
-            stream_id: self.stream_id.unwrap_or_else(|| panic!("Missing fields!")),
-            status: self.status.unwrap_or_else(|| panic!("Missing fields!")),
-            data: self.data.clone(),
-        }
-    }
-}
-
-type Data = SliceData<u8, 13>;
-
-impl Message {
-    const TYPE_CODE: ux::u4 = ux::u4::new(0x5);
-    getter::getter!(group, ux::u4);
-    getter::getter!(stream_id, u8);
-    getter::getter!(status, Status);
-
-    pub fn data(&self) -> &[u8] {
-        &self.data
-    }
-
-    pub(crate) fn stream_id_mut(&mut self) -> &mut u8 {
-        &mut self.stream_id
-    }
-
-    pub fn builder() -> Builder {
-        Builder {
-            group: None,
-            stream_id: None,
-            status: None,
-            data: Data::default(),
+    pub fn build(&'a self) -> Result<Sysex8Message<'a>> {
+        match &self.0 {
+            BuilderImpl::Ok(buffer) => Ok(Sysex8Message(buffer)),
+            BuilderImpl::Err(e) => Err(e.clone()),
         }
     }
 }
@@ -102,70 +170,19 @@ pub enum Validity {
     Invalid,
 }
 
-impl Midi2Message for Message {
-    fn validate_ump(bytes: &[u32]) -> Result<(), Error> {
-        match try_status_from_packet(bytes) {
-            Ok(status) => {
-                validate_data(bytes, status)?;
-                validate_packet(bytes)
-            }
-            Err(e) => Err(e),
-        }
-    }
-    fn from_ump(bytes: &[u32]) -> Self {
-        let status = try_status_from_packet(bytes).expect("Valid status");
-        Message {
-            group: super::helpers::group_from_packet(bytes),
-            stream_id: bytes[0].octet(2),
-            data: data_from_packet(bytes, status),
-            status,
-        }
-    }
-    fn to_ump<'a>(&self, bytes: &'a mut [u32]) -> &'a [u32] {
-        helpers::write_type_to_packet(Message::TYPE_CODE, bytes);
-        bytes[0].set_nibble(1, self.group);
-        bytes[0].set_nibble(
-            2,
-            match self.status {
-                Status::Complete => ux::u4::new(0x0),
-                Status::Begin => ux::u4::new(0x1),
-                Status::Continue => ux::u4::new(0x2),
-                Status::End => ux::u4::new(0x3),
-                Status::UnexpectedEnd(_) => ux::u4::new(0x3),
-            },
-        );
-        if let Status::UnexpectedEnd(validity) = self.status {
-            bytes[0] &= 0xFFFF_FF00;
-            bytes[1..4].copy_from_slice(&[0x0, 0x0, 0x0]);
-            match validity {
-                Validity::Valid => {
-                    bytes[0].set_nibble(3, ux::u4::new(0x1));
-                }
-                Validity::Invalid => {
-                    bytes[0].set_nibble(3, ux::u4::new(0xF));
-                }
-            }
-        } else {
-            bytes[0].set_octet(2, self.stream_id);
-            let n: ux::u4 = u8::try_from(self.data.len()).unwrap().truncate();
-            bytes[0].set_nibble(3, n + ux::u4::new(1));
-            for (d, i) in self.data.iter().zip(3_usize..) {
-                bytes[i / 4].set_octet(i % 4, *d);
-            }
-        }
-        &bytes[..4]
-    }
-}
-
-fn validate_packet(p: &[u32]) -> Result<(), Error> {
-    if p[0].nibble(0) != Message::TYPE_CODE {
+fn validate_packet(p: &[u32]) -> Result<()> {
+    if p[0].nibble(0) != Sysex8Message::OP_CODE {
         Err(Error::InvalidData)
     } else {
         Ok(())
     }
 }
 
-fn try_status_from_packet(p: &[u32]) -> Result<Status, Error> {
+fn validate_buffer(buf: &[u32]) -> Result<()> {
+    todo!()
+}
+
+fn try_status_from_packet(p: &[u32]) -> Result<Status> {
     match u8::from(p[0].nibble(2)) {
         0x0 => Ok(Status::Complete),
         0x1 => Ok(Status::Begin),
@@ -200,82 +217,41 @@ fn number_of_bytes(p: &[u32]) -> ux::u4 {
     p[0].nibble(3)
 }
 
-fn data_from_packet(p: &[u32], status: Status) -> Data {
-    let n: usize = u8::from(number_of_bytes(p)).into();
-    let unexpected_end = matches!(status, Status::UnexpectedEnd(_));
-    if unexpected_end {
-        Data::default()
-    } else {
-        let mut data = SliceData::default();
-        data.resize(n - 1);
-        for i in 1..n {
-            data[i - 1] = p[(i + 2) / 4].octet((2 + i) % 4);
-        }
-        data
-    }
-}
-
-fn validate_data(p: &[u32], status: Status) -> Result<(), Error> {
+fn validate_data(p: &[u32], status: Status) -> Result<()> {
     let n: usize = u8::from(number_of_bytes(p)).into();
     let unexpected_end = matches!(status, Status::UnexpectedEnd(_));
     if n == 0 {
         // we expect a stream id
         Err(Error::InvalidData)
     } else if unexpected_end {
+        // data should be set to zero
+        // but we wont make it a hard requirement here
         Ok(())
     } else if n > 14 {
         Err(Error::InvalidData)
-    } else if (n + 3) / 4 > p.len() {
-        Err(Error::BufferOverflow)
     } else {
         Ok(())
-    }
-}
-
-impl sysex_message::SysexMessage for Message {
-    fn group(&self) -> ux::u4 {
-        self.group
-    }
-    fn set_group(&mut self, group: ux::u4) {
-        self.group = group;
-    }
-    fn set_datum(&mut self, d: u8, i: usize) {
-        if i <= self.data().len() {
-            self.data.resize(i + 1);
-        }
-        self.data[i] = d;
-    }
-    fn datum(&self, i: usize) -> u8 {
-        self.data[i]
-    }
-    fn len(&self) -> usize {
-        self.data.len()
-    }
-    fn max_len() -> usize {
-        12
-    }
-    fn status(&self) -> sysex_message::Status {
-        match self.status {
-            Status::Complete => sysex_message::Status::Complete,
-            Status::Begin => sysex_message::Status::Begin,
-            Status::Continue => sysex_message::Status::Continue,
-            _ => sysex_message::Status::End,
-        }
-    }
-    fn set_status(&mut self, status: sysex_message::Status) {
-        match status {
-            sysex_message::Status::Complete => self.status = Status::Complete,
-            sysex_message::Status::Begin => self.status = Status::Begin,
-            sysex_message::Status::Continue => self.status = Status::Continue,
-            sysex_message::Status::End => self.status = Status::End,
-        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    
+    #[test]
+    fn builder() {
+        assert_eq!(
+            Sysex8Message::builder(&mut [0x0; 4])
+                .group(ux::u4::new(0xA))
+                .stream_id(0xC6)
+                .status(Status::Continue)
+                .payload([0x12, 0x34, 0x56, 0x78, 0x90].iter())
+                .build(),
+            Ok(Sysex8Message(&[0x5A26_C612, 0x3456_7890, 0x0, 0x0])),
+        )
+    }
 
+    /*
     #[test]
     fn deserialize() {
         assert_eq!(
@@ -346,4 +322,5 @@ mod tests {
             &[0x5F3F_0000, 0x0, 0x0, 0x0],
         );
     }
+    */
 }

@@ -17,11 +17,10 @@ impl BitOps for u32 {
 
     fn set_bit(&mut self, index: usize, v: bool) -> &mut Self {
         assert!(index < 32);
-        let v: u32 = match v {
-            true => 1,
-            false => 0,
-        };
-        *self |= v << (31 - index);
+        let v = u32::from(v);
+        let shift = 31 - index;
+        *self &= !(0b1 << shift);
+        *self |= v << shift;
         self
     }
 
@@ -32,7 +31,9 @@ impl BitOps for u32 {
 
     fn set_nibble(&mut self, index: usize, v: ux::u4) -> &mut Self {
         assert!(index < 8);
-        *self |= u32::from(v) << (28 - index * 4);
+        let shift = 28 - index * 4;
+        *self &= !(0xF << shift);
+        *self |= u32::from(v) << shift;
         self
     }
 
@@ -43,7 +44,9 @@ impl BitOps for u32 {
 
     fn set_octet(&mut self, index: usize, v: u8) -> &mut Self {
         assert!(index < 4);
-        *self |= (v as u32) << (24 - index * 8);
+        let shift = 24 - index * 8;
+        *self &= !(0xFF << shift);
+        *self |= (v as u32) << shift;
         self
     }
 
@@ -54,7 +57,9 @@ impl BitOps for u32 {
 
     fn set_word(&mut self, index: usize, v: u16) -> &mut Self {
         assert!(index < 2);
-        *self |= (v as u32) << (16 - index * 16);
+        let shift = 16 - index * 16;
+        *self &= !(0xFFFF << shift);
+        *self |= (v as u32) << shift;
         self
     }
 }
@@ -66,9 +71,10 @@ impl BitOps for u8 {
     }
     fn set_bit(&mut self, index: usize, v: bool) -> &mut Self {
         assert!(index < 8);
-        #[allow(clippy::bool_to_int_with_if)] // clippy bug?
-        let v: u8 = if v { 1 } else { 0 };
-        *self |= v << (7 - index);
+        let v = u8::from(v);
+        let shift = 7 - index;
+        *self &= !(0b1 << shift);
+        *self |= v << shift;
         self
     }
     fn nibble(&self, index: usize) -> ux::u4 {
@@ -77,7 +83,9 @@ impl BitOps for u8 {
     }
     fn set_nibble(&mut self, index: usize, v: ux::u4) -> &mut Self {
         assert!(index < 2);
-        *self |= u8::from(v) << (4 - index * 4);
+        let shift = 4 - index * 4;
+        *self &= !(0xF << shift);
+        *self |= u8::from(v) << shift;
         self
     }
     fn octet(&self, _index: usize) -> u8 {
@@ -111,6 +119,7 @@ mod tests_u8 {
 
     #[test]
     fn set_bit() {
+        assert_eq!(0b1000_0000_u8.set_bit(0, false), &0x0,);
         assert_eq!(0x0_u8.set_bit(0, true), &0b1000_0000,);
         assert_eq!(0x0_u8.set_bit(4, true), &0b0000_1000,);
     }
@@ -124,6 +133,7 @@ mod tests_u8 {
 
     #[test]
     fn set_nibble() {
+        assert_eq!(0x1_u8.set_nibble(1, ux::u4::new(6)), &0x6,);
         assert_eq!(0x0_u8.set_nibble(0, ux::u4::new(0xB)), &0xB0,);
         assert_eq!(0x0_u8.set_nibble(1, ux::u4::new(0xB)), &0x0B,);
     }
@@ -136,6 +146,7 @@ mod tests_u8 {
 
     #[test]
     fn set_octet() {
+        assert_eq!(0x1_u8.set_octet(0, 0x6), &0x6);
         assert_eq!(0x0_u8.set_octet(0, 0xBE), &0xBE);
     }
 }
@@ -176,6 +187,7 @@ mod tests_u32 {
 
     #[test]
     fn set_nibble() {
+        assert_eq!(0x5A21_C612_u32.set_nibble(3, ux::u4::new(6)), &0x5A26_C612,);
         assert_eq!(0x0_u32.set_nibble(0, ux::u4::new(0xB)), &0xB000_0000,);
         assert_eq!(0x0_u32.set_nibble(5, ux::u4::new(0xB)), &0x0000_0B00,);
         assert_eq!(0x0_u32.set_nibble(7, ux::u4::new(0x4)), &0x0000_0004,);
