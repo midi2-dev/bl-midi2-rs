@@ -36,7 +36,7 @@ impl<'a> Sysex7Message<'a> {
         message_helpers::group_from_packet(self.0)
     }
     pub fn status(&self) -> Status {
-        status_from_packet(self.0)
+        status_from_packet(self.0).expect("valid status")
     }
     pub fn payload(&self) -> PayloadIterator {
         PayloadIterator{
@@ -48,7 +48,7 @@ impl<'a> Sysex7Message<'a> {
     pub fn from_data(data: &'a [u32]) -> Result<Self> {
         validate_buffer(data)?;
         validate_type(data)?;
-        validate_status(data)?;
+        status_from_packet(data)?;
         validate_data(data)?;
         Ok(Sysex7Message(&data[..2]))
     }
@@ -126,7 +126,6 @@ impl<'a> Sysex7MessageBuilder<'a> {
     }
 }
 
-
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Status {
     Complete,
@@ -149,13 +148,13 @@ fn validate_type(p: &[u32]) -> Result<()> {
     }
 }
 
-fn status_from_packet(p: &[u32]) -> Status {
+fn status_from_packet(p: &[u32]) -> Result<Status> {
     match u8::from(p[0].nibble(2)) {
-        0x0 => Status::Complete,
-        0x1 => Status::Begin,
-        0x2 => Status::Continue,
-        0x3 => Status::End,
-        _ => panic!("Invalid status"),
+        0x0 => Ok(Status::Complete),
+        0x1 => Ok(Status::Begin),
+        0x2 => Ok(Status::Continue),
+        0x3 => Ok(Status::End),
+        _ => Err(Error::InvalidData),
     }
 }
 
@@ -167,22 +166,57 @@ fn validate_buffer(buffer: &[u32]) -> Result<()> {
     }
 }
 
-fn validate_status(p: &[u32]) -> Result<()> {
-    match u8::from(p[0].nibble(2)) {
-        0x0 => Ok(()),
-        0x1 => Ok(()),
-        0x2 => Ok(()),
-        0x3 => Ok(()),
-        _ => Err(Error::InvalidData),
-    }
-}
-
 fn validate_data(p: &[u32]) -> Result<()> {
     let n: usize = u8::from(p[0].nibble(3)).into();
     if n > 6 {
         Err(Error::InvalidData)
     } else {
         Ok(())
+    }
+}
+
+pub struct Sysex7MessageGroup<'a>(&'a [u32]);
+
+impl<'a> core::fmt::Debug for Sysex7MessageGroup<'a> {
+    fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
+        fmt.write_fmt(format_args!("{}(", "Sysex7MessageGroup"))?;
+        for chunk in self.0.chunks_exact(2) {
+            Sysex7Message(chunk).fmt(fmt)?;
+            fmt.write_str(", ")?;
+        }
+        fmt.write_str(")")
+    }
+}
+
+impl<'a> Sysex7MessageGroup<'a> {
+    pub fn builder(buffer: &mut [u32]) -> Sysex7MessageGroupBuilder<'a> {
+        Sysex7MessageGroupBuilder::new(buffer)
+    }
+    pub fn group(&self) -> ux::u4 {
+        message_helpers::group_from_packet(self.0)
+    }
+    pub fn messages(&self) -> Sysex7MessageGroupIterator<'a> {
+        Sysex7MessageGroupIterator(self.0.chunks_exact(2))        
+    }
+}
+
+pub struct Sysex7MessageGroupIterator<'a>(core::slice::ChunksExact<'a, u32>);
+
+impl<'a> core::iter::Iterator for Sysex7MessageGroupIterator<'a> {
+    type Item = Sysex7Message<'a>;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next().map(Sysex7Message)
+    }
+}
+
+pub struct Sysex7MessageGroupBuilder<'a>(&'a mut [u32]);
+
+impl<'a> Sysex7MessageGroupBuilder<'a> {
+    pub fn new(buffer: &mut [u32]) -> Self {
+        todo!()
+    }
+    pub fn build(&self) -> Sysex7MessageGroup<'a> {
+        todo!()
     }
 }
 
