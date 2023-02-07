@@ -7,14 +7,20 @@ use crate::{
 
 pub struct PayloadIterator<'a> {
     data: &'a [u32],
-    index: u8,
-    total: u8,
+    index: usize,
+    total: usize,
 }
 
 impl<'a> core::iter::Iterator for PayloadIterator<'a> {
     type Item = u8;
     fn next(&mut self) -> Option<Self::Item> {
-        todo!()
+        if self.index == self.total {
+            None
+        } else {
+            let ret = self.data[(self.index + 3) / 4].octet((self.index + 3) % 4);
+            self.index += 1;
+            Some(ret)
+        }
     }
 }
 
@@ -39,7 +45,7 @@ impl<'a> Sysex8Message<'a> {
         PayloadIterator{
             data: self.0,
             index: 0,
-            total: self.0[0].nibble(3).into(),
+            total: u32::from(self.0[0].nibble(3) - ux::u4::new(1)) as usize,
         }
     }
     pub fn from_data(data: &'a [u32]) -> Result<Self> {
@@ -111,6 +117,8 @@ impl<'a> Sysex8MessageBuilder<'a> {
     }
     pub fn payload<'b, I: core::iter::Iterator<Item = &'b u8>>(&mut self, mut data: I) -> &mut Self {
         if let BuilderImpl::Ok(buffer) = &mut self.0 {
+            // start at one because we always have
+            // a stream id
             let mut count = 1_u8;
             for i in 0_usize..13_usize {
                 if let Some(&v) = data.next() {
@@ -179,7 +187,11 @@ fn validate_packet(p: &[u32]) -> Result<()> {
 }
 
 fn validate_buffer(buf: &[u32]) -> Result<()> {
-    todo!()
+    if buf.len() < 4 {
+        Err(Error::InvalidData)
+    } else {
+        Ok(())
+    }
 }
 
 fn try_status_from_packet(p: &[u32]) -> Result<Status> {
@@ -250,77 +262,80 @@ mod tests {
             Ok(Sysex8Message(&[0x5A26_C612, 0x3456_7890, 0x0, 0x0])),
         )
     }
-
-    /*
+    
     #[test]
-    fn deserialize() {
+    fn builder_large_payload() {
         assert_eq!(
-            Message::try_from_ump(&[0x5B0C_AB01, 0x0203_0405, 0x0607_0809, 0x1011_0000,]),
-            Ok(Message {
-                group: ux::u4::new(0xB),
-                status: Status::Complete,
-                stream_id: 0xAB,
-                data: Data::from_data(&[
-                    0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10, 0x11,
-                ]),
-            }),
+            Sysex8Message::builder(&mut [0x0; 4])
+                .payload([0x0; 14].iter())
+                .build(),
+            Err(Error::InvalidData),
+        )
+    }
+    
+    #[test]
+    fn must_have_stream_id() {
+        assert_eq!(
+            Sysex8Message::from_data(&[0x5000_0000, 0x0, 0x0, 0x0]),
+            Err(Error::InvalidData),
         );
     }
 
     #[test]
-    fn deserialize_unexpected_end_valid() {
+    fn group() {
         assert_eq!(
-            Message::try_from_ump(&[0x5731_2100]),
-            Ok(Message {
-                group: ux::u4::new(0x7),
-                status: Status::UnexpectedEnd(Validity::Valid),
-                stream_id: 0x21,
-                data: Data::default(),
-            }),
+            Sysex8Message::from_data(&[0x5C01_0000, 0x0, 0x0, 0x0]).unwrap().group(),
+            ux::u4::new(0xC),
         );
     }
 
     #[test]
-    fn deserialize_unexpected_end_invalid() {
+    fn stream_id() {
         assert_eq!(
-            Message::try_from_ump(&[0x533F_B000]),
-            Ok(Message {
-                group: ux::u4::new(0x3),
-                status: Status::UnexpectedEnd(Validity::Invalid),
-                stream_id: 0xB0,
-                data: Data::default(),
-            }),
+            Sysex8Message::from_data(&[0x5001_9900, 0x0, 0x0, 0x0]).unwrap().stream_id(),
+            0x99,
         );
     }
 
     #[test]
-    fn serialize() {
+    fn status() {
         assert_eq!(
-            Message {
-                group: ux::u4::new(0xF),
-                status: Status::End,
-                stream_id: 0xDA,
-                data: Data::from_data(&[
-                    0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A,
-                ]),
-            }
-            .to_ump(&mut [0x0, 0x0, 0x0, 0x0]),
-            &[0x5F3B_DA01, 0x0203_0405, 0x0607_0809, 0x0A00_0000],
+            Sysex8Message::from_data(&[0x5021_0000, 0x0, 0x0, 0x0]).unwrap().status(),
+            Status::Continue,
         );
     }
 
     #[test]
-    fn serialize_unexpected_end_invalid() {
+    fn status_end() {
         assert_eq!(
-            Message {
-                group: ux::u4::new(0xF),
-                status: Status::UnexpectedEnd(Validity::Invalid),
-                stream_id: 0xDA,
-                data: Default::default(),
-            }
-            .to_ump(&mut [0x0, 0x0, 0x0, 0x0]),
-            &[0x5F3F_0000, 0x0, 0x0, 0x0],
+            Sysex8Message::from_data(&[0x5032_0000, 0x0, 0x0, 0x0]).unwrap().status(),
+            Status::End,
         );
     }
-    */
+
+    #[test]
+    fn status_unexpected_end_valid() {
+        assert_eq!(
+            Sysex8Message::from_data(&[0x5031_0000, 0x0, 0x0, 0x0]).unwrap().status(),
+            Status::UnexpectedEnd(Validity::Valid),
+        );
+    }
+
+    #[test]
+    fn status_unexpected_end_invalid() {
+        assert_eq!(
+            Sysex8Message::from_data(&[0x503F_0000, 0x0, 0x0, 0x0]).unwrap().status(),
+            Status::UnexpectedEnd(Validity::Invalid),
+        );
+    }
+    
+    #[test]
+    fn payload() {
+        let message = Sysex8Message::from_data(&[0x5009_FF00, 0x1122_3344, 0x5566_7700, 0x0]).unwrap();
+        let mut buffer = [0u8; 8];
+        for (i, v) in message.payload().enumerate() {
+            buffer[i] = v;
+        }
+        assert_eq!(&buffer, &[0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77]);
+    }
 }

@@ -7,8 +7,8 @@ use crate::{
 
 pub struct PayloadIterator<'a> {
     data: &'a [u32],
-    index: u8,
-    total: u8,
+    index: usize,
+    total: usize,
 }
 
 impl<'a> core::iter::Iterator for PayloadIterator<'a> {
@@ -16,12 +16,8 @@ impl<'a> core::iter::Iterator for PayloadIterator<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         if self.index == self.total {
             None
-        } else if self.index < 2 {
-            let ret: ux::u7 = self.data[0].octet(2 + self.index as usize).truncate();
-            self.index += 1;
-            Some(ret)
         } else {
-            let ret: ux::u7 = self.data[1].octet((self.index - 2) as usize).truncate();
+            let ret: ux::u7 = self.data[(self.index + 2) / 4].octet((self.index + 2) % 4).truncate();
             self.index += 1;
             Some(ret)
         }
@@ -46,7 +42,7 @@ impl<'a> Sysex7Message<'a> {
         PayloadIterator{
             data: self.0,
             index: 0,
-            total: self.0[0].nibble(3).into(),
+            total: u32::from(self.0[0].nibble(3)) as usize,
         }
     }
     pub fn from_data(data: &'a [u32]) -> Result<Self> {
@@ -94,16 +90,12 @@ impl<'a> Sysex7MessageBuilder<'a> {
     pub fn payload<'b, I: core::iter::Iterator<Item = &'b ux::u7>>(&mut self, mut data: I) -> &mut Self {
         if let BuilderImpl::Ok(buffer) = &mut self.0 {
             let mut count = 0_u8;
-            for i in 0_usize..2_usize {
+            for i in 0_usize..6_usize {
                 if let Some(&v) = data.next() {
-                    buffer[0].set_octet(2 + i, v.into());
+                    buffer[(i + 2) / 4].set_octet((i + 2) % 4, v.into());
                     count += 1;
-                }
-            }
-            for i in 0_usize..4_usize {
-                if let Some(&v) = data.next() {
-                    buffer[1].set_octet(i, v.into());
-                    count += 1;
+                } else {
+                    break;
                 }
             }
             if data.next().is_some() {
