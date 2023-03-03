@@ -209,40 +209,17 @@ fn validate_type(p: &[u32]) -> Result<()> {
 }
 
 fn status_from_packet(p: &[u32]) -> Result<Status> {
-    match u8::from(p[0].nibble(2)) {
+    status_from_nibble(p[0].nibble(2))
+}
+
+fn status_from_nibble(n: ux::u4) -> Result<Status> {
+    match u8::from(n) {
         0x0 => Ok(Status::Complete),
         0x1 => Ok(Status::Begin),
         0x2 => Ok(Status::Continue),
         0x3 => Ok(Status::End),
         _ => Err(Error::InvalidData),
     }
-}
-
-fn consistent_groups(buffer: &[u32]) -> Result<()> {
-    use message_helpers::group_from_packet as gfp;
-    if buffer.chunks_exact(2).all(|chunk| gfp(chunk) == gfp(buffer)) {
-        Ok(())
-    } else {
-        Err(Error::InvalidData)
-    }
-}
-
-// assumes that buffer contains valid sysex7 messages
-fn validate_group_statuses(buffer: &[u32]) -> Result<()> {
-    use Status::*;
-    let mut iter = buffer.chunks(2).peekable();
-    let first_status = status_from_packet(iter.next().unwrap()).unwrap();
-    if (iter.peek().is_none() && first_status != Complete) && first_status != Begin {
-        return Err(Error::InvalidData);
-    }
-    while let Some(chunk) = iter.next() {
-        let status = status_from_packet(chunk).unwrap();
-        if (iter.peek().is_some() && status != Continue) && status != End {
-            return Err(Error::InvalidData);
-        }
-    }
-
-    Ok(())
 }
 
 fn validate_buffer(buffer: &[u32]) -> Result<()> {
@@ -291,8 +268,15 @@ impl<'a> Sysex7MessageGroup<'a> {
         for chunk in buffer.chunks(2) {
             Sysex7Message::from_data(chunk)?;
         }
-        validate_group_statuses(buffer)?;
-        consistent_groups(buffer)?;
+        message_helpers::validate_sysex_group_statuses(
+            buffer,
+            |s| s == ux::u4::new(0x0),
+            |s| s == ux::u4::new(0x1),
+            |s| s == ux::u4::new(0x2),
+            |s| s == ux::u4::new(0x3),
+            2
+        )?;
+        message_helpers::sysex_group_consistent_groups(buffer, 2)?;
         Ok(Sysex7MessageGroup(buffer))
     }
 }
@@ -393,36 +377,38 @@ impl<'a> Sysex7MessageGroupBuilder<'a> {
         self.buffer[message_index].set_nibble(3, new_value);
     }
     fn grow(&mut self) {
-        if self.buffer.len() >= 2 * (self.size + 1) {
-            {
-                let mut builder = Sysex7Message::builder(&mut self.buffer[2*self.size..2*(self.size + 1)]);
-                builder.group(self.group);
-                match self.size {
-                    0 => {
-                        builder.status(Status::Complete);
-                    },
-                    _ => {
-                        builder.status(Status::End);
-                    },
-                }
-                builder.build().expect("successful message build");
-            }
-            if self.size != 0 {
-                let mut prev_builder = Sysex7MessageBuilder(Ok(&mut self.buffer[2*(self.size - 1)..2*self.size]));
-                match self.size {
-                    1 => {
-                        prev_builder.status(Status::Begin);
-                    },
-                    _ => {
-                        prev_builder.status(Status::Continue);
-                    },
-                }
-                prev_builder.build().expect("successful message build");
-            }
-            self.size += 1;
-        } else {
+if self.buffer.len() < 2 * (self.size + 1) {
             self.error = Some(Error::BufferOverflow);
+            return;
         }
+
+        {
+            let mut builder = Sysex7Message::builder(&mut self.buffer[2*self.size..2*(self.size + 1)]);
+            builder.group(self.group);
+            match self.size {
+                0 => {
+                    builder.status(Status::Complete);
+                },
+                _ => {
+                    builder.status(Status::End);
+                },
+            }
+            builder.build().expect("successful message build");
+        }
+
+        if self.size != 0 {
+            let mut prev_builder = Sysex7MessageBuilder(Ok(&mut self.buffer[2*(self.size - 1)..2*self.size]));
+            match self.size {
+                1 => {
+                    prev_builder.status(Status::Begin);
+                },
+                _ => {
+                    prev_builder.status(Status::Continue);
+                },
+            }
+            prev_builder.build().expect("successful message build");
+        }
+        self.size += 1;
     }
 }
 
