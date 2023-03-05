@@ -1,7 +1,10 @@
 use crate::{
     error::Error,
     result::Result,
-    message::helpers as message_helpers,
+    message::{
+        helpers as message_helpers,
+        sysex,
+    },
     util::{BitOps, Truncate, debug},
 };
 
@@ -36,6 +39,14 @@ impl<'a> PayloadIterator<'a> {
         }
         count
     }
+    fn advance(&mut self) {
+        self.payload_index += 1;
+        if self.payload_index == self.message_size(self.message_index) {
+            // end of message
+            self.message_index += 1;
+            self.payload_index = 0;
+        }        
+    }
 }
 
 impl<'a> core::iter::Iterator for PayloadIterator<'a> {
@@ -47,13 +58,7 @@ impl<'a> core::iter::Iterator for PayloadIterator<'a> {
 
         let ret = Some(self.value());
 
-        self.payload_index += 1;
-
-        if self.payload_index == self.message_size(self.message_index) {
-            // end of message
-            self.message_index += 1;
-            self.payload_index = 0;
-        }        
+        self.advance();
 
         ret
     }
@@ -76,7 +81,11 @@ impl<'a> core::iter::Iterator for PayloadIterator<'a> {
         if self.finished() {
             None
         } else {
-            Some(self.value())
+            let ret = self.value();
+
+            self.advance();
+
+            Some(ret)
         }
     }
 
@@ -326,7 +335,7 @@ impl<'a> Sysex8MessageGroup<'a> {
         }
     }
     pub fn messages(&self) -> Sysex8MessageGroupIterator<'a> {
-        Sysex8MessageGroupIterator(self.0.chunks_exact(2))        
+        Sysex8MessageGroupIterator(self.0.chunks_exact(4))
     }
     pub fn from_data(buffer: &'a [u32]) -> Result<Self> {
         if buffer.len() % 4 != 0 || buffer.is_empty() {
@@ -335,7 +344,7 @@ impl<'a> Sysex8MessageGroup<'a> {
         for chunk in buffer.chunks(4) {
             Sysex8Message::from_data(chunk)?;
         }
-        message_helpers::sysex_group_consistent_groups(buffer, 2)?;
+        message_helpers::sysex_group_consistent_groups(buffer, 4)?;
         message_helpers::validate_sysex_group_statuses(
             buffer,
             |s| s == ux::u4::new(0x0),
@@ -345,6 +354,9 @@ impl<'a> Sysex8MessageGroup<'a> {
             4
         )?;
         Ok(Sysex8MessageGroup(buffer))
+    }
+    pub fn data(&self) -> &[u32] {
+        self.0
     }
 }
 
@@ -490,6 +502,9 @@ impl<'a> Sysex8MessageGroupBuilder<'a> {
     }
 }
 
+impl<'a> sysex::SysexMessages for Sysex8MessageGroup<'a> {
+    type Builder = Sysex8MessageGroupBuilder<'a>;
+}
 
 #[cfg(test)]
 mod tests {
@@ -852,5 +867,39 @@ mod tests {
         ]);
         let mut payload = message_group.payload();
         assert_eq!(payload.nth(15), None);
+    }
+
+    #[test]
+    fn group_payload_nth_consumes_nth() {
+        let message_group = Sysex8MessageGroup(&[
+            0x541E_BB00,
+            0x0102_0304,
+            0x0506_0708,
+            0x090A_0B0C,
+            0x5433_BB0D,
+            0x0E00_0000,
+            0x0000_0000,
+            0x0000_0000,
+        ]);
+        let mut payload = message_group.payload();
+        payload.nth(1);
+        assert_eq!(payload.next(), Some(0x02));
+    }
+
+    #[test]
+    fn group_payload_nth_last_none_left() {
+        let message_group = Sysex8MessageGroup(&[
+            0x541E_BB00,
+            0x0102_0304,
+            0x0506_0708,
+            0x090A_0B0C,
+            0x5433_BB0D,
+            0x0E00_0000,
+            0x0000_0000,
+            0x0000_0000,
+        ]);
+        let mut payload = message_group.payload();
+        payload.nth(14);
+        assert_eq!(payload.next(), None);
     }
 }

@@ -17,3 +17,9 @@ macro_rules! message_debug_impl {
 }
 
 pub(crate) use message_debug_impl;
+
+// dev tool for hex printing of u32 buffers
+// helps to debug on failed test output
+#[derive(PartialEq, Eq)]
+pub struct Data<'a>(pub &'a [u32]);
+message_debug_impl!(Data);

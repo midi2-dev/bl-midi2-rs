@@ -1,7 +1,10 @@
 use crate::{
     error::Error,
     result::Result,
-    message::helpers as message_helpers,
+    message::{
+        helpers as message_helpers,
+        sysex,
+    },
     util::{BitOps, Truncate, debug},
 };
 
@@ -36,6 +39,15 @@ impl<'a> PayloadIterator<'a> {
         }
         count
     }
+    fn advance(&mut self) {
+        self.payload_index += 1;
+
+        if self.payload_index == self.message_size(self.message_index) {
+            // end of message
+            self.message_index += 1;
+            self.payload_index = 0;
+        }        
+    }
 }
 
 impl<'a> core::iter::Iterator for PayloadIterator<'a> {
@@ -46,15 +58,7 @@ impl<'a> core::iter::Iterator for PayloadIterator<'a> {
         }
 
         let ret = Some(self.value());
-
-        self.payload_index += 1;
-
-        if self.payload_index == self.message_size(self.message_index) {
-            // end of message
-            self.message_index += 1;
-            self.payload_index = 0;
-        }        
-
+        self.advance();
         ret
     }
 
@@ -76,7 +80,9 @@ impl<'a> core::iter::Iterator for PayloadIterator<'a> {
         if self.finished() {
             None
         } else {
-            Some(self.value())
+            let ret = Some(self.value());
+            self.advance();
+            ret
         }
     }
 
@@ -279,6 +285,9 @@ impl<'a> Sysex7MessageGroup<'a> {
         message_helpers::sysex_group_consistent_groups(buffer, 2)?;
         Ok(Sysex7MessageGroup(buffer))
     }
+    pub fn data(&self) -> &[u32] {
+        self.0
+    }
 }
 
 pub struct Sysex7MessageGroupIterator<'a>(core::slice::ChunksExact<'a, u32>);
@@ -410,6 +419,10 @@ if self.buffer.len() < 2 * (self.size + 1) {
         }
         self.size += 1;
     }
+}
+
+impl<'a> sysex::SysexMessages for Sysex7MessageGroup<'a> {
+    type Builder = Sysex7MessageGroupBuilder<'a>;
 }
 
 #[cfg(test)]
@@ -718,4 +731,18 @@ mod tests {
         payload.next();
         assert_eq!(payload.nth(7), None);
     }
+
+    #[test]
+    fn group_payload_nth_last_none_left() {
+        let message_group = Sysex7MessageGroup(&[
+            0x3014_0001,
+            0x0203_0000,
+            0x3034_0405,
+            0x0607_0000,
+        ]);
+        let mut payload = message_group.payload();
+        payload.nth(7);
+        assert_eq!(payload.next(), None);
+    }
+
 }
