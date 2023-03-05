@@ -1,8 +1,8 @@
 use crate::{
     result::Result,
-    ci::DeviceId,
+    ci::{DeviceId, Protocol},
     error::Error,
-    util::Truncate,
+    util::{Truncate, BitOps},
     message::system_exclusive_8bit as sysex8,
     message::system_exclusive_7bit as sysex7,
 };
@@ -135,96 +135,99 @@ pub fn validate_sysex7(
     Ok(messages)
 }
 
-
-/*
-pub struct StandardData {
-    pub device_id: DeviceId,
-    pub source: ux::u28,
-    pub destination: ux::u28,
+pub struct ProtocolDataIterator {
+    buffer: [u8; 8],
+    i: usize,
 }
 
-pub fn read_standard_data<M: sysex_message::SysexMessage>(messages: &[M]) -> StandardData {
-    let messages = sysex_message::SysexMessages::new(messages);
-    StandardData {
-        device_id: match messages.datum(1) {
-            0x7F => DeviceId::MidiPort,
-            v => DeviceId::Channel(v.truncate()),
-        },
-        source: ux::u28::from_u7s(&[
-            messages.datum(5),
-            messages.datum(6),
-            messages.datum(7),
-            messages.datum(8),
-        ]),
-        destination: ux::u28::from_u7s(&[
-            messages.datum(9),
-            messages.datum(10),
-            messages.datum(11),
-            messages.datum(12),
-        ]),
-    }
-}
-
-pub fn read_protocol<M>(messages: &sysex_message::SysexMessages<M>, first_byte: usize) -> Protocol
-where
-    M: sysex_message::SysexMessage,
-{
-    match messages.datum(first_byte) {
-        0x1 => {
-            let flags = messages.datum(first_byte + 2);
-            Protocol::Midi1 {
-                size_of_packet_extension: flags.bit(6),
-                jitter_reduction_extension: flags.bit(7),
-                version: messages.datum(first_byte + 1).truncate(),
-            }
-        },
-        0x2 => {
-            Protocol::Midi2 {
-                jitter_reduction_extension: messages.datum(first_byte + 2).bit(7),
-                version: messages.datum(first_byte + 1).truncate(),
-            }
+impl core::iter::Iterator for ProtocolDataIterator {
+    type Item = u8;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.i == 5 {
+            None
+        } else {
+            let current = self.i;
+            self.i += 1;
+            Some(self.buffer[current])
         }
-        _ => panic!(),
     }
 }
 
-pub fn validate_protocol_data(data: &[u8]) -> Result<(), Error> {
-    // todo: version assertion?
-    if ![1u8, 2u8].iter().any(|&v| v == data[0]) {
-        Err(Error::InvalidData)
-    } else {
-        Ok(())
-    }
-}
 
-pub fn protocol_data<'a, 'b>(protocol: &'a Protocol, buff: &'b mut [ux::u7]) -> &'b [ux::u7] {
+pub fn protocol_data(protocol: &Protocol) -> ProtocolDataIterator {
     match protocol {
         Protocol::Midi1 {
             size_of_packet_extension,
             jitter_reduction_extension,
             version,
         } => {
-            buff[0] = ux::u7::new(0x1);
-            buff[1] = *version;
-            buff[2] = ux::u7::new(
-                *0x0_u8
-                    .set_bit(6, *size_of_packet_extension)
-                    .set_bit(7, *jitter_reduction_extension),
-            );
-            buff[3] = ux::u7::default();
-            buff[4] = ux::u7::default();
+            ProtocolDataIterator {
+                buffer: [
+                    0x1,
+                    (*version).into(),
+                    *0x0_u8
+                        .set_bit(6, *size_of_packet_extension)
+                        .set_bit(7, *jitter_reduction_extension),
+                    0x0, 0x0, // reserved
+                    0x0, 0x0, 0x0, // padding
+                ], i: 0,
+            }
         }
         Protocol::Midi2 {
             jitter_reduction_extension,
             version,
         } => {
-            buff[0] = ux::u7::new(0x2);
-            buff[1] = *version;
-            buff[2] = ux::u7::new(*0x0_u8.set_bit(7, *jitter_reduction_extension));
-            buff[3] = ux::u7::default();
-            buff[4] = ux::u7::default();
+            ProtocolDataIterator {
+                buffer: [
+                    0x2,
+                    (*version).into(),
+                    *0x0_u8
+                        .set_bit(7, *jitter_reduction_extension),
+                    0x0, 0x0, // reserved
+                    0x0, 0x0, 0x0, // padding
+                ], i: 0,
+            }
         }
     }
-    buff
 }
-*/
+
+pub fn read_protocol<I: core::iter::Iterator<Item = u8>>(mut data: I) -> Result<Protocol> {
+    let ty = data.next().unwrap();
+    let version = data.next().unwrap();
+    let flags = data.next().unwrap();
+
+    // reserved data
+    data.next().unwrap();
+    data.next().unwrap();
+
+    match ty {
+        0x1 => {
+            Ok(Protocol::Midi1 {
+                size_of_packet_extension: flags.bit(6),
+                jitter_reduction_extension: flags.bit(7),
+                version: version.truncate(),
+            })
+        },
+        0x2 => {
+            Ok(Protocol::Midi2 {
+                jitter_reduction_extension: flags.bit(7),
+                version: version.truncate(),
+            })
+        }
+        _ => Err(Error::InvalidData)
+    }
+}
+
+pub fn validate_protocol_data<I: core::iter::Iterator<Item = u8>>(mut data: I) -> Result<()> {
+    // todo: version assertion?
+    if let Some(v) = data.next() {
+        if ![1u8, 2u8].iter().any(|&version| version == v) {
+            return Err(Error::InvalidData);
+        }
+    }
+    if data.nth(3).is_some() {
+        Ok(())
+    } else {
+        Err(Error::InvalidData)
+    }
+}

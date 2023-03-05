@@ -8,6 +8,7 @@ use crate::{
     util::{BitOps, Truncate, debug},
 };
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PayloadIterator<'a> {
     data: &'a [u32],
     message_index: usize,
@@ -74,7 +75,7 @@ impl<'a> core::iter::Iterator for PayloadIterator<'a> {
                 self.message_index += 1;
                 self.payload_index = 0;
             } else {
-                self.payload_index = n;
+                self.payload_index += n;
                 n = 0;
             }
         }
