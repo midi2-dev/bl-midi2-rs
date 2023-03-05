@@ -1,4 +1,5 @@
 use crate::{
+    result::Result,
     ci::DeviceId,
     error::Error,
     util::Truncate,
@@ -61,14 +62,14 @@ pub const STANDARD_DATA_SIZE: usize = 13;
 pub fn validate_sysex8(
     buffer: &[u32],
     status: u8,
-) -> Result<sysex8::Sysex8MessageGroup, Error> {
+) -> Result<sysex8::Sysex8MessageGroup> {
     let messages = sysex8::Sysex8MessageGroup::from_data(buffer)?;
     let mut payload = messages.payload();
     let Some(0x7E) = payload.next() else {
         return Err(Error::InvalidData);
     };
     if let Some(v) = payload.next() {
-        DeviceId::from_u8(v)?;
+        device_id_from_u8(v)?;
     } else {
         return Err(Error::InvalidData);
     };
@@ -89,10 +90,20 @@ pub fn validate_sysex8(
     Ok(messages)
 }
 
+fn device_id_from_u8(v: u8) -> Result<DeviceId> {
+    if v == 0x7F {
+        Ok(DeviceId::MidiPort)
+    } else if v < 0x0F {
+        Ok(DeviceId::Channel(v.try_into().unwrap()))
+    } else {
+        Err(Error::InvalidData)
+    }
+}
+
 pub fn validate_sysex7(
     buffer: &[u32],
     status: u8,
-) -> Result<sysex7::Sysex7MessageGroup, Error> {
+) -> Result<sysex7::Sysex7MessageGroup> {
     let messages = sysex7::Sysex7MessageGroup::from_data(buffer)?;
     let mut payload = messages.payload();
     if let Some(v) = payload.next() {
@@ -101,7 +112,7 @@ pub fn validate_sysex7(
         }
     };
     if let Some(v) = payload.next() {
-        DeviceId::from_u8(v.into())?;
+        device_id_from_u8(v.into())?;
     } else {
         return Err(Error::InvalidData);
     };

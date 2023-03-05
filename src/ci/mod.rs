@@ -1,8 +1,3 @@
-use crate::{
-    result::Result,
-    error::Error,
-};
-
 pub use confirm_protocol::ConfirmProtocolMessage;
 pub use confirm_protocol::ConfirmProtocolBuilder;
 //pub use discovery::query::Message as DiscoveryQueryMessage;
@@ -45,16 +40,4 @@ const VERSION: u8 = 0x01;
 pub enum DeviceId {
     Channel(ux::u4),
     MidiPort,
-}
-
-impl DeviceId {
-    fn from_u8(v: u8) -> Result<DeviceId> {
-        if v == 0x7F {
-            Ok(DeviceId::MidiPort)
-        } else if v < 0x0F {
-            Ok(DeviceId::Channel(v.try_into().unwrap()))
-        } else {
-            Err(Error::InvalidData)
-        }
-    }
 }
