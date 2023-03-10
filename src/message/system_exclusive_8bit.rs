@@ -227,19 +227,14 @@ impl<'a> Sysex8MessageBuilder<'a> {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
 pub enum Status {
+    #[default]
     Complete,
     Begin,
     Continue,
     End,
     UnexpectedEnd(Validity),
-}
-
-impl core::default::Default for Status {
-    fn default() -> Self {
-        Status::Complete
-    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -606,7 +601,7 @@ mod tests {
             Sysex8MessageGroup::builder(&mut [0x0; 8])
                 .group(ux::u4::new(0x4))
                 .stream_id(0xBB)
-                .payload((0..15).into_iter())
+                .payload(0..15)
                 .build(),
             Ok(Sysex8MessageGroup(&[
                 0x541E_BB00,
@@ -625,7 +620,7 @@ mod tests {
     fn group_builder_metadata_after_payload() {
         assert_eq!(
             Sysex8MessageGroup::builder(&mut [0x0; 8])
-                .payload((0..15).into_iter())
+                .payload(0..15)
                 .group(ux::u4::new(0x4))
                 .stream_id(0xBB)
                 .build(),
@@ -646,7 +641,7 @@ mod tests {
     fn group_builder_complete() {
         assert_eq!(
             Sysex8MessageGroup::builder(&mut [0x0; 4])
-                .payload((0x0..0xA).into_iter())
+                .payload(0x0..0xA)
                 .group(ux::u4::new(0x4))
                 .stream_id(0xBB)
                 .build(),
@@ -663,7 +658,7 @@ mod tests {
     fn group_builder_dirty_buffer() {
         assert_eq!(
             Sysex8MessageGroup::builder(&mut [0xFF; 4])
-                .payload((0x0..0xA).into_iter())
+                .payload(0x0..0xA)
                 .group(ux::u4::new(0x4))
                 .stream_id(0xBB)
                 .build(),
@@ -680,8 +675,8 @@ mod tests {
     fn group_builder_payload_in_batches() {
         assert_eq!(
             Sysex8MessageGroup::builder(&mut [0x0; 8])
-                .payload((0x0..0xA).into_iter())
-                .payload((0x0..0x5).into_iter())
+                .payload(0x0..0xA)
+                .payload(0x0..0x5)
                 .group(ux::u4::new(0x4))
                 .stream_id(0xBB)
                 .build(),

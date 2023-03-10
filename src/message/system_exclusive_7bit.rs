@@ -193,18 +193,13 @@ impl<'a> Sysex7MessageBuilder<'a> {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
 pub enum Status {
+    #[default]
     Complete,
     Begin,
     Continue,
     End,
-}
-
-impl core::default::Default for Status {
-    fn default() -> Self {
-        Status::Complete
-    }
 }
 
 fn validate_type(p: &[u32]) -> Result<()> {
@@ -512,7 +507,7 @@ mod tests {
         assert_eq!(
             Sysex7MessageGroup::builder(&mut [0x0; 6])
                 .group(ux::u4::new(0x4))
-                .payload((0..15).into_iter().map(ux::u7::new))
+                .payload((0..15).map(ux::u7::new))
                 .build(),
             Ok(Sysex7MessageGroup(&[
                 0x3416_0001,
@@ -529,7 +524,7 @@ mod tests {
     fn group_builder_group_after_payload() {
         assert_eq!(
             Sysex7MessageGroup::builder(&mut [0x0; 6])
-                .payload((0..15).into_iter().map(ux::u7::new))
+                .payload((0..15).map(ux::u7::new))
                 .group(ux::u4::new(0x4))
                 .build(),
             Ok(Sysex7MessageGroup(&[
@@ -548,7 +543,7 @@ mod tests {
         assert_eq!(
             Sysex7MessageGroup::builder(&mut [0x0; 2])
                 .group(ux::u4::new(0x4))
-                .payload((0..4).into_iter().map(ux::u7::new))
+                .payload((0..4).map(ux::u7::new))
                 .build(),
             Ok(Sysex7MessageGroup(&[
                 0x3404_0001,
@@ -562,7 +557,7 @@ mod tests {
         assert_eq!(
             Sysex7MessageGroup::builder(&mut [0xFFFF_FFFF; 2])
                 .group(ux::u4::new(0x4))
-                .payload((0..4).into_iter().map(ux::u7::new))
+                .payload((0..4).map(ux::u7::new))
                 .build(),
             Ok(Sysex7MessageGroup(&[
                 0x3404_0001,
@@ -575,8 +570,8 @@ mod tests {
     fn group_builder_payload_in_batches() {
         assert_eq!(
             Sysex7MessageGroup::builder(&mut [0x0; 4])
-                .payload((0..4).into_iter().map(ux::u7::new))
-                .payload((4..8).into_iter().map(ux::u7::new))
+                .payload((0..4).map(ux::u7::new))
+                .payload((4..8).map(ux::u7::new))
                 .build(),
             Ok(Sysex7MessageGroup(&[
                 0x3014_0001,
