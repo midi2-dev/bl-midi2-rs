@@ -1,184 +1,274 @@
+        
+pub struct ProtocolIterator {}
+
 macro_rules! initiate_protocol_negotiation_message {
     ($op_code:expr) => {
         use crate::{
-            ci::{ci_message_impl, helpers as ci_helpers, protocol::*, DeviceId},
+            result::Result,
             error::Error,
-            util::{builder, getter, sysex_message, SliceData, Truncate},
+            message::{
+                sysex, 
+                system_exclusive_8bit as sysex8,
+                system_exclusive_7bit as sysex7,
+            },
+            ci::{
+                helpers as ci_helpers,
+                DeviceId, Protocol,
+                initiate_protocol_negotiation::ProtocolIterator,
+            },
         };
 
-        type Protocols = SliceData<Option<Protocol>, 2>;
-        
-        #[derive(Clone, Debug, PartialEq, Eq)]
-        pub struct Message {
-            group: ux::u4,
+
+        #[derive(Clone, PartialEq, Eq, Debug)]
+        pub struct InitiateProtocolNegotiationMessage<Repr: sysex::SysexMessages>(Repr);
+
+        const STATUS: u8 = $op_code;
+        impl<'a> InitiateProtocolNegotiationMessage<sysex8::Sysex8MessageGroup<'a>> {
+            pub fn builder(buffer: &'a mut [u32]) -> InitiateProtocolNegotiationBuilder<sysex8::Sysex8MessageGroup<'a>> {
+                InitiateProtocolNegotiationBuilder::<sysex8::Sysex8MessageGroup<'a>>::new(buffer)
+            }
+            pub fn group(&self) -> ux::u4 {
+                self.0.group()
+            }
+            pub fn source(&self) -> ux::u28 {
+                ci_helpers::source_from_payload(self.0.payload())
+            }
+            pub fn destination(&self) -> ux::u28 {
+                ci_helpers::destination_from_payload(self.0.payload())
+            }
+            pub fn authority_level(&self) -> ux::u7 {
+                ci_helpers::authority_level_from_payload(self.0.payload())
+            }
+            pub fn protocols(&self) -> ProtocolIterator {
+                todo!()
+            }
+            pub fn from_data(data: &'a [u32]) -> Result<Self> {
+                let messages = ci_helpers::validate_sysex8(data, STATUS)?;
+                let mut payload = messages.payload();
+
+                // authority level
+                let Some(_) = payload.nth(ci_helpers::STANDARD_DATA_SIZE) else {
+                    return Err(Error::InvalidData);
+                };
+
+                todo!();
+
+                Ok(InitiateProtocolNegotiationMessage(messages))
+            }
+            pub fn data(&self) -> &[u32] {
+                self.0.data()
+            }
+        }
+
+        impl<'a> InitiateProtocolNegotiationMessage<sysex7::Sysex7MessageGroup<'a>> {
+            pub fn builder(buffer: &'a mut [u32]) -> InitiateProtocolNegotiationBuilder<sysex7::Sysex7MessageGroup<'a>> {
+                InitiateProtocolNegotiationBuilder::<sysex7::Sysex7MessageGroup<'a>>::new(buffer)
+            }
+            pub fn group(&self) -> ux::u4 {
+                self.0.group()
+            }
+            pub fn source(&self) -> ux::u28 {
+                ci_helpers::source_from_payload(self.0.payload().map(u8::from))
+            }
+            pub fn destination(&self) -> ux::u28 {
+                ci_helpers::destination_from_payload(self.0.payload().map(u8::from))
+            }
+            pub fn authority_level(&self) -> ux::u7 {
+                ci_helpers::authority_level_from_payload(self.0.payload().map(u8::from))
+            }
+            pub fn protocols(&self) -> ProtocolIterator {
+                todo!()
+            }
+            pub fn from_data(data: &'a [u32]) -> Result<Self> {
+                let messages = ci_helpers::validate_sysex7(data, STATUS)?;
+                let mut payload = messages.payload();
+
+                // authority level
+                let Some(_) = payload.nth(ci_helpers::STANDARD_DATA_SIZE) else {
+                    return Err(Error::InvalidData);
+                };
+
+                todo!();
+
+                Ok(InitiateProtocolNegotiationMessage(messages))
+            }
+            
+            pub fn data(&self) -> &[u32] {
+                self.0.data()
+            }
+        }
+
+
+        pub struct InitiateProtocolNegotiationBuilder<Repr: sysex::SysexMessages> {
             source: ux::u28,
             destination: ux::u28,
             authority_level: ux::u7,
-            protocols: Protocols,
+            builder: Result<Repr::Builder>,
+            protocols: [Option<Protocol>; 2],
         }
 
-        impl Message {
-            const STATUS: u8 = 0x10;
-
-            getter::getter!(group, ux::u4);
-            getter::getter!(source, ux::u28);
-            getter::getter!(destination, ux::u28);
-            getter::getter!(authority_level, ux::u7);
-            builder::builder_method!();
-
-            pub fn protocol(&self, index: usize) -> Option<&Protocol> {
-                match index {
-                    0 | 1 => self.protocols[index].as_ref(),
-                    _ => None,
+        impl<'a> InitiateProtocolNegotiationBuilder<sysex8::Sysex8MessageGroup<'a>> {
+            pub fn group(&mut self, g: ux::u4) -> &mut Self {
+                if let Ok(builder) = &mut self.builder {
+                    builder.group(g);
                 }
-            }
-
-            pub fn preferred_protocol(&self) -> &Protocol {
-                self.protocols[0].as_ref().unwrap()
-            }
-
-            fn protocol_data<'a>(&self, buff: &'a mut [ux::u7]) -> &'a [ux::u7] {
-                for (i, protocol) in self.protocols.iter()
-                        .filter_map(|v| v.as_ref())
-                        .enumerate() {
-                    ci_helpers::protocol_data(protocol, &mut buff[5*i..5*i + 5]);
-                }
-                &buff[0..5 * self.protocols.len()]
-            }
-        }
-
-        #[derive(Clone, Default)]
-        pub struct Builder {
-            group: Option<ux::u4>,
-            source: Option<ux::u28>,
-            destination: Option<ux::u28>,
-            authority_level: Option<ux::u7>,
-            protocols: Protocols,
-        }
-
-        impl Builder {
-            builder::builder_setter!(group: ux::u4);
-            builder::builder_setter!(source: ux::u28);
-            builder::builder_setter!(destination: ux::u28);
-            builder::builder_setter!(authority_level: ux::u7);
-
-            /// Append an additional protocol to the list of
-            /// supported protocols.
-            ///
-            /// **Warning**: only two supported protocols can be added.
-            /// This function will panic if called more than
-            /// twice on the same builder.
-            pub fn protocol(&mut self, p: Protocol) -> &mut Self {
-                self.protocols.push(Some(p));
                 self
             }
+            pub fn stream_id(&mut self, id: u8) -> &mut Self {
+                if let Ok(builder) = &mut self.builder {
+                    builder.stream_id(id);
+                }
+                self
+            }
+            pub fn source(&mut self, source: ux::u28) -> &mut Self {
+                self.source = source;
+                self
+            }
+            pub fn destination(&mut self, dest: ux::u28) -> &mut Self {
+                self.destination = dest;
+                self
+            }
+            pub fn authority_level(&mut self, auth: ux::u7) -> &mut Self{
+                self.authority_level = auth;
+                self
+            }
+            /// amends an additional protocol for each call.
+            ///
+            /// Warning! only two protocols are currently supported.
+            /// the build will fail if this method is called more than twice for a single
+            /// builder.
+            pub fn protocol(&mut self, protocol: Protocol) -> &mut Self {
+                if let Some((idx, _)) = self.protocols.iter().enumerate().find(|(_, &opt)| opt.is_none()) {
+                    self.protocols[idx] = Some(protocol);
+                } else {
+                    self.builder = Err(Error::InvalidData);
+                }
+                self
+            }
+            fn new(buffer: &'a mut [u32]) -> Self {
+                InitiateProtocolNegotiationBuilder {
+                    builder: Ok(sysex8::Sysex8MessageGroupBuilder::new(buffer)),
+                    destination: Default::default(),
+                    source: Default::default(),
+                    authority_level: Default::default(),
+                    protocols: Default::default(),
+                }
+            }
+            pub fn build(&'a mut self) -> Result<InitiateProtocolNegotiationMessage<sysex8::Sysex8MessageGroup<'a>>> {
+                if let None = self.protocols[0] {
+                    return Err(Error::InvalidData);
+                }
 
-            pub fn build(&self) -> Message {
-                Message {
-                    group: self.group.unwrap_or_else(|| panic!("Missing fields")),
-                    source: self.source.unwrap_or_else(|| panic!("Missing fields")),
-                    destination: self.destination.unwrap_or_else(|| panic!("Missing fields")),
-                    authority_level: self
-                        .authority_level
-                        .unwrap_or_else(|| panic!("Missing fields")),
-                    protocols: {
-                        if self.protocols.is_empty() {
-                            panic!("Missing fields");
-                        }
-                        self.protocols.clone()
-                    },
+                if let Err(e) = &self.builder {
+                    return Err(e.clone());
+                };
+                
+                let Ok(builder) = &mut self.builder else {
+                    unreachable!();
+                };
+
+                let payload = ci_helpers::StandardDataIterator::new(
+                    DeviceId::MidiPort,
+                    STATUS,
+                    self.source,
+                    self.destination,
+                );
+
+                let payload = payload.chain(core::iter::once(u8::from(self.authority_level)));
+                // number of supported protocols
+                let payload = payload.chain(core::iter::once(self.protocols.iter().map(|o| -> u8 { if o.is_none() { 0 } else { 1 }}).sum()));
+                let payload = payload.chain(ci_helpers::protocol_data(self.protocols[0].as_ref().unwrap()));
+
+                if let Some(aux_protocol) = &self.protocols[1] {
+                    let payload = payload.chain(ci_helpers::protocol_data(aux_protocol));
+                    match builder.payload(payload).build() {
+                        Ok(messages) => Ok(InitiateProtocolNegotiationMessage(messages)),
+                        Err(e) => Err(e),
+                    }
+                } else {
+                    match builder.payload(payload).build() {
+                        Ok(messages) => Ok(InitiateProtocolNegotiationMessage(messages)),
+                        Err(e) => Err(e),
+                    }
                 }
             }
         }
 
-        fn to_sysex<'a, M: sysex_message::SysexMessage>(message: &Message, messages: &'a mut [M]) -> &'a mut [M] {
-            let mut protocol_data_buffer = [ux::u7::default(); 5 * Protocols::LEN];
-            ci_helpers::write_ci_data(
-                message.group,
-                DeviceId::MidiPort,
-                Message::STATUS,
-                message.source,
-                message.destination,
-                &[
-                    &[
-                        message.authority_level,
-                        match message.protocols.len() {
-                            1 => ux::u7::new(0x1),
-                            2 => ux::u7::new(0x2),
-                            _ => unreachable!(),
-                        },
-                    ],
-                    message.protocol_data(&mut protocol_data_buffer),
-                ]
-                .concat(),
-                messages,
-            )
-        }
+        impl<'a> InitiateProtocolNegotiationBuilder<sysex7::Sysex7MessageGroup<'a>> {
+            pub fn group(&mut self, g: ux::u4) -> &mut Self {
+                if let Ok(builder) = &mut self.builder {
+                    builder.group(g);
+                }
+                self
+            }
+            pub fn source(&mut self, source: ux::u28) -> &mut Self {
+                self.source = source;
+                self
+            }
+            pub fn destination(&mut self, dest: ux::u28) -> &mut Self {
+                self.destination = dest;
+                self
+            }
+            pub fn authority_level(&mut self, auth: ux::u7) -> &mut Self{
+                self.authority_level = auth;
+                self
+            }
+            pub fn protocol(&mut self, protocol: Protocol) -> &mut Self {
+                if let Some((idx, _)) = self.protocols.iter().enumerate().find(|(_, &opt)| opt.is_none()) {
+                    self.protocols[idx] = Some(protocol);
+                } else {
+                    self.builder = Err(Error::InvalidData);
+                }
+                self
+            }
+            fn new(buffer: &'a mut [u32]) -> Self {
+                InitiateProtocolNegotiationBuilder {
+                    builder: Ok(sysex7::Sysex7MessageGroupBuilder::new(buffer)),
+                    destination: Default::default(),
+                    source: Default::default(),
+                    authority_level: Default::default(),
+                    protocols: Default::default(),
+                }
+            }
+            pub fn build(&'a mut self) -> Result<InitiateProtocolNegotiationMessage<sysex7::Sysex7MessageGroup<'a>>> {
+                if let None = self.protocols[0] {
+                    return Err(Error::InvalidData);
+                }
 
-        fn from_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Message {
-            let standard_data = ci_helpers::read_standard_data(messages);
-            let messages = sysex_message::SysexMessages::new(messages);
-            Message {
-                group: messages.group(),
-                source: standard_data.source,
-                destination: standard_data.destination,
-                authority_level: messages.datum(13).truncate(),
-                protocols: read_protocols(&messages),
+                if let Err(e) = &self.builder {
+                    return Err(e.clone());
+                };
+                
+                let Ok(builder) = &mut self.builder else {
+                    unreachable!();
+                };
+
+                let payload = ci_helpers::StandardDataIterator::new(
+                    DeviceId::MidiPort,
+                    STATUS,
+                    self.source,
+                    self.destination,
+                );
+
+                let payload = payload.chain(core::iter::once(u8::from(self.authority_level)));
+                // number of supported protocols
+                let payload = payload.chain(core::iter::once(self.protocols.iter().map(|o| -> u8 { if o.is_none() { 0 } else { 1 }}).sum()));
+                let payload = payload.chain(ci_helpers::protocol_data(self.protocols[0].as_ref().unwrap()));
+
+                if let Some(aux_protocol) = &self.protocols[1] {
+                    let payload = payload.chain(ci_helpers::protocol_data(aux_protocol));
+                    match builder.payload(payload.map(ux::u7::new)).build() {
+                        Ok(messages) => Ok(InitiateProtocolNegotiationMessage(messages)),
+                        Err(e) => Err(e),
+                    }
+                } else {
+                    match builder.payload(payload.map(ux::u7::new)).build() {
+                        Ok(messages) => Ok(InitiateProtocolNegotiationMessage(messages)),
+                        Err(e) => Err(e),
+                    }
+                }
             }
         }
-
-        fn validate_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Result<(), Error> {
-            let messages_wrapper = sysex_message::SysexMessages::new(messages);
-
-            if messages_wrapper.len() < 15 {
-                return Err(Error::InvalidData);
-            }
-            let protocol_count = messages_wrapper.datum(14) as usize;
-
-            // do we need to support more than two
-            // protocols at this point?
-            let protocol_count_supported = [1_usize, 2_usize].iter().any(|&v| v == protocol_count);
-            if !protocol_count_supported {
-                // todo
-                // maybe better not to fail at this point
-                // could just pick the first two supported protocols?
-                return Err(Error::InvalidData);
-            }
-
-            ci_helpers::validate_buffer_size(messages, 15 + 5 * protocol_count)?;
-
-            for i in 0..protocol_count {
-                ci_helpers::validate_protocol_data(&[
-                    messages_wrapper.datum(15 + i * 5),
-                    messages_wrapper.datum(16 + i * 5),
-                    messages_wrapper.datum(17 + i * 5),
-                    messages_wrapper.datum(18 + i * 5),
-                    messages_wrapper.datum(19 + i * 5),
-                ])?;
-            }
-
-            Ok(())
-        }
-
-        fn validate_to_sysex_buffer<M: sysex_message::SysexMessage>(
-            message: &Message,
-            messages: &[M],
-        ) -> Result<(), Error> {
-            ci_helpers::validate_buffer_size(messages, 15 + 5 * message.protocols.len())
-        }
-
-        fn read_protocols<M>(messages: &sysex_message::SysexMessages<M>) -> Protocols
-        where
-            M: sysex_message::SysexMessage,
-        {
-            let mut protocols = Protocols::default();
-            for i in 0..(messages.datum(14) as usize) {
-                protocols.push(Some(ci_helpers::read_protocol(messages, 15 + i*5)));
-            }
-            protocols
-        }
-        
-        ci_message_impl!();
     }
 }
 
@@ -186,323 +276,91 @@ pub mod query {
     initiate_protocol_negotiation_message!(0x10);
 }
 
-pub mod reply {
-    initiate_protocol_negotiation_message!(0x11);
-}
+//pub mod reply {
+//    initiate_protocol_negotiation_message!(0x11);
+//}
 
 #[cfg(test)]
 mod tests {
     use crate::{
-        ci::{CiMessage, VERSION},
         message::system_exclusive_7bit as sysex7,
         message::system_exclusive_8bit as sysex8,
     };
     
     use super::query::*;
-    use crate::ci::protocol::*;
+    use crate::{
+        ci::protocol,
+        util::debug,
+    };
 
     #[test]
-    #[rustfmt::skip]
-    fn try_to_sysex8() {
+    fn sysex8_builder() {
         assert_eq!(
-            Message::builder()
-                .group(ux::u4::new(0x3))
-                .source(ux::u28::new(14973326))
-                .destination(ux::u28::new(89757246))
-                .authority_level(ux::u7::new(0x2D))
-                .protocol(Protocol::Midi1 {
-                        size_of_packet_extension: true,
-                        jitter_reduction_extension: false,
-                        version: Protocol::MIDI_1_VERSION,
+            debug::Data(InitiateProtocolNegotiationMessage::<sysex8::Sysex8MessageGroup>::builder(&mut [0x0; 8])
+                .group(ux::u4::new(0x4))
+                .stream_id(0x14)
+                .source(ux::u28::new(0x5FF9751))
+                .destination(ux::u28::new(0x562F000))
+                .authority_level(ux::u7::new(0x6C))
+                .protocol(protocol::Protocol::Midi2 {
+                    jitter_reduction_extension: true,
+                    version: protocol::Protocol::MIDI_2_VERSION,
                 })
-                .protocol(Protocol::Midi2 {
-                        jitter_reduction_extension: false,
-                        version: Protocol::MIDI_2_VERSION,
+                .protocol(protocol::Protocol::Midi1 {
+                    jitter_reduction_extension: true,
+                    size_of_packet_extension: true,
+                    version: protocol::Protocol::MIDI_1_VERSION,
                 })
                 .build()
-                .try_to_sysex8(
-                    &mut [
-                        Default::default(),
-                        Default::default(),
-                        Default::default(),
-                    ],
-                    0x5C,
-                ).unwrap(),
-            &[
-                sysex8::Message::builder()
-                    .stream_id(0x5C)
-                    .group(ux::u4::new(0x3))
-                    .status(sysex8::Status::Begin)
-                    .data(&[
-                        0x7E, // universal sysex
-                        0x7F, // Device ID: to MIDI Port
-                        0x0D, // universal sysex sub-id 1: midi ci
-                        0x10, // universal sysex sub-id 2: init protocol negotiation
-                        VERSION,
-                        0b00001110, 0b01110011, 0b00010001, 0b00000111, // source
-                        0b00111110, 0b00101100, 0b01100110, // destination
-                    ])
-                    .build(),
-                sysex8::Message::builder()
-                    .stream_id(0x5C)
-                    .group(ux::u4::new(0x3))
-                    .status(sysex8::Status::Continue)
-                    .data(&[
-                        0b00101010, // destination muid
-                        0x2D, // authority level
-                        2, // number of supported protocols
-                        // first protocol
-                        0x01, // midi1
-                        Protocol::MIDI_1_VERSION.into(),
-                        0b0000_0010, // extension bit mask
-                        0x0, 0x0, // reserved
-                        // second protocol
-                        0x02, // midi1
-                        Protocol::MIDI_2_VERSION.into(),
-                        0b0000_0000, // extension bit mask
-                        0x0, // reserved
-                    ])
-                    .build(),
-                sysex8::Message::builder()
-                    .stream_id(0x5C)
-                    .group(ux::u4::new(0x3))
-                    .status(sysex8::Status::End)
-                    .data(&[
-                        0x0, // reserved
-                    ])
-                    .build(),
-            ]
-        )
-    }
-
-    #[test]
-    #[rustfmt::skip]
-    fn try_from_sysex8() {
-        assert_eq!(
-            Message::try_from_sysex8(
-                &[
-                    sysex8::Message::builder()
-                        .stream_id(0x5C)
-                        .group(ux::u4::new(0x3))
-                        .status(sysex8::Status::Begin)
-                        .data(&[
-                            0x7E, // universal sysex
-                            0x7F, // Device ID: to MIDI Port
-                            0x0D, // universal sysex sub-id 1: midi ci
-                            0x10, // universal sysex sub-id 2: init protocol negotiation
-                            VERSION,
-                            0b00001110, 0b01110011, 0b00010001, 0b00000111, // source
-                            0b00111110, 0b00101100, 0b01100110, // destination
-                        ])
-                        .build(),
-                    sysex8::Message::builder()
-                        .stream_id(0x5C)
-                        .group(ux::u4::new(0x3))
-                        .status(sysex8::Status::Continue)
-                        .data(&[
-                            0b00101010, // destination muid
-                            0x2D, // authority level
-                            2, // number of supported protocols
-                            // first protocol
-                            0x01, // midi1
-                            Protocol::MIDI_1_VERSION.into(),
-                            0b0000_0010, // extension bit mask
-                            0x0, 0x0, // reserved
-                            // second protocol
-                            0x02, // midi1
-                            Protocol::MIDI_2_VERSION.into(),
-                            0b0000_0000, // extension bit mask
-                            0x0, // reserved
-                        ])
-                        .build(),
-                    sysex8::Message::builder()
-                        .stream_id(0x5C)
-                        .group(ux::u4::new(0x3))
-                        .status(sysex8::Status::End)
-                        .data(&[
-                            0x0, // reserved
-                        ])
-                        .build(),
-                ],
+                .unwrap()
+                .data(),
             ),
-            Ok(Message::builder()
-                .group(ux::u4::new(0x3))
-                .source(ux::u28::new(14973326))
-                .destination(ux::u28::new(89757246))
-                .authority_level(ux::u7::new(0x2D))
-                .protocol(Protocol::Midi1 {
-                        size_of_packet_extension: true,
-                        jitter_reduction_extension: false,
-                        version: Protocol::MIDI_1_VERSION,
-                })
-                .protocol(Protocol::Midi2 {
-                        jitter_reduction_extension: false,
-                        version: Protocol::MIDI_2_VERSION,
-                })
-                .build()
-            ),
+            debug::Data(&[
+                0x541E_147E,
+                0x7F0D_1001,
+                0x512E_7E2F,
+                0x0060_0B2B,
+                0x543D_146C,
+                0x0202_0001,
+                0x0000_0100,
+                0x0300_0000
+            ]),
         );
     }
 
     #[test]
-    #[rustfmt::skip]
-    fn try_to_sysex7() {
+    fn sysex7_builder() {
         assert_eq!(
-            Message::builder()
-                .group(ux::u4::new(0x3))
-                .source(ux::u28::new(14973326))
-                .destination(ux::u28::new(89757246))
-                .authority_level(ux::u7::new(0x2D))
-                .protocol(Protocol::Midi1 {
-                        size_of_packet_extension: true,
-                        jitter_reduction_extension: false,
-                        version: Protocol::MIDI_1_VERSION,
+            debug::Data(InitiateProtocolNegotiationMessage::<sysex7::Sysex7MessageGroup>::builder(&mut [0x0; 10])
+                .group(ux::u4::new(0x4))
+                .source(ux::u28::new(0x5FF9751))
+                .destination(ux::u28::new(0x562F000))
+                .authority_level(ux::u7::new(0x6C))
+                .protocol(protocol::Protocol::Midi2 {
+                    jitter_reduction_extension: true,
+                    version: protocol::Protocol::MIDI_2_VERSION,
                 })
-                .protocol(Protocol::Midi2 {
-                        jitter_reduction_extension: false,
-                        version: Protocol::MIDI_2_VERSION,
+                .protocol(protocol::Protocol::Midi1 {
+                    jitter_reduction_extension: true,
+                    size_of_packet_extension: true,
+                    version: protocol::Protocol::MIDI_1_VERSION,
                 })
                 .build()
-                .try_to_sysex7(&mut [
-                    Default::default(),
-                    Default::default(),
-                    Default::default(),
-                    Default::default(),
-                    Default::default(),
-                ]).unwrap(),
-            &[
-                sysex7::Message::builder()
-                    .group(ux::u4::new(0x3))
-                    .status(sysex7::Status::Begin)
-                    .data(&[
-                        ux::u7::new(0x7E), // universal sysex
-                        ux::u7::new(0x7F), // Device ID: to MIDI Port
-                        ux::u7::new(0x0D), // universal sysex sub-id 1: midi ci
-                        ux::u7::new(0x10), // universal sysex sub-id 2: init protocol negotiation
-                        ux::u7::new(VERSION),
-                        ux::u7::new(0b00001110), // source
-                    ])
-                    .build(),
-                sysex7::Message::builder()
-                    .group(ux::u4::new(0x3))
-                    .status(sysex7::Status::Continue)
-                    .data(&[
-                        ux::u7::new(0b01110011), ux::u7::new(0b00010001), ux::u7::new(0b00000111), // source
-                        ux::u7::new(0b00111110), ux::u7::new(0b00101100), ux::u7::new(0b01100110), // destination
-                    ])
-                    .build(),
-                sysex7::Message::builder()
-                    .group(ux::u4::new(0x3))
-                    .status(sysex7::Status::Continue)
-                    .data(&[
-                        ux::u7::new(0b00101010), // destination muid
-                        ux::u7::new(0x2D), // authority level
-                        ux::u7::new(2), // number of supported protocols
-                        // first protocol
-                        ux::u7::new(0x01), // midi1
-                        Protocol::MIDI_1_VERSION,
-                        ux::u7::new(0b0000_0010), // extension bit mask
-                    ])
-                    .build(),
-                sysex7::Message::builder()
-                    .group(ux::u4::new(0x3))
-                    .status(sysex7::Status::Continue)
-                    .data(&[
-                        ux::u7::new(0x0), ux::u7::new(0x0), // reserved
-                        // second protocol
-                        ux::u7::new(0x02), // midi1
-                        Protocol::MIDI_2_VERSION,
-                        ux::u7::new(0b0000_0000), // extension bit mask
-                        ux::u7::new(0x0), // reserved
-                    ])
-                    .build(),
-                sysex7::Message::builder()
-                    .group(ux::u4::new(0x3))
-                    .status(sysex7::Status::End)
-                    .data(&[
-                        ux::u7::new(0x0), // reserved
-                    ])
-                    .build(),
-            ]
-        )
-    }
-
-    #[test]
-    #[rustfmt::skip]
-    fn try_from_sysex7() {
-        assert_eq!(
-            Message::try_from_sysex7(
-                &[
-                    sysex7::Message::builder()
-                        .group(ux::u4::new(0x3))
-                        .status(sysex7::Status::Begin)
-                        .data(&[
-                            ux::u7::new(0x7E), // universal sysex
-                            ux::u7::new(0x7F), // Device ID: to MIDI Port
-                            ux::u7::new(0x0D), // universal sysex sub-id 1: midi ci
-                            ux::u7::new(0x10), // universal sysex sub-id 2: init protocol negotiation
-                            ux::u7::new(VERSION),
-                            ux::u7::new(0b00001110), // source
-                        ])
-                        .build(),
-                    sysex7::Message::builder()
-                        .group(ux::u4::new(0x3))
-                        .status(sysex7::Status::Continue)
-                        .data(&[
-                            ux::u7::new(0b01110011), ux::u7::new(0b00010001), ux::u7::new(0b00000111), // source
-                            ux::u7::new(0b00111110), ux::u7::new(0b00101100), ux::u7::new(0b01100110), // destination
-                        ])
-                        .build(),
-                    sysex7::Message::builder()
-                        .group(ux::u4::new(0x3))
-                        .status(sysex7::Status::Continue)
-                        .data(&[
-                            ux::u7::new(0b00101010), // destination muid
-                            ux::u7::new(0x2D), // authority level
-                            ux::u7::new(2), // number of supported protocols
-                            // first protocol
-                            ux::u7::new(0x01), // midi1
-                            Protocol::MIDI_1_VERSION,
-                            ux::u7::new(0b0000_0010), // extension bit mask
-                        ])
-                        .build(),
-                    sysex7::Message::builder()
-                        .group(ux::u4::new(0x3))
-                        .status(sysex7::Status::Continue)
-                        .data(&[
-                            ux::u7::new(0x0), ux::u7::new(0x0), // reserved
-                            // second protocol
-                            ux::u7::new(0x02), // midi1
-                            Protocol::MIDI_2_VERSION,
-                            ux::u7::new(0b0000_0000), // extension bit mask
-                            ux::u7::new(0x0), // reserved
-                        ])
-                        .build(),
-                    sysex7::Message::builder()
-                        .group(ux::u4::new(0x3))
-                        .status(sysex7::Status::End)
-                        .data(&[
-                            ux::u7::new(0x0), // reserved
-                        ])
-                        .build(),
-                ],
+                .unwrap()
+                .data(),
             ),
-            Ok(Message::builder()
-                .group(ux::u4::new(0x3))
-                .source(ux::u28::new(14973326))
-                .destination(ux::u28::new(89757246))
-                .authority_level(ux::u7::new(0x2D))
-                .protocol(Protocol::Midi1 {
-                        size_of_packet_extension: true,
-                        jitter_reduction_extension: false,
-                        version: Protocol::MIDI_1_VERSION,
-                })
-                .protocol(Protocol::Midi2 {
-                        jitter_reduction_extension: false,
-                        version: Protocol::MIDI_2_VERSION,
-                })
-                .build()
-            ),
+            debug::Data(&[
+                0x3416_7E7F,
+                0x0D10_0151,
+                0x3426_2E7E,
+                0x2F00_600B,
+                0x3426_2B6C,
+                0x0202_0001,
+                0x3426_0000,
+                0x0100_0300,
+                0x3431_0000,
+                0x0000_0000
+            ]),
         );
     }
 }

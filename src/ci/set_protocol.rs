@@ -11,7 +11,6 @@ use crate::{
         DeviceId,
         Protocol,
     },
-    util::{Encode7Bit, Truncate},
 };
 
 
@@ -28,28 +27,13 @@ impl<'a> SetProtocolMessage<sysex8::Sysex8MessageGroup<'a>> {
         self.0.group()
     }
     pub fn source(&self) -> ux::u28 {
-        let mut payload = self.0.payload();
-        payload.nth(4);
-        ux::u28::from_u7s(&[
-            payload.next().unwrap(),
-            payload.next().unwrap(),
-            payload.next().unwrap(),
-            payload.next().unwrap(),
-        ])
+        ci_helpers::source_from_payload(self.0.payload())
     }
     pub fn destination(&self) -> ux::u28 {
-        let mut payload = self.0.payload();
-        payload.nth(8);
-        ux::u28::from_u7s(&[
-            payload.next().unwrap(),
-            payload.next().unwrap(),
-            payload.next().unwrap(),
-            payload.next().unwrap(),
-        ])
+        ci_helpers::destination_from_payload(self.0.payload())
     }
     pub fn authority_level(&self) -> ux::u7 {
-        let mut payload = self.0.payload();
-        payload.nth(ci_helpers::STANDARD_DATA_SIZE).unwrap().truncate()
+        ci_helpers::authority_level_from_payload(self.0.payload())
     }
     pub fn protocol(&self) -> Protocol {
         let mut payload = self.0.payload();
@@ -87,28 +71,13 @@ impl<'a> SetProtocolMessage<sysex7::Sysex7MessageGroup<'a>> {
         self.0.group()
     }
     pub fn source(&self) -> ux::u28 {
-        let mut payload = self.0.payload();
-        payload.nth(4);
-        ux::u28::from_u7s(&[
-            payload.next().unwrap().into(),
-            payload.next().unwrap().into(),
-            payload.next().unwrap().into(),
-            payload.next().unwrap().into(),
-        ])
+        ci_helpers::source_from_payload(self.0.payload().map(u8::from))
     }
     pub fn destination(&self) -> ux::u28 {
-        let mut payload = self.0.payload();
-        payload.nth(8);
-        ux::u28::from_u7s(&[
-            payload.next().unwrap().into(),
-            payload.next().unwrap().into(),
-            payload.next().unwrap().into(),
-            payload.next().unwrap().into(),
-        ])
+        ci_helpers::destination_from_payload(self.0.payload().map(u8::from))
     }
     pub fn authority_level(&self) -> ux::u7 {
-        let mut payload = self.0.payload();
-        payload.nth(ci_helpers::STANDARD_DATA_SIZE).unwrap()
+        ci_helpers::authority_level_from_payload(self.0.payload().map(u8::from))
     }
     pub fn protocol(&self) -> Protocol {
         let mut payload = self.0.payload();

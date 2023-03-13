@@ -2,7 +2,7 @@ use crate::{
     result::Result,
     ci::{DeviceId, Protocol},
     error::Error,
-    util::{Truncate, BitOps},
+    util::{Encode7Bit, Truncate, BitOps},
     message::system_exclusive_8bit as sysex8,
     message::system_exclusive_7bit as sysex7,
 };
@@ -230,4 +230,28 @@ pub fn validate_protocol_data<I: core::iter::Iterator<Item = u8>>(mut data: I) -
     } else {
         Err(Error::InvalidData)
     }
+}
+
+pub fn source_from_payload<I: core::iter::Iterator<Item=u8>>(mut payload: I) -> ux::u28 {
+    payload.nth(4);
+    ux::u28::from_u7s(&[
+        payload.next().unwrap(),
+        payload.next().unwrap(),
+        payload.next().unwrap(),
+        payload.next().unwrap(),
+    ])
+}
+
+pub fn destination_from_payload<I: core::iter::Iterator<Item=u8>>(mut payload: I) -> ux::u28 {
+    payload.nth(8);
+    ux::u28::from_u7s(&[
+        payload.next().unwrap(),
+        payload.next().unwrap(),
+        payload.next().unwrap(),
+        payload.next().unwrap(),
+    ])
+}
+
+pub fn authority_level_from_payload<I: core::iter::Iterator<Item=u8>>(mut payload: I) -> ux::u7 {
+    payload.nth(STANDARD_DATA_SIZE).unwrap().truncate()
 }
