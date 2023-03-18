@@ -1,30 +1,25 @@
-        
 pub struct ProtocolIterator {}
 
 macro_rules! initiate_protocol_negotiation_message {
     ($op_code:expr) => {
         use crate::{
-            result::Result,
-            error::Error,
-            message::{
-                sysex, 
-                system_exclusive_8bit as sysex8,
-                system_exclusive_7bit as sysex7,
-            },
             ci::{
-                helpers as ci_helpers,
-                DeviceId, Protocol,
-                initiate_protocol_negotiation::ProtocolIterator,
+                helpers as ci_helpers, initiate_protocol_negotiation::ProtocolIterator, DeviceId,
+                Protocol,
             },
+            error::Error,
+            message::{sysex, system_exclusive_7bit as sysex7, system_exclusive_8bit as sysex8},
+            result::Result,
         };
-
 
         #[derive(Clone, PartialEq, Eq, Debug)]
         pub struct InitiateProtocolNegotiationMessage<Repr: sysex::SysexMessages>(Repr);
 
         const STATUS: u8 = $op_code;
         impl<'a> InitiateProtocolNegotiationMessage<sysex8::Sysex8MessageGroup<'a>> {
-            pub fn builder(buffer: &'a mut [u32]) -> InitiateProtocolNegotiationBuilder<sysex8::Sysex8MessageGroup<'a>> {
+            pub fn builder(
+                buffer: &'a mut [u32],
+            ) -> InitiateProtocolNegotiationBuilder<sysex8::Sysex8MessageGroup<'a>> {
                 InitiateProtocolNegotiationBuilder::<sysex8::Sysex8MessageGroup<'a>>::new(buffer)
             }
             pub fn group(&self) -> ux::u4 {
@@ -48,8 +43,8 @@ macro_rules! initiate_protocol_negotiation_message {
 
                 // authority level
                 let Some(_) = payload.nth(ci_helpers::STANDARD_DATA_SIZE) else {
-                    return Err(Error::InvalidData);
-                };
+                                                    return Err(Error::InvalidData);
+                                                };
 
                 todo!();
 
@@ -61,7 +56,9 @@ macro_rules! initiate_protocol_negotiation_message {
         }
 
         impl<'a> InitiateProtocolNegotiationMessage<sysex7::Sysex7MessageGroup<'a>> {
-            pub fn builder(buffer: &'a mut [u32]) -> InitiateProtocolNegotiationBuilder<sysex7::Sysex7MessageGroup<'a>> {
+            pub fn builder(
+                buffer: &'a mut [u32],
+            ) -> InitiateProtocolNegotiationBuilder<sysex7::Sysex7MessageGroup<'a>> {
                 InitiateProtocolNegotiationBuilder::<sysex7::Sysex7MessageGroup<'a>>::new(buffer)
             }
             pub fn group(&self) -> ux::u4 {
@@ -85,19 +82,18 @@ macro_rules! initiate_protocol_negotiation_message {
 
                 // authority level
                 let Some(_) = payload.nth(ci_helpers::STANDARD_DATA_SIZE) else {
-                    return Err(Error::InvalidData);
-                };
+                                                    return Err(Error::InvalidData);
+                                                };
 
                 todo!();
 
                 Ok(InitiateProtocolNegotiationMessage(messages))
             }
-            
+
             pub fn data(&self) -> &[u32] {
                 self.0.data()
             }
         }
-
 
         pub struct InitiateProtocolNegotiationBuilder<Repr: sysex::SysexMessages> {
             source: ux::u28,
@@ -128,7 +124,7 @@ macro_rules! initiate_protocol_negotiation_message {
                 self.destination = dest;
                 self
             }
-            pub fn authority_level(&mut self, auth: ux::u7) -> &mut Self{
+            pub fn authority_level(&mut self, auth: ux::u7) -> &mut Self {
                 self.authority_level = auth;
                 self
             }
@@ -138,7 +134,12 @@ macro_rules! initiate_protocol_negotiation_message {
             /// the build will fail if this method is called more than twice for a single
             /// builder.
             pub fn protocol(&mut self, protocol: Protocol) -> &mut Self {
-                if let Some((idx, _)) = self.protocols.iter().enumerate().find(|(_, &opt)| opt.is_none()) {
+                if let Some((idx, _)) = self
+                    .protocols
+                    .iter()
+                    .enumerate()
+                    .find(|(_, &opt)| opt.is_none())
+                {
                     self.protocols[idx] = Some(protocol);
                 } else {
                     self.builder = Err(Error::InvalidData);
@@ -154,7 +155,9 @@ macro_rules! initiate_protocol_negotiation_message {
                     protocols: Default::default(),
                 }
             }
-            pub fn build(&'a mut self) -> Result<InitiateProtocolNegotiationMessage<sysex8::Sysex8MessageGroup<'a>>> {
+            pub fn build(
+                &'a mut self,
+            ) -> Result<InitiateProtocolNegotiationMessage<sysex8::Sysex8MessageGroup<'a>>> {
                 if let None = self.protocols[0] {
                     return Err(Error::InvalidData);
                 }
@@ -162,10 +165,10 @@ macro_rules! initiate_protocol_negotiation_message {
                 if let Err(e) = &self.builder {
                     return Err(e.clone());
                 };
-                
+
                 let Ok(builder) = &mut self.builder else {
-                    unreachable!();
-                };
+                                                    unreachable!();
+                                                };
 
                 let payload = ci_helpers::StandardDataIterator::new(
                     DeviceId::MidiPort,
@@ -176,8 +179,21 @@ macro_rules! initiate_protocol_negotiation_message {
 
                 let payload = payload.chain(core::iter::once(u8::from(self.authority_level)));
                 // number of supported protocols
-                let payload = payload.chain(core::iter::once(self.protocols.iter().map(|o| -> u8 { if o.is_none() { 0 } else { 1 }}).sum()));
-                let payload = payload.chain(ci_helpers::protocol_data(self.protocols[0].as_ref().unwrap()));
+                let payload = payload.chain(core::iter::once(
+                    self.protocols
+                        .iter()
+                        .map(|o| -> u8 {
+                            if o.is_none() {
+                                0
+                            } else {
+                                1
+                            }
+                        })
+                        .sum(),
+                ));
+                let payload = payload.chain(ci_helpers::protocol_data(
+                    self.protocols[0].as_ref().unwrap(),
+                ));
 
                 if let Some(aux_protocol) = &self.protocols[1] {
                     let payload = payload.chain(ci_helpers::protocol_data(aux_protocol));
@@ -209,12 +225,17 @@ macro_rules! initiate_protocol_negotiation_message {
                 self.destination = dest;
                 self
             }
-            pub fn authority_level(&mut self, auth: ux::u7) -> &mut Self{
+            pub fn authority_level(&mut self, auth: ux::u7) -> &mut Self {
                 self.authority_level = auth;
                 self
             }
             pub fn protocol(&mut self, protocol: Protocol) -> &mut Self {
-                if let Some((idx, _)) = self.protocols.iter().enumerate().find(|(_, &opt)| opt.is_none()) {
+                if let Some((idx, _)) = self
+                    .protocols
+                    .iter()
+                    .enumerate()
+                    .find(|(_, &opt)| opt.is_none())
+                {
                     self.protocols[idx] = Some(protocol);
                 } else {
                     self.builder = Err(Error::InvalidData);
@@ -230,7 +251,9 @@ macro_rules! initiate_protocol_negotiation_message {
                     protocols: Default::default(),
                 }
             }
-            pub fn build(&'a mut self) -> Result<InitiateProtocolNegotiationMessage<sysex7::Sysex7MessageGroup<'a>>> {
+            pub fn build(
+                &'a mut self,
+            ) -> Result<InitiateProtocolNegotiationMessage<sysex7::Sysex7MessageGroup<'a>>> {
                 if let None = self.protocols[0] {
                     return Err(Error::InvalidData);
                 }
@@ -238,10 +261,10 @@ macro_rules! initiate_protocol_negotiation_message {
                 if let Err(e) = &self.builder {
                     return Err(e.clone());
                 };
-                
+
                 let Ok(builder) = &mut self.builder else {
-                    unreachable!();
-                };
+                                                    unreachable!();
+                                                };
 
                 let payload = ci_helpers::StandardDataIterator::new(
                     DeviceId::MidiPort,
@@ -252,8 +275,21 @@ macro_rules! initiate_protocol_negotiation_message {
 
                 let payload = payload.chain(core::iter::once(u8::from(self.authority_level)));
                 // number of supported protocols
-                let payload = payload.chain(core::iter::once(self.protocols.iter().map(|o| -> u8 { if o.is_none() { 0 } else { 1 }}).sum()));
-                let payload = payload.chain(ci_helpers::protocol_data(self.protocols[0].as_ref().unwrap()));
+                let payload = payload.chain(core::iter::once(
+                    self.protocols
+                        .iter()
+                        .map(|o| -> u8 {
+                            if o.is_none() {
+                                0
+                            } else {
+                                1
+                            }
+                        })
+                        .sum(),
+                ));
+                let payload = payload.chain(ci_helpers::protocol_data(
+                    self.protocols[0].as_ref().unwrap(),
+                ));
 
                 if let Some(aux_protocol) = &self.protocols[1] {
                     let payload = payload.chain(ci_helpers::protocol_data(aux_protocol));
@@ -269,34 +305,33 @@ macro_rules! initiate_protocol_negotiation_message {
                 }
             }
         }
-    }
+    };
 }
 
 pub mod query {
     initiate_protocol_negotiation_message!(0x10);
 }
 
-//pub mod reply {
-//    initiate_protocol_negotiation_message!(0x11);
-//}
+pub mod reply {
+    initiate_protocol_negotiation_message!(0x11);
+}
 
 #[cfg(test)]
 mod tests {
     use crate::{
-        message::system_exclusive_7bit as sysex7,
-        message::system_exclusive_8bit as sysex8,
+        message::system_exclusive_7bit as sysex7, message::system_exclusive_8bit as sysex8,
     };
-    
+
     use super::query::*;
-    use crate::{
-        ci::protocol,
-        util::debug,
-    };
+    use crate::{ci::protocol, util::debug};
 
     #[test]
     fn sysex8_builder() {
         assert_eq!(
-            debug::Data(InitiateProtocolNegotiationMessage::<sysex8::Sysex8MessageGroup>::builder(&mut [0x0; 8])
+            debug::Data(
+                InitiateProtocolNegotiationMessage::<sysex8::Sysex8MessageGroup>::builder(
+                    &mut [0x0; 8]
+                )
                 .group(ux::u4::new(0x4))
                 .stream_id(0x14)
                 .source(ux::u28::new(0x5FF9751))
@@ -331,7 +366,10 @@ mod tests {
     #[test]
     fn sysex7_builder() {
         assert_eq!(
-            debug::Data(InitiateProtocolNegotiationMessage::<sysex7::Sysex7MessageGroup>::builder(&mut [0x0; 10])
+            debug::Data(
+                InitiateProtocolNegotiationMessage::<sysex7::Sysex7MessageGroup>::builder(
+                    &mut [0x0; 10]
+                )
                 .group(ux::u4::new(0x4))
                 .source(ux::u28::new(0x5FF9751))
                 .destination(ux::u28::new(0x562F000))

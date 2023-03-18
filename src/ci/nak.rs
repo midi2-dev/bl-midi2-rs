@@ -1,15 +1,8 @@
 use crate::{
+    ci::{helpers as ci_helpers, DeviceId},
     error::Error,
+    message::{sysex, system_exclusive_7bit as sysex7, system_exclusive_8bit as sysex8},
     result::Result,
-    message::{
-        sysex,
-        system_exclusive_8bit as sysex8,
-        system_exclusive_7bit as sysex7,
-    },
-    ci::{
-        helpers as ci_helpers,
-        DeviceId,
-    },
     util::Encode7Bit,
 };
 
@@ -139,17 +132,19 @@ impl<'a> NakBuilder<sysex8::Sysex8MessageGroup<'a>> {
         }
     }
     pub fn build(&'a mut self) -> Result<NakMessage<sysex8::Sysex8MessageGroup<'a>>> {
-        match self.builder.payload(
-            ci_helpers::StandardDataIterator::new(
+        match self
+            .builder
+            .payload(ci_helpers::StandardDataIterator::new(
                 self.device_id,
                 STATUS,
                 self.source,
                 self.destination,
-            )
-        ).build() {
+            ))
+            .build()
+        {
             Ok(messages) => Ok(NakMessage(messages)),
-            Err(e) => Err(e)
-        }            
+            Err(e) => Err(e),
+        }
     }
 }
 
@@ -179,17 +174,22 @@ impl<'a> NakBuilder<sysex7::Sysex7MessageGroup<'a>> {
         }
     }
     pub fn build(&'a mut self) -> Result<NakMessage<sysex7::Sysex7MessageGroup<'a>>> {
-        match self.builder.payload(
-            ci_helpers::StandardDataIterator::new(
-                self.device_id,
-                STATUS,
-                self.source,
-                self.destination,
-            ).map(ux::u7::new)
-        ).build() {
+        match self
+            .builder
+            .payload(
+                ci_helpers::StandardDataIterator::new(
+                    self.device_id,
+                    STATUS,
+                    self.source,
+                    self.destination,
+                )
+                .map(ux::u7::new),
+            )
+            .build()
+        {
             Ok(messages) => Ok(NakMessage(messages)),
-            Err(e) => Err(e)
-        }            
+            Err(e) => Err(e),
+        }
     }
 }
 
@@ -201,36 +201,33 @@ mod tests {
     #[test]
     fn sysex8_builder() {
         assert_eq!(
-            debug::Data(NakMessage::<sysex8::Sysex8MessageGroup>::builder(&mut [0x0; 4])
-                .group(ux::u4::new(0x3))
-                .stream_id(0xB2)
-                .device_id(DeviceId::Channel(ux::u4::new(0xD)))
-                .source(ux::u28::new(92027634))
-                .destination(ux::u28::new(139459637))
-                .build()
-                .unwrap()
-                .data(),
+            debug::Data(
+                NakMessage::<sysex8::Sysex8MessageGroup>::builder(&mut [0x0; 4])
+                    .group(ux::u4::new(0x3))
+                    .stream_id(0xB2)
+                    .device_id(DeviceId::Channel(ux::u4::new(0xD)))
+                    .source(ux::u28::new(92027634))
+                    .destination(ux::u28::new(139459637))
+                    .build()
+                    .unwrap()
+                    .data(),
             ),
-            debug::Data(&[
-                0x530E_B27E,
-                0x0D0D_7F01,
-                0x7275_702B,
-                0x3578_3F42,
-            ]),
+            debug::Data(&[0x530E_B27E, 0x0D0D_7F01, 0x7275_702B, 0x3578_3F42,]),
         );
     }
 
     #[test]
     fn sysex7_builder() {
         assert_eq!(
-            debug::Data(NakMessage::<sysex7::Sysex7MessageGroup>::builder(&mut [0x0; 6])
-                .group(ux::u4::new(0x3))
-                .device_id(DeviceId::Channel(ux::u4::new(0xD)))
-                .source(ux::u28::new(92027634))
-                .destination(ux::u28::new(139459637))
-                .build()
-                .unwrap()
-                .data(),
+            debug::Data(
+                NakMessage::<sysex7::Sysex7MessageGroup>::builder(&mut [0x0; 6])
+                    .group(ux::u4::new(0x3))
+                    .device_id(DeviceId::Channel(ux::u4::new(0xD)))
+                    .source(ux::u28::new(92027634))
+                    .destination(ux::u28::new(139459637))
+                    .build()
+                    .unwrap()
+                    .data(),
             ),
             debug::Data(&[
                 0x3316_7E0D,
@@ -250,7 +247,8 @@ mod tests {
             0x0D0D_7F01,
             0x7275_702B,
             0x3578_3F42,
-        ]).is_ok());
+        ])
+        .is_ok());
     }
 
     #[test]
@@ -262,6 +260,7 @@ mod tests {
             0x2B35_783F,
             0x3331_4200,
             0x0000_0000,
-        ]).is_ok());
+        ])
+        .is_ok());
     }
 }
