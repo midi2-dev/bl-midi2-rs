@@ -217,4 +217,40 @@ mod tests {
             ]),
         );
     }
+
+    #[test]
+    fn target_muid_sysex8() {
+        assert_eq!(
+            InvalidateMuidMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
+                0x571E_4A7E,
+                0x7F0D_7E01,
+                0x7475_6501,
+                0x7F7F_7F7F,
+                0x5735_4A6A,
+                0x5863_6B00,
+                0x0000_0000,
+                0x0000_0000,
+            ])
+            .unwrap()
+            .target_muid(),
+            ux::u28::new(226028650),
+        )
+    }
+
+    #[test]
+    fn target_muid_sysex7() {
+        assert_eq!(
+            InvalidateMuidMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
+                0x3716_7E7F,
+                0x0D7E_0174,
+                0x3726_7565,
+                0x017F_7F7F,
+                0x3735_7F6A,
+                0x5863_6B00,
+            ])
+            .unwrap()
+            .target_muid(),
+            ux::u28::new(226028650),
+        )
+    }
 }
