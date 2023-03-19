@@ -188,14 +188,16 @@ pub fn protocol_data(protocol: &Protocol) -> ProtocolDataIterator {
     }
 }
 
-pub fn read_protocol<I: core::iter::Iterator<Item = u8>>(mut data: I) -> Result<Protocol> {
-    let ty = data.next().unwrap();
-    let version = data.next().unwrap();
-    let flags = data.next().unwrap();
+pub fn read_protocol<Byte: core::convert::Into<u8>, I: core::iter::Iterator<Item = Byte>>(
+    mut data: I,
+) -> Result<Protocol> {
+    let ty: u8 = data.next().ok_or(Error::BufferOverflow)?.into();
+    let version: u8 = data.next().ok_or(Error::BufferOverflow)?.into();
+    let flags: u8 = data.next().ok_or(Error::BufferOverflow)?.into();
 
     // reserved data
-    data.next().unwrap();
-    data.next().unwrap();
+    data.next().ok_or(Error::BufferOverflow)?;
+    data.next().ok_or(Error::BufferOverflow)?;
 
     match ty {
         0x1 => Ok(Protocol::Midi1 {

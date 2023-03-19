@@ -1,4 +1,25 @@
-pub struct ProtocolIterator {}
+use crate::{
+    ci::{helpers as ci_helpers, Protocol},
+    message::sysex,
+};
+
+pub struct ProtocolIterator<Repr: sysex::SysexMessages>(Repr::PayloadIterator);
+
+impl<Repr: sysex::SysexMessages> ProtocolIterator<Repr> {
+    fn new(mut payload: Repr::PayloadIterator) -> Self {
+        payload.nth(ci_helpers::STANDARD_DATA_SIZE + 1);
+        Self(payload)
+    }
+}
+
+impl<Repr: sysex::SysexMessages> core::iter::Iterator for ProtocolIterator<Repr> {
+    type Item = Protocol;
+    fn next(&mut self) -> Option<Self::Item> {
+        let payload = self.0.clone();
+        self.0.nth(4);
+        ci_helpers::read_protocol(payload).ok()
+    }
+}
 
 macro_rules! initiate_protocol_negotiation_message {
     ($op_code:expr) => {
@@ -34,20 +55,20 @@ macro_rules! initiate_protocol_negotiation_message {
             pub fn authority_level(&self) -> ux::u7 {
                 ci_helpers::authority_level_from_payload(self.0.payload())
             }
-            pub fn protocols(&self) -> ProtocolIterator {
-                todo!()
+            pub fn protocols(&self) -> ProtocolIterator<sysex8::Sysex8MessageGroup> {
+                ProtocolIterator::new(self.0.payload())
             }
             pub fn from_data(data: &'a [u32]) -> Result<Self> {
                 let messages = ci_helpers::validate_sysex8(data, STATUS)?;
                 let mut payload = messages.payload();
 
                 let Some(_authority_level) = payload.nth(ci_helpers::STANDARD_DATA_SIZE) else {
-                                    return Err(Error::InvalidData);
-                                };
+                    return Err(Error::InvalidData);
+                };
 
                 let Some(number_supported_protocols) = payload.next() else {
-                                    return Err(Error::InvalidData);
-                                };
+                    return Err(Error::InvalidData);
+                };
 
                 if (number_supported_protocols == 0) {
                     return Err(Error::InvalidData);
@@ -89,8 +110,8 @@ macro_rules! initiate_protocol_negotiation_message {
             pub fn authority_level(&self) -> ux::u7 {
                 ci_helpers::authority_level_from_payload(self.0.payload().map(u8::from))
             }
-            pub fn protocols(&self) -> ProtocolIterator {
-                todo!()
+            pub fn protocols(&self) -> ProtocolIterator<sysex7::Sysex7MessageGroup> {
+                ProtocolIterator::new(self.0.payload())
             }
             pub fn from_data(data: &'a [u32]) -> Result<Self> {
                 let messages = ci_helpers::validate_sysex7(data, STATUS)?;
@@ -351,7 +372,8 @@ pub mod reply {
 #[cfg(test)]
 mod tests {
     use crate::{
-        message::system_exclusive_7bit as sysex7, message::system_exclusive_8bit as sysex8,
+        ci::Protocol, message::system_exclusive_7bit as sysex7,
+        message::system_exclusive_8bit as sysex8,
     };
 
     use super::query::*;
@@ -552,5 +574,75 @@ mod tests {
             .authority_level(),
             ux::u7::new(0x6C),
         );
+    }
+
+    #[test]
+    fn protocols_sysex8() {
+        let message =
+            InitiateProtocolNegotiationMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
+                0x541E_147E,
+                0x7F0D_1001,
+                0x512E_7E2F,
+                0x0060_0B2B,
+                0x543D_146C,
+                0x0202_0001,
+                0x0000_0100,
+                0x0300_0000,
+            ])
+            .unwrap();
+        let mut buffer: [Option<Protocol>; 2] = Default::default();
+        for (idx, protocol) in message.protocols().enumerate() {
+            buffer[idx] = Some(protocol);
+        }
+        assert_eq!(
+            buffer,
+            [
+                Some(Protocol::Midi2 {
+                    jitter_reduction_extension: true,
+                    version: Protocol::MIDI_2_VERSION,
+                }),
+                Some(Protocol::Midi1 {
+                    jitter_reduction_extension: true,
+                    size_of_packet_extension: true,
+                    version: Protocol::MIDI_1_VERSION,
+                }),
+            ]
+        )
+    }
+
+    #[test]
+    fn protocols_sysex7() {
+        let message =
+            InitiateProtocolNegotiationMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
+                0x3416_7E7F,
+                0x0D10_0151,
+                0x3426_2E7E,
+                0x2F00_600B,
+                0x3426_2B6C,
+                0x0202_0001,
+                0x3426_0000,
+                0x0100_0300,
+                0x3431_0000,
+                0x0000_0000,
+            ])
+            .unwrap();
+        let mut buffer: [Option<Protocol>; 2] = Default::default();
+        for (idx, protocol) in message.protocols().enumerate() {
+            buffer[idx] = Some(protocol);
+        }
+        assert_eq!(
+            buffer,
+            [
+                Some(Protocol::Midi2 {
+                    jitter_reduction_extension: true,
+                    version: Protocol::MIDI_2_VERSION,
+                }),
+                Some(Protocol::Midi1 {
+                    jitter_reduction_extension: true,
+                    size_of_packet_extension: true,
+                    version: Protocol::MIDI_1_VERSION,
+                }),
+            ]
+        )
     }
 }
