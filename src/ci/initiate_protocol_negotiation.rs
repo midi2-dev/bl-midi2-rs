@@ -41,12 +41,28 @@ macro_rules! initiate_protocol_negotiation_message {
                 let messages = ci_helpers::validate_sysex8(data, STATUS)?;
                 let mut payload = messages.payload();
 
-                // authority level
-                let Some(_) = payload.nth(ci_helpers::STANDARD_DATA_SIZE) else {
-                                                    return Err(Error::InvalidData);
-                                                };
+                let Some(_authority_level) = payload.nth(ci_helpers::STANDARD_DATA_SIZE) else {
+                                    return Err(Error::InvalidData);
+                                };
 
-                todo!();
+                let Some(number_supported_protocols) = payload.next() else {
+                                    return Err(Error::InvalidData);
+                                };
+
+                if (number_supported_protocols == 0) {
+                    return Err(Error::InvalidData);
+                }
+
+                for i in 0..number_supported_protocols {
+                    // only two protocols supported
+                    // ignore any additional
+                    if i < 2 {
+                        ci_helpers::validate_protocol_data(payload.clone())?;
+                    }
+                    if let None = payload.nth(4) {
+                        return Err(Error::InvalidData);
+                    }
+                }
 
                 Ok(InitiateProtocolNegotiationMessage(messages))
             }
@@ -80,12 +96,28 @@ macro_rules! initiate_protocol_negotiation_message {
                 let messages = ci_helpers::validate_sysex7(data, STATUS)?;
                 let mut payload = messages.payload();
 
-                // authority level
-                let Some(_) = payload.nth(ci_helpers::STANDARD_DATA_SIZE) else {
-                                                    return Err(Error::InvalidData);
-                                                };
+                let Some(_authority_level) = payload.nth(ci_helpers::STANDARD_DATA_SIZE) else {
+                                    return Err(Error::InvalidData);
+                                };
 
-                todo!();
+                let Some(number_supported_protocols) = payload.next() else {
+                                    return Err(Error::InvalidData);
+                                };
+
+                if (number_supported_protocols == ux::u7::new(0)) {
+                    return Err(Error::InvalidData);
+                }
+
+                for i in 0..u8::from(number_supported_protocols) {
+                    // only two protocols supported
+                    // ignore any additional
+                    if i < 2 {
+                        ci_helpers::validate_protocol_data(payload.clone().map(u8::from))?;
+                    }
+                    if let None = payload.nth(4) {
+                        return Err(Error::InvalidData);
+                    }
+                }
 
                 Ok(InitiateProtocolNegotiationMessage(messages))
             }
@@ -167,8 +199,8 @@ macro_rules! initiate_protocol_negotiation_message {
                 };
 
                 let Ok(builder) = &mut self.builder else {
-                                                    unreachable!();
-                                                };
+                                                                                    unreachable!();
+                                                                                };
 
                 let payload = ci_helpers::StandardDataIterator::new(
                     DeviceId::MidiPort,
@@ -263,8 +295,8 @@ macro_rules! initiate_protocol_negotiation_message {
                 };
 
                 let Ok(builder) = &mut self.builder else {
-                                                    unreachable!();
-                                                };
+                                    unreachable!();
+                                };
 
                 let payload = ci_helpers::StandardDataIterator::new(
                     DeviceId::MidiPort,
@@ -399,6 +431,126 @@ mod tests {
                 0x3431_0000,
                 0x0000_0000
             ]),
+        );
+    }
+
+    #[test]
+    fn source_sysex8() {
+        assert_eq!(
+            InitiateProtocolNegotiationMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
+                0x541E_147E,
+                0x7F0D_1001,
+                0x512E_7E2F,
+                0x0060_0B2B,
+                0x543D_146C,
+                0x0202_0001,
+                0x0000_0100,
+                0x0300_0000,
+            ])
+            .unwrap()
+            .source(),
+            ux::u28::new(0x5FF9751),
+        );
+    }
+
+    #[test]
+    fn source_sysex7() {
+        assert_eq!(
+            InitiateProtocolNegotiationMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
+                0x3416_7E7F,
+                0x0D10_0151,
+                0x3426_2E7E,
+                0x2F00_600B,
+                0x3426_2B6C,
+                0x0202_0001,
+                0x3426_0000,
+                0x0100_0300,
+                0x3431_0000,
+                0x0000_0000
+            ])
+            .unwrap()
+            .source(),
+            ux::u28::new(0x5FF9751),
+        );
+    }
+
+    #[test]
+    fn destination_sysex8() {
+        assert_eq!(
+            InitiateProtocolNegotiationMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
+                0x541E_147E,
+                0x7F0D_1001,
+                0x512E_7E2F,
+                0x0060_0B2B,
+                0x543D_146C,
+                0x0202_0001,
+                0x0000_0100,
+                0x0300_0000,
+            ])
+            .unwrap()
+            .destination(),
+            ux::u28::new(0x562F000),
+        );
+    }
+
+    #[test]
+    fn destination_sysex7() {
+        assert_eq!(
+            InitiateProtocolNegotiationMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
+                0x3416_7E7F,
+                0x0D10_0151,
+                0x3426_2E7E,
+                0x2F00_600B,
+                0x3426_2B6C,
+                0x0202_0001,
+                0x3426_0000,
+                0x0100_0300,
+                0x3431_0000,
+                0x0000_0000
+            ])
+            .unwrap()
+            .destination(),
+            ux::u28::new(0x562F000),
+        );
+    }
+
+    #[test]
+    fn authority_level_sysex8() {
+        assert_eq!(
+            InitiateProtocolNegotiationMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
+                0x541E_147E,
+                0x7F0D_1001,
+                0x512E_7E2F,
+                0x0060_0B2B,
+                0x543D_146C,
+                0x0202_0001,
+                0x0000_0100,
+                0x0300_0000,
+            ])
+            .unwrap()
+            .authority_level(),
+            ux::u7::new(0x6C),
+        );
+    }
+
+    #[test]
+    fn authority_level_sysex7() {
+        assert_eq!(
+            InitiateProtocolNegotiationMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
+                0x3416_7E7F,
+                0x0D10_0151,
+                0x3426_2E7E,
+                0x2F00_600B,
+                0x3426_2B6C,
+                0x0202_0001,
+                0x3426_0000,
+                0x0100_0300,
+                0x3431_0000,
+                0x0000_0000
+            ])
+            .unwrap()
+            .authority_level(),
+            ux::u7::new(0x6C),
         );
     }
 }
