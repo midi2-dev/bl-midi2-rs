@@ -1,4 +1,5 @@
 use crate::{
+    error::Error,
     ci::{helpers as ci_helpers, DeviceId},
     message::{sysex, system_exclusive_7bit as sysex7, system_exclusive_8bit as sysex8},
     result::Result,
@@ -28,11 +29,23 @@ impl<'a> InvalidateMuidMessage<sysex8::Sysex8MessageGroup<'a>> {
         ])
     }
     pub fn target_muid(&self) -> ux::u28 {
-        todo!()
+        let mut payload = self.0.payload();
+        payload.nth(12);
+        ux::u28::from_u7s(&[
+            payload.next().unwrap(),
+            payload.next().unwrap(),
+            payload.next().unwrap(),
+            payload.next().unwrap(),
+        ])
     }
     pub fn from_data(data: &'a [u32]) -> Result<Self> {
         let messages = ci_helpers::validate_sysex8(data, STATUS)?;
-        todo!();
+
+        let mut payload = messages.payload();
+        let Some(_) = payload.nth(ci_helpers::STANDARD_DATA_SIZE + 3) else {
+            return Err(Error::InvalidData);
+        };
+
         Ok(InvalidateMuidMessage(messages))
     }
     pub fn data(&self) -> &[u32] {
@@ -58,11 +71,23 @@ impl<'a> InvalidateMuidMessage<sysex7::Sysex7MessageGroup<'a>> {
         ])
     }
     pub fn target_muid(&self) -> ux::u28 {
-        todo!()
+        let mut payload = self.0.payload();
+        payload.nth(12);
+        ux::u28::from_u7s(&[
+            payload.next().unwrap().into(),
+            payload.next().unwrap().into(),
+            payload.next().unwrap().into(),
+            payload.next().unwrap().into(),
+        ])
     }
     pub fn from_data(data: &'a [u32]) -> Result<Self> {
         let messages = ci_helpers::validate_sysex7(data, STATUS)?;
-        todo!();
+
+        let mut payload = messages.payload();
+        let Some(_) = payload.nth(ci_helpers::STANDARD_DATA_SIZE + 3) else {
+            return Err(Error::InvalidData);
+        };
+
         Ok(InvalidateMuidMessage(messages))
     }
     pub fn data(&self) -> &[u32] {
