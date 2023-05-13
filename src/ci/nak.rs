@@ -39,7 +39,8 @@ impl<'a> NakMessage<sysex8::Sysex8MessageGroup<'a>> {
         ])
     }
     pub fn device_id(&self) -> DeviceId {
-        todo!()
+        let mut payload = self.0.payload();
+        ci_helpers::device_id_from_u8(payload.nth(1).unwrap()).unwrap()
     }
     pub fn from_data(data: &'a [u32]) -> Result<Self> {
         let messages = ci_helpers::validate_sysex8(data, STATUS)?;
@@ -81,7 +82,8 @@ impl<'a> NakMessage<sysex7::Sysex7MessageGroup<'a>> {
         ])
     }
     pub fn device_id(&self) -> DeviceId {
-        todo!()
+        let mut payload = self.0.payload();
+        ci_helpers::device_id_from_u8(payload.nth(1).unwrap().into()).unwrap()
     }
     pub fn from_data(data: &'a [u32]) -> Result<Self> {
         let messages = ci_helpers::validate_sysex7(data, STATUS)?;
@@ -262,5 +264,33 @@ mod tests {
             0x0000_0000,
         ])
         .is_ok());
+    }
+
+    #[test]
+    fn device_id_syszex7() {
+        assert_eq!(NakMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
+            0x3316_7E0D,
+            0x0D7F_0172,
+            0x3326_7570,
+            0x2B35_783F,
+            0x3331_4200,
+            0x0000_0000,
+        ])
+        .unwrap()
+        .device_id(),
+        DeviceId::Channel(ux::u4::new(0xD)));
+    }
+
+    #[test]
+    fn device_id_syszex8() {
+        assert_eq!(NakMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
+            0x530E_B27E,
+            0x0D0D_7F01,
+            0x7275_702B,
+            0x3578_3F42,
+        ])
+        .unwrap()
+        .device_id(),
+        DeviceId::Channel(ux::u4::new(0xD)));
     }
 }

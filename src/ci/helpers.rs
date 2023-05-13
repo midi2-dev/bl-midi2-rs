@@ -84,7 +84,7 @@ pub fn validate_sysex8(buffer: &[u32], status: u8) -> Result<sysex8::Sysex8Messa
     Ok(messages)
 }
 
-fn device_id_from_u8(v: u8) -> Result<DeviceId> {
+pub fn device_id_from_u8(v: u8) -> Result<DeviceId> {
     if v == 0x7F {
         Ok(DeviceId::MidiPort)
     } else if v < 0x0F {
