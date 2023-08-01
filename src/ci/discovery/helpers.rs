@@ -1,7 +1,7 @@
 use crate::{
     ci::{helpers, DeviceId},
     error::Error,
-    util::{sysex_message, BitOps, Encode7Bit, Truncate},
+    util::{BitOps, Encode7Bit, Truncate},
 };
 
 pub struct DiscoveryData {

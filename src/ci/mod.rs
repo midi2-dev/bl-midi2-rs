@@ -1,7 +1,7 @@
 pub use confirm_protocol::ConfirmProtocolBuilder;
 pub use confirm_protocol::ConfirmProtocolMessage;
-//pub use discovery::query::Message as DiscoveryQueryMessage;
-//pub use discovery::query::Builder as DiscoveryQueryMessageBuilder;
+pub use discovery::query::DiscoveryQueryMessage;
+pub use discovery::query::DiscoveryQueryBuilder;
 //pub use discovery::reply::Message as DiscoveryReplyMessage;
 //pub use discovery::reply::Builder as DiscoveryReplyMessageBuilder;
 pub use initiate_protocol_negotiation::query::InitiateProtocolNegotiationBuilder as InitiateProtocolNegotiationQueryBuilder;
@@ -21,7 +21,7 @@ pub use set_protocol::SetProtocolMessage;
 //pub use test_protocol::reply::Builder as TestProtocolReplyMessageBuilder;
 
 mod confirm_protocol;
-//mod discovery;
+mod discovery;
 mod helpers;
 mod initiate_protocol_negotiation;
 mod invalidate_muid;
