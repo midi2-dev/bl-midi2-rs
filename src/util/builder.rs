@@ -41,8 +41,8 @@ macro_rules! builder {
 }
 
 pub(crate) use builder;
-pub(crate) use builder_setter;
 pub(crate) use builder_method;
+pub(crate) use builder_setter;
 
 #[cfg(test)]
 mod tests {
@@ -55,7 +55,7 @@ mod tests {
     }
 
     builder!(note: ux::u7, group: ux::u4);
-    
+
     impl Message {
         builder_method!();
     }

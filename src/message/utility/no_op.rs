@@ -1,7 +1,7 @@
 use crate::{
     error::Error,
     result::Result,
-    util::{BitOps, debug},
+    util::{debug, BitOps},
 };
 
 #[derive(Clone, PartialEq, Eq)]
@@ -55,7 +55,6 @@ impl<'a> NoOpMessageBuilder<'a> {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -69,13 +68,11 @@ mod tests {
             Ok(NoOpMessage(&[0x0B00_0000])),
         )
     }
-    
+
     #[test]
     fn group() {
         assert_eq!(
-            NoOpMessage::from_data(&[0x0900_0000])
-                .unwrap()
-                .group(),
+            NoOpMessage::from_data(&[0x0900_0000]).unwrap().group(),
             ux::u4::new(0x9),
         );
     }

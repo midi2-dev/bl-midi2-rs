@@ -54,7 +54,10 @@ pub fn least_significant_bit(word_14: ux::u14) -> ux::u7 {
 
 pub fn sysex_group_consistent_groups(buffer: &[u32], stride: usize) -> Result<()> {
     use group_from_packet as gfp;
-    if buffer.chunks_exact(stride).all(|chunk| gfp(chunk) == gfp(buffer)) {
+    if buffer
+        .chunks_exact(stride)
+        .all(|chunk| gfp(chunk) == gfp(buffer))
+    {
         Ok(())
     } else {
         Err(Error::InvalidData)
@@ -80,12 +83,12 @@ pub fn validate_sysex_group_statuses<
 
     if iter.peek().is_none() {
         if is_complete(first_status) {
-            return Ok(())
+            return Ok(());
         } else {
             return Err(Error::InvalidData);
         }
     }
-    
+
     if !is_begin(first_status) {
         return Err(Error::InvalidData);
     }

@@ -13,7 +13,7 @@ macro_rules! message_debug_impl {
                 fmt.write_str(")")
             }
         }
-    }
+    };
 }
 
 pub(crate) use message_debug_impl;

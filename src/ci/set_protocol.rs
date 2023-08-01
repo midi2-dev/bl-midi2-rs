@@ -1,18 +1,9 @@
 use crate::{
+    ci::{helpers as ci_helpers, DeviceId, Protocol},
     error::Error,
+    message::{sysex, system_exclusive_7bit as sysex7, system_exclusive_8bit as sysex8},
     result::Result,
-    message::{
-        sysex,
-        system_exclusive_8bit as sysex8,
-        system_exclusive_7bit as sysex7,
-    },
-    ci::{
-        helpers as ci_helpers,
-        DeviceId,
-        Protocol,
-    },
 };
-
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct SetProtocolMessage<Repr: sysex::SysexMessages>(Repr);
@@ -107,7 +98,6 @@ impl<'a> SetProtocolMessage<sysex7::Sysex7MessageGroup<'a>> {
     }
 }
 
-
 pub struct SetProtocolBuilder<Repr: sysex::SysexMessages> {
     source: ux::u28,
     destination: ux::u28,
@@ -133,7 +123,7 @@ impl<'a> SetProtocolBuilder<sysex8::Sysex8MessageGroup<'a>> {
         self.destination = dest;
         self
     }
-    pub fn authority_level(&mut self, auth: ux::u7) -> &mut Self{
+    pub fn authority_level(&mut self, auth: ux::u7) -> &mut Self {
         self.authority_level = auth;
         self
     }
@@ -155,19 +145,23 @@ impl<'a> SetProtocolBuilder<sysex8::Sysex8MessageGroup<'a>> {
         }
     }
     pub fn build(&'a mut self) -> Result<SetProtocolMessage<sysex8::Sysex8MessageGroup<'a>>> {
-        match self.builder.payload(
-            ci_helpers::StandardDataIterator::new(
-                DeviceId::MidiPort,
-                STATUS,
-                self.source,
-                self.destination,
+        match self
+            .builder
+            .payload(
+                ci_helpers::StandardDataIterator::new(
+                    DeviceId::MidiPort,
+                    STATUS,
+                    self.source,
+                    self.destination,
+                )
+                .chain([self.authority_level.into()].iter().copied())
+                .chain(ci_helpers::protocol_data(&self.protocol)),
             )
-            .chain([self.authority_level.into()].iter().copied())
-            .chain(ci_helpers::protocol_data(&self.protocol))
-        ).build() {
+            .build()
+        {
             Ok(messages) => Ok(SetProtocolMessage(messages)),
-            Err(e) => Err(e)
-        }            
+            Err(e) => Err(e),
+        }
     }
 }
 
@@ -184,7 +178,7 @@ impl<'a> SetProtocolBuilder<sysex7::Sysex7MessageGroup<'a>> {
         self.destination = dest;
         self
     }
-    pub fn authority_level(&mut self, auth: ux::u7) -> &mut Self{
+    pub fn authority_level(&mut self, auth: ux::u7) -> &mut Self {
         self.authority_level = auth;
         self
     }
@@ -206,47 +200,49 @@ impl<'a> SetProtocolBuilder<sysex7::Sysex7MessageGroup<'a>> {
         }
     }
     pub fn build(&'a mut self) -> Result<SetProtocolMessage<sysex7::Sysex7MessageGroup<'a>>> {
-        match self.builder.payload(
-            ci_helpers::StandardDataIterator::new(
-                DeviceId::MidiPort,
-                STATUS,
-                self.source,
-                self.destination,
+        match self
+            .builder
+            .payload(
+                ci_helpers::StandardDataIterator::new(
+                    DeviceId::MidiPort,
+                    STATUS,
+                    self.source,
+                    self.destination,
+                )
+                .map(ux::u7::new)
+                .chain([self.authority_level].iter().copied())
+                .chain(ci_helpers::protocol_data(&self.protocol).map(ux::u7::new)),
             )
-            .map(ux::u7::new)
-            .chain([self.authority_level].iter().copied())
-            .chain(ci_helpers::protocol_data(&self.protocol).map(ux::u7::new))
-        ).build() {
+            .build()
+        {
             Ok(messages) => Ok(SetProtocolMessage(messages)),
-            Err(e) => Err(e)
-        }            
+            Err(e) => Err(e),
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        util::debug,
-        ci::protocol,
-    };
-    
+    use crate::{ci::protocol, util::debug};
+
     #[test]
     fn sysex8_builder() {
         assert_eq!(
-            debug::Data(SetProtocolMessage::<sysex8::Sysex8MessageGroup>::builder(&mut [0x0; 8])
-                .group(ux::u4::new(0x5))
-                .stream_id(0xA1)
-                .source(ux::u28::new(126104616))
-                .destination(ux::u28::new(124848818))
-                .authority_level(ux::u7::new(0x3C))
-                .protocol(protocol::Protocol::Midi2 {
-                    jitter_reduction_extension: true,
-                    version: protocol::Protocol::MIDI_2_VERSION,
-                })
-                .build()
-                .unwrap()
-                .data(),
+            debug::Data(
+                SetProtocolMessage::<sysex8::Sysex8MessageGroup>::builder(&mut [0x0; 8])
+                    .group(ux::u4::new(0x5))
+                    .stream_id(0xA1)
+                    .source(ux::u28::new(126104616))
+                    .destination(ux::u28::new(124848818))
+                    .authority_level(ux::u7::new(0x3C))
+                    .protocol(protocol::Protocol::Midi2 {
+                        jitter_reduction_extension: true,
+                        version: protocol::Protocol::MIDI_2_VERSION,
+                    })
+                    .build()
+                    .unwrap()
+                    .data(),
             ),
             debug::Data(&[
                 0x551E_A17E,
@@ -264,18 +260,19 @@ mod tests {
     #[test]
     fn sysex7_builder() {
         assert_eq!(
-            debug::Data(SetProtocolMessage::<sysex7::Sysex7MessageGroup>::builder(&mut [0x0; 8])
-                .group(ux::u4::new(0x5))
-                .source(ux::u28::new(126104616))
-                .destination(ux::u28::new(124848818))
-                .authority_level(ux::u7::new(0x3C))
-                .protocol(protocol::Protocol::Midi2 {
-                    jitter_reduction_extension: true,
-                    version: protocol::Protocol::MIDI_2_VERSION,
-                })
-                .build()
-                .unwrap()
-                .data(),
+            debug::Data(
+                SetProtocolMessage::<sysex7::Sysex7MessageGroup>::builder(&mut [0x0; 8])
+                    .group(ux::u4::new(0x5))
+                    .source(ux::u28::new(126104616))
+                    .destination(ux::u28::new(124848818))
+                    .authority_level(ux::u7::new(0x3C))
+                    .protocol(protocol::Protocol::Midi2 {
+                        jitter_reduction_extension: true,
+                        version: protocol::Protocol::MIDI_2_VERSION,
+                    })
+                    .build()
+                    .unwrap()
+                    .data(),
             ),
             debug::Data(&[
                 0x3516_7E7F,
@@ -289,33 +286,39 @@ mod tests {
             ]),
         );
     }
-    
+
     #[test]
     fn sysex8_from_data() {
-        assert!(SetProtocolMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
-            0x551E_A17E,
-            0x7F0D_1201,
-            0x2868_103C,
-            0x3215_443B,
-            0x5537_A13C,
-            0x0200_0100,
-            0x0000_0000,
-            0x0000_0000,
-        ]).is_ok());
+        assert!(
+            SetProtocolMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
+                0x551E_A17E,
+                0x7F0D_1201,
+                0x2868_103C,
+                0x3215_443B,
+                0x5537_A13C,
+                0x0200_0100,
+                0x0000_0000,
+                0x0000_0000,
+            ])
+            .is_ok()
+        );
     }
 
     #[test]
     fn sysex7_from_data() {
-        assert!(SetProtocolMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
-            0x3516_7E7F,
-            0x0D12_0128,
-            0x3526_6810,
-            0x3C32_1544,
-            0x3526_3B3C,
-            0x0200_0100,
-            0x3531_0000,
-            0x0000_0000,
-        ]).is_ok());
+        assert!(
+            SetProtocolMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
+                0x3516_7E7F,
+                0x0D12_0128,
+                0x3526_6810,
+                0x3C32_1544,
+                0x3526_3B3C,
+                0x0200_0100,
+                0x3531_0000,
+                0x0000_0000,
+            ])
+            .is_ok()
+        );
     }
 
     #[test]

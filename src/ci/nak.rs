@@ -268,29 +268,33 @@ mod tests {
 
     #[test]
     fn device_id_syszex7() {
-        assert_eq!(NakMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
-            0x3316_7E0D,
-            0x0D7F_0172,
-            0x3326_7570,
-            0x2B35_783F,
-            0x3331_4200,
-            0x0000_0000,
-        ])
-        .unwrap()
-        .device_id(),
-        DeviceId::Channel(ux::u4::new(0xD)));
+        assert_eq!(
+            NakMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
+                0x3316_7E0D,
+                0x0D7F_0172,
+                0x3326_7570,
+                0x2B35_783F,
+                0x3331_4200,
+                0x0000_0000,
+            ])
+            .unwrap()
+            .device_id(),
+            DeviceId::Channel(ux::u4::new(0xD))
+        );
     }
 
     #[test]
     fn device_id_syszex8() {
-        assert_eq!(NakMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
-            0x530E_B27E,
-            0x0D0D_7F01,
-            0x7275_702B,
-            0x3578_3F42,
-        ])
-        .unwrap()
-        .device_id(),
-        DeviceId::Channel(ux::u4::new(0xD)));
+        assert_eq!(
+            NakMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
+                0x530E_B27E,
+                0x0D0D_7F01,
+                0x7275_702B,
+                0x3578_3F42,
+            ])
+            .unwrap()
+            .device_id(),
+            DeviceId::Channel(ux::u4::new(0xD))
+        );
     }
 }

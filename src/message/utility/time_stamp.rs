@@ -1,7 +1,7 @@
 use crate::{
     error::Error,
     result::Result,
-    util::{BitOps, Truncate, debug},
+    util::{debug, BitOps, Truncate},
 };
 
 #[derive(Clone, PartialEq, Eq)]
@@ -53,8 +53,8 @@ impl<'a> TimeStampMessageBuilder<'a> {
             buffer[0].set_nibble(2, ux::u4::new(2));
             Self(Some(buffer))
         } else {
-            Self(None)            
-        }        
+            Self(None)
+        }
     }
     pub fn build(&'a self) -> Result<TimeStampMessage<'a>> {
         if let Some(buffer) = &self.0 {
@@ -103,7 +103,7 @@ mod tests {
             Err(Error::BufferOverflow),
         );
     }
-    
+
     #[test]
     fn group() {
         assert_eq!(
@@ -115,7 +115,9 @@ mod tests {
     #[test]
     fn time_stamp() {
         assert_eq!(
-            TimeStampMessage::from_data(&[0x0021_2345]).unwrap().time_stamp(),
+            TimeStampMessage::from_data(&[0x0021_2345])
+                .unwrap()
+                .time_stamp(),
             ux::u20::new(0x12345),
         )
     }
