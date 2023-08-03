@@ -1,8 +1,15 @@
 use crate::{
-    ci::{helpers as ci_helpers, DeviceId},
     error::Error,
-    message::{sysex, system_exclusive_7bit as sysex7, system_exclusive_8bit as sysex8},
     result::Result,
+    message::{
+        sysex,
+        system_exclusive_8bit as sysex8,
+        system_exclusive_7bit as sysex7,
+    },
+    ci::{
+        helpers as ci_helpers,
+        DeviceId,
+    },
     util::{Encode7Bit, Truncate},
 };
 
@@ -12,9 +19,7 @@ pub struct ConfirmProtocolMessage<Repr: sysex::SysexMessages>(Repr);
 const STATUS: u8 = 0x15;
 
 impl<'a> ConfirmProtocolMessage<sysex8::Sysex8MessageGroup<'a>> {
-    pub fn builder(
-        buffer: &'a mut [u32],
-    ) -> ConfirmProtocolBuilder<sysex8::Sysex8MessageGroup<'a>> {
+    pub fn builder(buffer: &'a mut [u32]) -> ConfirmProtocolBuilder<sysex8::Sysex8MessageGroup<'a>> {
         ConfirmProtocolBuilder::<sysex8::Sysex8MessageGroup<'a>>::new(buffer)
     }
     pub fn group(&self) -> ux::u4 {
@@ -42,10 +47,7 @@ impl<'a> ConfirmProtocolMessage<sysex8::Sysex8MessageGroup<'a>> {
     }
     pub fn authority_level(&self) -> ux::u7 {
         let mut payload = self.0.payload();
-        payload
-            .nth(ci_helpers::STANDARD_DATA_SIZE)
-            .unwrap()
-            .truncate()
+        payload.nth(ci_helpers::STANDARD_DATA_SIZE).unwrap().truncate()
     }
     pub fn from_data(data: &'a [u32]) -> Result<Self> {
         let messages = ci_helpers::validate_sysex8(data, STATUS)?;
@@ -64,9 +66,7 @@ impl<'a> ConfirmProtocolMessage<sysex8::Sysex8MessageGroup<'a>> {
 }
 
 impl<'a> ConfirmProtocolMessage<sysex7::Sysex7MessageGroup<'a>> {
-    pub fn builder(
-        buffer: &'a mut [u32],
-    ) -> ConfirmProtocolBuilder<sysex7::Sysex7MessageGroup<'a>> {
+    pub fn builder(buffer: &'a mut [u32]) -> ConfirmProtocolBuilder<sysex7::Sysex7MessageGroup<'a>> {
         ConfirmProtocolBuilder::<sysex7::Sysex7MessageGroup<'a>>::new(buffer)
     }
     pub fn group(&self) -> ux::u4 {
@@ -112,6 +112,7 @@ impl<'a> ConfirmProtocolMessage<sysex7::Sysex7MessageGroup<'a>> {
     }
 }
 
+
 pub struct ConfirmProtocolBuilder<Repr: sysex::SysexMessages> {
     source: ux::u28,
     destination: ux::u28,
@@ -136,7 +137,7 @@ impl<'a> ConfirmProtocolBuilder<sysex8::Sysex8MessageGroup<'a>> {
         self.destination = dest;
         self
     }
-    pub fn authority_level(&mut self, auth: ux::u7) -> &mut Self {
+    pub fn authority_level(&mut self, auth: ux::u7) -> &mut Self{
         self.authority_level = auth;
         self
     }
@@ -149,22 +150,17 @@ impl<'a> ConfirmProtocolBuilder<sysex8::Sysex8MessageGroup<'a>> {
         }
     }
     pub fn build(&'a mut self) -> Result<ConfirmProtocolMessage<sysex8::Sysex8MessageGroup<'a>>> {
-        match self
-            .builder
-            .payload(
-                ci_helpers::StandardDataIterator::new(
-                    DeviceId::MidiPort,
-                    STATUS,
-                    self.source,
-                    self.destination,
-                )
-                .chain([self.authority_level.into()].iter().copied()),
-            )
-            .build()
-        {
+        match self.builder.payload(
+            ci_helpers::StandardDataIterator::new(
+                DeviceId::MidiPort,
+                STATUS,
+                self.source,
+                self.destination,
+            ).chain([self.authority_level.into()].iter().copied())
+        ).build() {
             Ok(messages) => Ok(ConfirmProtocolMessage(messages)),
-            Err(e) => Err(e),
-        }
+            Err(e) => Err(e)
+        }            
     }
 }
 
@@ -181,7 +177,7 @@ impl<'a> ConfirmProtocolBuilder<sysex7::Sysex7MessageGroup<'a>> {
         self.destination = dest;
         self
     }
-    pub fn authority_level(&mut self, auth: ux::u7) -> &mut Self {
+    pub fn authority_level(&mut self, auth: ux::u7) -> &mut Self{
         self.authority_level = auth;
         self
     }
@@ -194,23 +190,17 @@ impl<'a> ConfirmProtocolBuilder<sysex7::Sysex7MessageGroup<'a>> {
         }
     }
     pub fn build(&'a mut self) -> Result<ConfirmProtocolMessage<sysex7::Sysex7MessageGroup<'a>>> {
-        match self
-            .builder
-            .payload(
-                ci_helpers::StandardDataIterator::new(
-                    DeviceId::MidiPort,
-                    STATUS,
-                    self.source,
-                    self.destination,
-                )
-                .map(ux::u7::new)
-                .chain([self.authority_level].iter().copied()),
-            )
-            .build()
-        {
+        match self.builder.payload(
+            ci_helpers::StandardDataIterator::new(
+                DeviceId::MidiPort,
+                STATUS,
+                self.source,
+                self.destination,
+            ).map(ux::u7::new).chain([self.authority_level].iter().copied())
+        ).build() {
             Ok(messages) => Ok(ConfirmProtocolMessage(messages)),
-            Err(e) => Err(e),
-        }
+            Err(e) => Err(e)
+        }            
     }
 }
 
@@ -222,16 +212,15 @@ mod tests {
     #[test]
     fn sysex8_builder() {
         assert_eq!(
-            debug::Data(
-                ConfirmProtocolMessage::<sysex8::Sysex8MessageGroup>::builder(&mut [0x0; 8])
-                    .group(ux::u4::new(0xF))
-                    .stream_id(0x76)
-                    .source(ux::u28::new(11629215))
-                    .destination(ux::u28::new(225493351))
-                    .authority_level(ux::u7::new(0x27))
-                    .build()
-                    .unwrap()
-                    .data(),
+            debug::Data(ConfirmProtocolMessage::<sysex8::Sysex8MessageGroup>::builder(&mut [0x0; 8])
+                .group(ux::u4::new(0xF))
+                .stream_id(0x76)
+                .source(ux::u28::new(11629215))
+                .destination(ux::u28::new(225493351))
+                .authority_level(ux::u7::new(0x27))
+                .build()
+                .unwrap()
+                .data(),
             ),
             debug::Data(&[
                 0x5F1E_767E,
@@ -249,15 +238,14 @@ mod tests {
     #[test]
     fn sysex7_builder() {
         assert_eq!(
-            debug::Data(
-                ConfirmProtocolMessage::<sysex7::Sysex7MessageGroup>::builder(&mut [0x0; 8])
-                    .group(ux::u4::new(0xF))
-                    .source(ux::u28::new(11629215))
-                    .destination(ux::u28::new(225493351))
-                    .authority_level(ux::u7::new(0x27))
-                    .build()
-                    .unwrap()
-                    .data(),
+            debug::Data(ConfirmProtocolMessage::<sysex7::Sysex7MessageGroup>::builder(&mut [0x0; 8])
+                .group(ux::u4::new(0xF))
+                .source(ux::u28::new(11629215))
+                .destination(ux::u28::new(225493351))
+                .authority_level(ux::u7::new(0x27))
+                .build()
+                .unwrap()
+                .data(),
             ),
             debug::Data(&[
                 0x3F16_7E7F,
@@ -269,7 +257,7 @@ mod tests {
             ]),
         );
     }
-
+    
     #[test]
     fn sysx8_from_data() {
         assert!(
@@ -282,11 +270,10 @@ mod tests {
                 0x0000_0000,
                 0x0000_0000,
                 0x0000_0000,
-            ])
-            .is_ok()
+            ]).is_ok()
         )
     }
-
+    
     #[test]
     fn sysex7_from_data() {
         assert!(
@@ -297,8 +284,7 @@ mod tests {
                 0x0567_0243,
                 0x3F32_6B27,
                 0x0000_0000
-            ])
-            .is_ok()
+            ]).is_ok()
         );
     }
 
@@ -320,7 +306,7 @@ mod tests {
             ux::u4::new(0xF),
         );
     }
-
+    
     #[test]
     fn sysex8_source() {
         assert_eq!(
@@ -339,7 +325,7 @@ mod tests {
             ux::u28::new(11629215),
         );
     }
-
+    
     #[test]
     fn sysex8_destination() {
         assert_eq!(
@@ -358,7 +344,7 @@ mod tests {
             ux::u28::new(225493351),
         );
     }
-
+    
     #[test]
     fn sysex8_authority_level() {
         assert_eq!(
@@ -394,7 +380,7 @@ mod tests {
             ux::u4::new(0xF),
         );
     }
-
+    
     #[test]
     fn sysex7_source() {
         assert_eq!(
@@ -411,7 +397,7 @@ mod tests {
             ux::u28::new(11629215),
         );
     }
-
+    
     #[test]
     fn sysex7_destination() {
         assert_eq!(
@@ -428,7 +414,7 @@ mod tests {
             ux::u28::new(225493351),
         );
     }
-
+    
     #[test]
     fn sysex7_authority_level() {
         assert_eq!(
