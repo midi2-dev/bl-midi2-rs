@@ -37,6 +37,9 @@ impl<'a> ControlChangeMessage<'a> {
     }
     pub fn from_data(data: &'a [u32]) -> Result<Self> {
         midi2cv_helpers::validate_packet(data, MIDI2CV_TYPE_CODE, OP_CODE)?;
+        if data.len() < 2 {
+            return Err(Error::BufferOverflow);
+        }
         Ok(Self(data))
     }
 }
