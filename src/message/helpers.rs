@@ -20,6 +20,14 @@ pub fn write_group_to_packet(g: ux::u4, p: &mut [u32]) {
     p[0].set_nibble(1, g);
 }
 
+pub fn write_channel_to_packet(channel: ux::u4, p: &mut [u32]) {
+    p[0].set_nibble(3, channel);
+}
+
+pub fn write_op_code_to_packet(op_code: ux::u4, p: &mut [u32]) {
+    p[0].set_nibble(2, op_code);
+}
+
 pub fn write_data(
     type_code: ux::u4,
     group: ux::u4,
@@ -29,7 +37,8 @@ pub fn write_data(
 ) {
     write_type_to_packet(type_code, p);
     write_group_to_packet(group, p);
-    p[0].set_nibble(2, op_code).set_nibble(3, channel);
+    write_channel_to_packet(channel, p);
+    write_op_code_to_packet(op_code, p);
 }
 
 pub fn group_from_packet(p: &[u32]) -> ux::u4 {

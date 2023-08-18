@@ -33,8 +33,8 @@ pub use assignable_per_note_controller::Builder as AssignablePerNoteControllerMe
 pub use assignable_per_note_controller::Message as AssignablePerNoteControllerMessage;
 pub use channel_pressure::Builder as ChannelPressureMessageBuilder;
 pub use channel_pressure::Message as ChannelPressureMessage;
-pub use control_change::Builder as ControlChangeMessageBuilder;
-pub use control_change::Message as ControlChangeMessage;
+pub use control_change::ControlChangeBuilder;
+pub use control_change::ControlChangeMessage;
 pub use key_pressure::Builder as KeyPressureMessageBuilder;
 pub use key_pressure::Message as KeyPressureMessage;
 pub use note_off::Builder as NoteOffMessageBuilder;
