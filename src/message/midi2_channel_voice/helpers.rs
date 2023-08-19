@@ -20,6 +20,14 @@ pub fn controller_data_from_packet(p: &[u32]) -> u32 {
     p[1]
 }
 
+pub fn note_from_packet(p: &[u32]) -> ux::u7 {
+    p[0].octet(2).truncate()
+}
+
+pub fn note_velocity_from_packet(p: &[u32]) -> u16 {
+    p[1].word(0)
+}
+
 pub fn write_controller_bank_to_packet(v: ux::u7, p: &mut [u32]) -> &mut [u32] {
     p[0].set_octet(2, v.into());
     p
@@ -35,10 +43,21 @@ pub fn write_controller_data_to_packet(v: u32, p: &mut [u32]) -> &mut [u32]{
     p
 }
 
-pub fn validate_controller_message_buffer_size(p: &[u32]) -> Result<()> {
-    match p.len() {
-        0 | 1 => Err(Error::BufferOverflow),
-        _ => Ok(()),
+pub fn write_note_to_packet(note: ux::u7, p: &mut [u32]) -> &mut [u32] {
+    p[0].set_octet(2, note.into());
+    p
+}
+
+pub fn write_note_velocity_to_packet(velocity: u16, p: &mut [u32]) -> &mut [u32] {
+    p[1].set_word(0, velocity);
+    p
+}
+
+pub fn validate_buffer_size(p: &[u32], sz: usize) -> Result<()> {
+    if p.len() < sz {
+        Err(Error::BufferOverflow)
+    } else {
+        Ok(())
     }
 }
 
@@ -62,6 +81,16 @@ mod tests {
     }
 
     #[test]
+    fn test_note_from_packet() {
+        assert_eq!(note_from_packet(&[0x0000_3200]), ux::u7::new(0x32));
+    }
+
+    #[test]
+    fn test_note_velocity_from_packet() {
+        assert_eq!(note_velocity_from_packet(&[0x0000_0000, 0x328A_0000]), 0x328A);
+    }
+
+    #[test]
     fn test_write_controller_bank_to_packet() {
         assert_eq!(write_controller_bank_to_packet(ux::u7::new(0x3A), &mut [0x0]), &[0x0000_3A00]);
     }
@@ -77,9 +106,19 @@ mod tests {
     }
 
     #[test]
-    fn test_valid_controller_message_buffer_size() {
-        assert_eq!(validate_controller_message_buffer_size(&[]), Err(Error::BufferOverflow));
-        assert_eq!(validate_controller_message_buffer_size(&[0x0]), Err(Error::BufferOverflow));
-        assert_eq!(validate_controller_message_buffer_size(&[0x0, 0x0]), Ok(()));
+    fn test_write_note_to_packet() {
+        assert_eq!(write_note_to_packet(ux::u7::new(0x73), &mut [0x0]), &[0x0000_7300]);
+    }
+
+    #[test]
+    fn test_write_note_velocity_to_packet() {
+        assert_eq!(write_note_velocity_to_packet(0x1E02, &mut [0x0, 0x0]), &[0x0, 0x1E02_0000]);
+    }
+
+    #[test]
+    fn test_valid_buffer_size() {
+        assert_eq!(validate_buffer_size(&[], 2), Err(Error::BufferOverflow));
+        assert_eq!(validate_buffer_size(&[0x0], 2), Err(Error::BufferOverflow));
+        assert_eq!(validate_buffer_size(&[0x0, 0x0], 2), Ok(()));
     }
 }
