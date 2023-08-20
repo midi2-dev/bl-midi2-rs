@@ -97,8 +97,6 @@ impl<'a> NoteOnBuilder<'a> {
     }
 }
 
-
-
 #[cfg(test)]
 mod tests {
     use super::*;
