@@ -15,26 +15,26 @@ use simple_generic::stop;
 use simple_generic::timing_clock;
 use simple_generic::tune_request;
 
-pub use active_sensing::Builder as ActiveSensingMessageBuilder;
-pub use active_sensing::Message as ActiveSensingMessage;
-pub use cont::Builder as ContinueMessageBuilder;
-pub use cont::Message as ContinueMessage;
-pub use reset::Builder as ResetMessageBuilder;
-pub use reset::Message as ResetMessage;
-pub use song_position_pointer::Builder as SongPositionPointerMessageBuilder;
-pub use song_position_pointer::Message as SongPositionPointerMessage;
+pub use active_sensing::ActiveSensingBuilder;
+pub use active_sensing::ActiveSensingMessage;
+pub use cont::ContinueBuilder;
+pub use cont::ContinueMessage;
+pub use reset::ResetBuilder;
+pub use reset::ResetMessage;
+pub use song_position_pointer::SongPositionPointerBuilder;
+pub use song_position_pointer::SongPositionPointerMessage;
 pub use song_select::Builder as SongSelectMessageBuilder;
 pub use song_select::Message as SongSelectMessage;
-pub use start::Builder as StartMessageBuilder;
-pub use start::Message as StartMessage;
-pub use stop::Builder as StopMessageBuilder;
-pub use stop::Message as StopMessage;
+pub use start::StartBuilder;
+pub use start::StartMessage;
+pub use stop::StopBuilder;
+pub use stop::StopMessage;
 pub use time_code::Builder as TimeCodeMessageBuilder;
 pub use time_code::Message as TimeCodeMessage;
-pub use timing_clock::Builder as TimingClockMessageBuilder;
-pub use timing_clock::Message as TimingClockMessage;
-pub use tune_request::Builder as TuneRequestMessageBuilder;
-pub use tune_request::Message as TuneRequestMessage;
+pub use timing_clock::TimingClockBuilder;
+pub use timing_clock::TimingClockMessage;
+pub use tune_request::TuneRequestBuilder;
+pub use tune_request::TuneRequestMessage;
 
 fn validate_packet(p: &[u32], status: u8) -> Result<(), Error> {
     if p.is_empty() {
@@ -44,6 +44,18 @@ fn validate_packet(p: &[u32], status: u8) -> Result<(), Error> {
     } else {
         Ok(())
     }
+}
+
+fn validate_buffer_size(buffer: &[u32]) -> Result<(), Error> {
+    if buffer.len() > 0 {
+        Ok(())
+    } else {
+        Err(Error::BufferOverflow)
+    }
+}
+
+fn write_op_code_to_packet(buffer: &mut [u32], op_code: u8) {
+    buffer[0].set_octet(1, op_code);
 }
 
 fn write_data_to_packet(
