@@ -1,98 +1,156 @@
 use crate::{
-    error::Error,
-    message::{helpers as message_helpers, midi2_channel_voice::helpers, Midi2Message},
-    util::{builder, getter, BitOps, Truncate},
+    message::{
+        helpers as message_helpers,
+        midi2_channel_voice::{
+            TYPE_CODE as MIDI2CV_TYPE_CODE,
+            helpers as midi2cv_helpers,
+        },
+    },
+    result::Result,
+    util::{BitOps, debug},
 };
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Message {
-    group: ux::u4,
-    channel: ux::u4,
-    note: ux::u7,
-    index: u8,
-    data: u32,
-}
+const OP_CODE: ux::u4 = ux::u4::new(0b0001);
 
-builder::builder!(
-    group: ux::u4,
-    channel: ux::u4,
-    note: ux::u7,
-    index: u8,
-    data: u32
-);
+#[derive(Clone, PartialEq, Eq)]
+pub struct AssignablePerNoteControllerMessage<'a>(&'a [u32]);
 
-impl Message {
-    const TYPE_CODE: ux::u4 = super::TYPE_CODE;
-    const OP_CODE: ux::u4 = ux::u4::new(0b0001);
-    getter::getter!(group, ux::u4);
-    getter::getter!(channel, ux::u4);
-    getter::getter!(note, ux::u7);
-    getter::getter!(index, u8);
-    getter::getter!(data, u32);
-    builder::builder_method!();
-}
+debug::message_debug_impl!(AssignablePerNoteControllerMessage);
 
-impl Midi2Message for Message {
-    fn validate_ump(bytes: &[u32]) -> Result<(), Error> {
-        helpers::validate_packet(bytes, Message::TYPE_CODE, Message::OP_CODE)
+impl<'a> AssignablePerNoteControllerMessage<'a> {
+    pub fn builder(buffer: &mut [u32]) -> AssignablePerNoteControllerBuilder {
+        AssignablePerNoteControllerBuilder::new(buffer)
     }
-    fn from_ump(bytes: &[u32]) -> Self {
-        Message {
-            group: message_helpers::group_from_packet(bytes),
-            channel: message_helpers::channel_from_packet(bytes),
-            note: bytes[0].octet(2).truncate(),
-            index: bytes[0].octet(3),
-            data: bytes[1],
+    pub fn group(&self) -> ux::u4 {
+        message_helpers::group_from_packet(self.0)
+    }
+    pub fn channel(&self) -> ux::u4 {
+        message_helpers::channel_from_packet(self.0)
+    }
+    pub fn note(&self) -> ux::u7 {
+        midi2cv_helpers::note_from_packet(self.0)
+    }
+    pub fn index(&self) -> u8 {
+        self.0[0].octet(3)
+    }
+    pub fn controller_data(&self) -> u32 {
+        self.0[1]
+    }
+    pub fn from_data(data: &'a [u32]) -> Result<Self> {
+        message_helpers::validate_packet(data, MIDI2CV_TYPE_CODE, OP_CODE)?;
+        midi2cv_helpers::validate_buffer_size(data, 2)?;
+        Ok(Self(data))
+    }
+}
+
+#[derive(PartialEq, Eq)]
+pub struct AssignablePerNoteControllerBuilder<'a>(Result<&'a mut [u32]>);
+
+impl<'a> AssignablePerNoteControllerBuilder<'a> {
+    pub fn new(buffer: &'a mut [u32]) -> Self {
+        match midi2cv_helpers::validate_buffer_size(buffer, 2) {
+            Ok(()) => {
+                message_helpers::write_op_code_to_packet(OP_CODE, buffer);
+                message_helpers::write_type_to_packet(MIDI2CV_TYPE_CODE, buffer);
+                Self(Ok(buffer))
+            }
+            Err(e) => Self(Err(e)),
         }
     }
-    fn to_ump<'a>(&self, bytes: &'a mut [u32]) -> &'a [u32] {
-        message_helpers::write_data(
-            Message::TYPE_CODE,
-            self.group,
-            Message::OP_CODE,
-            self.channel,
-            bytes,
-        );
-        bytes[0].set_octet(2, self.note.into());
-        bytes[0].set_octet(3, self.index);
-        bytes[1] = self.data;
-        &bytes[..2]
+    pub fn group(&mut self, v: ux::u4) -> &mut Self {
+
+        if let Ok(buffer) = &mut self.0 {
+            message_helpers::write_group_to_packet(v, buffer);
+        }
+        self
+    }
+    pub fn channel(&mut self, v: ux::u4) -> &mut Self {
+        if let Ok(buffer) = &mut self.0 {
+            message_helpers::write_channel_to_packet(v, buffer);
+        }
+        self
+    }
+    pub fn note(&mut self, v: ux::u7) -> &mut Self {
+        if let Ok(buffer) = &mut self.0 {
+            midi2cv_helpers::write_note_to_packet(v, buffer);
+        }
+        self
+    }
+    pub fn index(&mut self, v: u8) -> &mut Self {
+        if let Ok(buffer) = &mut self.0 {
+            buffer[0].set_octet(3, v);
+        }
+        self
+    }
+    pub fn controller_data(&mut self, v: u32) -> &mut Self {
+        if let Ok(buffer) = &mut self.0 {
+            buffer[1] = v;
+        }
+        self
+    }
+    pub fn build(&'a self) -> Result<AssignablePerNoteControllerMessage<'a>> {
+        match &self.0 {
+            Ok(buffer) => Ok(AssignablePerNoteControllerMessage(buffer)),
+            Err(e) => Err(e.clone()),
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::message_traits_test;
-
-    message_traits_test!(Message);
 
     #[test]
-    fn deserialize() {
+    fn builder() {
         assert_eq!(
-            Message::try_from_ump(&[0x4410_2A05, 0x3691_2151]),
-            Ok(Message {
-                group: ux::u4::new(0x4),
-                channel: ux::u4::new(0x0),
-                note: ux::u7::new(0x2A),
-                index: 0x05,
-                data: 0x3691_2151,
-            }),
+            AssignablePerNoteControllerMessage::builder(&mut [0x0, 0x0])
+                .group(ux::u4::new(0x2))
+                .channel(ux::u4::new(0x4))
+                .note(ux::u7::new(0x6F))
+                .index(0xB1)
+                .controller_data(0x46105EE5)
+                .build(),
+            Ok(AssignablePerNoteControllerMessage(&[0x4214_6FB1, 0x46105EE5])),
         );
     }
 
     #[test]
-    fn serialize() {
+    fn group() {
         assert_eq!(
-            Message {
-                group: ux::u4::new(0x8),
-                channel: ux::u4::new(0xE),
-                note: ux::u7::new(0x1A),
-                index: 0xF6,
-                data: 0xBE90_8008,
-            }
-            .to_ump(&mut [0x0, 0x0]),
-            &[0x481E_1AF6, 0xBE90_8008],
+            AssignablePerNoteControllerMessage::from_data(&[0x4214_6FB1, 0x46105EE5]).unwrap().group(),
+            ux::u4::new(0x2),
+        );
+    }
+
+    #[test]
+    fn channel() {
+        assert_eq!(
+            AssignablePerNoteControllerMessage::from_data(&[0x4214_6FB1, 0x46105EE5]).unwrap().channel(),
+            ux::u4::new(0x4),
+        );
+    }
+
+    #[test]
+    fn note() {
+        assert_eq!(
+            AssignablePerNoteControllerMessage::from_data(&[0x4214_6FB1, 0x46105EE5]).unwrap().note(),
+            ux::u7::new(0x6F),
+        );
+    }
+
+    #[test]
+    fn index() {
+        assert_eq!(
+            AssignablePerNoteControllerMessage::from_data(&[0x4214_6FB1, 0x46105EE5]).unwrap().index(),
+            0xB1,
+        );
+    }
+
+    #[test]
+    fn controller_data() {
+        assert_eq!(
+            AssignablePerNoteControllerMessage::from_data(&[0x4214_6FB1, 0x46105EE5]).unwrap().controller_data(),
+            0x46105EE5,
         );
     }
 }

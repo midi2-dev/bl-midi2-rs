@@ -24,8 +24,8 @@ pub use controller::Controller;
 
 pub use assignable_controller::AssignableControllerBuilder;
 pub use assignable_controller::AssignableControllerMessage;
-pub use assignable_per_note_controller::Builder as AssignablePerNoteControllerMessageBuilder;
-pub use assignable_per_note_controller::Message as AssignablePerNoteControllerMessage;
+pub use assignable_per_note_controller::AssignablePerNoteControllerBuilder;
+pub use assignable_per_note_controller::AssignablePerNoteControllerMessage;
 pub use channel_pressure::ChannelPressureBuilder;
 pub use channel_pressure::ChannelPressureMessage;
 pub use control_change::ControlChangeBuilder;
