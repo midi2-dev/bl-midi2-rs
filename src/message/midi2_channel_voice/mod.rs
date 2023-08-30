@@ -4,7 +4,7 @@ mod attribute;
 mod channel_pitch_bend;
 mod channel_pressure;
 mod control_change;
-mod controllers;
+mod controller;
 mod helpers;
 mod key_pressure;
 mod note_off;
@@ -20,7 +20,7 @@ mod relative_registered_controller;
 pub(crate) const TYPE_CODE: ux::u4 = ux::u4::new(0x4);
 
 pub use attribute::Attribute as NoteAttribute;
-pub use controllers::Controller;
+pub use controller::Controller;
 
 pub use assignable_controller::AssignableControllerBuilder;
 pub use assignable_controller::AssignableControllerMessage;
@@ -46,8 +46,8 @@ pub use program_change::ProgramChangeBuilder;
 pub use program_change::ProgramChangeMessage;
 pub use registered_controller::RegisteredControllerBuilder;
 pub use registered_controller::RegisteredControllerMessage;
-pub use registered_per_note_controller::Builder as RegisteredPerNoteControllerMessageBuilder;
-pub use registered_per_note_controller::Message as RegisteredPerNoteControllerMessage;
+pub use registered_per_note_controller::RegisteredPerNoteControllerBuilder;
+pub use registered_per_note_controller::RegisteredPerNoteControllerMessage;
 pub use relative_assignable_controller::RelativeAssignableControllerBuilder;
 pub use relative_assignable_controller::RelativeAssignableControllerMessage;
 pub use relative_registered_controller::RelativeRegisteredControllerBuilder;

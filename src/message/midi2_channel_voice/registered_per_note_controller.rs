@@ -1,109 +1,146 @@
 use crate::{
-    error::Error,
     message::{
         helpers as message_helpers,
-        midi2_channel_voice::{controllers, helpers},
-        Midi2Message,
+        midi2_channel_voice::{
+            controller,
+            TYPE_CODE as MIDI2CV_TYPE_CODE,
+            helpers as midi2cv_helpers,
+        },
     },
-    util::{builder, getter, BitOps, Truncate},
+    result::Result,
+    util::{BitOps, debug},
 };
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Message {
-    group: ux::u4,
-    channel: ux::u4,
-    note: ux::u7,
-    controller: controllers::Controller,
-}
+const OP_CODE: ux::u4 = ux::u4::new(0b0000);
 
-builder::builder!(
-    group: ux::u4,
-    channel: ux::u4,
-    note: ux::u7,
-    controller: controllers::Controller
-);
+#[derive(Clone, PartialEq, Eq)]
+pub struct RegisteredPerNoteControllerMessage<'a>(&'a [u32]);
 
-impl Message {
-    const TYPE_CODE: ux::u4 = super::TYPE_CODE;
-    const OP_CODE: ux::u4 = ux::u4::new(0b0000);
-    getter::getter!(group, ux::u4);
-    getter::getter!(channel, ux::u4);
-    getter::getter!(note, ux::u7);
-    getter::getter!(controller, controllers::Controller);
-    builder::builder_method!();
-}
+debug::message_debug_impl!(RegisteredPerNoteControllerMessage);
 
-impl Midi2Message for Message {
-    fn validate_ump(bytes: &[u32]) -> Result<(), Error> {
-        controllers::validate_index(bytes[0].octet(3))?;
-        helpers::validate_packet(bytes, Message::TYPE_CODE, Message::OP_CODE)
+impl<'a> RegisteredPerNoteControllerMessage<'a> {
+    pub fn builder(buffer: &mut [u32]) -> RegisteredPerNoteControllerBuilder {
+        RegisteredPerNoteControllerBuilder::new(buffer)
     }
-    fn from_ump(bytes: &[u32]) -> Self {
-        Message {
-            group: message_helpers::group_from_packet(bytes),
-            channel: message_helpers::channel_from_packet(bytes),
-            note: bytes[0].octet(2).truncate(),
-            controller: controllers::from_index_and_data(bytes[0].octet(3), bytes[1]),
+    pub fn group(&self) -> ux::u4 {
+        message_helpers::group_from_packet(self.0)
+    }
+    pub fn channel(&self) -> ux::u4 {
+        message_helpers::channel_from_packet(self.0)
+    }
+    pub fn note(&self) -> ux::u7 {
+        midi2cv_helpers::note_from_packet(self.0)
+    }
+    pub fn controller(&self) -> controller::Controller {
+        controller::from_index_and_data(self.0[0].octet(3), self.0[1])
+    }
+    pub fn from_data(data: &'a [u32]) -> Result<Self> {
+        message_helpers::validate_packet(data, MIDI2CV_TYPE_CODE, OP_CODE)?;
+        midi2cv_helpers::validate_buffer_size(data, 2)?;
+        controller::validate_index(data[0].octet(3))?;
+        Ok(Self(data))
+    }
+}
+
+#[derive(PartialEq, Eq)]
+pub struct RegisteredPerNoteControllerBuilder<'a>(Result<&'a mut [u32]>);
+
+impl<'a> RegisteredPerNoteControllerBuilder<'a> {
+    pub fn new(buffer: &'a mut [u32]) -> Self {
+        match midi2cv_helpers::validate_buffer_size(buffer, 2) {
+            Ok(()) => {
+                message_helpers::write_op_code_to_packet(OP_CODE, buffer);
+                message_helpers::write_type_to_packet(MIDI2CV_TYPE_CODE, buffer);
+                Self(Ok(buffer))
+            }
+            Err(e) => Self(Err(e)),
         }
     }
-    fn to_ump<'a>(&self, bytes: &'a mut [u32]) -> &'a [u32] {
-        message_helpers::write_data(
-            Message::TYPE_CODE,
-            self.group,
-            Message::OP_CODE,
-            self.channel,
-            bytes,
-        );
-        bytes[0].set_octet(2, self.note.into());
-        let (index, data) = controllers::to_index_and_data(self.controller);
-        bytes[0].set_octet(3, index);
-        bytes[1] = data;
-        &bytes[..2]
+    pub fn group(&mut self, v: ux::u4) -> &mut Self {
+
+        if let Ok(buffer) = &mut self.0 {
+            message_helpers::write_group_to_packet(v, buffer);
+        }
+        self
+    }
+    pub fn channel(&mut self, v: ux::u4) -> &mut Self {
+        if let Ok(buffer) = &mut self.0 {
+            message_helpers::write_channel_to_packet(v, buffer);
+        }
+        self
+    }
+    pub fn note(&mut self, v: ux::u7) -> &mut Self {
+        if let Ok(buffer) = &mut self.0 {
+            midi2cv_helpers::write_note_to_packet(v, buffer);
+        }
+        self
+    }
+    pub fn controller(&mut self, v: controller::Controller) -> &mut Self {
+        if let Ok(buffer) = &mut self.0 {
+            let (index, data) = controller::to_index_and_data(v);
+            buffer[0].set_octet(3, index);
+            buffer[1] = data;
+        }
+        self
+    }
+    pub fn build(&'a self) -> Result<RegisteredPerNoteControllerMessage<'a>> {
+        match &self.0 {
+            Ok(buffer) => {
+                controller::validate_index(buffer[0].octet(3))?;
+                Ok(RegisteredPerNoteControllerMessage(buffer))
+            },
+            Err(e) => Err(e.clone()),
+        }
     }
 }
+
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::message_traits_test;
-
-    message_traits_test!(Message);
 
     #[test]
-    fn deserialize() {
+    fn builder() {
         assert_eq!(
-            Message::try_from_ump(&[0x4B06_7B03, 0b1011_0011_0010_1110_1111_1100_1011_1010,]),
-            Ok(Message {
-                group: ux::u4::new(0xB),
-                channel: ux::u4::new(0x6),
-                note: ux::u7::new(0x7B),
-                controller: controllers::Controller::Pitch7_25 {
-                    note: ux::u7::new(0b1011001),
-                    pitch_up: ux::u25::new(0b1001011101111110010111010),
-                }
-            })
+            RegisteredPerNoteControllerMessage::builder(&mut [0x0, 0x0])
+                .group(ux::u4::new(0x4))
+                .channel(ux::u4::new(0x5))
+                .note(ux::u7::new(0x6C))
+                .controller(controller::Controller::Volume(0xE1E35E92))
+                .build(),
+            Ok(RegisteredPerNoteControllerMessage(&[0x4405_6C07, 0xE1E35E92])),
         );
     }
 
     #[test]
-    fn deserialize_invalid_controller() {
+    fn group() {
         assert_eq!(
-            Message::try_from_ump(&[0x4000_0004, 0x0]),
-            Err(Error::InvalidData),
+            RegisteredPerNoteControllerMessage::from_data(&[0x4405_6C07, 0xE1E35E92]).unwrap().group(),
+            ux::u4::new(0x4),
         );
     }
 
     #[test]
-    fn serialize() {
+    fn channel() {
         assert_eq!(
-            Message {
-                group: ux::u4::new(0x9),
-                channel: ux::u4::new(0x7),
-                note: ux::u7::new(0x30),
-                controller: controllers::Controller::AttackTime(0x3141_5926),
-            }
-            .to_ump(&mut [0x0, 0x0]),
-            &[0x4907_3049, 0x31415926],
-        )
+            RegisteredPerNoteControllerMessage::from_data(&[0x4405_6C07, 0xE1E35E92]).unwrap().channel(),
+            ux::u4::new(0x5),
+        );
+    }
+
+    #[test]
+    fn note() {
+        assert_eq!(
+            RegisteredPerNoteControllerMessage::from_data(&[0x4405_6C07, 0xE1E35E92]).unwrap().note(),
+            ux::u7::new(0x6C),
+        );
+    }
+
+    #[test]
+    fn controller() {
+        assert_eq!(
+            RegisteredPerNoteControllerMessage::from_data(&[0x4405_6C07, 0xE1E35E92]).unwrap().controller(),
+            controller::Controller::Volume(0xE1E35E92),
+        );
     }
 }
