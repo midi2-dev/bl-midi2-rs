@@ -1,115 +1,165 @@
 use crate::{
-    error::Error,
-    message::{helpers as message_helpers, midi2_channel_voice::helpers, Midi2Message},
-    util::{builder, getter, BitOps, Truncate},
+    message::{
+        helpers as message_helpers,
+        midi2_channel_voice::{
+            TYPE_CODE as MIDI2CV_TYPE_CODE,
+            helpers as midi2cv_helpers,
+        },
+    },
+    result::Result,
+    util::{debug, Encode7Bit, BitOps, Truncate},
 };
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Message {
-    group: ux::u4,
-    channel: ux::u4,
-    program: ux::u7,
-    bank: Option<ux::u14>,
-}
+const OP_CODE: ux::u4 = ux::u4::new(0b1100);
 
-#[derive(Clone, Default)]
-pub struct Builder {
-    group: Option<ux::u4>,
-    channel: Option<ux::u4>,
-    program: Option<ux::u7>,
-    bank: Option<ux::u14>,
-}
+#[derive(Clone, PartialEq, Eq)]
+pub struct ProgramChangeMessage<'a>(&'a [u32]);
 
-impl Builder {
-    builder::builder_setter!(group: ux::u4);
-    builder::builder_setter!(channel: ux::u4);
-    builder::builder_setter!(program: ux::u7);
-    builder::builder_setter!(bank: ux::u14);
+debug::message_debug_impl!(ProgramChangeMessage);
 
-    pub fn build(&self) -> Message {
-        Message {
-            group: self.group.unwrap_or_else(|| panic!("Missing fields!")),
-            channel: self.channel.unwrap_or_else(|| panic!("Missing fields!")),
-            program: self.program.unwrap_or_else(|| panic!("Missing fields!")),
-            bank: self.bank,
+impl<'a> ProgramChangeMessage<'a> {
+    pub fn builder(buffer: &mut [u32]) -> ProgramChangeBuilder {
+        ProgramChangeBuilder::new(buffer)
+    }
+    pub fn group(&self) -> ux::u4 {
+        message_helpers::group_from_packet(self.0)
+    }
+    pub fn channel(&self) -> ux::u4 {
+        message_helpers::channel_from_packet(self.0)
+    }
+    pub fn program(&self) -> ux::u7 {
+        self.0[1].octet(0).truncate()
+    }
+    pub fn bank(&self) -> Option<ux::u14> {
+        if self.0[0].bit(31) {
+            Some(ux::u14::from_u7s(&[self.0[1].octet(2), self.0[1].octet(3)]))
+        } else {
+            None
         }
+    }
+    pub fn from_data(data: &'a [u32]) -> Result<Self> {
+        message_helpers::validate_packet(data, MIDI2CV_TYPE_CODE, OP_CODE)?;
+        midi2cv_helpers::validate_buffer_size(data, 2)?;
+        Ok(Self(data))
     }
 }
 
-impl Message {
-    const TYPE_CODE: ux::u4 = super::TYPE_CODE;
-    const OP_CODE: ux::u4 = ux::u4::new(0b1100);
+#[derive(PartialEq, Eq)]
+pub struct ProgramChangeBuilder<'a>(Result<&'a mut [u32]>);
 
-    getter::getter!(group, ux::u4);
-    getter::getter!(channel, ux::u4);
-    getter::getter!(program, ux::u7);
-    getter::getter!(bank, Option<ux::u14>);
-    builder::builder_method!();
-}
-
-impl Midi2Message for Message {
-    fn validate_ump(bytes: &[u32]) -> Result<(), Error> {
-        helpers::validate_packet(bytes, Message::TYPE_CODE, Message::OP_CODE)
-    }
-    fn from_ump(bytes: &[u32]) -> Self {
-        Message {
-            group: message_helpers::group_from_packet(bytes),
-            channel: message_helpers::channel_from_packet(bytes),
-            program: bytes[1].octet(0).truncate(),
-            bank: match bytes[0].octet(3) & 0b0000_0001 {
-                1 => Some(ux::u14::from(bytes[1].octet(2)) << 7 | ux::u14::from(bytes[1].octet(3))),
-                _ => None,
-            },
+impl<'a> ProgramChangeBuilder<'a> {
+    pub fn new(buffer: &'a mut [u32]) -> Self {
+        match midi2cv_helpers::validate_buffer_size(buffer, 2) {
+            Ok(()) => {
+                message_helpers::write_op_code_to_packet(OP_CODE, buffer);
+                message_helpers::write_type_to_packet(MIDI2CV_TYPE_CODE, buffer);
+                Self(Ok(buffer))
+            }
+            Err(e) => Self(Err(e)),
         }
     }
-    fn to_ump<'a>(&self, bytes: &'a mut [u32]) -> &'a [u32] {
-        message_helpers::write_data(
-            Message::TYPE_CODE,
-            self.group,
-            Message::OP_CODE,
-            self.channel,
-            bytes,
-        );
-        bytes[1].set_octet(0, self.program.into());
-        if let Some(v) = self.bank {
-            bytes[1].set_octet(2, (v >> 7).truncate());
-            bytes[1].set_octet(3, v.truncate());
+    pub fn group(&mut self, v: ux::u4) -> &mut Self {
+
+        if let Ok(buffer) = &mut self.0 {
+            message_helpers::write_group_to_packet(v, buffer);
         }
-        &bytes[..2]
+        self
+    }
+    pub fn channel(&mut self, v: ux::u4) -> &mut Self {
+        if let Ok(buffer) = &mut self.0 {
+            message_helpers::write_channel_to_packet(v, buffer);
+        }
+        self
+    }
+    pub fn program(&mut self, v: ux::u7) -> &mut Self {
+        if let Ok(buffer) = &mut self.0 {
+            buffer[1].set_octet(0, v.into());
+        }
+        self
+    }
+    pub fn bank(&mut self, v: ux::u14) -> &mut Self {
+        if let Ok(buffer) = &mut self.0 {
+            let u7s = v.to_u7s();
+            buffer[0].set_bit(31, true);
+            buffer[1].set_octet(2, u7s[0].into());
+            buffer[1].set_octet(3, u7s[1].into());
+        }
+        self
+    }
+    pub fn build(&'a self) -> Result<ProgramChangeMessage<'a>> {
+        match &self.0 {
+            Ok(buffer) => Ok(ProgramChangeMessage(buffer)),
+            Err(e) => Err(e.clone()),
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::message_traits_test;
-
-    message_traits_test!(Message);
 
     #[test]
-    fn deserialize() {
+    fn builder() {
         assert_eq!(
-            Message::try_from_ump(&[0x42C0_0001, 0x6600_7F7F,]),
-            Ok(Message {
-                group: ux::u4::new(0x2),
-                channel: ux::u4::new(0x0),
-                program: ux::u7::new(0x66),
-                bank: Some(ux::u14::new(0b11_1111_1111_1111))
-            })
+            ProgramChangeMessage::builder(&mut [0x0, 0x0])
+                .group(ux::u4::new(0xF))
+                .channel(ux::u4::new(0xE))
+                .program(ux::u7::new(0x75))
+                .bank(ux::u14::new(0x1F5E))
+                .build(),
+            Ok(ProgramChangeMessage(&[0x4FCE_0001, 0x7500_5E3E])),
         );
     }
 
     #[test]
-    fn serialize() {
+    fn builder_no_bank() {
         assert_eq!(
-            Message {
-                group: ux::u4::new(0x0),
-                channel: ux::u4::new(0xD),
-                program: ux::u7::new(0x7C),
-                bank: None,
-            }
-            .to_ump(&mut [0x0, 0x0]),
-            &[0x40CD_0000, 0x7C00_0000,],
+            ProgramChangeMessage::builder(&mut [0x0, 0x0])
+                .group(ux::u4::new(0xF))
+                .channel(ux::u4::new(0xE))
+                .program(ux::u7::new(0x75))
+                .build(),
+            Ok(ProgramChangeMessage(&[0x4FCE_0000, 0x7500_0000])),
+        );
+    }
+
+    #[test]
+    fn group() {
+        assert_eq!(
+            ProgramChangeMessage::from_data(&[0x4FCE_0001, 0x7500_5E3E]).unwrap().group(),
+            ux::u4::new(0xF),
+        )
+    }
+
+    #[test]
+    fn channel() {
+        assert_eq!(
+            ProgramChangeMessage::from_data(&[0x4FCE_0001, 0x7500_5E3E]).unwrap().channel(),
+            ux::u4::new(0xE),
+        )
+    }
+
+    #[test]
+    fn program() {
+        assert_eq!(
+            ProgramChangeMessage::from_data(&[0x4FCE_0001, 0x7500_5E3E]).unwrap().program(),
+            ux::u7::new(0x75),
+        )
+    }
+
+    #[test]
+    fn bank() {
+        assert_eq!(
+            ProgramChangeMessage::from_data(&[0x4FCE_0001, 0x7500_5E3E]).unwrap().bank(),
+            Some(ux::u14::new(0x1F5E)),
+        )
+    }
+
+    #[test]
+    fn no_bank() {
+        assert_eq!(
+            ProgramChangeMessage::from_data(&[0x4FCE_0000, 0x7500_0000]).unwrap().bank(),
+            None,
         )
     }
 }
