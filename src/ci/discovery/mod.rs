@@ -23,7 +23,9 @@ enum DataOffsets {
 }
 
 impl<'a, const STATUS: u8> DiscoveryMessage<sysex8::Sysex8MessageGroup<'a>, STATUS> {
-    pub fn builder(buffer: &'a mut [u32]) -> DiscoveryBuilder<sysex8::Sysex8MessageGroup<'a>, STATUS> {
+    pub fn builder(
+        buffer: &'a mut [u32],
+    ) -> DiscoveryBuilder<sysex8::Sysex8MessageGroup<'a>, STATUS> {
         DiscoveryBuilder::<sysex8::Sysex8MessageGroup<'a>, STATUS>::new(buffer)
     }
     pub fn group(&self) -> ux::u4 {
@@ -116,7 +118,9 @@ impl<'a, const STATUS: u8> DiscoveryMessage<sysex8::Sysex8MessageGroup<'a>, STAT
 }
 
 impl<'a, const STATUS: u8> DiscoveryMessage<sysex7::Sysex7MessageGroup<'a>, STATUS> {
-    pub fn builder(buffer: &'a mut [u32]) -> DiscoveryBuilder<sysex7::Sysex7MessageGroup<'a>, STATUS> {
+    pub fn builder(
+        buffer: &'a mut [u32],
+    ) -> DiscoveryBuilder<sysex7::Sysex7MessageGroup<'a>, STATUS> {
         DiscoveryBuilder::<sysex7::Sysex7MessageGroup<'a>, STATUS>::new(buffer)
     }
     pub fn group(&self) -> ux::u4 {

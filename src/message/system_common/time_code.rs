@@ -1,10 +1,7 @@
 use crate::{
     message::{
         helpers as message_helpers,
-        system_common::{
-            TYPE_CODE as SYSTEM_COMMON_TYPE_CODE,
-            self,
-        },
+        system_common::{self, TYPE_CODE as SYSTEM_COMMON_TYPE_CODE},
     },
     result::Result,
     util::{debug, BitOps, Truncate},
@@ -93,7 +90,9 @@ mod tests {
     #[test]
     fn time_code() {
         assert_eq!(
-            TimeCodeMessage::from_data(&[0x15F1_5F00]).unwrap().time_code(),
+            TimeCodeMessage::from_data(&[0x15F1_5F00])
+                .unwrap()
+                .time_code(),
             ux::u7::new(0x5F),
         );
     }

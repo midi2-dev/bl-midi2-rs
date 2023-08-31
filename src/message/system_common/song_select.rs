@@ -1,10 +1,7 @@
 use crate::{
     message::{
         helpers as message_helpers,
-        system_common::{
-            TYPE_CODE as SYSTEM_COMMON_TYPE_CODE,
-            self,
-        },
+        system_common::{self, TYPE_CODE as SYSTEM_COMMON_TYPE_CODE},
     },
     result::Result,
     util::{debug, BitOps, Truncate},
@@ -85,7 +82,9 @@ mod tests {
     #[test]
     fn group() {
         assert_eq!(
-            SongSelectMessage::from_data(&[0x1AF3_4F00]).unwrap().group(),
+            SongSelectMessage::from_data(&[0x1AF3_4F00])
+                .unwrap()
+                .group(),
             ux::u4::new(0xA),
         );
     }

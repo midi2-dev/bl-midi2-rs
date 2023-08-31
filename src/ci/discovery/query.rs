@@ -137,18 +137,21 @@ impl<'a> DiscoveryQueryBuilder<sysex8::Sysex8MessageGroup<'a>> {
         &mut self,
         protocol_negotiation_supported: bool,
     ) -> &mut Self {
-        self.0.protocol_negotiation_supported(protocol_negotiation_supported);
+        self.0
+            .protocol_negotiation_supported(protocol_negotiation_supported);
         self
     }
     pub fn profile_configuration_supported(
         &mut self,
         profile_configuration_supported: bool,
     ) -> &mut Self {
-        self.0.profile_configuration_supported(profile_configuration_supported);
+        self.0
+            .profile_configuration_supported(profile_configuration_supported);
         self
     }
     pub fn property_exchange_supported(&mut self, property_exchange_supported: bool) -> &mut Self {
-        self.0.property_exchange_supported(property_exchange_supported);
+        self.0
+            .property_exchange_supported(property_exchange_supported);
         self
     }
     pub fn max_sysex_message_size(&mut self, max_sysex_message_size: ux::u28) -> &mut Self {
@@ -197,18 +200,21 @@ impl<'a> DiscoveryQueryBuilder<sysex7::Sysex7MessageGroup<'a>> {
         &mut self,
         protocol_negotiation_supported: bool,
     ) -> &mut Self {
-        self.0.protocol_negotiation_supported(protocol_negotiation_supported);
+        self.0
+            .protocol_negotiation_supported(protocol_negotiation_supported);
         self
     }
     pub fn profile_configuration_supported(
         &mut self,
         profile_configuration_supported: bool,
     ) -> &mut Self {
-        self.0.profile_configuration_supported(profile_configuration_supported);
+        self.0
+            .profile_configuration_supported(profile_configuration_supported);
         self
     }
     pub fn property_exchange_supported(&mut self, property_exchange_supported: bool) -> &mut Self {
-        self.0.property_exchange_supported(property_exchange_supported);
+        self.0
+            .property_exchange_supported(property_exchange_supported);
         self
     }
     pub fn max_sysex_message_size(&mut self, max_sysex_message_size: ux::u28) -> &mut Self {

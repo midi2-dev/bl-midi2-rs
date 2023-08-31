@@ -2,9 +2,7 @@ use crate::{
     message::{
         helpers as message_helpers,
         midi2_channel_voice::{
-            attribute,
-            TYPE_CODE as MIDI2CV_TYPE_CODE,
-            helpers as midi2cv_helpers,
+            attribute, helpers as midi2cv_helpers, TYPE_CODE as MIDI2CV_TYPE_CODE,
         },
     },
     result::Result,
@@ -134,7 +132,9 @@ mod tests {
     #[test]
     fn group() {
         assert_eq!(
-            NoteOnMessage::from_data(&[0x4898_5E03, 0x6A14_E98A]).unwrap().group(),
+            NoteOnMessage::from_data(&[0x4898_5E03, 0x6A14_E98A])
+                .unwrap()
+                .group(),
             ux::u4::new(0x8),
         );
     }
@@ -142,7 +142,9 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            NoteOnMessage::from_data(&[0x4898_5E03, 0x6A14_E98A]).unwrap().channel(),
+            NoteOnMessage::from_data(&[0x4898_5E03, 0x6A14_E98A])
+                .unwrap()
+                .channel(),
             ux::u4::new(0x8),
         );
     }
@@ -150,7 +152,9 @@ mod tests {
     #[test]
     fn note() {
         assert_eq!(
-            NoteOnMessage::from_data(&[0x4898_5E03, 0x6A14_E98A]).unwrap().note(),
+            NoteOnMessage::from_data(&[0x4898_5E03, 0x6A14_E98A])
+                .unwrap()
+                .note(),
             ux::u7::new(0x5E),
         );
     }
@@ -158,7 +162,9 @@ mod tests {
     #[test]
     fn volocity() {
         assert_eq!(
-            NoteOnMessage::from_data(&[0x4898_5E03, 0x6A14_E98A]).unwrap().velocity(),
+            NoteOnMessage::from_data(&[0x4898_5E03, 0x6A14_E98A])
+                .unwrap()
+                .velocity(),
             0x6A14,
         );
     }
@@ -166,7 +172,9 @@ mod tests {
     #[test]
     fn attribute() {
         assert_eq!(
-            NoteOnMessage::from_data(&[0x4898_5E03, 0x6A14_E98A]).unwrap().attribute(),
+            NoteOnMessage::from_data(&[0x4898_5E03, 0x6A14_E98A])
+                .unwrap()
+                .attribute(),
             Some(attribute::Attribute::Pitch7_9 {
                 note: ux::u7::new(0x74),
                 pitch_up: ux::u9::new(0x18A),

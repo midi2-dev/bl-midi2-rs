@@ -2,14 +2,11 @@ macro_rules! simple_generic_message {
     ($op_code:expr, $name:ident, $builder_name:ident) => {
         use crate::{
             message::{
-                system_common::{
-                    TYPE_CODE as SYSTEM_COMMON_TYPE_CODE,
-                    self,
-                },
                 helpers as message_helpers,
+                system_common::{self, TYPE_CODE as SYSTEM_COMMON_TYPE_CODE},
             },
             result::Result,
-            util::{debug},
+            util::debug,
         };
 
         #[derive(Clone, PartialEq, Eq)]
@@ -42,7 +39,7 @@ macro_rules! simple_generic_message {
                         system_common::write_op_code_to_packet(buffer, $op_code);
                         message_helpers::write_type_to_packet(SYSTEM_COMMON_TYPE_CODE, buffer);
                         Self(Ok(buffer))
-                    },
+                    }
                     Err(e) => Self(Err(e)),
                 }
             }

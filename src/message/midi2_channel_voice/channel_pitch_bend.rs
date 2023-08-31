@@ -1,10 +1,7 @@
 use crate::{
     message::{
         helpers as message_helpers,
-        midi2_channel_voice::{
-            TYPE_CODE as MIDI2CV_TYPE_CODE,
-            helpers as midi2cv_helpers,
-        },
+        midi2_channel_voice::{helpers as midi2cv_helpers, TYPE_CODE as MIDI2CV_TYPE_CODE},
     },
     result::Result,
     util::debug,
@@ -96,7 +93,9 @@ mod tests {
     #[test]
     fn group() {
         assert_eq!(
-            ChannelPitchBendMessage::from_data(&[0x4BE9_0000, 0x0830_6AF8]).unwrap().group(),
+            ChannelPitchBendMessage::from_data(&[0x4BE9_0000, 0x0830_6AF8])
+                .unwrap()
+                .group(),
             ux::u4::new(0xB),
         );
     }
@@ -104,7 +103,9 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            ChannelPitchBendMessage::from_data(&[0x4BE9_0000, 0x0830_6AF8]).unwrap().channel(),
+            ChannelPitchBendMessage::from_data(&[0x4BE9_0000, 0x0830_6AF8])
+                .unwrap()
+                .channel(),
             ux::u4::new(0x9),
         );
     }
@@ -112,7 +113,9 @@ mod tests {
     #[test]
     fn pitch_bend_data() {
         assert_eq!(
-            ChannelPitchBendMessage::from_data(&[0x4BE9_0000, 0x0830_6AF8]).unwrap().pitch_bend_data(),
+            ChannelPitchBendMessage::from_data(&[0x4BE9_0000, 0x0830_6AF8])
+                .unwrap()
+                .pitch_bend_data(),
             0x0830_6AF8,
         );
     }

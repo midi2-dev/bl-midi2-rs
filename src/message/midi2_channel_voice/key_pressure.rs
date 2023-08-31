@@ -1,12 +1,9 @@
-use crate::{ 
-    message::helpers as message_helpers,
-    message::midi2_channel_voice::{
-        helpers as midi2cv_helpers,
-        TYPE_CODE as MIDI2CV_TYPE_CODE,
-    },
-    util::debug,
-    result::Result,
+use crate::{
     error::Error,
+    message::helpers as message_helpers,
+    message::midi2_channel_voice::{helpers as midi2cv_helpers, TYPE_CODE as MIDI2CV_TYPE_CODE},
+    result::Result,
+    util::debug,
 };
 
 #[derive(Clone, PartialEq, Eq)]
@@ -52,7 +49,7 @@ impl<'a> KeyPressureBuilder<'a> {
                 message_helpers::write_type_to_packet(MIDI2CV_TYPE_CODE, buffer);
                 message_helpers::write_op_code_to_packet(OP_CODE, buffer);
                 Self(Ok(buffer))
-            },
+            }
         }
     }
     pub fn group(&mut self, group: ux::u4) -> &mut Self {
@@ -107,15 +104,19 @@ mod tests {
     #[test]
     fn group() {
         assert_eq!(
-            KeyPressureMessage::from_data(&[0x4BAC_5900, 0xC0B83064]).unwrap().group(),
+            KeyPressureMessage::from_data(&[0x4BAC_5900, 0xC0B83064])
+                .unwrap()
+                .group(),
             ux::u4::new(0xB),
         );
     }
-    
+
     #[test]
     fn channel() {
         assert_eq!(
-            KeyPressureMessage::from_data(&[0x4BAC_5900, 0xC0B83064]).unwrap().channel(),
+            KeyPressureMessage::from_data(&[0x4BAC_5900, 0xC0B83064])
+                .unwrap()
+                .channel(),
             ux::u4::new(0xC),
         );
     }
@@ -123,7 +124,9 @@ mod tests {
     #[test]
     fn note() {
         assert_eq!(
-            KeyPressureMessage::from_data(&[0x4BAC_5900, 0xC0B83064]).unwrap().note(),
+            KeyPressureMessage::from_data(&[0x4BAC_5900, 0xC0B83064])
+                .unwrap()
+                .note(),
             ux::u7::new(0x59),
         );
     }
@@ -131,7 +134,9 @@ mod tests {
     #[test]
     fn key_pressure_data() {
         assert_eq!(
-            KeyPressureMessage::from_data(&[0x4BAC_5900, 0xC0B83064]).unwrap().key_pressure_data(),
+            KeyPressureMessage::from_data(&[0x4BAC_5900, 0xC0B83064])
+                .unwrap()
+                .key_pressure_data(),
             0xC0B83064,
         );
     }

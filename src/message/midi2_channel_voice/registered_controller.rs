@@ -1,10 +1,7 @@
 use crate::{
     message::{
         helpers as message_helpers,
-        midi2_channel_voice::{
-            TYPE_CODE as MIDI2CV_TYPE_CODE,
-            helpers as midi2cv_helpers,
-        },
+        midi2_channel_voice::{helpers as midi2cv_helpers, TYPE_CODE as MIDI2CV_TYPE_CODE},
     },
     result::Result,
     util::debug,
@@ -64,7 +61,7 @@ impl<'a> RegisteredControllerBuilder<'a> {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
         }
-self
+        self
     }
     pub fn channel(&mut self, v: ux::u4) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
@@ -119,7 +116,9 @@ mod tests {
     #[test]
     fn group() {
         assert_eq!(
-            RegisteredControllerMessage::from_data(&[0x4A2B_7D64, 0x46845E00]).unwrap().group(),
+            RegisteredControllerMessage::from_data(&[0x4A2B_7D64, 0x46845E00])
+                .unwrap()
+                .group(),
             ux::u4::new(0xA),
         );
     }
@@ -127,7 +126,9 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            RegisteredControllerMessage::from_data(&[0x4A2B_7D64, 0x46845E00]).unwrap().channel(),
+            RegisteredControllerMessage::from_data(&[0x4A2B_7D64, 0x46845E00])
+                .unwrap()
+                .channel(),
             ux::u4::new(0xB),
         );
     }
@@ -135,7 +136,9 @@ mod tests {
     #[test]
     pub fn bank() {
         assert_eq!(
-            RegisteredControllerMessage::from_data(&[0x4A2B_7D64, 0x46845E00]).unwrap().bank(),
+            RegisteredControllerMessage::from_data(&[0x4A2B_7D64, 0x46845E00])
+                .unwrap()
+                .bank(),
             ux::u7::new(0x7D),
         );
     }
@@ -143,7 +146,9 @@ mod tests {
     #[test]
     pub fn index() {
         assert_eq!(
-            RegisteredControllerMessage::from_data(&[0x4A2B_7D64, 0x46845E00]).unwrap().index(),
+            RegisteredControllerMessage::from_data(&[0x4A2B_7D64, 0x46845E00])
+                .unwrap()
+                .index(),
             ux::u7::new(0x64),
         );
     }
@@ -151,7 +156,9 @@ mod tests {
     #[test]
     pub fn controller_data() {
         assert_eq!(
-            RegisteredControllerMessage::from_data(&[0x4A2B_7D64, 0x46845E00]).unwrap().controller_data(),
+            RegisteredControllerMessage::from_data(&[0x4A2B_7D64, 0x46845E00])
+                .unwrap()
+                .controller_data(),
             0x46845E00,
         );
     }
@@ -159,7 +166,9 @@ mod tests {
     #[test]
     pub fn data() {
         assert_eq!(
-            RegisteredControllerMessage::from_data(&[0x4A2B_7D64, 0x46845E00]).unwrap().data(),
+            RegisteredControllerMessage::from_data(&[0x4A2B_7D64, 0x46845E00])
+                .unwrap()
+                .data(),
             &[0x4A2B_7D64, 0x46845E00],
         );
     }

@@ -2,13 +2,11 @@ use crate::{
     message::{
         helpers as message_helpers,
         midi2_channel_voice::{
-            controller,
-            TYPE_CODE as MIDI2CV_TYPE_CODE,
-            helpers as midi2cv_helpers,
+            controller, helpers as midi2cv_helpers, TYPE_CODE as MIDI2CV_TYPE_CODE,
         },
     },
     result::Result,
-    util::{BitOps, debug},
+    util::{debug, BitOps},
 };
 
 const OP_CODE: ux::u4 = ux::u4::new(0b0000);
@@ -57,7 +55,6 @@ impl<'a> RegisteredPerNoteControllerBuilder<'a> {
         }
     }
     pub fn group(&mut self, v: ux::u4) -> &mut Self {
-
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
         }
@@ -88,12 +85,11 @@ impl<'a> RegisteredPerNoteControllerBuilder<'a> {
             Ok(buffer) => {
                 controller::validate_index(buffer[0].octet(3))?;
                 Ok(RegisteredPerNoteControllerMessage(buffer))
-            },
+            }
             Err(e) => Err(e.clone()),
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -108,14 +104,19 @@ mod tests {
                 .note(ux::u7::new(0x6C))
                 .controller(controller::Controller::Volume(0xE1E35E92))
                 .build(),
-            Ok(RegisteredPerNoteControllerMessage(&[0x4405_6C07, 0xE1E35E92])),
+            Ok(RegisteredPerNoteControllerMessage(&[
+                0x4405_6C07,
+                0xE1E35E92
+            ])),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            RegisteredPerNoteControllerMessage::from_data(&[0x4405_6C07, 0xE1E35E92]).unwrap().group(),
+            RegisteredPerNoteControllerMessage::from_data(&[0x4405_6C07, 0xE1E35E92])
+                .unwrap()
+                .group(),
             ux::u4::new(0x4),
         );
     }
@@ -123,7 +124,9 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            RegisteredPerNoteControllerMessage::from_data(&[0x4405_6C07, 0xE1E35E92]).unwrap().channel(),
+            RegisteredPerNoteControllerMessage::from_data(&[0x4405_6C07, 0xE1E35E92])
+                .unwrap()
+                .channel(),
             ux::u4::new(0x5),
         );
     }
@@ -131,7 +134,9 @@ mod tests {
     #[test]
     fn note() {
         assert_eq!(
-            RegisteredPerNoteControllerMessage::from_data(&[0x4405_6C07, 0xE1E35E92]).unwrap().note(),
+            RegisteredPerNoteControllerMessage::from_data(&[0x4405_6C07, 0xE1E35E92])
+                .unwrap()
+                .note(),
             ux::u7::new(0x6C),
         );
     }
@@ -139,7 +144,9 @@ mod tests {
     #[test]
     fn controller() {
         assert_eq!(
-            RegisteredPerNoteControllerMessage::from_data(&[0x4405_6C07, 0xE1E35E92]).unwrap().controller(),
+            RegisteredPerNoteControllerMessage::from_data(&[0x4405_6C07, 0xE1E35E92])
+                .unwrap()
+                .controller(),
             controller::Controller::Volume(0xE1E35E92),
         );
     }

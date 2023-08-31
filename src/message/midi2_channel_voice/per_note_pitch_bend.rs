@@ -1,12 +1,9 @@
-use crate::{ 
-    message::helpers as message_helpers,
-    message::midi2_channel_voice::{
-        helpers as midi2cv_helpers,
-        TYPE_CODE as MIDI2CV_TYPE_CODE,
-    },
-    util::debug,
-    result::Result,
+use crate::{
     error::Error,
+    message::helpers as message_helpers,
+    message::midi2_channel_voice::{helpers as midi2cv_helpers, TYPE_CODE as MIDI2CV_TYPE_CODE},
+    result::Result,
+    util::debug,
 };
 
 #[derive(Clone, PartialEq, Eq)]
@@ -52,7 +49,7 @@ impl<'a> PerNotePitchBendBuilder<'a> {
                 message_helpers::write_type_to_packet(MIDI2CV_TYPE_CODE, buffer);
                 message_helpers::write_op_code_to_packet(OP_CODE, buffer);
                 Self(Ok(buffer))
-            },
+            }
         }
     }
     pub fn group(&mut self, group: ux::u4) -> &mut Self {
@@ -107,15 +104,19 @@ mod tests {
     #[test]
     fn group() {
         assert_eq!(
-            PerNotePitchBendMessage::from_data(&[0x4962_7600, 0x2AD74672]).unwrap().group(),
+            PerNotePitchBendMessage::from_data(&[0x4962_7600, 0x2AD74672])
+                .unwrap()
+                .group(),
             ux::u4::new(0x9),
         );
     }
-    
+
     #[test]
     fn channel() {
         assert_eq!(
-            PerNotePitchBendMessage::from_data(&[0x4962_7600, 0x2AD74672]).unwrap().channel(),
+            PerNotePitchBendMessage::from_data(&[0x4962_7600, 0x2AD74672])
+                .unwrap()
+                .channel(),
             ux::u4::new(0x2),
         );
     }
@@ -123,7 +124,9 @@ mod tests {
     #[test]
     fn note() {
         assert_eq!(
-            PerNotePitchBendMessage::from_data(&[0x4962_7600, 0x2AD74672]).unwrap().note(),
+            PerNotePitchBendMessage::from_data(&[0x4962_7600, 0x2AD74672])
+                .unwrap()
+                .note(),
             ux::u7::new(0x76),
         );
     }
@@ -131,9 +134,10 @@ mod tests {
     #[test]
     fn pitch_bend_data() {
         assert_eq!(
-            PerNotePitchBendMessage::from_data(&[0x4962_7600, 0x2AD74672]).unwrap().pitch_bend_data(),
+            PerNotePitchBendMessage::from_data(&[0x4962_7600, 0x2AD74672])
+                .unwrap()
+                .pitch_bend_data(),
             0x2AD74672,
         );
     }
 }
-

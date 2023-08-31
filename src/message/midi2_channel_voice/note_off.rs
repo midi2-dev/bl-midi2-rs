@@ -2,9 +2,7 @@ use crate::{
     message::{
         helpers as message_helpers,
         midi2_channel_voice::{
-            attribute,
-            TYPE_CODE as MIDI2CV_TYPE_CODE,
-            helpers as midi2cv_helpers,
+            attribute, helpers as midi2cv_helpers, TYPE_CODE as MIDI2CV_TYPE_CODE,
         },
     },
     result::Result,
@@ -97,8 +95,6 @@ impl<'a> NoteOffBuilder<'a> {
     }
 }
 
-
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -133,7 +129,9 @@ mod tests {
     #[test]
     fn group() {
         assert_eq!(
-            NoteOffMessage::from_data(&[0x4284_4E01, 0x9DE6_CC6E]).unwrap().group(),
+            NoteOffMessage::from_data(&[0x4284_4E01, 0x9DE6_CC6E])
+                .unwrap()
+                .group(),
             ux::u4::new(0x2),
         );
     }
@@ -141,7 +139,9 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-           NoteOffMessage::from_data(&[0x4284_4E01, 0x9DE6_CC6E]).unwrap().channel(),
+            NoteOffMessage::from_data(&[0x4284_4E01, 0x9DE6_CC6E])
+                .unwrap()
+                .channel(),
             ux::u4::new(0x4),
         );
     }
@@ -149,7 +149,9 @@ mod tests {
     #[test]
     fn note() {
         assert_eq!(
-            NoteOffMessage::from_data(&[0x4284_4E01, 0x9DE6_CC6E]).unwrap().note(),
+            NoteOffMessage::from_data(&[0x4284_4E01, 0x9DE6_CC6E])
+                .unwrap()
+                .note(),
             ux::u7::new(0x4E),
         );
     }
@@ -157,7 +159,9 @@ mod tests {
     #[test]
     fn volocity() {
         assert_eq!(
-            NoteOffMessage::from_data(&[0x4284_4E01, 0x9DE6_CC6E]).unwrap().velocity(),
+            NoteOffMessage::from_data(&[0x4284_4E01, 0x9DE6_CC6E])
+                .unwrap()
+                .velocity(),
             0x9DE6,
         );
     }
@@ -165,7 +169,9 @@ mod tests {
     #[test]
     fn attribute() {
         assert_eq!(
-            NoteOffMessage::from_data(&[0x4284_4E01, 0x9DE6_CC6E]).unwrap().attribute(),
+            NoteOffMessage::from_data(&[0x4284_4E01, 0x9DE6_CC6E])
+                .unwrap()
+                .attribute(),
             Some(attribute::Attribute::ManufacturerSpecific(0xCC6E)),
         );
     }

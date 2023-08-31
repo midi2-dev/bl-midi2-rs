@@ -1,10 +1,7 @@
 use crate::{
     message::{
         helpers as message_helpers,
-        midi2_channel_voice::{
-            TYPE_CODE as MIDI2CV_TYPE_CODE,
-            helpers as midi2cv_helpers,
-        },
+        midi2_channel_voice::{helpers as midi2cv_helpers, TYPE_CODE as MIDI2CV_TYPE_CODE},
     },
     result::Result,
     util::debug,
@@ -96,7 +93,9 @@ mod tests {
     #[test]
     fn group() {
         assert_eq!(
-            ChannelPressureMessage::from_data(&[0x4EDD_0000, 0xDE0D_E0F2]).unwrap().group(),
+            ChannelPressureMessage::from_data(&[0x4EDD_0000, 0xDE0D_E0F2])
+                .unwrap()
+                .group(),
             ux::u4::new(0xE),
         );
     }
@@ -104,7 +103,9 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            ChannelPressureMessage::from_data(&[0x4EDD_0000, 0xDE0D_E0F2]).unwrap().channel(),
+            ChannelPressureMessage::from_data(&[0x4EDD_0000, 0xDE0D_E0F2])
+                .unwrap()
+                .channel(),
             ux::u4::new(0xD),
         );
     }
@@ -112,7 +113,9 @@ mod tests {
     #[test]
     fn channel_pressure_data() {
         assert_eq!(
-            ChannelPressureMessage::from_data(&[0x4EDD_0000, 0xDE0D_E0F2]).unwrap().channel_pressure_data(),
+            ChannelPressureMessage::from_data(&[0x4EDD_0000, 0xDE0D_E0F2])
+                .unwrap()
+                .channel_pressure_data(),
             0xDE0DE0F2,
         );
     }

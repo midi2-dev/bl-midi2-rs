@@ -1,13 +1,10 @@
 use crate::{
     message::{
         helpers as message_helpers,
-        system_common::{
-            TYPE_CODE as SYSTEM_COMMON_TYPE_CODE,
-            self,
-        },
+        system_common::{self, TYPE_CODE as SYSTEM_COMMON_TYPE_CODE},
     },
     result::Result,
-    util::{debug, Encode7Bit, BitOps},
+    util::{debug, BitOps, Encode7Bit},
 };
 
 const OP_CODE: u8 = 0xF2;
@@ -25,10 +22,7 @@ impl<'a> SongPositionPointerMessage<'a> {
         message_helpers::group_from_packet(self.0)
     }
     pub fn position(&self) -> ux::u14 {
-        ux::u14::from_u7s(&[
-            self.0[0].octet(2),
-            self.0[0].octet(3),
-        ])
+        ux::u14::from_u7s(&[self.0[0].octet(2), self.0[0].octet(3)])
     }
     pub fn from_data(data: &'a [u32]) -> Result<Self> {
         system_common::validate_packet(data, OP_CODE)?;
@@ -90,7 +84,9 @@ mod tests {
     #[test]
     fn group() {
         assert_eq!(
-            SongPositionPointerMessage::from_data(&[0x1AF2_7D6C]).unwrap().group(),
+            SongPositionPointerMessage::from_data(&[0x1AF2_7D6C])
+                .unwrap()
+                .group(),
             ux::u4::new(0xA),
         );
     }
@@ -98,7 +94,9 @@ mod tests {
     #[test]
     fn position() {
         assert_eq!(
-            SongPositionPointerMessage::from_data(&[0x1AF2_7D6C]).unwrap().position(),
+            SongPositionPointerMessage::from_data(&[0x1AF2_7D6C])
+                .unwrap()
+                .position(),
             ux::u14::new(0x367D),
         );
     }

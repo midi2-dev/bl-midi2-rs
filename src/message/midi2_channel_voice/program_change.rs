@@ -1,13 +1,10 @@
 use crate::{
     message::{
         helpers as message_helpers,
-        midi2_channel_voice::{
-            TYPE_CODE as MIDI2CV_TYPE_CODE,
-            helpers as midi2cv_helpers,
-        },
+        midi2_channel_voice::{helpers as midi2cv_helpers, TYPE_CODE as MIDI2CV_TYPE_CODE},
     },
     result::Result,
-    util::{debug, Encode7Bit, BitOps, Truncate},
+    util::{debug, BitOps, Encode7Bit, Truncate},
 };
 
 const OP_CODE: ux::u4 = ux::u4::new(0b1100);
@@ -59,7 +56,6 @@ impl<'a> ProgramChangeBuilder<'a> {
         }
     }
     pub fn group(&mut self, v: ux::u4) -> &mut Self {
-
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
         }
@@ -126,7 +122,9 @@ mod tests {
     #[test]
     fn group() {
         assert_eq!(
-            ProgramChangeMessage::from_data(&[0x4FCE_0001, 0x7500_5E3E]).unwrap().group(),
+            ProgramChangeMessage::from_data(&[0x4FCE_0001, 0x7500_5E3E])
+                .unwrap()
+                .group(),
             ux::u4::new(0xF),
         )
     }
@@ -134,7 +132,9 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            ProgramChangeMessage::from_data(&[0x4FCE_0001, 0x7500_5E3E]).unwrap().channel(),
+            ProgramChangeMessage::from_data(&[0x4FCE_0001, 0x7500_5E3E])
+                .unwrap()
+                .channel(),
             ux::u4::new(0xE),
         )
     }
@@ -142,7 +142,9 @@ mod tests {
     #[test]
     fn program() {
         assert_eq!(
-            ProgramChangeMessage::from_data(&[0x4FCE_0001, 0x7500_5E3E]).unwrap().program(),
+            ProgramChangeMessage::from_data(&[0x4FCE_0001, 0x7500_5E3E])
+                .unwrap()
+                .program(),
             ux::u7::new(0x75),
         )
     }
@@ -150,7 +152,9 @@ mod tests {
     #[test]
     fn bank() {
         assert_eq!(
-            ProgramChangeMessage::from_data(&[0x4FCE_0001, 0x7500_5E3E]).unwrap().bank(),
+            ProgramChangeMessage::from_data(&[0x4FCE_0001, 0x7500_5E3E])
+                .unwrap()
+                .bank(),
             Some(ux::u14::new(0x1F5E)),
         )
     }
@@ -158,7 +162,9 @@ mod tests {
     #[test]
     fn no_bank() {
         assert_eq!(
-            ProgramChangeMessage::from_data(&[0x4FCE_0000, 0x7500_0000]).unwrap().bank(),
+            ProgramChangeMessage::from_data(&[0x4FCE_0000, 0x7500_0000])
+                .unwrap()
+                .bank(),
             None,
         )
     }

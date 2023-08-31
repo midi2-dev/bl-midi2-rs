@@ -7,7 +7,9 @@ pub struct DiscoveryReplyMessage<Repr: sysex::SysexMessages>(DiscoveryMessage<Re
 
 impl<'a> DiscoveryReplyMessage<sysex8::Sysex8MessageGroup<'a>> {
     pub fn builder(buffer: &'a mut [u32]) -> DiscoveryReplyBuilder<sysex8::Sysex8MessageGroup<'a>> {
-        DiscoveryReplyBuilder(DiscoveryMessage::<sysex8::Sysex8MessageGroup<'a>, STATUS>::builder(buffer))
+        DiscoveryReplyBuilder(
+            DiscoveryMessage::<sysex8::Sysex8MessageGroup<'a>, STATUS>::builder(buffer),
+        )
     }
     pub fn group(&self) -> ux::u4 {
         self.0.group()
@@ -56,7 +58,9 @@ impl<'a> DiscoveryReplyMessage<sysex8::Sysex8MessageGroup<'a>> {
 
 impl<'a> DiscoveryReplyMessage<sysex7::Sysex7MessageGroup<'a>> {
     pub fn builder(buffer: &'a mut [u32]) -> DiscoveryReplyBuilder<sysex7::Sysex7MessageGroup<'a>> {
-        DiscoveryReplyBuilder(DiscoveryMessage::<sysex7::Sysex7MessageGroup<'a>, STATUS>::builder(buffer))
+        DiscoveryReplyBuilder(
+            DiscoveryMessage::<sysex7::Sysex7MessageGroup<'a>, STATUS>::builder(buffer),
+        )
     }
     pub fn group(&self) -> ux::u4 {
         self.0.group()
@@ -145,18 +149,21 @@ impl<'a> DiscoveryReplyBuilder<sysex8::Sysex8MessageGroup<'a>> {
         &mut self,
         protocol_negotiation_supported: bool,
     ) -> &mut Self {
-        self.0.protocol_negotiation_supported(protocol_negotiation_supported);
+        self.0
+            .protocol_negotiation_supported(protocol_negotiation_supported);
         self
     }
     pub fn profile_configuration_supported(
         &mut self,
         profile_configuration_supported: bool,
     ) -> &mut Self {
-        self.0.profile_configuration_supported(profile_configuration_supported);
+        self.0
+            .profile_configuration_supported(profile_configuration_supported);
         self
     }
     pub fn property_exchange_supported(&mut self, property_exchange_supported: bool) -> &mut Self {
-        self.0.property_exchange_supported(property_exchange_supported);
+        self.0
+            .property_exchange_supported(property_exchange_supported);
         self
     }
     pub fn max_sysex_message_size(&mut self, max_sysex_message_size: ux::u28) -> &mut Self {
@@ -207,18 +214,21 @@ impl<'a> DiscoveryReplyBuilder<sysex7::Sysex7MessageGroup<'a>> {
         &mut self,
         protocol_negotiation_supported: bool,
     ) -> &mut Self {
-        self.0.protocol_negotiation_supported(protocol_negotiation_supported);
+        self.0
+            .protocol_negotiation_supported(protocol_negotiation_supported);
         self
     }
     pub fn profile_configuration_supported(
         &mut self,
         profile_configuration_supported: bool,
     ) -> &mut Self {
-        self.0.profile_configuration_supported(profile_configuration_supported);
+        self.0
+            .profile_configuration_supported(profile_configuration_supported);
         self
     }
     pub fn property_exchange_supported(&mut self, property_exchange_supported: bool) -> &mut Self {
-        self.0.property_exchange_supported(property_exchange_supported);
+        self.0
+            .property_exchange_supported(property_exchange_supported);
         self
     }
     pub fn max_sysex_message_size(&mut self, max_sysex_message_size: ux::u28) -> &mut Self {
@@ -349,7 +359,6 @@ mod tests {
             ux::u28::new(64054537)
         );
     }
-
 
     #[test]
     fn sysex8_device_manufacturer() {
@@ -642,7 +651,6 @@ mod tests {
             ux::u28::new(64054537)
         );
     }
-
 
     #[test]
     fn sysex7_device_manufacturer() {

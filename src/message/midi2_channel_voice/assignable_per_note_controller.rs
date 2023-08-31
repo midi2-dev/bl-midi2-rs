@@ -1,13 +1,10 @@
 use crate::{
     message::{
         helpers as message_helpers,
-        midi2_channel_voice::{
-            TYPE_CODE as MIDI2CV_TYPE_CODE,
-            helpers as midi2cv_helpers,
-        },
+        midi2_channel_voice::{helpers as midi2cv_helpers, TYPE_CODE as MIDI2CV_TYPE_CODE},
     },
     result::Result,
-    util::{BitOps, debug},
+    util::{debug, BitOps},
 };
 
 const OP_CODE: ux::u4 = ux::u4::new(0b0001);
@@ -58,7 +55,6 @@ impl<'a> AssignablePerNoteControllerBuilder<'a> {
         }
     }
     pub fn group(&mut self, v: ux::u4) -> &mut Self {
-
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
         }
@@ -110,14 +106,19 @@ mod tests {
                 .index(0xB1)
                 .controller_data(0x46105EE5)
                 .build(),
-            Ok(AssignablePerNoteControllerMessage(&[0x4214_6FB1, 0x46105EE5])),
+            Ok(AssignablePerNoteControllerMessage(&[
+                0x4214_6FB1,
+                0x46105EE5
+            ])),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            AssignablePerNoteControllerMessage::from_data(&[0x4214_6FB1, 0x46105EE5]).unwrap().group(),
+            AssignablePerNoteControllerMessage::from_data(&[0x4214_6FB1, 0x46105EE5])
+                .unwrap()
+                .group(),
             ux::u4::new(0x2),
         );
     }
@@ -125,7 +126,9 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            AssignablePerNoteControllerMessage::from_data(&[0x4214_6FB1, 0x46105EE5]).unwrap().channel(),
+            AssignablePerNoteControllerMessage::from_data(&[0x4214_6FB1, 0x46105EE5])
+                .unwrap()
+                .channel(),
             ux::u4::new(0x4),
         );
     }
@@ -133,7 +136,9 @@ mod tests {
     #[test]
     fn note() {
         assert_eq!(
-            AssignablePerNoteControllerMessage::from_data(&[0x4214_6FB1, 0x46105EE5]).unwrap().note(),
+            AssignablePerNoteControllerMessage::from_data(&[0x4214_6FB1, 0x46105EE5])
+                .unwrap()
+                .note(),
             ux::u7::new(0x6F),
         );
     }
@@ -141,7 +146,9 @@ mod tests {
     #[test]
     fn index() {
         assert_eq!(
-            AssignablePerNoteControllerMessage::from_data(&[0x4214_6FB1, 0x46105EE5]).unwrap().index(),
+            AssignablePerNoteControllerMessage::from_data(&[0x4214_6FB1, 0x46105EE5])
+                .unwrap()
+                .index(),
             0xB1,
         );
     }
@@ -149,7 +156,9 @@ mod tests {
     #[test]
     fn controller_data() {
         assert_eq!(
-            AssignablePerNoteControllerMessage::from_data(&[0x4214_6FB1, 0x46105EE5]).unwrap().controller_data(),
+            AssignablePerNoteControllerMessage::from_data(&[0x4214_6FB1, 0x46105EE5])
+                .unwrap()
+                .controller_data(),
             0x46105EE5,
         );
     }

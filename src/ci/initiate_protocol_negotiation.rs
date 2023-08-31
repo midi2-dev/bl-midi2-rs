@@ -118,12 +118,12 @@ macro_rules! initiate_protocol_negotiation_message {
                 let mut payload = messages.payload();
 
                 let Some(_authority_level) = payload.nth(ci_helpers::STANDARD_DATA_SIZE) else {
-                                    return Err(Error::InvalidData);
-                                };
+                    return Err(Error::InvalidData);
+                };
 
                 let Some(number_supported_protocols) = payload.next() else {
-                                    return Err(Error::InvalidData);
-                                };
+                    return Err(Error::InvalidData);
+                };
 
                 if (number_supported_protocols == ux::u7::new(0)) {
                     return Err(Error::InvalidData);
@@ -220,8 +220,8 @@ macro_rules! initiate_protocol_negotiation_message {
                 };
 
                 let Ok(builder) = &mut self.builder else {
-                                                                                    unreachable!();
-                                                                                };
+                    unreachable!();
+                };
 
                 let payload = ci_helpers::StandardDataIterator::new(
                     DeviceId::MidiPort,
@@ -316,8 +316,8 @@ macro_rules! initiate_protocol_negotiation_message {
                 };
 
                 let Ok(builder) = &mut self.builder else {
-                                    unreachable!();
-                                };
+                    unreachable!();
+                };
 
                 let payload = ci_helpers::StandardDataIterator::new(
                     DeviceId::MidiPort,

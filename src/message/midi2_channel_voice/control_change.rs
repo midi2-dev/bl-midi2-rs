@@ -1,12 +1,9 @@
-use crate::{ 
-    message::helpers as message_helpers,
-    message::midi2_channel_voice::{
-        helpers as midi2cv_helpers,
-        TYPE_CODE as MIDI2CV_TYPE_CODE,
-    },
-    util::{BitOps, Truncate, debug},
-    result::Result,
+use crate::{
     error::Error,
+    message::helpers as message_helpers,
+    message::midi2_channel_voice::{helpers as midi2cv_helpers, TYPE_CODE as MIDI2CV_TYPE_CODE},
+    result::Result,
+    util::{debug, BitOps, Truncate},
 };
 
 #[derive(Clone, PartialEq, Eq)]
@@ -54,7 +51,7 @@ impl<'a> ControlChangeBuilder<'a> {
                 message_helpers::write_type_to_packet(MIDI2CV_TYPE_CODE, buffer);
                 message_helpers::write_op_code_to_packet(OP_CODE, buffer);
                 Self(Ok(buffer))
-            },
+            }
         }
     }
     pub fn group(&mut self, group: ux::u4) -> &mut Self {
@@ -109,7 +106,9 @@ mod tests {
     #[test]
     fn group() {
         assert_eq!(
-            ControlChangeMessage::from_data(&[0x43B9_3000, 0x2468_1012]).unwrap().group(),
+            ControlChangeMessage::from_data(&[0x43B9_3000, 0x2468_1012])
+                .unwrap()
+                .group(),
             ux::u4::new(0x3),
         );
     }
@@ -117,7 +116,9 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            ControlChangeMessage::from_data(&[0x43B9_3000, 0x2468_1012]).unwrap().channel(),
+            ControlChangeMessage::from_data(&[0x43B9_3000, 0x2468_1012])
+                .unwrap()
+                .channel(),
             ux::u4::new(0x9),
         );
     }
@@ -125,7 +126,9 @@ mod tests {
     #[test]
     fn index() {
         assert_eq!(
-            ControlChangeMessage::from_data(&[0x43B9_3000, 0x2468_1012]).unwrap().index(),
+            ControlChangeMessage::from_data(&[0x43B9_3000, 0x2468_1012])
+                .unwrap()
+                .index(),
             ux::u7::new(0x30),
         );
     }
@@ -133,7 +136,9 @@ mod tests {
     #[test]
     fn control_change_data() {
         assert_eq!(
-            ControlChangeMessage::from_data(&[0x43B9_3000, 0x2468_1012]).unwrap().control_change_data(),
+            ControlChangeMessage::from_data(&[0x43B9_3000, 0x2468_1012])
+                .unwrap()
+                .control_change_data(),
             0x2468_1012,
         );
     }
