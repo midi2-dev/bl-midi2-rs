@@ -30,9 +30,6 @@ mod protocol;
 mod set_protocol;
 //mod test_protocol;
 
-//pub use message_trait::CiMessage;
-//use message_trait::ci_message_impl;
-
 const VERSION: u8 = 0x01;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
