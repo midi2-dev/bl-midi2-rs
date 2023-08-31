@@ -23,14 +23,14 @@ pub use reset::ResetBuilder;
 pub use reset::ResetMessage;
 pub use song_position_pointer::SongPositionPointerBuilder;
 pub use song_position_pointer::SongPositionPointerMessage;
-pub use song_select::Builder as SongSelectMessageBuilder;
-pub use song_select::Message as SongSelectMessage;
+pub use song_select::SongSelectBuilder;
+pub use song_select::SongSelectMessage;
 pub use start::StartBuilder;
 pub use start::StartMessage;
 pub use stop::StopBuilder;
 pub use stop::StopMessage;
-pub use time_code::Builder as TimeCodeMessageBuilder;
-pub use time_code::Message as TimeCodeMessage;
+pub use time_code::TimeCodeBuilder;
+pub use time_code::TimeCodeMessage;
 pub use timing_clock::TimingClockBuilder;
 pub use timing_clock::TimingClockMessage;
 pub use tune_request::TuneRequestBuilder;
@@ -56,22 +56,4 @@ fn validate_buffer_size(buffer: &[u32]) -> Result<(), Error> {
 
 fn write_op_code_to_packet(buffer: &mut [u32], op_code: u8) {
     buffer[0].set_octet(1, op_code);
-}
-
-fn write_data_to_packet(
-    p: &mut [u32],
-    group: ux::u4,
-    status: u8,
-    byte1: Option<ux::u7>,
-    byte2: Option<ux::u7>,
-) {
-    super::helpers::write_type_to_packet(TYPE_CODE, p);
-    super::helpers::write_group_to_packet(group, p);
-    p[0].set_octet(1, status);
-    if let Some(b) = byte1 {
-        p[0].set_octet(2, b.into());
-    }
-    if let Some(b) = byte2 {
-        p[0].set_octet(3, b.into());
-    }
 }
