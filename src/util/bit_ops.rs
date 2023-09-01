@@ -1,8 +1,10 @@
+use crate::*;
+
 pub trait BitOps {
     fn bit(&self, index: usize) -> bool;
     fn set_bit(&mut self, index: usize, v: bool) -> &mut Self;
-    fn nibble(&self, index: usize) -> ux::u4;
-    fn set_nibble(&mut self, index: usize, v: ux::u4) -> &mut Self;
+    fn nibble(&self, index: usize) -> u4;
+    fn set_nibble(&mut self, index: usize, v: u4) -> &mut Self;
     fn octet(&self, index: usize) -> u8;
     fn set_octet(&mut self, index: usize, v: u8) -> &mut Self;
     fn word(&self, index: usize) -> u16;
@@ -24,12 +26,12 @@ impl BitOps for u32 {
         self
     }
 
-    fn nibble(&self, index: usize) -> ux::u4 {
+    fn nibble(&self, index: usize) -> u4 {
         assert!(index < 8);
         ((self >> (28 - index * 4)) & 0xF).try_into().unwrap()
     }
 
-    fn set_nibble(&mut self, index: usize, v: ux::u4) -> &mut Self {
+    fn set_nibble(&mut self, index: usize, v: u4) -> &mut Self {
         assert!(index < 8);
         let shift = 28 - index * 4;
         *self &= !(0xF << shift);
@@ -77,11 +79,11 @@ impl BitOps for u8 {
         *self |= v << shift;
         self
     }
-    fn nibble(&self, index: usize) -> ux::u4 {
+    fn nibble(&self, index: usize) -> u4 {
         assert!(index < 2);
         ((self >> (4 - index * 4)) & 0xF).try_into().unwrap()
     }
-    fn set_nibble(&mut self, index: usize, v: ux::u4) -> &mut Self {
+    fn set_nibble(&mut self, index: usize, v: u4) -> &mut Self {
         assert!(index < 2);
         let shift = 4 - index * 4;
         *self &= !(0xF << shift);
@@ -127,15 +129,15 @@ mod tests_u8 {
     #[test]
     fn nibble() {
         let p = 0xAB_u8;
-        assert_eq!(p.nibble(0), ux::u4::new(0xA));
-        assert_eq!(p.nibble(1), ux::u4::new(0xB));
+        assert_eq!(p.nibble(0), u4::new(0xA));
+        assert_eq!(p.nibble(1), u4::new(0xB));
     }
 
     #[test]
     fn set_nibble() {
-        assert_eq!(0x1_u8.set_nibble(1, ux::u4::new(6)), &0x6,);
-        assert_eq!(0x0_u8.set_nibble(0, ux::u4::new(0xB)), &0xB0,);
-        assert_eq!(0x0_u8.set_nibble(1, ux::u4::new(0xB)), &0x0B,);
+        assert_eq!(0x1_u8.set_nibble(1, u4::new(6)), &0x6,);
+        assert_eq!(0x0_u8.set_nibble(0, u4::new(0xB)), &0xB0,);
+        assert_eq!(0x0_u8.set_nibble(1, u4::new(0xB)), &0x0B,);
     }
 
     #[test]
@@ -179,18 +181,18 @@ mod tests_u32 {
     #[test]
     fn nibble() {
         let p = 0x2468_ACE0_u32;
-        assert_eq!(p.nibble(0), ux::u4::new(0x2));
-        assert_eq!(p.nibble(3), ux::u4::new(0x8));
-        assert_eq!(p.nibble(5), ux::u4::new(0xC));
-        assert_eq!(p.nibble(7), ux::u4::new(0x0));
+        assert_eq!(p.nibble(0), u4::new(0x2));
+        assert_eq!(p.nibble(3), u4::new(0x8));
+        assert_eq!(p.nibble(5), u4::new(0xC));
+        assert_eq!(p.nibble(7), u4::new(0x0));
     }
 
     #[test]
     fn set_nibble() {
-        assert_eq!(0x5A21_C612_u32.set_nibble(3, ux::u4::new(6)), &0x5A26_C612,);
-        assert_eq!(0x0_u32.set_nibble(0, ux::u4::new(0xB)), &0xB000_0000,);
-        assert_eq!(0x0_u32.set_nibble(5, ux::u4::new(0xB)), &0x0000_0B00,);
-        assert_eq!(0x0_u32.set_nibble(7, ux::u4::new(0x4)), &0x0000_0004,);
+        assert_eq!(0x5A21_C612_u32.set_nibble(3, u4::new(6)), &0x5A26_C612,);
+        assert_eq!(0x0_u32.set_nibble(0, u4::new(0xB)), &0xB000_0000,);
+        assert_eq!(0x0_u32.set_nibble(5, u4::new(0xB)), &0x0000_0B00,);
+        assert_eq!(0x0_u32.set_nibble(7, u4::new(0x4)), &0x0000_0004,);
     }
 
     #[test]

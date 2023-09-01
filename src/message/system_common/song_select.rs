@@ -1,4 +1,5 @@
 use crate::{
+    *,
     message::{
         helpers as message_helpers,
         system_common::{self, TYPE_CODE as SYSTEM_COMMON_TYPE_CODE},
@@ -18,10 +19,10 @@ impl<'a> SongSelectMessage<'a> {
     pub fn builder(buffer: &mut [u32]) -> SongSelectBuilder {
         SongSelectBuilder::new(buffer)
     }
-    pub fn group(&self) -> ux::u4 {
+    pub fn group(&self) -> u4 {
         message_helpers::group_from_packet(self.0)
     }
-    pub fn song(&self) -> ux::u7 {
+    pub fn song(&self) -> u7 {
         self.0[0].octet(2).truncate()
     }
     pub fn from_data(data: &'a [u32]) -> Result<Self> {
@@ -44,13 +45,13 @@ impl<'a> SongSelectBuilder<'a> {
             Err(e) => Self(Err(e)),
         }
     }
-    pub fn group(&mut self, v: ux::u4) -> &mut Self {
+    pub fn group(&mut self, v: u4) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
         }
         self
     }
-    pub fn song(&mut self, v: ux::u7) -> &mut Self {
+    pub fn song(&mut self, v: u7) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             buffer[0].set_octet(2, v.into());
         }
@@ -72,8 +73,8 @@ mod tests {
     fn builder() {
         assert_eq!(
             SongSelectMessage::builder(&mut [0x0])
-                .group(ux::u4::new(0xA))
-                .song(ux::u7::new(0x4F))
+                .group(u4::new(0xA))
+                .song(u7::new(0x4F))
                 .build(),
             Ok(SongSelectMessage(&[0x1AF3_4F00])),
         );
@@ -85,7 +86,7 @@ mod tests {
             SongSelectMessage::from_data(&[0x1AF3_4F00])
                 .unwrap()
                 .group(),
-            ux::u4::new(0xA),
+            u4::new(0xA),
         );
     }
 
@@ -93,7 +94,7 @@ mod tests {
     fn song() {
         assert_eq!(
             SongSelectMessage::from_data(&[0x1AF3_4F00]).unwrap().song(),
-            ux::u7::new(0x4F),
+            u7::new(0x4F),
         );
     }
 }

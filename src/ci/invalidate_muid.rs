@@ -1,4 +1,5 @@
 use crate::{
+    *,
     ci::{helpers as ci_helpers, DeviceId},
     error::Error,
     message::{sysex, system_exclusive_7bit as sysex7, system_exclusive_8bit as sysex8},
@@ -15,23 +16,23 @@ impl<'a> InvalidateMuidMessage<sysex8::Sysex8MessageGroup<'a>> {
     pub fn builder(buffer: &'a mut [u32]) -> InvalidateMuidBuilder<sysex8::Sysex8MessageGroup<'a>> {
         InvalidateMuidBuilder::<sysex8::Sysex8MessageGroup<'a>>::new(buffer)
     }
-    pub fn group(&self) -> ux::u4 {
+    pub fn group(&self) -> u4 {
         self.0.group()
     }
-    pub fn source(&self) -> ux::u28 {
+    pub fn source(&self) -> u28 {
         let mut payload = self.0.payload();
         payload.nth(4);
-        ux::u28::from_u7s(&[
+        u28::from_u7s(&[
             payload.next().unwrap(),
             payload.next().unwrap(),
             payload.next().unwrap(),
             payload.next().unwrap(),
         ])
     }
-    pub fn target_muid(&self) -> ux::u28 {
+    pub fn target_muid(&self) -> u28 {
         let mut payload = self.0.payload();
         payload.nth(12);
-        ux::u28::from_u7s(&[
+        u28::from_u7s(&[
             payload.next().unwrap(),
             payload.next().unwrap(),
             payload.next().unwrap(),
@@ -57,23 +58,23 @@ impl<'a> InvalidateMuidMessage<sysex7::Sysex7MessageGroup<'a>> {
     pub fn builder(buffer: &'a mut [u32]) -> InvalidateMuidBuilder<sysex7::Sysex7MessageGroup<'a>> {
         InvalidateMuidBuilder::<sysex7::Sysex7MessageGroup<'a>>::new(buffer)
     }
-    pub fn group(&self) -> ux::u4 {
+    pub fn group(&self) -> u4 {
         self.0.group()
     }
-    pub fn source(&self) -> ux::u28 {
+    pub fn source(&self) -> u28 {
         let mut payload = self.0.payload();
         payload.nth(4);
-        ux::u28::from_u7s(&[
+        u28::from_u7s(&[
             payload.next().unwrap().into(),
             payload.next().unwrap().into(),
             payload.next().unwrap().into(),
             payload.next().unwrap().into(),
         ])
     }
-    pub fn target_muid(&self) -> ux::u28 {
+    pub fn target_muid(&self) -> u28 {
         let mut payload = self.0.payload();
         payload.nth(12);
-        ux::u28::from_u7s(&[
+        u28::from_u7s(&[
             payload.next().unwrap().into(),
             payload.next().unwrap().into(),
             payload.next().unwrap().into(),
@@ -96,13 +97,13 @@ impl<'a> InvalidateMuidMessage<sysex7::Sysex7MessageGroup<'a>> {
 }
 
 pub struct InvalidateMuidBuilder<Repr: sysex::SysexMessages> {
-    source: ux::u28,
-    target_muid: ux::u28,
+    source: u28,
+    target_muid: u28,
     builder: Repr::Builder,
 }
 
 impl<'a> InvalidateMuidBuilder<sysex8::Sysex8MessageGroup<'a>> {
-    pub fn group(&mut self, g: ux::u4) -> &mut Self {
+    pub fn group(&mut self, g: u4) -> &mut Self {
         self.builder.group(g);
         self
     }
@@ -110,11 +111,11 @@ impl<'a> InvalidateMuidBuilder<sysex8::Sysex8MessageGroup<'a>> {
         self.builder.stream_id(id);
         self
     }
-    pub fn source(&mut self, source: ux::u28) -> &mut Self {
+    pub fn source(&mut self, source: u28) -> &mut Self {
         self.source = source;
         self
     }
-    pub fn target_muid(&mut self, muid: ux::u28) -> &mut Self {
+    pub fn target_muid(&mut self, muid: u28) -> &mut Self {
         self.target_muid = muid;
         self
     }
@@ -133,7 +134,7 @@ impl<'a> InvalidateMuidBuilder<sysex8::Sysex8MessageGroup<'a>> {
                     DeviceId::MidiPort,
                     STATUS,
                     self.source,
-                    ux::u28::new(0xFFFFFFF),
+                    u28::new(0xFFFFFFF),
                 )
                 .chain(self.target_muid.to_u7s().map(u8::from)),
             )
@@ -146,15 +147,15 @@ impl<'a> InvalidateMuidBuilder<sysex8::Sysex8MessageGroup<'a>> {
 }
 
 impl<'a> InvalidateMuidBuilder<sysex7::Sysex7MessageGroup<'a>> {
-    pub fn group(&mut self, g: ux::u4) -> &mut Self {
+    pub fn group(&mut self, g: u4) -> &mut Self {
         self.builder.group(g);
         self
     }
-    pub fn source(&mut self, source: ux::u28) -> &mut Self {
+    pub fn source(&mut self, source: u28) -> &mut Self {
         self.source = source;
         self
     }
-    pub fn target_muid(&mut self, muid: ux::u28) -> &mut Self {
+    pub fn target_muid(&mut self, muid: u28) -> &mut Self {
         self.target_muid = muid;
         self
     }
@@ -173,9 +174,9 @@ impl<'a> InvalidateMuidBuilder<sysex7::Sysex7MessageGroup<'a>> {
                     DeviceId::MidiPort,
                     STATUS,
                     self.source,
-                    ux::u28::new(0xFFFFFFF),
+                    u28::new(0xFFFFFFF),
                 )
-                .map(ux::u7::new)
+                .map(u7::new)
                 .chain(self.target_muid.to_u7s()),
             )
             .build()
@@ -199,10 +200,10 @@ mod tests {
         assert_eq!(
             debug::Data(
                 InvalidateMuidMessage::<sysex8::Sysex8MessageGroup>::builder(&mut [0x0; 8])
-                    .group(ux::u4::new(0x7))
+                    .group(u4::new(0x7))
                     .stream_id(0x4A)
-                    .source(ux::u28::new(3767028))
-                    .target_muid(ux::u28::new(226028650))
+                    .source(u28::new(3767028))
+                    .target_muid(u28::new(226028650))
                     .build()
                     .unwrap()
                     .data(),
@@ -225,9 +226,9 @@ mod tests {
         assert_eq!(
             debug::Data(
                 InvalidateMuidMessage::<sysex7::Sysex7MessageGroup>::builder(&mut [0x0; 8])
-                    .group(ux::u4::new(0x7))
-                    .source(ux::u28::new(3767028))
-                    .target_muid(ux::u28::new(226028650))
+                    .group(u4::new(0x7))
+                    .source(u28::new(3767028))
+                    .target_muid(u28::new(226028650))
                     .build()
                     .unwrap()
                     .data(),
@@ -258,7 +259,7 @@ mod tests {
             ])
             .unwrap()
             .target_muid(),
-            ux::u28::new(226028650),
+            u28::new(226028650),
         )
     }
 
@@ -275,7 +276,7 @@ mod tests {
             ])
             .unwrap()
             .target_muid(),
-            ux::u28::new(226028650),
+            u28::new(226028650),
         )
     }
 }

@@ -1,4 +1,5 @@
 use crate::{
+    *,
     message::{
         midi1_channel_voice::TYPE_CODE as MIDI1_CHANNEL_VOICE_TYPE,
         helpers as message_helpers,
@@ -7,7 +8,7 @@ use crate::{
     util::{Encode7Bit, BitOps, Truncate, debug},
 };
 
-const OP_CODE: ux::u4 = ux::u4::new(0b1110);
+const OP_CODE: u4 = u4::new(0b1110);
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct PitchBendMessage<'a>(&'a [u32]);
@@ -18,14 +19,14 @@ impl<'a> PitchBendMessage<'a> {
     pub fn builder(buffer: &mut [u32]) -> PitchBendBuilder {
         PitchBendBuilder::new(buffer)
     }
-    pub fn group(&self) -> ux::u4 {
+    pub fn group(&self) -> u4 {
         message_helpers::group_from_packet(self.0)
     }
-    pub fn channel(&self) -> ux::u4 {
+    pub fn channel(&self) -> u4 {
         message_helpers::channel_from_packet(self.0)
     }
-    pub fn bend(&self) -> ux::u14 {
-        ux::u14::from_u7s(&[
+    pub fn bend(&self) -> u14 {
+        u14::from_u7s(&[
             self.0[0].octet(2).truncate(),
             self.0[0].octet(3).truncate(),
         ])
@@ -50,19 +51,19 @@ impl<'a> PitchBendBuilder<'a> {
             Err(e) => Self(Err(e)),
         }
     }
-    pub fn group(&mut self, v: ux::u4) -> &mut Self {
+    pub fn group(&mut self, v: u4) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
         }
         self
     }
-    pub fn channel(&mut self, v: ux::u4) -> &mut Self {
+    pub fn channel(&mut self, v: u4) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_channel_to_packet(v, buffer);
         }
         self
     }
-    pub fn bend(&mut self, v: ux::u14) -> &mut Self {
+    pub fn bend(&mut self, v: u14) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             let u7s = v.to_u7s();
             buffer[0].set_octet(2, u7s[0].into());
@@ -86,9 +87,9 @@ mod tests {
     fn builder() {
         assert_eq!(
             PitchBendMessage::builder(&mut [0x0])
-                .group(ux::u4::new(0x1))
-                .channel(ux::u4::new(0xE))
-                .bend(ux::u14::new(0x147))
+                .group(u4::new(0x1))
+                .channel(u4::new(0xE))
+                .bend(u14::new(0x147))
                 .build(),
             Ok(PitchBendMessage(&[0x21EE_4702])),
         );
@@ -98,7 +99,7 @@ mod tests {
     fn group() {
         assert_eq!(
             PitchBendMessage::from_data(&[0x21EE_4702]).unwrap().group(),
-            ux::u4::new(0x1),
+            u4::new(0x1),
         );
     }
 
@@ -106,7 +107,7 @@ mod tests {
     fn channel() {
         assert_eq!(
             PitchBendMessage::from_data(&[0x21EE_4702]).unwrap().channel(),
-            ux::u4::new(0xE),
+            u4::new(0xE),
         );
     }
 
@@ -114,7 +115,7 @@ mod tests {
     fn bend() {
         assert_eq!(
             PitchBendMessage::from_data(&[0x21EE_4702]).unwrap().bend(),
-            ux::u14::new(0x147)
+            u14::new(0x147)
         );
     }
 }

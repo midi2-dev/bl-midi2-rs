@@ -1,4 +1,5 @@
 use crate::{
+    *,
     message::{
         helpers as message_helpers,
         midi2_channel_voice::TYPE_CODE as MIDI2CV_TYPE_CODE,
@@ -7,7 +8,7 @@ use crate::{
     util::debug,
 };
 
-const OP_CODE: ux::u4 = ux::u4::new(0b1101);
+const OP_CODE: u4 = u4::new(0b1101);
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct ChannelPressureMessage<'a>(&'a [u32]);
@@ -18,10 +19,10 @@ impl<'a> ChannelPressureMessage<'a> {
     pub fn builder(buffer: &mut [u32]) -> ChannelPressureBuilder {
         ChannelPressureBuilder::new(buffer)
     }
-    pub fn group(&self) -> ux::u4 {
+    pub fn group(&self) -> u4 {
         message_helpers::group_from_packet(self.0)
     }
-    pub fn channel(&self) -> ux::u4 {
+    pub fn channel(&self) -> u4 {
         message_helpers::channel_from_packet(self.0)
     }
     pub fn channel_pressure_data(&self) -> u32 {
@@ -48,13 +49,13 @@ impl<'a> ChannelPressureBuilder<'a> {
             Err(e) => Self(Err(e)),
         }
     }
-    pub fn group(&mut self, v: ux::u4) -> &mut Self {
+    pub fn group(&mut self, v: u4) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
         }
         self
     }
-    pub fn channel(&mut self, v: ux::u4) -> &mut Self {
+    pub fn channel(&mut self, v: u4) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_channel_to_packet(v, buffer);
         }
@@ -82,8 +83,8 @@ mod tests {
     fn builder() {
         assert_eq!(
             ChannelPressureMessage::builder(&mut [0x0, 0x0])
-                .group(ux::u4::new(0xE))
-                .channel(ux::u4::new(0xD))
+                .group(u4::new(0xE))
+                .channel(u4::new(0xD))
                 .channel_pressure_data(0xDE0DE0F2)
                 .build(),
             Ok(ChannelPressureMessage(&[0x4EDD_0000, 0xDE0D_E0F2])),
@@ -96,7 +97,7 @@ mod tests {
             ChannelPressureMessage::from_data(&[0x4EDD_0000, 0xDE0D_E0F2])
                 .unwrap()
                 .group(),
-            ux::u4::new(0xE),
+            u4::new(0xE),
         );
     }
 
@@ -106,7 +107,7 @@ mod tests {
             ChannelPressureMessage::from_data(&[0x4EDD_0000, 0xDE0D_E0F2])
                 .unwrap()
                 .channel(),
-            ux::u4::new(0xD),
+            u4::new(0xD),
         );
     }
 

@@ -1,4 +1,5 @@
 use crate::{
+    *,
     error::Error,
     message::helpers as message_helpers,
     message::midi2_channel_voice::{helpers as midi2cv_helpers, TYPE_CODE as MIDI2CV_TYPE_CODE},
@@ -11,19 +12,19 @@ pub struct ControlChangeMessage<'a>(&'a [u32]);
 
 debug::message_debug_impl!(ControlChangeMessage);
 
-const OP_CODE: ux::u4 = ux::u4::new(0b1011);
+const OP_CODE: u4 = u4::new(0b1011);
 
 impl<'a> ControlChangeMessage<'a> {
     pub fn builder(buffer: &mut [u32]) -> ControlChangeBuilder {
         ControlChangeBuilder::new(buffer)
     }
-    pub fn group(&self) -> ux::u4 {
+    pub fn group(&self) -> u4 {
         message_helpers::group_from_packet(self.0)
     }
-    pub fn channel(&self) -> ux::u4 {
+    pub fn channel(&self) -> u4 {
         message_helpers::channel_from_packet(self.0)
     }
-    pub fn index(&self) -> ux::u7 {
+    pub fn index(&self) -> u7 {
         self.0[0].octet(2).truncate()
     }
     pub fn control_change_data(&self) -> u32 {
@@ -54,19 +55,19 @@ impl<'a> ControlChangeBuilder<'a> {
             }
         }
     }
-    pub fn group(&mut self, group: ux::u4) -> &mut Self {
+    pub fn group(&mut self, group: u4) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(group, buffer);
         }
         self
     }
-    pub fn channel(&mut self, channel: ux::u4) -> &mut Self {
+    pub fn channel(&mut self, channel: u4) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_channel_to_packet(channel, buffer);
         }
         self
     }
-    pub fn index(&mut self, index: ux::u7) -> &mut Self {
+    pub fn index(&mut self, index: u7) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             buffer[0].set_octet(2, index.into());
         }
@@ -94,9 +95,9 @@ mod tests {
     fn builder() {
         assert_eq!(
             ControlChangeMessage::builder(&mut [0x0, 0x0])
-                .group(ux::u4::new(0x3))
-                .channel(ux::u4::new(0x9))
-                .index(ux::u7::new(0x30))
+                .group(u4::new(0x3))
+                .channel(u4::new(0x9))
+                .index(u7::new(0x30))
                 .control_change_data(0x2468_1012)
                 .build(),
             Ok(ControlChangeMessage(&[0x43B9_3000, 0x2468_1012]))
@@ -109,7 +110,7 @@ mod tests {
             ControlChangeMessage::from_data(&[0x43B9_3000, 0x2468_1012])
                 .unwrap()
                 .group(),
-            ux::u4::new(0x3),
+            u4::new(0x3),
         );
     }
 
@@ -119,7 +120,7 @@ mod tests {
             ControlChangeMessage::from_data(&[0x43B9_3000, 0x2468_1012])
                 .unwrap()
                 .channel(),
-            ux::u4::new(0x9),
+            u4::new(0x9),
         );
     }
 
@@ -129,7 +130,7 @@ mod tests {
             ControlChangeMessage::from_data(&[0x43B9_3000, 0x2468_1012])
                 .unwrap()
                 .index(),
-            ux::u7::new(0x30),
+            u7::new(0x30),
         );
     }
 

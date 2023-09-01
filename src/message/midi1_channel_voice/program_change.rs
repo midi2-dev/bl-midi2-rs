@@ -1,4 +1,5 @@
 use crate::{
+    *,
     message::{
         midi1_channel_voice::TYPE_CODE as MIDI1_CHANNEL_VOICE_TYPE,
         helpers as message_helpers,
@@ -7,7 +8,7 @@ use crate::{
     util::debug,
 };
 
-const OP_CODE: ux::u4 = ux::u4::new(0b1100);
+const OP_CODE: u4 = u4::new(0b1100);
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct ProgramChangeMessage<'a>(&'a [u32]);
@@ -18,13 +19,13 @@ impl<'a> ProgramChangeMessage<'a> {
     pub fn builder(buffer: &mut [u32]) -> ProgramChangeBuilder {
         ProgramChangeBuilder::new(buffer)
     }
-    pub fn group(&self) -> ux::u4 {
+    pub fn group(&self) -> u4 {
         message_helpers::group_from_packet(self.0)
     }
-    pub fn channel(&self) -> ux::u4 {
+    pub fn channel(&self) -> u4 {
         message_helpers::channel_from_packet(self.0)
     }
-    pub fn program(&self) -> ux::u7 {
+    pub fn program(&self) -> u7 {
         message_helpers::note_from_packet(self.0)
     }
     pub fn from_data(data: &'a [u32]) -> Result<Self> {
@@ -47,19 +48,19 @@ impl<'a> ProgramChangeBuilder<'a> {
             Err(e) => Self(Err(e)),
         }
     }
-    pub fn group(&mut self, v: ux::u4) -> &mut Self {
+    pub fn group(&mut self, v: u4) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
         }
         self
     }
-    pub fn channel(&mut self, v: ux::u4) -> &mut Self {
+    pub fn channel(&mut self, v: u4) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_channel_to_packet(v, buffer);
         }
         self
     }
-    pub fn program(&mut self, v: ux::u7) -> &mut Self {
+    pub fn program(&mut self, v: u7) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_note_to_packet(v, buffer);
         }
@@ -81,9 +82,9 @@ mod tests {
     fn builder() {
         assert_eq!(
             ProgramChangeMessage::builder(&mut [0x0])
-                .group(ux::u4::new(0x4))
-                .channel(ux::u4::new(0x7))
-                .program(ux::u7::new(0x63))
+                .group(u4::new(0x4))
+                .channel(u4::new(0x7))
+                .program(u7::new(0x63))
                 .build(),
             Ok(ProgramChangeMessage(&[0x24C7_6300])),
         );
@@ -93,7 +94,7 @@ mod tests {
     fn group() {
         assert_eq!(
             ProgramChangeMessage::from_data(&[0x24C7_6300]).unwrap().group(),
-            ux::u4::new(0x4),
+            u4::new(0x4),
         );
     }
 
@@ -101,7 +102,7 @@ mod tests {
     fn channel() {
         assert_eq!(
             ProgramChangeMessage::from_data(&[0x24C7_6300]).unwrap().channel(),
-            ux::u4::new(0x7),
+            u4::new(0x7),
         );
     }
 
@@ -109,7 +110,7 @@ mod tests {
     fn program() {
         assert_eq!(
             ProgramChangeMessage::from_data(&[0x24C7_6300]).unwrap().program(),
-            ux::u7::new(0x63),
+            u7::new(0x63),
         );
     }
 }

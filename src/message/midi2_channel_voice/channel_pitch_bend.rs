@@ -1,4 +1,5 @@
 use crate::{
+    *,
     message::{
         helpers as message_helpers,
         midi2_channel_voice::TYPE_CODE as MIDI2CV_TYPE_CODE,
@@ -7,7 +8,7 @@ use crate::{
     util::debug,
 };
 
-const OP_CODE: ux::u4 = ux::u4::new(0b1110);
+const OP_CODE: u4 = u4::new(0b1110);
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct ChannelPitchBendMessage<'a>(&'a [u32]);
@@ -18,10 +19,10 @@ impl<'a> ChannelPitchBendMessage<'a> {
     pub fn builder(buffer: &mut [u32]) -> ChannelPitchBendBuilder {
         ChannelPitchBendBuilder::new(buffer)
     }
-    pub fn group(&self) -> ux::u4 {
+    pub fn group(&self) -> u4 {
         message_helpers::group_from_packet(self.0)
     }
-    pub fn channel(&self) -> ux::u4 {
+    pub fn channel(&self) -> u4 {
         message_helpers::channel_from_packet(self.0)
     }
     pub fn pitch_bend_data(&self) -> u32 {
@@ -48,13 +49,13 @@ impl<'a> ChannelPitchBendBuilder<'a> {
             Err(e) => Self(Err(e)),
         }
     }
-    pub fn group(&mut self, v: ux::u4) -> &mut Self {
+    pub fn group(&mut self, v: u4) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
         }
         self
     }
-    pub fn channel(&mut self, v: ux::u4) -> &mut Self {
+    pub fn channel(&mut self, v: u4) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_channel_to_packet(v, buffer);
         }
@@ -82,8 +83,8 @@ mod tests {
     fn builder() {
         assert_eq!(
             ChannelPitchBendMessage::builder(&mut [0x0, 0x0])
-                .group(ux::u4::new(0xB))
-                .channel(ux::u4::new(0x9))
+                .group(u4::new(0xB))
+                .channel(u4::new(0x9))
                 .pitch_bend_data(0x08306AF8)
                 .build(),
             Ok(ChannelPitchBendMessage(&[0x4BE9_0000, 0x0830_6AF8])),
@@ -96,7 +97,7 @@ mod tests {
             ChannelPitchBendMessage::from_data(&[0x4BE9_0000, 0x0830_6AF8])
                 .unwrap()
                 .group(),
-            ux::u4::new(0xB),
+            u4::new(0xB),
         );
     }
 
@@ -106,7 +107,7 @@ mod tests {
             ChannelPitchBendMessage::from_data(&[0x4BE9_0000, 0x0830_6AF8])
                 .unwrap()
                 .channel(),
-            ux::u4::new(0x9),
+            u4::new(0x9),
         );
     }
 

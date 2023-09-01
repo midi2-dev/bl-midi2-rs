@@ -9,22 +9,22 @@ impl<'a> DiscoveryQueryMessage<sysex8::Sysex8MessageGroup<'a>> {
     pub fn builder(buffer: &'a mut [u32]) -> DiscoveryQueryBuilder<sysex8::Sysex8MessageGroup<'a>> {
         DiscoveryQueryBuilder::<sysex8::Sysex8MessageGroup<'a>>::new(buffer)
     }
-    pub fn group(&self) -> ux::u4 {
+    pub fn group(&self) -> u4 {
         self.0.group()
     }
-    pub fn source(&self) -> ux::u28 {
+    pub fn source(&self) -> u28 {
         self.0.source()
     }
-    pub fn device_manufacturer(&self) -> ux::u21 {
+    pub fn device_manufacturer(&self) -> u21 {
         self.0.device_manufacturer()
     }
-    pub fn device_family(&self) -> ux::u14 {
+    pub fn device_family(&self) -> u14 {
         self.0.device_family()
     }
-    pub fn device_model_number(&self) -> ux::u14 {
+    pub fn device_model_number(&self) -> u14 {
         self.0.device_model_number()
     }
-    pub fn software_version(&self) -> [ux::u7; 4] {
+    pub fn software_version(&self) -> [u7; 4] {
         self.0.software_version()
     }
     pub fn protocol_negotiation_supported(&self) -> bool {
@@ -36,7 +36,7 @@ impl<'a> DiscoveryQueryMessage<sysex8::Sysex8MessageGroup<'a>> {
     pub fn property_exchange_supported(&self) -> bool {
         self.0.property_exchange_supported()
     }
-    pub fn max_sysex_message_size(&self) -> ux::u28 {
+    pub fn max_sysex_message_size(&self) -> u28 {
         self.0.max_sysex_message_size()
     }
     pub fn data(&self) -> &[u32] {
@@ -55,22 +55,22 @@ impl<'a> DiscoveryQueryMessage<sysex7::Sysex7MessageGroup<'a>> {
     pub fn builder(buffer: &'a mut [u32]) -> DiscoveryQueryBuilder<sysex7::Sysex7MessageGroup<'a>> {
         DiscoveryQueryBuilder::<sysex7::Sysex7MessageGroup<'a>>::new(buffer)
     }
-    pub fn group(&self) -> ux::u4 {
+    pub fn group(&self) -> u4 {
         self.0.group()
     }
-    pub fn source(&self) -> ux::u28 {
+    pub fn source(&self) -> u28 {
         self.0.source()
     }
-    pub fn device_manufacturer(&self) -> ux::u21 {
+    pub fn device_manufacturer(&self) -> u21 {
         self.0.device_manufacturer()
     }
-    pub fn device_family(&self) -> ux::u14 {
+    pub fn device_family(&self) -> u14 {
         self.0.device_family()
     }
-    pub fn device_model_number(&self) -> ux::u14 {
+    pub fn device_model_number(&self) -> u14 {
         self.0.device_model_number()
     }
-    pub fn software_version(&self) -> [ux::u7; 4] {
+    pub fn software_version(&self) -> [u7; 4] {
         self.0.software_version()
     }
     pub fn protocol_negotiation_supported(&self) -> bool {
@@ -82,7 +82,7 @@ impl<'a> DiscoveryQueryMessage<sysex7::Sysex7MessageGroup<'a>> {
     pub fn property_exchange_supported(&self) -> bool {
         self.0.property_exchange_supported()
     }
-    pub fn max_sysex_message_size(&self) -> ux::u28 {
+    pub fn max_sysex_message_size(&self) -> u28 {
         self.0.max_sysex_message_size()
     }
     pub fn data(&self) -> &[u32] {
@@ -102,34 +102,34 @@ pub struct DiscoveryQueryBuilder<Repr: sysex::SysexMessages>(DiscoveryBuilder<Re
 impl<'a> DiscoveryQueryBuilder<sysex8::Sysex8MessageGroup<'a>> {
     pub fn new(buffer: &'a mut [u32]) -> Self {
         let mut builder = DiscoveryBuilder::<sysex8::Sysex8MessageGroup<'a>, STATUS>::new(buffer);
-        builder.destination(ux::u28::max_value());
+        builder.destination(u28::max_value());
         Self(builder)
     }
     pub fn stream_id(&mut self, id: u8) -> &mut Self {
         self.0.stream_id(id);
         self
     }
-    pub fn group(&mut self, group: ux::u4) -> &mut Self {
+    pub fn group(&mut self, group: u4) -> &mut Self {
         self.0.group(group);
         self
     }
-    pub fn source(&mut self, source: ux::u28) -> &mut Self {
+    pub fn source(&mut self, source: u28) -> &mut Self {
         self.0.source(source);
         self
     }
-    pub fn device_manufacturer(&mut self, device_manufacturer: ux::u21) -> &mut Self {
+    pub fn device_manufacturer(&mut self, device_manufacturer: u21) -> &mut Self {
         self.0.device_manufacturer(device_manufacturer);
         self
     }
-    pub fn device_family(&mut self, device_family: ux::u14) -> &mut Self {
+    pub fn device_family(&mut self, device_family: u14) -> &mut Self {
         self.0.device_family(device_family);
         self
     }
-    pub fn device_model_number(&mut self, device_model_number: ux::u14) -> &mut Self {
+    pub fn device_model_number(&mut self, device_model_number: u14) -> &mut Self {
         self.0.device_model_number(device_model_number);
         self
     }
-    pub fn software_version(&mut self, software_version: [ux::u7; 4]) -> &mut Self {
+    pub fn software_version(&mut self, software_version: [u7; 4]) -> &mut Self {
         self.0.software_version(software_version);
         self
     }
@@ -154,7 +154,7 @@ impl<'a> DiscoveryQueryBuilder<sysex8::Sysex8MessageGroup<'a>> {
             .property_exchange_supported(property_exchange_supported);
         self
     }
-    pub fn max_sysex_message_size(&mut self, max_sysex_message_size: ux::u28) -> &mut Self {
+    pub fn max_sysex_message_size(&mut self, max_sysex_message_size: u28) -> &mut Self {
         self.0.max_sysex_message_size(max_sysex_message_size);
         self
     }
@@ -169,30 +169,30 @@ impl<'a> DiscoveryQueryBuilder<sysex8::Sysex8MessageGroup<'a>> {
 impl<'a> DiscoveryQueryBuilder<sysex7::Sysex7MessageGroup<'a>> {
     pub fn new(buffer: &'a mut [u32]) -> Self {
         let mut builder = DiscoveryBuilder::<sysex7::Sysex7MessageGroup<'a>, STATUS>::new(buffer);
-        builder.destination(ux::u28::max_value());
+        builder.destination(u28::max_value());
         Self(builder)
     }
-    pub fn group(&mut self, group: ux::u4) -> &mut Self {
+    pub fn group(&mut self, group: u4) -> &mut Self {
         self.0.group(group);
         self
     }
-    pub fn source(&mut self, source: ux::u28) -> &mut Self {
+    pub fn source(&mut self, source: u28) -> &mut Self {
         self.0.source(source);
         self
     }
-    pub fn device_manufacturer(&mut self, device_manufacturer: ux::u21) -> &mut Self {
+    pub fn device_manufacturer(&mut self, device_manufacturer: u21) -> &mut Self {
         self.0.device_manufacturer(device_manufacturer);
         self
     }
-    pub fn device_family(&mut self, device_family: ux::u14) -> &mut Self {
+    pub fn device_family(&mut self, device_family: u14) -> &mut Self {
         self.0.device_family(device_family);
         self
     }
-    pub fn device_model_number(&mut self, device_model_number: ux::u14) -> &mut Self {
+    pub fn device_model_number(&mut self, device_model_number: u14) -> &mut Self {
         self.0.device_model_number(device_model_number);
         self
     }
-    pub fn software_version(&mut self, software_version: [ux::u7; 4]) -> &mut Self {
+    pub fn software_version(&mut self, software_version: [u7; 4]) -> &mut Self {
         self.0.software_version(software_version);
         self
     }
@@ -217,7 +217,7 @@ impl<'a> DiscoveryQueryBuilder<sysex7::Sysex7MessageGroup<'a>> {
             .property_exchange_supported(property_exchange_supported);
         self
     }
-    pub fn max_sysex_message_size(&mut self, max_sysex_message_size: ux::u28) -> &mut Self {
+    pub fn max_sysex_message_size(&mut self, max_sysex_message_size: u28) -> &mut Self {
         self.0.max_sysex_message_size(max_sysex_message_size);
         self
     }
@@ -239,22 +239,22 @@ mod tests {
         assert_eq!(
             debug::Data(
                 DiscoveryQueryMessage::<sysex8::Sysex8MessageGroup>::builder(&mut [0x0; 12])
-                    .group(ux::u4::new(0x8))
+                    .group(u4::new(0x8))
                     .stream_id(0x31)
-                    .source(ux::u28::new(196099328))
-                    .device_manufacturer(ux::u21::new(2054957))
-                    .device_family(ux::u14::new(508))
-                    .device_model_number(ux::u14::new(7156))
+                    .source(u28::new(196099328))
+                    .device_manufacturer(u21::new(2054957))
+                    .device_family(u14::new(508))
+                    .device_model_number(u14::new(7156))
                     .software_version([
-                        ux::u7::new(0x01),
-                        ux::u7::new(0x06),
-                        ux::u7::new(0x05),
-                        ux::u7::new(0x31),
+                        u7::new(0x01),
+                        u7::new(0x06),
+                        u7::new(0x05),
+                        u7::new(0x31),
                     ])
                     .protocol_negotiation_supported(true)
                     .profile_configuration_supported(true)
                     .property_exchange_supported(true)
-                    .max_sysex_message_size(ux::u28::new(176315622))
+                    .max_sysex_message_size(u28::new(176315622))
                     .build()
                     .unwrap()
                     .data(),
@@ -295,7 +295,7 @@ mod tests {
             ])
             .unwrap()
             .group(),
-            ux::u4::new(0x8)
+            u4::new(0x8)
         );
     }
 
@@ -318,7 +318,7 @@ mod tests {
             ])
             .unwrap()
             .source(),
-            ux::u28::new(196099328)
+            u28::new(196099328)
         );
     }
 
@@ -341,7 +341,7 @@ mod tests {
             ])
             .unwrap()
             .device_manufacturer(),
-            ux::u21::new(2054957)
+            u21::new(2054957)
         );
     }
 
@@ -364,7 +364,7 @@ mod tests {
             ])
             .unwrap()
             .device_family(),
-            ux::u14::new(508)
+            u14::new(508)
         );
     }
 
@@ -387,7 +387,7 @@ mod tests {
             ])
             .unwrap()
             .device_model_number(),
-            ux::u14::new(7156)
+            u14::new(7156)
         );
     }
 
@@ -411,10 +411,10 @@ mod tests {
             .unwrap()
             .software_version(),
             [
-                ux::u7::new(0x01),
-                ux::u7::new(0x06),
-                ux::u7::new(0x05),
-                ux::u7::new(0x31),
+                u7::new(0x01),
+                u7::new(0x06),
+                u7::new(0x05),
+                u7::new(0x31),
             ]
         );
     }
@@ -507,7 +507,7 @@ mod tests {
             ])
             .unwrap()
             .max_sysex_message_size(),
-            ux::u28::new(176315622)
+            u28::new(176315622)
         );
     }
 
@@ -516,21 +516,21 @@ mod tests {
         assert_eq!(
             debug::Data(
                 DiscoveryQueryMessage::<sysex7::Sysex7MessageGroup>::builder(&mut [0x0; 10])
-                    .group(ux::u4::new(0x8))
-                    .source(ux::u28::new(196099328))
-                    .device_manufacturer(ux::u21::new(2054957))
-                    .device_family(ux::u14::new(508))
-                    .device_model_number(ux::u14::new(7156))
+                    .group(u4::new(0x8))
+                    .source(u28::new(196099328))
+                    .device_manufacturer(u21::new(2054957))
+                    .device_family(u14::new(508))
+                    .device_model_number(u14::new(7156))
                     .software_version([
-                        ux::u7::new(0x01),
-                        ux::u7::new(0x06),
-                        ux::u7::new(0x05),
-                        ux::u7::new(0x31),
+                        u7::new(0x01),
+                        u7::new(0x06),
+                        u7::new(0x05),
+                        u7::new(0x31),
                     ])
                     .protocol_negotiation_supported(true)
                     .profile_configuration_supported(true)
                     .property_exchange_supported(true)
-                    .max_sysex_message_size(ux::u28::new(176315622))
+                    .max_sysex_message_size(u28::new(176315622))
                     .build()
                     .unwrap()
                     .data(),
@@ -567,7 +567,7 @@ mod tests {
             ])
             .unwrap()
             .group(),
-            ux::u4::new(0x8)
+            u4::new(0x8)
         );
     }
 
@@ -588,7 +588,7 @@ mod tests {
             ])
             .unwrap()
             .source(),
-            ux::u28::new(196099328)
+            u28::new(196099328)
         );
     }
 
@@ -609,7 +609,7 @@ mod tests {
             ])
             .unwrap()
             .device_manufacturer(),
-            ux::u21::new(2054957)
+            u21::new(2054957)
         );
     }
 
@@ -630,7 +630,7 @@ mod tests {
             ])
             .unwrap()
             .device_family(),
-            ux::u14::new(508)
+            u14::new(508)
         );
     }
 
@@ -651,7 +651,7 @@ mod tests {
             ])
             .unwrap()
             .device_model_number(),
-            ux::u14::new(7156)
+            u14::new(7156)
         );
     }
 
@@ -673,10 +673,10 @@ mod tests {
             .unwrap()
             .software_version(),
             [
-                ux::u7::new(0x01),
-                ux::u7::new(0x06),
-                ux::u7::new(0x05),
-                ux::u7::new(0x31),
+                u7::new(0x01),
+                u7::new(0x06),
+                u7::new(0x05),
+                u7::new(0x31),
             ]
         );
     }
@@ -761,7 +761,7 @@ mod tests {
             ])
             .unwrap()
             .max_sysex_message_size(),
-            ux::u28::new(176315622)
+            u28::new(176315622)
         );
     }
 }

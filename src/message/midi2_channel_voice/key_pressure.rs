@@ -1,4 +1,5 @@
 use crate::{
+    *,
     error::Error,
     message::helpers as message_helpers,
     message::midi2_channel_voice::{helpers as midi2cv_helpers, TYPE_CODE as MIDI2CV_TYPE_CODE},
@@ -11,19 +12,19 @@ pub struct KeyPressureMessage<'a>(&'a [u32]);
 
 debug::message_debug_impl!(KeyPressureMessage);
 
-const OP_CODE: ux::u4 = ux::u4::new(0b1010);
+const OP_CODE: u4 = u4::new(0b1010);
 
 impl<'a> KeyPressureMessage<'a> {
     pub fn builder(buffer: &mut [u32]) -> KeyPressureBuilder {
         KeyPressureBuilder::new(buffer)
     }
-    pub fn group(&self) -> ux::u4 {
+    pub fn group(&self) -> u4 {
         message_helpers::group_from_packet(self.0)
     }
-    pub fn channel(&self) -> ux::u4 {
+    pub fn channel(&self) -> u4 {
         message_helpers::channel_from_packet(self.0)
     }
-    pub fn note(&self) -> ux::u7 {
+    pub fn note(&self) -> u7 {
         message_helpers::note_from_packet(self.0)
     }
     pub fn key_pressure_data(&self) -> u32 {
@@ -52,19 +53,19 @@ impl<'a> KeyPressureBuilder<'a> {
             }
         }
     }
-    pub fn group(&mut self, group: ux::u4) -> &mut Self {
+    pub fn group(&mut self, group: u4) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(group, buffer);
         }
         self
     }
-    pub fn channel(&mut self, channel: ux::u4) -> &mut Self {
+    pub fn channel(&mut self, channel: u4) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_channel_to_packet(channel, buffer);
         }
         self
     }
-    pub fn note(&mut self, v: ux::u7) -> &mut Self {
+    pub fn note(&mut self, v: u7) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_note_to_packet(v, buffer);
         }
@@ -92,9 +93,9 @@ mod tests {
     fn builder() {
         assert_eq!(
             KeyPressureMessage::builder(&mut [0x0, 0x0])
-                .group(ux::u4::new(0xB))
-                .channel(ux::u4::new(0xC))
-                .note(ux::u7::new(0x59))
+                .group(u4::new(0xB))
+                .channel(u4::new(0xC))
+                .note(u7::new(0x59))
                 .key_pressure_data(0xC0B83064)
                 .build(),
             Ok(KeyPressureMessage(&[0x4BAC_5900, 0xC0B83064])),
@@ -107,7 +108,7 @@ mod tests {
             KeyPressureMessage::from_data(&[0x4BAC_5900, 0xC0B83064])
                 .unwrap()
                 .group(),
-            ux::u4::new(0xB),
+            u4::new(0xB),
         );
     }
 
@@ -117,7 +118,7 @@ mod tests {
             KeyPressureMessage::from_data(&[0x4BAC_5900, 0xC0B83064])
                 .unwrap()
                 .channel(),
-            ux::u4::new(0xC),
+            u4::new(0xC),
         );
     }
 
@@ -127,7 +128,7 @@ mod tests {
             KeyPressureMessage::from_data(&[0x4BAC_5900, 0xC0B83064])
                 .unwrap()
                 .note(),
-            ux::u7::new(0x59),
+            u7::new(0x59),
         );
     }
 

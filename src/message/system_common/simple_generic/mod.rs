@@ -1,6 +1,7 @@
 macro_rules! simple_generic_message {
     ($op_code:expr, $name:ident, $builder_name:ident) => {
         use crate::{
+            *,
             message::{
                 helpers as message_helpers,
                 system_common::{self, TYPE_CODE as SYSTEM_COMMON_TYPE_CODE},
@@ -18,7 +19,7 @@ macro_rules! simple_generic_message {
             pub fn builder(buffer: &mut [u32]) -> $builder_name {
                 $builder_name::new(buffer)
             }
-            pub fn group(&self) -> ux::u4 {
+            pub fn group(&self) -> u4 {
                 message_helpers::group_from_packet(self.0)
             }
             pub fn from_data(data: &'a [u32]) -> Result<Self> {
@@ -43,7 +44,7 @@ macro_rules! simple_generic_message {
                     Err(e) => Self(Err(e)),
                 }
             }
-            pub fn group(&mut self, v: ux::u4) -> &mut Self {
+            pub fn group(&mut self, v: u4) -> &mut Self {
                 if let Ok(buffer) = &mut self.0 {
                     message_helpers::write_group_to_packet(v, buffer);
                 }
@@ -100,7 +101,7 @@ mod tests {
     fn builder() {
         assert_eq!(
             TestMessage::builder(&mut [0x0])
-                .group(ux::u4::new(0x9))
+                .group(u4::new(0x9))
                 .build(),
             Ok(TestMessage(&[0x19FF_0000])),
         );
@@ -110,7 +111,7 @@ mod tests {
     fn group() {
         assert_eq!(
             TestMessage::from_data(&[0x19FF_0000]).unwrap().group(),
-            ux::u4::new(0x9),
+            u4::new(0x9),
         );
     }
 }

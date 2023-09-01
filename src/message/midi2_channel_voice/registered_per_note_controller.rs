@@ -1,4 +1,5 @@
 use crate::{
+    *,
     message::{
         helpers as message_helpers,
         midi2_channel_voice::{
@@ -9,7 +10,7 @@ use crate::{
     util::{debug, BitOps},
 };
 
-const OP_CODE: ux::u4 = ux::u4::new(0b0000);
+const OP_CODE: u4 = u4::new(0b0000);
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct RegisteredPerNoteControllerMessage<'a>(&'a [u32]);
@@ -20,13 +21,13 @@ impl<'a> RegisteredPerNoteControllerMessage<'a> {
     pub fn builder(buffer: &mut [u32]) -> RegisteredPerNoteControllerBuilder {
         RegisteredPerNoteControllerBuilder::new(buffer)
     }
-    pub fn group(&self) -> ux::u4 {
+    pub fn group(&self) -> u4 {
         message_helpers::group_from_packet(self.0)
     }
-    pub fn channel(&self) -> ux::u4 {
+    pub fn channel(&self) -> u4 {
         message_helpers::channel_from_packet(self.0)
     }
-    pub fn note(&self) -> ux::u7 {
+    pub fn note(&self) -> u7 {
         message_helpers::note_from_packet(self.0)
     }
     pub fn controller(&self) -> controller::Controller {
@@ -54,19 +55,19 @@ impl<'a> RegisteredPerNoteControllerBuilder<'a> {
             Err(e) => Self(Err(e)),
         }
     }
-    pub fn group(&mut self, v: ux::u4) -> &mut Self {
+    pub fn group(&mut self, v: u4) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
         }
         self
     }
-    pub fn channel(&mut self, v: ux::u4) -> &mut Self {
+    pub fn channel(&mut self, v: u4) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_channel_to_packet(v, buffer);
         }
         self
     }
-    pub fn note(&mut self, v: ux::u7) -> &mut Self {
+    pub fn note(&mut self, v: u7) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_note_to_packet(v, buffer);
         }
@@ -99,9 +100,9 @@ mod tests {
     fn builder() {
         assert_eq!(
             RegisteredPerNoteControllerMessage::builder(&mut [0x0, 0x0])
-                .group(ux::u4::new(0x4))
-                .channel(ux::u4::new(0x5))
-                .note(ux::u7::new(0x6C))
+                .group(u4::new(0x4))
+                .channel(u4::new(0x5))
+                .note(u7::new(0x6C))
                 .controller(controller::Controller::Volume(0xE1E35E92))
                 .build(),
             Ok(RegisteredPerNoteControllerMessage(&[
@@ -117,7 +118,7 @@ mod tests {
             RegisteredPerNoteControllerMessage::from_data(&[0x4405_6C07, 0xE1E35E92])
                 .unwrap()
                 .group(),
-            ux::u4::new(0x4),
+            u4::new(0x4),
         );
     }
 
@@ -127,7 +128,7 @@ mod tests {
             RegisteredPerNoteControllerMessage::from_data(&[0x4405_6C07, 0xE1E35E92])
                 .unwrap()
                 .channel(),
-            ux::u4::new(0x5),
+            u4::new(0x5),
         );
     }
 
@@ -137,7 +138,7 @@ mod tests {
             RegisteredPerNoteControllerMessage::from_data(&[0x4405_6C07, 0xE1E35E92])
                 .unwrap()
                 .note(),
-            ux::u7::new(0x6C),
+            u7::new(0x6C),
         );
     }
 

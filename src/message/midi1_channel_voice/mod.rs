@@ -1,3 +1,5 @@
+use crate::*;
+
 mod channel_pressure;
 mod control_change;
 mod helpers;
@@ -7,7 +9,7 @@ mod note_on;
 mod pitch_bend;
 mod program_change;
 
-const TYPE_CODE: ux::u4 = ux::u4::new(0x2);
+const TYPE_CODE: u4 = u4::new(0x2);
 
 pub use channel_pressure::ChannelPressureBuilder;
 pub use channel_pressure::ChannelPressureMessage;

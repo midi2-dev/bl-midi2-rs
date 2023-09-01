@@ -1,3 +1,5 @@
+use crate::*;
+
 mod assignable_controller;
 mod assignable_per_note_controller;
 mod attribute;
@@ -17,7 +19,7 @@ mod registered_per_note_controller;
 mod relative_assignable_controller;
 mod relative_registered_controller;
 
-pub(crate) const TYPE_CODE: ux::u4 = ux::u4::new(0x4);
+pub(crate) const TYPE_CODE: u4 = u4::new(0x4);
 
 pub use attribute::Attribute as NoteAttribute;
 pub use controller::Controller;
@@ -38,8 +40,8 @@ pub use note_off::NoteOffBuilder;
 pub use note_off::NoteOffMessage;
 pub use note_on::NoteOnBuilder;
 pub use note_on::NoteOnMessage;
-pub use per_note_management::Builder as PerNoteManagementMessageBuilder;
-pub use per_note_management::Message as PerNoteManagementMessage;
+pub use per_note_management::PerNoteManagementBuilder;
+pub use per_note_management::PerNoteManagementMessage;
 pub use per_note_pitch_bend::PerNotePitchBendBuilder;
 pub use per_note_pitch_bend::PerNotePitchBendMessage;
 pub use program_change::ProgramChangeBuilder;

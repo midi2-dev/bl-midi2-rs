@@ -1,3 +1,5 @@
+use crate::*;
+
 pub use discovery::query::DiscoveryQueryBuilder;
 pub use discovery::query::DiscoveryQueryMessage;
 pub use discovery::reply::DiscoveryReplyBuilder;
@@ -16,6 +18,6 @@ const VERSION: u8 = 0x01;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum DeviceId {
-    Channel(ux::u4),
+    Channel(u4),
     MidiPort,
 }

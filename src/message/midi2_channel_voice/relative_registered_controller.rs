@@ -1,4 +1,5 @@
 use crate::{
+    *,
     message::{
         helpers as message_helpers,
         midi2_channel_voice::{helpers as midi2cv_helpers, TYPE_CODE as MIDI2CV_TYPE_CODE},
@@ -7,7 +8,7 @@ use crate::{
     util::debug,
 };
 
-const TYPE_CODE: ux::u4 = ux::u4::new(0b0100);
+const TYPE_CODE: u4 = u4::new(0b0100);
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct RelativeRegisteredControllerMessage<'a>(&'a [u32]);
@@ -18,16 +19,16 @@ impl<'a> RelativeRegisteredControllerMessage<'a> {
     pub fn builder(buffer: &mut [u32]) -> RelativeRegisteredControllerBuilder {
         RelativeRegisteredControllerBuilder::new(buffer)
     }
-    pub fn group(&self) -> ux::u4 {
+    pub fn group(&self) -> u4 {
         message_helpers::group_from_packet(self.0)
     }
-    pub fn channel(&self) -> ux::u4 {
+    pub fn channel(&self) -> u4 {
         message_helpers::channel_from_packet(self.0)
     }
-    pub fn bank(&self) -> ux::u7 {
+    pub fn bank(&self) -> u7 {
         midi2cv_helpers::controller_bank_from_packet(self.0)
     }
-    pub fn index(&self) -> ux::u7 {
+    pub fn index(&self) -> u7 {
         midi2cv_helpers::controller_index_from_packet(self.0)
     }
     pub fn controller_data(&self) -> u32 {
@@ -57,25 +58,25 @@ impl<'a> RelativeRegisteredControllerBuilder<'a> {
             Err(e) => Self(Err(e)),
         }
     }
-    pub fn group(&mut self, v: ux::u4) -> &mut Self {
+    pub fn group(&mut self, v: u4) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
         }
         self
     }
-    pub fn channel(&mut self, v: ux::u4) -> &mut Self {
+    pub fn channel(&mut self, v: u4) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_channel_to_packet(v, buffer);
         }
         self
     }
-    pub fn bank(&mut self, v: ux::u7) -> &mut Self {
+    pub fn bank(&mut self, v: u7) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             midi2cv_helpers::write_controller_bank_to_packet(v, buffer);
         }
         self
     }
-    pub fn index(&mut self, v: ux::u7) -> &mut Self {
+    pub fn index(&mut self, v: u7) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             midi2cv_helpers::write_controller_index_to_packet(v, buffer);
         }
@@ -103,10 +104,10 @@ mod tests {
     fn builder() {
         assert_eq!(
             RelativeRegisteredControllerMessage::builder(&mut [0x0, 0x0])
-                .group(ux::u4::new(0x1))
-                .channel(ux::u4::new(0xE))
-                .bank(ux::u7::new(0x45))
-                .index(ux::u7::new(0x02))
+                .group(u4::new(0x1))
+                .channel(u4::new(0xE))
+                .bank(u7::new(0x45))
+                .index(u7::new(0x02))
                 .controller_data(0xAF525908)
                 .build(),
             Ok(RelativeRegisteredControllerMessage(&[
@@ -122,7 +123,7 @@ mod tests {
             RelativeRegisteredControllerMessage::from_data(&[0x414E_4502, 0xAF525908])
                 .unwrap()
                 .group(),
-            ux::u4::new(0x1),
+            u4::new(0x1),
         );
     }
 
@@ -132,7 +133,7 @@ mod tests {
             RelativeRegisteredControllerMessage::from_data(&[0x414E_4502, 0xAF525908])
                 .unwrap()
                 .channel(),
-            ux::u4::new(0xE),
+            u4::new(0xE),
         );
     }
 
@@ -142,7 +143,7 @@ mod tests {
             RelativeRegisteredControllerMessage::from_data(&[0x414E_4502, 0xAF525908])
                 .unwrap()
                 .bank(),
-            ux::u7::new(0x45),
+            u7::new(0x45),
         );
     }
 
@@ -152,7 +153,7 @@ mod tests {
             RelativeRegisteredControllerMessage::from_data(&[0x414E_4502, 0xAF525908])
                 .unwrap()
                 .index(),
-            ux::u7::new(0x02),
+            u7::new(0x02),
         );
     }
 

@@ -1,6 +1,4 @@
-pub mod builder;
 pub mod debug;
-pub mod getter;
 
 mod bit_ops;
 mod bounded;
@@ -19,17 +17,3 @@ pub trait MessageTraits {
 }
 
 impl<T> MessageTraits for T where T: Clone + core::fmt::Debug + PartialEq {}
-
-#[cfg(test)]
-macro_rules! message_traits_test {
-    ($t:ty) => {
-        use crate::util::MessageTraits;
-        #[test]
-        fn traits() {
-            let _ = <Message as MessageTraits>::DUMMY;
-        }
-    };
-}
-
-#[cfg(test)]
-pub(crate) use message_traits_test;

@@ -1,4 +1,5 @@
 use crate::{
+    *,
     error::Error,
     message::helpers as message_helpers,
     message::midi2_channel_voice::{helpers as midi2cv_helpers, TYPE_CODE as MIDI2CV_TYPE_CODE},
@@ -11,19 +12,19 @@ pub struct PerNotePitchBendMessage<'a>(&'a [u32]);
 
 debug::message_debug_impl!(PerNotePitchBendMessage);
 
-const OP_CODE: ux::u4 = ux::u4::new(0b0110);
+const OP_CODE: u4 = u4::new(0b0110);
 
 impl<'a> PerNotePitchBendMessage<'a> {
     pub fn builder(buffer: &mut [u32]) -> PerNotePitchBendBuilder {
         PerNotePitchBendBuilder::new(buffer)
     }
-    pub fn group(&self) -> ux::u4 {
+    pub fn group(&self) -> u4 {
         message_helpers::group_from_packet(self.0)
     }
-    pub fn channel(&self) -> ux::u4 {
+    pub fn channel(&self) -> u4 {
         message_helpers::channel_from_packet(self.0)
     }
-    pub fn note(&self) -> ux::u7 {
+    pub fn note(&self) -> u7 {
         message_helpers::note_from_packet(self.0)
     }
     pub fn pitch_bend_data(&self) -> u32 {
@@ -52,19 +53,19 @@ impl<'a> PerNotePitchBendBuilder<'a> {
             }
         }
     }
-    pub fn group(&mut self, group: ux::u4) -> &mut Self {
+    pub fn group(&mut self, group: u4) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(group, buffer);
         }
         self
     }
-    pub fn channel(&mut self, channel: ux::u4) -> &mut Self {
+    pub fn channel(&mut self, channel: u4) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_channel_to_packet(channel, buffer);
         }
         self
     }
-    pub fn note(&mut self, v: ux::u7) -> &mut Self {
+    pub fn note(&mut self, v: u7) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_note_to_packet(v, buffer);
         }
@@ -92,9 +93,9 @@ mod tests {
     fn builder() {
         assert_eq!(
             PerNotePitchBendMessage::builder(&mut [0x0, 0x0])
-                .group(ux::u4::new(0x9))
-                .channel(ux::u4::new(0x2))
-                .note(ux::u7::new(0x76))
+                .group(u4::new(0x9))
+                .channel(u4::new(0x2))
+                .note(u7::new(0x76))
                 .pitch_bend_data(0x2AD74672)
                 .build(),
             Ok(PerNotePitchBendMessage(&[0x4962_7600, 0x2AD74672])),
@@ -107,7 +108,7 @@ mod tests {
             PerNotePitchBendMessage::from_data(&[0x4962_7600, 0x2AD74672])
                 .unwrap()
                 .group(),
-            ux::u4::new(0x9),
+            u4::new(0x9),
         );
     }
 
@@ -117,7 +118,7 @@ mod tests {
             PerNotePitchBendMessage::from_data(&[0x4962_7600, 0x2AD74672])
                 .unwrap()
                 .channel(),
-            ux::u4::new(0x2),
+            u4::new(0x2),
         );
     }
 
@@ -127,7 +128,7 @@ mod tests {
             PerNotePitchBendMessage::from_data(&[0x4962_7600, 0x2AD74672])
                 .unwrap()
                 .note(),
-            ux::u7::new(0x76),
+            u7::new(0x76),
         );
     }
 

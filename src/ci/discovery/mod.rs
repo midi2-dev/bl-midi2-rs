@@ -1,4 +1,5 @@
 use crate::{
+    *,
     ci::{helpers as ci_helpers, DeviceId},
     error::Error,
     message::{sysex, system_exclusive_7bit as sysex7, system_exclusive_8bit as sysex8},
@@ -28,42 +29,42 @@ impl<'a, const STATUS: u8> DiscoveryMessage<sysex8::Sysex8MessageGroup<'a>, STAT
     ) -> DiscoveryBuilder<sysex8::Sysex8MessageGroup<'a>, STATUS> {
         DiscoveryBuilder::<sysex8::Sysex8MessageGroup<'a>, STATUS>::new(buffer)
     }
-    pub fn group(&self) -> ux::u4 {
+    pub fn group(&self) -> u4 {
         self.0.group()
     }
-    pub fn source(&self) -> ux::u28 {
+    pub fn source(&self) -> u28 {
         let mut payload = self.0.payload();
         payload.nth(4);
-        ux::u28::from_u7s(&[
+        u28::from_u7s(&[
             payload.next().unwrap(),
             payload.next().unwrap(),
             payload.next().unwrap(),
             payload.next().unwrap(),
         ])
     }
-    pub fn destination(&self) -> ux::u28 {
+    pub fn destination(&self) -> u28 {
         ci_helpers::destination_from_payload(self.0.payload())
     }
-    pub fn device_manufacturer(&self) -> ux::u21 {
+    pub fn device_manufacturer(&self) -> u21 {
         let mut payload = self.0.payload();
         payload.nth(DataOffsets::DeviceManufacturer as usize - 1);
-        ux::u21::from_u7s(&[
+        u21::from_u7s(&[
             payload.next().unwrap(),
             payload.next().unwrap(),
             payload.next().unwrap(),
         ])
     }
-    pub fn device_family(&self) -> ux::u14 {
+    pub fn device_family(&self) -> u14 {
         let mut payload = self.0.payload();
         payload.nth(DataOffsets::DeviceFamily as usize - 1);
-        ux::u14::from_u7s(&[payload.next().unwrap(), payload.next().unwrap()])
+        u14::from_u7s(&[payload.next().unwrap(), payload.next().unwrap()])
     }
-    pub fn device_model_number(&self) -> ux::u14 {
+    pub fn device_model_number(&self) -> u14 {
         let mut payload = self.0.payload();
         payload.nth(DataOffsets::DeviceFamilyModelNumber as usize - 1);
-        ux::u14::from_u7s(&[payload.next().unwrap(), payload.next().unwrap()])
+        u14::from_u7s(&[payload.next().unwrap(), payload.next().unwrap()])
     }
-    pub fn software_version(&self) -> [ux::u7; 4] {
+    pub fn software_version(&self) -> [u7; 4] {
         let mut payload = self.0.payload();
         payload.nth(DataOffsets::SoftwareVersion as usize - 1);
         [
@@ -94,10 +95,10 @@ impl<'a, const STATUS: u8> DiscoveryMessage<sysex8::Sysex8MessageGroup<'a>, STAT
             .unwrap()
             .bit(4)
     }
-    pub fn max_sysex_message_size(&self) -> ux::u28 {
+    pub fn max_sysex_message_size(&self) -> u28 {
         let mut payload = self.0.payload();
         payload.nth(DataOffsets::MaxSysexSize as usize - 1);
-        ux::u28::from_u7s(&[
+        u28::from_u7s(&[
             payload.next().unwrap(),
             payload.next().unwrap(),
             payload.next().unwrap(),
@@ -123,48 +124,48 @@ impl<'a, const STATUS: u8> DiscoveryMessage<sysex7::Sysex7MessageGroup<'a>, STAT
     ) -> DiscoveryBuilder<sysex7::Sysex7MessageGroup<'a>, STATUS> {
         DiscoveryBuilder::<sysex7::Sysex7MessageGroup<'a>, STATUS>::new(buffer)
     }
-    pub fn group(&self) -> ux::u4 {
+    pub fn group(&self) -> u4 {
         self.0.group()
     }
-    pub fn source(&self) -> ux::u28 {
+    pub fn source(&self) -> u28 {
         let mut payload = self.0.payload();
         payload.nth(4);
-        ux::u28::from_u7s(&[
+        u28::from_u7s(&[
             payload.next().unwrap().into(),
             payload.next().unwrap().into(),
             payload.next().unwrap().into(),
             payload.next().unwrap().into(),
         ])
     }
-    pub fn destination(&self) -> ux::u28 {
+    pub fn destination(&self) -> u28 {
         ci_helpers::destination_from_payload(self.0.payload().map(u8::from))
     }
-    pub fn device_manufacturer(&self) -> ux::u21 {
+    pub fn device_manufacturer(&self) -> u21 {
         let mut payload = self.0.payload();
         payload.nth(DataOffsets::DeviceManufacturer as usize - 1);
-        ux::u21::from_u7s(&[
+        u21::from_u7s(&[
             payload.next().unwrap().into(),
             payload.next().unwrap().into(),
             payload.next().unwrap().into(),
         ])
     }
-    pub fn device_family(&self) -> ux::u14 {
+    pub fn device_family(&self) -> u14 {
         let mut payload = self.0.payload();
         payload.nth(DataOffsets::DeviceFamily as usize - 1);
-        ux::u14::from_u7s(&[
+        u14::from_u7s(&[
             payload.next().unwrap().into(),
             payload.next().unwrap().into(),
         ])
     }
-    pub fn device_model_number(&self) -> ux::u14 {
+    pub fn device_model_number(&self) -> u14 {
         let mut payload = self.0.payload();
         payload.nth(DataOffsets::DeviceFamilyModelNumber as usize - 1);
-        ux::u14::from_u7s(&[
+        u14::from_u7s(&[
             payload.next().unwrap().into(),
             payload.next().unwrap().into(),
         ])
     }
-    pub fn software_version(&self) -> [ux::u7; 4] {
+    pub fn software_version(&self) -> [u7; 4] {
         let mut payload = self.0.payload();
         payload.nth(DataOffsets::SoftwareVersion as usize - 1);
         [
@@ -190,10 +191,10 @@ impl<'a, const STATUS: u8> DiscoveryMessage<sysex7::Sysex7MessageGroup<'a>, STAT
     pub fn property_exchange_supported(&self) -> bool {
         self.flags_bit().bit(4)
     }
-    pub fn max_sysex_message_size(&self) -> ux::u28 {
+    pub fn max_sysex_message_size(&self) -> u28 {
         let mut payload = self.0.payload();
         payload.nth(DataOffsets::MaxSysexSize as usize - 1);
-        ux::u28::from_u7s(&[
+        u28::from_u7s(&[
             payload.next().unwrap().into(),
             payload.next().unwrap().into(),
             payload.next().unwrap().into(),
@@ -214,16 +215,16 @@ impl<'a, const STATUS: u8> DiscoveryMessage<sysex7::Sysex7MessageGroup<'a>, STAT
 }
 
 struct DiscoveryBuilder<Repr: sysex::SysexMessages, const STATUS: u8> {
-    source: ux::u28,
-    destination: ux::u28,
-    device_manufacturer: ux::u21,
-    device_family: ux::u14,
-    device_model_number: ux::u14,
-    software_version: [ux::u7; 4],
+    source: u28,
+    destination: u28,
+    device_manufacturer: u21,
+    device_family: u14,
+    device_model_number: u14,
+    software_version: [u7; 4],
     protocol_negotiation_supported: bool,
     profile_configuration_supported: bool,
     property_exchange_supported: bool,
-    max_sysex_message_size: ux::u28,
+    max_sysex_message_size: u28,
     builder: Repr::Builder,
 }
 
@@ -247,31 +248,31 @@ impl<'a, const STATUS: u8> DiscoveryBuilder<sysex8::Sysex8MessageGroup<'a>, STAT
         self.builder.stream_id(id);
         self
     }
-    pub fn group(&mut self, group: ux::u4) -> &mut Self {
+    pub fn group(&mut self, group: u4) -> &mut Self {
         self.builder.group(group);
         self
     }
-    pub fn source(&mut self, source: ux::u28) -> &mut Self {
+    pub fn source(&mut self, source: u28) -> &mut Self {
         self.source = source;
         self
     }
-    pub fn destination(&mut self, dest: ux::u28) -> &mut Self {
+    pub fn destination(&mut self, dest: u28) -> &mut Self {
         self.destination = dest;
         self
     }
-    pub fn device_manufacturer(&mut self, device_manufacturer: ux::u21) -> &mut Self {
+    pub fn device_manufacturer(&mut self, device_manufacturer: u21) -> &mut Self {
         self.device_manufacturer = device_manufacturer;
         self
     }
-    pub fn device_family(&mut self, device_family: ux::u14) -> &mut Self {
+    pub fn device_family(&mut self, device_family: u14) -> &mut Self {
         self.device_family = device_family;
         self
     }
-    pub fn device_model_number(&mut self, device_model_number: ux::u14) -> &mut Self {
+    pub fn device_model_number(&mut self, device_model_number: u14) -> &mut Self {
         self.device_model_number = device_model_number;
         self
     }
-    pub fn software_version(&mut self, software_version: [ux::u7; 4]) -> &mut Self {
+    pub fn software_version(&mut self, software_version: [u7; 4]) -> &mut Self {
         self.software_version = software_version;
         self
     }
@@ -293,7 +294,7 @@ impl<'a, const STATUS: u8> DiscoveryBuilder<sysex8::Sysex8MessageGroup<'a>, STAT
         self.property_exchange_supported = property_exchange_supported;
         self
     }
-    pub fn max_sysex_message_size(&mut self, max_sysex_message_size: ux::u28) -> &mut Self {
+    pub fn max_sysex_message_size(&mut self, max_sysex_message_size: u28) -> &mut Self {
         self.max_sysex_message_size = max_sysex_message_size;
         self
     }
@@ -351,31 +352,31 @@ impl<'a, const STATUS: u8> DiscoveryBuilder<sysex7::Sysex7MessageGroup<'a>, STAT
             max_sysex_message_size: Default::default(),
         }
     }
-    pub fn group(&mut self, group: ux::u4) -> &mut Self {
+    pub fn group(&mut self, group: u4) -> &mut Self {
         self.builder.group(group);
         self
     }
-    pub fn source(&mut self, source: ux::u28) -> &mut Self {
+    pub fn source(&mut self, source: u28) -> &mut Self {
         self.source = source;
         self
     }
-    pub fn destination(&mut self, dest: ux::u28) -> &mut Self {
+    pub fn destination(&mut self, dest: u28) -> &mut Self {
         self.destination = dest;
         self
     }
-    pub fn device_manufacturer(&mut self, device_manufacturer: ux::u21) -> &mut Self {
+    pub fn device_manufacturer(&mut self, device_manufacturer: u21) -> &mut Self {
         self.device_manufacturer = device_manufacturer;
         self
     }
-    pub fn device_family(&mut self, device_family: ux::u14) -> &mut Self {
+    pub fn device_family(&mut self, device_family: u14) -> &mut Self {
         self.device_family = device_family;
         self
     }
-    pub fn device_model_number(&mut self, device_model_number: ux::u14) -> &mut Self {
+    pub fn device_model_number(&mut self, device_model_number: u14) -> &mut Self {
         self.device_model_number = device_model_number;
         self
     }
-    pub fn software_version(&mut self, software_version: [ux::u7; 4]) -> &mut Self {
+    pub fn software_version(&mut self, software_version: [u7; 4]) -> &mut Self {
         self.software_version = software_version;
         self
     }
@@ -397,7 +398,7 @@ impl<'a, const STATUS: u8> DiscoveryBuilder<sysex7::Sysex7MessageGroup<'a>, STAT
         self.property_exchange_supported = property_exchange_supported;
         self
     }
-    pub fn max_sysex_message_size(&mut self, max_sysex_message_size: ux::u28) -> &mut Self {
+    pub fn max_sysex_message_size(&mut self, max_sysex_message_size: u28) -> &mut Self {
         self.max_sysex_message_size = max_sysex_message_size;
         self
     }

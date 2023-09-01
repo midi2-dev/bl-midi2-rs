@@ -1,4 +1,5 @@
 use crate::{
+    *,
     message::{
         helpers as message_helpers,
         system_common::{self, TYPE_CODE as SYSTEM_COMMON_TYPE_CODE},
@@ -18,10 +19,10 @@ impl<'a> TimeCodeMessage<'a> {
     pub fn builder(buffer: &mut [u32]) -> TimeCodeBuilder {
         TimeCodeBuilder::new(buffer)
     }
-    pub fn group(&self) -> ux::u4 {
+    pub fn group(&self) -> u4 {
         message_helpers::group_from_packet(self.0)
     }
-    pub fn time_code(&self) -> ux::u7 {
+    pub fn time_code(&self) -> u7 {
         self.0[0].octet(2).truncate()
     }
     pub fn from_data(data: &'a [u32]) -> Result<Self> {
@@ -44,13 +45,13 @@ impl<'a> TimeCodeBuilder<'a> {
             Err(e) => Self(Err(e)),
         }
     }
-    pub fn group(&mut self, v: ux::u4) -> &mut Self {
+    pub fn group(&mut self, v: u4) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
         }
         self
     }
-    pub fn time_code(&mut self, v: ux::u7) -> &mut Self {
+    pub fn time_code(&mut self, v: u7) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             buffer[0].set_octet(2, v.into());
         }
@@ -72,8 +73,8 @@ mod tests {
     fn builder() {
         assert_eq!(
             TimeCodeMessage::builder(&mut [0x0])
-                .group(ux::u4::new(0x5))
-                .time_code(ux::u7::new(0x5F))
+                .group(u4::new(0x5))
+                .time_code(u7::new(0x5F))
                 .build(),
             Ok(TimeCodeMessage(&[0x15F1_5F00])),
         );
@@ -83,7 +84,7 @@ mod tests {
     fn group() {
         assert_eq!(
             TimeCodeMessage::from_data(&[0x15F1_5F00]).unwrap().group(),
-            ux::u4::new(0x5),
+            u4::new(0x5),
         );
     }
 
@@ -93,7 +94,7 @@ mod tests {
             TimeCodeMessage::from_data(&[0x15F1_5F00])
                 .unwrap()
                 .time_code(),
-            ux::u7::new(0x5F),
+            u7::new(0x5F),
         );
     }
 }

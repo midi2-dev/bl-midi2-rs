@@ -24,14 +24,15 @@ impl<T> Truncate for T where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::*;
 
     #[test]
     fn truncate_u8_to_u7() {
-        assert_eq!(ux::u7::new(0b110_0111), 0b0110_0111_u8.truncate());
+        assert_eq!(u7::new(0b110_0111), 0b0110_0111_u8.truncate());
     }
 
     #[test]
     fn truncate_u8_to_u4() {
-        assert_eq!(ux::u4::new(0b0111), 0b0110_0111_u8.truncate());
+        assert_eq!(u4::new(0b0111), 0b0110_0111_u8.truncate());
     }
 }

@@ -1,4 +1,5 @@
 use crate::{
+    *,
     ci::{helpers as ci_helpers, DeviceId},
     error::Error,
     message::{sysex, system_exclusive_7bit as sysex7, system_exclusive_8bit as sysex8},
@@ -15,23 +16,23 @@ impl<'a> NakMessage<sysex8::Sysex8MessageGroup<'a>> {
     pub fn builder(buffer: &'a mut [u32]) -> NakBuilder<sysex8::Sysex8MessageGroup<'a>> {
         NakBuilder::<sysex8::Sysex8MessageGroup<'a>>::new(buffer)
     }
-    pub fn group(&self) -> ux::u4 {
+    pub fn group(&self) -> u4 {
         self.0.group()
     }
-    pub fn source(&self) -> ux::u28 {
+    pub fn source(&self) -> u28 {
         let mut payload = self.0.payload();
         payload.nth(4);
-        ux::u28::from_u7s(&[
+        u28::from_u7s(&[
             payload.next().unwrap(),
             payload.next().unwrap(),
             payload.next().unwrap(),
             payload.next().unwrap(),
         ])
     }
-    pub fn destination(&self) -> ux::u28 {
+    pub fn destination(&self) -> u28 {
         let mut payload = self.0.payload();
         payload.nth(8);
-        ux::u28::from_u7s(&[
+        u28::from_u7s(&[
             payload.next().unwrap(),
             payload.next().unwrap(),
             payload.next().unwrap(),
@@ -58,23 +59,23 @@ impl<'a> NakMessage<sysex7::Sysex7MessageGroup<'a>> {
     pub fn builder(buffer: &'a mut [u32]) -> NakBuilder<sysex7::Sysex7MessageGroup<'a>> {
         NakBuilder::<sysex7::Sysex7MessageGroup<'a>>::new(buffer)
     }
-    pub fn group(&self) -> ux::u4 {
+    pub fn group(&self) -> u4 {
         self.0.group()
     }
-    pub fn source(&self) -> ux::u28 {
+    pub fn source(&self) -> u28 {
         let mut payload = self.0.payload();
         payload.nth(4);
-        ux::u28::from_u7s(&[
+        u28::from_u7s(&[
             payload.next().unwrap().into(),
             payload.next().unwrap().into(),
             payload.next().unwrap().into(),
             payload.next().unwrap().into(),
         ])
     }
-    pub fn destination(&self) -> ux::u28 {
+    pub fn destination(&self) -> u28 {
         let mut payload = self.0.payload();
         payload.nth(8);
-        ux::u28::from_u7s(&[
+        u28::from_u7s(&[
             payload.next().unwrap().into(),
             payload.next().unwrap().into(),
             payload.next().unwrap().into(),
@@ -99,13 +100,13 @@ impl<'a> NakMessage<sysex7::Sysex7MessageGroup<'a>> {
 
 pub struct NakBuilder<Repr: sysex::SysexMessages> {
     device_id: DeviceId,
-    source: ux::u28,
-    destination: ux::u28,
+    source: u28,
+    destination: u28,
     builder: Repr::Builder,
 }
 
 impl<'a> NakBuilder<sysex8::Sysex8MessageGroup<'a>> {
-    pub fn group(&mut self, g: ux::u4) -> &mut Self {
+    pub fn group(&mut self, g: u4) -> &mut Self {
         self.builder.group(g);
         self
     }
@@ -117,11 +118,11 @@ impl<'a> NakBuilder<sysex8::Sysex8MessageGroup<'a>> {
         self.device_id = id;
         self
     }
-    pub fn source(&mut self, source: ux::u28) -> &mut Self {
+    pub fn source(&mut self, source: u28) -> &mut Self {
         self.source = source;
         self
     }
-    pub fn destination(&mut self, dest: ux::u28) -> &mut Self {
+    pub fn destination(&mut self, dest: u28) -> &mut Self {
         self.destination = dest;
         self
     }
@@ -151,15 +152,15 @@ impl<'a> NakBuilder<sysex8::Sysex8MessageGroup<'a>> {
 }
 
 impl<'a> NakBuilder<sysex7::Sysex7MessageGroup<'a>> {
-    pub fn group(&mut self, g: ux::u4) -> &mut Self {
+    pub fn group(&mut self, g: u4) -> &mut Self {
         self.builder.group(g);
         self
     }
-    pub fn source(&mut self, source: ux::u28) -> &mut Self {
+    pub fn source(&mut self, source: u28) -> &mut Self {
         self.source = source;
         self
     }
-    pub fn destination(&mut self, dest: ux::u28) -> &mut Self {
+    pub fn destination(&mut self, dest: u28) -> &mut Self {
         self.destination = dest;
         self
     }
@@ -185,7 +186,7 @@ impl<'a> NakBuilder<sysex7::Sysex7MessageGroup<'a>> {
                     self.source,
                     self.destination,
                 )
-                .map(ux::u7::new),
+                .map(u7::new),
             )
             .build()
         {
@@ -205,11 +206,11 @@ mod tests {
         assert_eq!(
             debug::Data(
                 NakMessage::<sysex8::Sysex8MessageGroup>::builder(&mut [0x0; 4])
-                    .group(ux::u4::new(0x3))
+                    .group(u4::new(0x3))
                     .stream_id(0xB2)
-                    .device_id(DeviceId::Channel(ux::u4::new(0xD)))
-                    .source(ux::u28::new(92027634))
-                    .destination(ux::u28::new(139459637))
+                    .device_id(DeviceId::Channel(u4::new(0xD)))
+                    .source(u28::new(92027634))
+                    .destination(u28::new(139459637))
                     .build()
                     .unwrap()
                     .data(),
@@ -223,10 +224,10 @@ mod tests {
         assert_eq!(
             debug::Data(
                 NakMessage::<sysex7::Sysex7MessageGroup>::builder(&mut [0x0; 6])
-                    .group(ux::u4::new(0x3))
-                    .device_id(DeviceId::Channel(ux::u4::new(0xD)))
-                    .source(ux::u28::new(92027634))
-                    .destination(ux::u28::new(139459637))
+                    .group(u4::new(0x3))
+                    .device_id(DeviceId::Channel(u4::new(0xD)))
+                    .source(u28::new(92027634))
+                    .destination(u28::new(139459637))
                     .build()
                     .unwrap()
                     .data(),
@@ -279,7 +280,7 @@ mod tests {
             ])
             .unwrap()
             .device_id(),
-            DeviceId::Channel(ux::u4::new(0xD))
+            DeviceId::Channel(u4::new(0xD))
         );
     }
 
@@ -294,7 +295,7 @@ mod tests {
             ])
             .unwrap()
             .device_id(),
-            DeviceId::Channel(ux::u4::new(0xD))
+            DeviceId::Channel(u4::new(0xD))
         );
     }
 }

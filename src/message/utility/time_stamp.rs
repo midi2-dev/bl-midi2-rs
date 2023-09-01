@@ -1,4 +1,5 @@
 use crate::{
+    *,
     error::Error,
     result::Result,
     util::{debug, BitOps, Truncate},
@@ -8,14 +9,14 @@ use crate::{
 pub struct TimeStampMessage<'a>(&'a [u32]);
 
 impl<'a> TimeStampMessage<'a> {
-    const OP_CODE: ux::u4 = ux::u4::new(0b0010);
+    const OP_CODE: u4 = u4::new(0b0010);
     pub fn builder(buffer: &'a mut [u32]) -> TimeStampMessageBuilder<'a> {
         TimeStampMessageBuilder::new(buffer)
     }
-    pub fn group(&self) -> ux::u4 {
+    pub fn group(&self) -> u4 {
         self.0[0].nibble(1)
     }
-    pub fn time_stamp(&self) -> ux::u20 {
+    pub fn time_stamp(&self) -> u20 {
         self.0[0].truncate()
     }
     pub fn from_data(data: &'a [u32]) -> Result<Self> {
@@ -32,13 +33,13 @@ debug::message_debug_impl!(TimeStampMessage);
 pub struct TimeStampMessageBuilder<'a>(Option<&'a mut [u32]>);
 
 impl<'a> TimeStampMessageBuilder<'a> {
-    pub fn group(&mut self, g: ux::u4) -> &mut Self {
+    pub fn group(&mut self, g: u4) -> &mut Self {
         if let Some(buffer) = &mut self.0 {
             buffer[0].set_nibble(1, g);
         }
         self
     }
-    pub fn time_stamp(&mut self, time_stamp: ux::u20) -> &mut Self {
+    pub fn time_stamp(&mut self, time_stamp: u20) -> &mut Self {
         if let Some(buffer) = &mut self.0 {
             buffer[0] |= u32::from(time_stamp);
         }
@@ -50,7 +51,7 @@ impl<'a> TimeStampMessageBuilder<'a> {
             for v in buffer.iter_mut() {
                 *v = 0;
             }
-            buffer[0].set_nibble(2, ux::u4::new(2));
+            buffer[0].set_nibble(2, u4::new(2));
             Self(Some(buffer))
         } else {
             Self(None)
@@ -73,8 +74,8 @@ mod tests {
     fn builder() {
         assert_eq!(
             TimeStampMessage::builder(&mut [0x0])
-                .group(ux::u4::new(0x4))
-                .time_stamp(ux::u20::new(0xE_69AE))
+                .group(u4::new(0x4))
+                .time_stamp(u20::new(0xE_69AE))
                 .build(),
             Ok(TimeStampMessage(&[0x042E_69AE])),
         );
@@ -108,7 +109,7 @@ mod tests {
     fn group() {
         assert_eq!(
             TimeStampMessage::from_data(&[0x0F20_0000]).unwrap().group(),
-            ux::u4::new(0xF),
+            u4::new(0xF),
         )
     }
 
@@ -118,7 +119,7 @@ mod tests {
             TimeStampMessage::from_data(&[0x0021_2345])
                 .unwrap()
                 .time_stamp(),
-            ux::u20::new(0x12345),
+            u20::new(0x12345),
         )
     }
 }

@@ -1,4 +1,5 @@
 use crate::{
+    *,
     ci::DeviceId,
     error::Error,
     message::system_exclusive_7bit as sysex7,
@@ -13,7 +14,7 @@ pub struct StandardDataIterator {
 }
 
 impl StandardDataIterator {
-    pub fn new(device_id: DeviceId, category: u8, source: ux::u28, destination: ux::u28) -> Self {
+    pub fn new(device_id: DeviceId, category: u8, source: u28, destination: u28) -> Self {
         StandardDataIterator {
             data: [
                 0x7E,
@@ -98,7 +99,7 @@ pub fn validate_sysex7(buffer: &[u32], status: u8) -> Result<sysex7::Sysex7Messa
     let messages = sysex7::Sysex7MessageGroup::from_data(buffer)?;
     let mut payload = messages.payload();
     if let Some(v) = payload.next() {
-        if v != ux::u7::new(0x7E) {
+        if v != u7::new(0x7E) {
             return Err(Error::InvalidData);
         }
     };
@@ -144,9 +145,9 @@ impl core::iter::Iterator for ProtocolDataIterator {
     }
 }
 
-pub fn destination_from_payload<I: core::iter::Iterator<Item = u8>>(mut payload: I) -> ux::u28 {
+pub fn destination_from_payload<I: core::iter::Iterator<Item = u8>>(mut payload: I) -> u28 {
     payload.nth(8);
-    ux::u28::from_u7s(&[
+    u28::from_u7s(&[
         payload.next().unwrap(),
         payload.next().unwrap(),
         payload.next().unwrap(),

@@ -1,4 +1,5 @@
 use crate::{
+    *,
     message::{
         midi1_channel_voice::{
             TYPE_CODE as MIDI1_CHANNEL_VOICE_TYPE,
@@ -10,7 +11,7 @@ use crate::{
     util::debug,
 };
 
-const OP_CODE: ux::u4 = ux::u4::new(0b1011);
+const OP_CODE: u4 = u4::new(0b1011);
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct ControlChangeMessage<'a>(&'a [u32]);
@@ -21,16 +22,16 @@ impl<'a> ControlChangeMessage<'a> {
     pub fn builder(buffer: &mut [u32]) -> ControlChangeBuilder {
         ControlChangeBuilder::new(buffer)
     }
-    pub fn group(&self) -> ux::u4 {
+    pub fn group(&self) -> u4 {
         message_helpers::group_from_packet(self.0)
     }
-    pub fn channel(&self) -> ux::u4 {
+    pub fn channel(&self) -> u4 {
         message_helpers::channel_from_packet(self.0)
     }
-    pub fn control(&self) -> ux::u7 {
+    pub fn control(&self) -> u7 {
         message_helpers::note_from_packet(self.0)
     }
-    pub fn control_data(&self) -> ux::u7 {
+    pub fn control_data(&self) -> u7 {
         midi1cv_helpers::note_velocity_from_packet(self.0)
     }
     pub fn from_data(data: &'a [u32]) -> Result<Self> {
@@ -53,25 +54,25 @@ impl<'a> ControlChangeBuilder<'a> {
             Err(e) => Self(Err(e)),
         }
     }
-    pub fn group(&mut self, v: ux::u4) -> &mut Self {
+    pub fn group(&mut self, v: u4) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
         }
         self
     }
-    pub fn channel(&mut self, v: ux::u4) -> &mut Self {
+    pub fn channel(&mut self, v: u4) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_channel_to_packet(v, buffer);
         }
         self
     }
-    pub fn control(&mut self, v: ux::u7) -> &mut Self {
+    pub fn control(&mut self, v: u7) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_note_to_packet(v, buffer);
         }
         self
     }
-    pub fn control_data(&mut self, v: ux::u7) -> &mut Self {
+    pub fn control_data(&mut self, v: u7) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             midi1cv_helpers::write_note_velocity_to_packet(v, buffer);
         }
@@ -93,10 +94,10 @@ mod tests {
     fn builder() {
         assert_eq!(
             ControlChangeMessage::builder(&mut [0x0])
-                .group(ux::u4::new(0xA))
-                .channel(ux::u4::new(0x7))
-                .control(ux::u7::new(0x36))
-                .control_data(ux::u7::new(0x37))
+                .group(u4::new(0xA))
+                .channel(u4::new(0x7))
+                .control(u7::new(0x36))
+                .control_data(u7::new(0x37))
                 .build(),
             Ok(ControlChangeMessage(&[0x2AB7_3637])),
         );
@@ -106,7 +107,7 @@ mod tests {
     fn group() {
         assert_eq!(
             ControlChangeMessage::from_data(&[0x2AB7_3637]).unwrap().group(),
-            ux::u4::new(0xA),
+            u4::new(0xA),
         );
     }
 
@@ -114,7 +115,7 @@ mod tests {
     fn channel() {
         assert_eq!(
             ControlChangeMessage::from_data(&[0x2AB7_3637]).unwrap().channel(),
-            ux::u4::new(0x7),
+            u4::new(0x7),
         );
     }
 
@@ -122,7 +123,7 @@ mod tests {
     fn control() {
         assert_eq!(
             ControlChangeMessage::from_data(&[0x2AB7_3637]).unwrap().control(),
-            ux::u7::new(0x36),
+            u7::new(0x36),
         );
     }
 
@@ -130,7 +131,7 @@ mod tests {
     fn control_data() {
         assert_eq!(
             ControlChangeMessage::from_data(&[0x2AB7_3637]).unwrap().control_data(),
-            ux::u7::new(0x37),
+            u7::new(0x37),
         );
     }
 }

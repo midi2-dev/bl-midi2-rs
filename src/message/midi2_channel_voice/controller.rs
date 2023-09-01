@@ -1,11 +1,11 @@
-use crate::{error::Error, util::Truncate};
+use crate::{*, error::Error, util::Truncate};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum Controller {
     Modulation(u32),
     Breath(u32),
-    Pitch7_25 { note: ux::u7, pitch_up: ux::u25 },
+    Pitch7_25 { note: u7, pitch_up: u25 },
     Volume(u32),
     Balance(u32),
     Pan(u32),
@@ -59,7 +59,7 @@ pub fn from_index_and_data(index: u8, data: u32) -> Controller {
         1 => Controller::Modulation(data),
         2 => Controller::Breath(data),
         3 => Controller::Pitch7_25 {
-            note: ux::u7::try_from(data >> 25).unwrap(),
+            note: u7::try_from(data >> 25).unwrap(),
             pitch_up: data.truncate(),
         },
         7 => Controller::Volume(data),

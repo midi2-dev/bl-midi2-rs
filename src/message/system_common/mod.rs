@@ -1,6 +1,6 @@
-use crate::{error::Error, util::BitOps};
+use crate::{*, error::Error, util::BitOps};
 
-const TYPE_CODE: ux::u4 = ux::u4::new(0x1);
+const TYPE_CODE: u4 = u4::new(0x1);
 
 mod simple_generic;
 mod song_position_pointer;

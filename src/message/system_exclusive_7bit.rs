@@ -1,4 +1,5 @@
 use crate::{
+    *,
     error::Error,
     message::{helpers as message_helpers, sysex},
     result::Result,
@@ -13,7 +14,7 @@ pub struct PayloadIterator<'a> {
 }
 
 impl<'a> PayloadIterator<'a> {
-    fn value(&self) -> ux::u7 {
+    fn value(&self) -> u7 {
         let buffer_index = self.message_index * 2 + (self.payload_index + 2) / 4;
         let octet_index = (self.payload_index + 2) % 4;
         self.data[buffer_index].octet(octet_index).truncate()
@@ -49,7 +50,7 @@ impl<'a> PayloadIterator<'a> {
 }
 
 impl<'a> core::iter::Iterator for PayloadIterator<'a> {
-    type Item = ux::u7;
+    type Item = u7;
     fn next(&mut self) -> Option<Self::Item> {
         if self.finished() {
             return None;
@@ -97,11 +98,11 @@ impl<'a> core::iter::Iterator for PayloadIterator<'a> {
 pub struct Sysex7Message<'a>(&'a [u32]);
 
 impl<'a> Sysex7Message<'a> {
-    const OP_CODE: ux::u4 = ux::u4::new(0x3);
+    const OP_CODE: u4 = u4::new(0x3);
     pub fn builder(buffer: &'a mut [u32]) -> Sysex7MessageBuilder<'a> {
         Sysex7MessageBuilder::new(buffer)
     }
-    pub fn group(&self) -> ux::u4 {
+    pub fn group(&self) -> u4 {
         message_helpers::group_from_packet(self.0)
     }
     pub fn status(&self) -> Status {
@@ -131,7 +132,7 @@ debug::message_debug_impl!(Sysex7Message);
 pub struct Sysex7MessageBuilder<'a>(Result<&'a mut [u32]>);
 
 impl<'a> Sysex7MessageBuilder<'a> {
-    pub fn group(&mut self, g: ux::u4) -> &mut Self {
+    pub fn group(&mut self, g: u4) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             buffer[0].set_nibble(1, g);
         }
@@ -142,16 +143,16 @@ impl<'a> Sysex7MessageBuilder<'a> {
             buffer[0].set_nibble(
                 2,
                 match s {
-                    Status::Complete => ux::u4::new(0x0),
-                    Status::Begin => ux::u4::new(0x1),
-                    Status::Continue => ux::u4::new(0x2),
-                    Status::End => ux::u4::new(0x3),
+                    Status::Complete => u4::new(0x0),
+                    Status::Begin => u4::new(0x1),
+                    Status::Continue => u4::new(0x2),
+                    Status::End => u4::new(0x3),
                 },
             );
         }
         self
     }
-    pub fn payload<I: core::iter::Iterator<Item = ux::u7>>(&mut self, mut data: I) -> &mut Self {
+    pub fn payload<I: core::iter::Iterator<Item = u7>>(&mut self, mut data: I) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             let mut count = 0_u8;
             for i in 0_usize..6_usize {
@@ -211,7 +212,7 @@ fn status_from_packet(p: &[u32]) -> Result<Status> {
     status_from_nibble(p[0].nibble(2))
 }
 
-fn status_from_nibble(n: ux::u4) -> Result<Status> {
+fn status_from_nibble(n: u4) -> Result<Status> {
     match u8::from(n) {
         0x0 => Ok(Status::Complete),
         0x1 => Ok(Status::Begin),
@@ -247,7 +248,7 @@ impl<'a> Sysex7MessageGroup<'a> {
     pub fn builder(buffer: &'a mut [u32]) -> Sysex7MessageGroupBuilder<'a> {
         Sysex7MessageGroupBuilder::new(buffer)
     }
-    pub fn group(&self) -> ux::u4 {
+    pub fn group(&self) -> u4 {
         message_helpers::group_from_packet(self.0)
     }
     pub fn payload(&self) -> PayloadIterator {
@@ -265,10 +266,10 @@ impl<'a> Sysex7MessageGroup<'a> {
         }
         message_helpers::validate_sysex_group_statuses(
             buffer,
-            |s| s == ux::u4::new(0x0),
-            |s| s == ux::u4::new(0x1),
-            |s| s == ux::u4::new(0x2),
-            |s| s == ux::u4::new(0x3),
+            |s| s == u4::new(0x0),
+            |s| s == u4::new(0x1),
+            |s| s == u4::new(0x2),
+            |s| s == u4::new(0x3),
             2,
         )?;
         message_helpers::sysex_group_consistent_groups(buffer, 2)?;
@@ -291,7 +292,7 @@ pub struct Sysex7MessageGroupBuilder<'a> {
     buffer: &'a mut [u32],
     size: usize,
     error: Option<Error>,
-    group: ux::u4,
+    group: u4,
 }
 
 impl<'a> Sysex7MessageGroupBuilder<'a> {
@@ -300,10 +301,10 @@ impl<'a> Sysex7MessageGroupBuilder<'a> {
             buffer,
             size: 0,
             error: None,
-            group: ux::u4::new(0x0),
+            group: u4::new(0x0),
         }
     }
-    pub fn group(&mut self, g: ux::u4) -> &mut Self {
+    pub fn group(&mut self, g: u4) -> &mut Self {
         if self.error.is_some() || self.group == g {
             return self;
         }
@@ -314,7 +315,7 @@ impl<'a> Sysex7MessageGroupBuilder<'a> {
         self
     }
 
-    pub fn payload<I: core::iter::Iterator<Item = ux::u7>>(&mut self, mut iter: I) -> &mut Self {
+    pub fn payload<I: core::iter::Iterator<Item = u7>>(&mut self, mut iter: I) -> &mut Self {
         if self.error.is_some() {
             return self;
         }
@@ -367,7 +368,7 @@ impl<'a> Sysex7MessageGroupBuilder<'a> {
         }
     }
     fn increment_message_size(&mut self, message_index: usize) {
-        let new_value = self.buffer[message_index].nibble(3) + ux::u4::new(1);
+        let new_value = self.buffer[message_index].nibble(3) + u4::new(1);
         self.buffer[message_index].set_nibble(3, new_value);
     }
     fn grow(&mut self) {
@@ -410,7 +411,7 @@ impl<'a> Sysex7MessageGroupBuilder<'a> {
 
 impl<'a> sysex::SysexMessages for Sysex7MessageGroup<'a> {
     type Builder = Sysex7MessageGroupBuilder<'a>;
-    type Byte = ux::u7;
+    type Byte = u7;
     type PayloadIterator = PayloadIterator<'a>;
     fn payload(&self) -> Self::PayloadIterator {
         PayloadIterator {
@@ -453,10 +454,10 @@ mod tests {
     fn builder() {
         assert_eq!(
             Sysex7Message::builder(&mut [0x0, 0x0])
-                .group(ux::u4::new(0x1))
+                .group(u4::new(0x1))
                 .status(Status::Begin)
                 .payload(
-                    [ux::u7::new(0x12), ux::u7::new(0x34), ux::u7::new(0x56),]
+                    [u7::new(0x12), u7::new(0x34), u7::new(0x56),]
                         .iter()
                         .copied()
                 )
@@ -469,7 +470,7 @@ mod tests {
     fn builder_invalid_payload() {
         assert_eq!(
             Sysex7Message::builder(&mut [0x0, 0x0])
-                .payload([ux::u7::default(); 7].iter().copied())
+                .payload([u7::default(); 7].iter().copied())
                 .build(),
             Err(Error::InvalidData),
         );
@@ -481,7 +482,7 @@ mod tests {
             Sysex7Message::from_data(&[0x3C00_0000, 0x0,])
                 .unwrap()
                 .group(),
-            ux::u4::new(0xC),
+            u4::new(0xC),
         );
     }
 
@@ -508,17 +509,17 @@ mod tests {
     #[test]
     fn payload() {
         let message = Sysex7Message::from_data(&[0x3004_1234, 0x5678_0000]).unwrap();
-        let mut buffer = [ux::u7::new(0); 4];
+        let mut buffer = [u7::new(0); 4];
         for (i, v) in message.payload().enumerate() {
             buffer[i] = v;
         }
         assert_eq!(
             &buffer,
             &[
-                ux::u7::new(0x12),
-                ux::u7::new(0x34),
-                ux::u7::new(0x56),
-                ux::u7::new(0x78)
+                u7::new(0x12),
+                u7::new(0x34),
+                u7::new(0x56),
+                u7::new(0x78)
             ]
         );
     }
@@ -527,8 +528,8 @@ mod tests {
     fn group_builder() {
         assert_eq!(
             Sysex7MessageGroup::builder(&mut [0x0; 6])
-                .group(ux::u4::new(0x4))
-                .payload((0..15).map(ux::u7::new))
+                .group(u4::new(0x4))
+                .payload((0..15).map(u7::new))
                 .build(),
             Ok(Sysex7MessageGroup(&[
                 0x3416_0001,
@@ -545,8 +546,8 @@ mod tests {
     fn group_builder_group_after_payload() {
         assert_eq!(
             Sysex7MessageGroup::builder(&mut [0x0; 6])
-                .payload((0..15).map(ux::u7::new))
-                .group(ux::u4::new(0x4))
+                .payload((0..15).map(u7::new))
+                .group(u4::new(0x4))
                 .build(),
             Ok(Sysex7MessageGroup(&[
                 0x3416_0001,
@@ -563,8 +564,8 @@ mod tests {
     fn group_builder_complete() {
         assert_eq!(
             Sysex7MessageGroup::builder(&mut [0x0; 2])
-                .group(ux::u4::new(0x4))
-                .payload((0..4).map(ux::u7::new))
+                .group(u4::new(0x4))
+                .payload((0..4).map(u7::new))
                 .build(),
             Ok(Sysex7MessageGroup(&[0x3404_0001, 0x0203_0000,])),
         );
@@ -574,8 +575,8 @@ mod tests {
     fn group_builder_dirty_buffer() {
         assert_eq!(
             Sysex7MessageGroup::builder(&mut [0xFFFF_FFFF; 2])
-                .group(ux::u4::new(0x4))
-                .payload((0..4).map(ux::u7::new))
+                .group(u4::new(0x4))
+                .payload((0..4).map(u7::new))
                 .build(),
             Ok(Sysex7MessageGroup(&[0x3404_0001, 0x0203_0000,])),
         );
@@ -585,8 +586,8 @@ mod tests {
     fn group_builder_payload_in_batches() {
         assert_eq!(
             Sysex7MessageGroup::builder(&mut [0x0; 4])
-                .payload((0..4).map(ux::u7::new))
-                .payload((4..8).map(ux::u7::new))
+                .payload((0..4).map(u7::new))
+                .payload((4..8).map(u7::new))
                 .build(),
             Ok(Sysex7MessageGroup(&[
                 0x3014_0001,
@@ -625,7 +626,7 @@ mod tests {
 
     #[test]
     fn group_payload() {
-        let mut buffer = [ux::u7::new(0x0); 8];
+        let mut buffer = [u7::new(0x0); 8];
         let message_group =
             Sysex7MessageGroup(&[0x3014_0001, 0x0203_0000, 0x3034_0405, 0x0607_0000]);
         for (i, v) in message_group.payload().enumerate() {
@@ -634,14 +635,14 @@ mod tests {
         assert_eq!(
             &buffer,
             &[
-                ux::u7::new(0),
-                ux::u7::new(1),
-                ux::u7::new(2),
-                ux::u7::new(3),
-                ux::u7::new(4),
-                ux::u7::new(5),
-                ux::u7::new(6),
-                ux::u7::new(7),
+                u7::new(0),
+                u7::new(1),
+                u7::new(2),
+                u7::new(3),
+                u7::new(4),
+                u7::new(5),
+                u7::new(6),
+                u7::new(7),
             ]
         )
     }
@@ -668,7 +669,7 @@ mod tests {
             Sysex7MessageGroup(&[0x3014_0001, 0x0203_0000, 0x3034_0405, 0x0607_0000]);
         let mut payload = message_group.payload();
         payload.next();
-        assert_eq!(payload.nth(4), Some(ux::u7::new(5)));
+        assert_eq!(payload.nth(4), Some(u7::new(5)));
     }
 
     #[test]
@@ -678,7 +679,7 @@ mod tests {
             Sysex7MessageGroup(&[0x3014_0001, 0x0203_0000, 0x3034_0405, 0x0607_0000]);
         let mut payload = message_group.payload();
         payload.next();
-        assert_eq!(payload.nth(0), Some(ux::u7::new(1)));
+        assert_eq!(payload.nth(0), Some(u7::new(1)));
     }
 
     #[test]
@@ -687,7 +688,7 @@ mod tests {
             Sysex7MessageGroup(&[0x3014_0001, 0x0203_0000, 0x3034_0405, 0x0607_0000]);
         let mut payload = message_group.payload();
         payload.next();
-        assert_eq!(payload.nth(6), Some(ux::u7::new(7)));
+        assert_eq!(payload.nth(6), Some(u7::new(7)));
     }
 
     #[test]

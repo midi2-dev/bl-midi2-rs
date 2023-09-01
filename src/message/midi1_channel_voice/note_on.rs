@@ -1,4 +1,5 @@
 use crate::{
+    *,
     message::{
         midi1_channel_voice::{
             TYPE_CODE as MIDI1_CHANNEL_VOICE_TYPE,
@@ -10,7 +11,7 @@ use crate::{
     util::debug,
 };
 
-const OP_CODE: ux::u4 = ux::u4::new(0b1001);
+const OP_CODE: u4 = u4::new(0b1001);
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct NoteOnMessage<'a>(&'a [u32]);
@@ -21,16 +22,16 @@ impl<'a> NoteOnMessage<'a> {
     pub fn builder(buffer: &mut [u32]) -> NoteOnBuilder {
         NoteOnBuilder::new(buffer)
     }
-    pub fn group(&self) -> ux::u4 {
+    pub fn group(&self) -> u4 {
         message_helpers::group_from_packet(self.0)
     }
-    pub fn channel(&self) -> ux::u4 {
+    pub fn channel(&self) -> u4 {
         message_helpers::channel_from_packet(self.0)
     }
-    pub fn note(&self) -> ux::u7 {
+    pub fn note(&self) -> u7 {
         message_helpers::note_from_packet(self.0)
     }
-    pub fn velocity(&self) -> ux::u7 {
+    pub fn velocity(&self) -> u7 {
         midi1cv_helpers::note_velocity_from_packet(self.0)
     }
     pub fn from_data(data: &'a [u32]) -> Result<Self> {
@@ -53,25 +54,25 @@ impl<'a> NoteOnBuilder<'a> {
             Err(e) => Self(Err(e)),
         }
     }
-    pub fn group(&mut self, v: ux::u4) -> &mut Self {
+    pub fn group(&mut self, v: u4) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
         }
         self
     }
-    pub fn channel(&mut self, v: ux::u4) -> &mut Self {
+    pub fn channel(&mut self, v: u4) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_channel_to_packet(v, buffer);
         }
         self
     }
-    pub fn note(&mut self, v: ux::u7) -> &mut Self {
+    pub fn note(&mut self, v: u7) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_note_to_packet(v, buffer);
         }
         self
     }
-    pub fn velocity(&mut self, v: ux::u7) -> &mut Self {
+    pub fn velocity(&mut self, v: u7) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             midi1cv_helpers::write_note_velocity_to_packet(v, buffer);
         }
@@ -93,10 +94,10 @@ mod tests {
     fn builder() {
         assert_eq!(
             NoteOnMessage::builder(&mut [0x0])
-                .group(ux::u4::new(0xD))
-                .channel(ux::u4::new(0xE))
-                .note(ux::u7::new(0x75))
-                .velocity(ux::u7::new(0x3D))
+                .group(u4::new(0xD))
+                .channel(u4::new(0xE))
+                .note(u7::new(0x75))
+                .velocity(u7::new(0x3D))
                 .build(),
             Ok(NoteOnMessage(&[0x2D9E_753D])),
         );
@@ -106,7 +107,7 @@ mod tests {
     fn group() {
         assert_eq!(
             NoteOnMessage::from_data(&[0x2D9E_753D]).unwrap().group(),
-            ux::u4::new(0xD),
+            u4::new(0xD),
         );
     }
 
@@ -114,7 +115,7 @@ mod tests {
     fn channel() {
         assert_eq!(
             NoteOnMessage::from_data(&[0x2D9E_753D]).unwrap().channel(),
-            ux::u4::new(0xE),
+            u4::new(0xE),
         );
     }
 
@@ -122,7 +123,7 @@ mod tests {
     fn note() {
         assert_eq!(
             NoteOnMessage::from_data(&[0x2D9E_753D]).unwrap().note(),
-            ux::u7::new(0x75),
+            u7::new(0x75),
         );
     }
 
@@ -130,7 +131,7 @@ mod tests {
     fn velocity() {
         assert_eq!(
             NoteOnMessage::from_data(&[0x2D9E_753D]).unwrap().velocity(),
-            ux::u7::new(0x3D),
+            u7::new(0x3D),
         );
     }
 }

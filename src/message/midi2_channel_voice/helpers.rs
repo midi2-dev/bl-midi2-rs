@@ -1,11 +1,12 @@
 use crate::{
+    *,
     error::Error,
     message::helpers as message_helpers,
     result::Result,
     util::{BitOps, Truncate},
 };
 
-pub fn validate_packet(p: &[u32], type_code: ux::u4, op_code: ux::u4) -> Result<()> {
+pub fn validate_packet(p: &[u32], type_code: u4, op_code: u4) -> Result<()> {
     if p.len() < 2 {
         Err(Error::BufferOverflow)
     } else {
@@ -13,11 +14,11 @@ pub fn validate_packet(p: &[u32], type_code: ux::u4, op_code: ux::u4) -> Result<
     }
 }
 
-pub fn controller_bank_from_packet(p: &[u32]) -> ux::u7 {
+pub fn controller_bank_from_packet(p: &[u32]) -> u7 {
     p[0].octet(2).truncate()
 }
 
-pub fn controller_index_from_packet(p: &[u32]) -> ux::u7 {
+pub fn controller_index_from_packet(p: &[u32]) -> u7 {
     p[0].octet(3).truncate()
 }
 
@@ -29,12 +30,12 @@ pub fn note_velocity_from_packet(p: &[u32]) -> u16 {
     p[1].word(0)
 }
 
-pub fn write_controller_bank_to_packet(v: ux::u7, p: &mut [u32]) -> &mut [u32] {
+pub fn write_controller_bank_to_packet(v: u7, p: &mut [u32]) -> &mut [u32] {
     p[0].set_octet(2, v.into());
     p
 }
 
-pub fn write_controller_index_to_packet(v: ux::u7, p: &mut [u32]) -> &mut [u32] {
+pub fn write_controller_index_to_packet(v: u7, p: &mut [u32]) -> &mut [u32] {
     p[0].set_octet(3, v.into());
     p
 }
@@ -57,7 +58,7 @@ mod tests {
     fn test_controller_bank_from_packet() {
         assert_eq!(
             controller_bank_from_packet(&[0x472A_5B3C]),
-            ux::u7::new(0x5B)
+            u7::new(0x5B)
         );
     }
 
@@ -65,7 +66,7 @@ mod tests {
     fn test_controller_index_from_packet() {
         assert_eq!(
             controller_index_from_packet(&[0x472A_5B3C]),
-            ux::u7::new(0x3C)
+            u7::new(0x3C)
         );
     }
 
@@ -88,7 +89,7 @@ mod tests {
     #[test]
     fn test_write_controller_bank_to_packet() {
         assert_eq!(
-            write_controller_bank_to_packet(ux::u7::new(0x3A), &mut [0x0]),
+            write_controller_bank_to_packet(u7::new(0x3A), &mut [0x0]),
             &[0x0000_3A00]
         );
     }
@@ -96,7 +97,7 @@ mod tests {
     #[test]
     fn test_write_controller_index_to_packet() {
         assert_eq!(
-            write_controller_index_to_packet(ux::u7::new(0x55), &mut [0x0]),
+            write_controller_index_to_packet(u7::new(0x55), &mut [0x0]),
             &[0x0000_0055]
         );
     }

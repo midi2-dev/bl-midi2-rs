@@ -1,4 +1,5 @@
 use crate::{
+    *,
     message::{
         helpers as message_helpers,
         midi2_channel_voice::{helpers as midi2cv_helpers, TYPE_CODE as MIDI2CV_TYPE_CODE},
@@ -7,7 +8,7 @@ use crate::{
     util::debug,
 };
 
-const TYPE_CODE: ux::u4 = ux::u4::new(0b0011);
+const TYPE_CODE: u4 = u4::new(0b0011);
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct AssignableControllerMessage<'a>(&'a [u32]);
@@ -18,16 +19,16 @@ impl<'a> AssignableControllerMessage<'a> {
     pub fn builder(buffer: &mut [u32]) -> AssignableControllerBuilder {
         AssignableControllerBuilder::new(buffer)
     }
-    pub fn group(&self) -> ux::u4 {
+    pub fn group(&self) -> u4 {
         message_helpers::group_from_packet(self.0)
     }
-    pub fn channel(&self) -> ux::u4 {
+    pub fn channel(&self) -> u4 {
         message_helpers::channel_from_packet(self.0)
     }
-    pub fn bank(&self) -> ux::u7 {
+    pub fn bank(&self) -> u7 {
         midi2cv_helpers::controller_bank_from_packet(self.0)
     }
-    pub fn index(&self) -> ux::u7 {
+    pub fn index(&self) -> u7 {
         midi2cv_helpers::controller_index_from_packet(self.0)
     }
     pub fn controller_data(&self) -> u32 {
@@ -57,25 +58,25 @@ impl<'a> AssignableControllerBuilder<'a> {
             Err(e) => Self(Err(e)),
         }
     }
-    pub fn group(&mut self, v: ux::u4) -> &mut Self {
+    pub fn group(&mut self, v: u4) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
         }
         self
     }
-    pub fn channel(&mut self, v: ux::u4) -> &mut Self {
+    pub fn channel(&mut self, v: u4) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_channel_to_packet(v, buffer);
         }
         self
     }
-    pub fn bank(&mut self, v: ux::u7) -> &mut Self {
+    pub fn bank(&mut self, v: u7) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             midi2cv_helpers::write_controller_bank_to_packet(v, buffer);
         }
         self
     }
-    pub fn index(&mut self, v: ux::u7) -> &mut Self {
+    pub fn index(&mut self, v: u7) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             midi2cv_helpers::write_controller_index_to_packet(v, buffer);
         }
@@ -103,10 +104,10 @@ mod tests {
     fn builder() {
         assert_eq!(
             AssignableControllerMessage::builder(&mut [0x0, 0x0])
-                .group(ux::u4::new(0xC))
-                .channel(ux::u4::new(0x8))
-                .bank(ux::u7::new(0x51))
-                .index(ux::u7::new(0x38))
+                .group(u4::new(0xC))
+                .channel(u4::new(0x8))
+                .bank(u7::new(0x51))
+                .index(u7::new(0x38))
                 .controller_data(0x3F3ADD42)
                 .build(),
             Ok(AssignableControllerMessage(&[0x4C38_5138, 0x3F3ADD42])),
@@ -119,7 +120,7 @@ mod tests {
             AssignableControllerMessage::from_data(&[0x4C38_5138, 0x3F3ADD42])
                 .unwrap()
                 .group(),
-            ux::u4::new(0xC),
+            u4::new(0xC),
         );
     }
 
@@ -129,7 +130,7 @@ mod tests {
             AssignableControllerMessage::from_data(&[0x4C38_5138, 0x3F3ADD42])
                 .unwrap()
                 .channel(),
-            ux::u4::new(0x8),
+            u4::new(0x8),
         );
     }
 
@@ -139,7 +140,7 @@ mod tests {
             AssignableControllerMessage::from_data(&[0x4C38_5138, 0x3F3ADD42])
                 .unwrap()
                 .bank(),
-            ux::u7::new(0x51),
+            u7::new(0x51),
         );
     }
 
@@ -149,7 +150,7 @@ mod tests {
             AssignableControllerMessage::from_data(&[0x4C38_5138, 0x3F3ADD42])
                 .unwrap()
                 .index(),
-            ux::u7::new(0x38),
+            u7::new(0x38),
         );
     }
 

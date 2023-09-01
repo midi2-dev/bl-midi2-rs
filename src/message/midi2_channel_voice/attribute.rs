@@ -1,4 +1,5 @@
 use crate::{
+    *,
     error::Error,
     util::{BitOps, Truncate},
 };
@@ -8,7 +9,7 @@ use crate::{
 pub enum Attribute {
     ManufacturerSpecific(u16),
     ProfileSpecific(u16),
-    Pitch7_9 { note: ux::u7, pitch_up: ux::u9 },
+    Pitch7_9 { note: u7, pitch_up: u9 },
 }
 
 pub fn validate_ump(bytes: &[u32]) -> Result<(), Error> {
@@ -90,8 +91,8 @@ mod tests {
         assert_eq!(
             try_from_ump(&[0x0000_0003, 0b0000_0000_0000_0000_0011_0011_0011_0011]),
             Ok(Some(Attribute::Pitch7_9 {
-                note: ux::u7::new(0b0011001),
-                pitch_up: ux::u9::new(0b100110011)
+                note: u7::new(0b0011001),
+                pitch_up: u9::new(0b100110011)
             })),
         );
     }
@@ -112,8 +113,8 @@ mod tests {
     #[test]
     fn write_attribute_pitch7_9() {
         let attribute = Attribute::Pitch7_9 {
-            note: ux::u7::new(0b1011100),
-            pitch_up: ux::u9::new(0b100010111),
+            note: u7::new(0b1011100),
+            pitch_up: u9::new(0b100010111),
         };
         assert_eq!(
             write_attribute(&mut [0x0, 0x0], Some(attribute)),

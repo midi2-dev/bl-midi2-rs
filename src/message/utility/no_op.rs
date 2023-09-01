@@ -1,4 +1,5 @@
 use crate::{
+    *,
     error::Error,
     result::Result,
     util::{debug, BitOps},
@@ -8,11 +9,11 @@ use crate::{
 pub struct NoOpMessage<'a>(&'a [u32]);
 
 impl<'a> NoOpMessage<'a> {
-    const OP_CODE: ux::u4 = ux::u4::new(0x0);
+    const OP_CODE: u4 = u4::new(0x0);
     pub fn builder(buffer: &'a mut [u32]) -> NoOpMessageBuilder<'a> {
         NoOpMessageBuilder::new(buffer)
     }
-    pub fn group(&self) -> ux::u4 {
+    pub fn group(&self) -> u4 {
         self.0[0].nibble(1)
     }
     pub fn from_data(data: &'a [u32]) -> Result<Self> {
@@ -29,7 +30,7 @@ debug::message_debug_impl!(NoOpMessage);
 pub struct NoOpMessageBuilder<'a>(Option<&'a mut [u32]>);
 
 impl<'a> NoOpMessageBuilder<'a> {
-    pub fn group(&mut self, g: ux::u4) -> &mut Self {
+    pub fn group(&mut self, g: u4) -> &mut Self {
         if let Some(buffer) = &mut self.0 {
             buffer[0].set_nibble(1, g);
         }
@@ -63,7 +64,7 @@ mod tests {
     fn builder() {
         assert_eq!(
             NoOpMessage::builder(&mut [0x0])
-                .group(ux::u4::new(0xB))
+                .group(u4::new(0xB))
                 .build(),
             Ok(NoOpMessage(&[0x0B00_0000])),
         )
@@ -73,7 +74,7 @@ mod tests {
     fn group() {
         assert_eq!(
             NoOpMessage::from_data(&[0x0900_0000]).unwrap().group(),
-            ux::u4::new(0x9),
+            u4::new(0x9),
         );
     }
 }

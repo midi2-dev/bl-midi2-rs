@@ -1,4 +1,5 @@
 use crate::{
+    *,
     message::{
         helpers as message_helpers,
         system_common::{self, TYPE_CODE as SYSTEM_COMMON_TYPE_CODE},
@@ -18,11 +19,11 @@ impl<'a> SongPositionPointerMessage<'a> {
     pub fn builder(buffer: &mut [u32]) -> SongPositionPointerBuilder {
         SongPositionPointerBuilder::new(buffer)
     }
-    pub fn group(&self) -> ux::u4 {
+    pub fn group(&self) -> u4 {
         message_helpers::group_from_packet(self.0)
     }
-    pub fn position(&self) -> ux::u14 {
-        ux::u14::from_u7s(&[self.0[0].octet(2), self.0[0].octet(3)])
+    pub fn position(&self) -> u14 {
+        u14::from_u7s(&[self.0[0].octet(2), self.0[0].octet(3)])
     }
     pub fn from_data(data: &'a [u32]) -> Result<Self> {
         system_common::validate_packet(data, OP_CODE)?;
@@ -44,13 +45,13 @@ impl<'a> SongPositionPointerBuilder<'a> {
             Err(e) => Self(Err(e)),
         }
     }
-    pub fn group(&mut self, v: ux::u4) -> &mut Self {
+    pub fn group(&mut self, v: u4) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
         }
         self
     }
-    pub fn position(&mut self, v: ux::u14) -> &mut Self {
+    pub fn position(&mut self, v: u14) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             let u7s = v.to_u7s();
             buffer[0].set_octet(2, u7s[0].into());
@@ -74,8 +75,8 @@ mod tests {
     fn builder() {
         assert_eq!(
             SongPositionPointerMessage::builder(&mut [0x0])
-                .group(ux::u4::new(0xA))
-                .position(ux::u14::new(0x367D))
+                .group(u4::new(0xA))
+                .position(u14::new(0x367D))
                 .build(),
             Ok(SongPositionPointerMessage(&[0x1AF2_7D6C])),
         );
@@ -87,7 +88,7 @@ mod tests {
             SongPositionPointerMessage::from_data(&[0x1AF2_7D6C])
                 .unwrap()
                 .group(),
-            ux::u4::new(0xA),
+            u4::new(0xA),
         );
     }
 
@@ -97,7 +98,7 @@ mod tests {
             SongPositionPointerMessage::from_data(&[0x1AF2_7D6C])
                 .unwrap()
                 .position(),
-            ux::u14::new(0x367D),
+            u14::new(0x367D),
         );
     }
 }

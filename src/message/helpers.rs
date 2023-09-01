@@ -1,10 +1,11 @@
 use crate::{
+    *,
     error::Error,
     result::Result,
     util::{BitOps, Truncate},
 };
 
-pub fn validate_packet(p: &[u32], type_code: ux::u4, op_code: ux::u4) -> Result<()> {
+pub fn validate_packet(p: &[u32], type_code: u4, op_code: u4) -> Result<()> {
     if p.is_empty() || p[0].nibble(0) != type_code || p[0].nibble(2) != op_code {
         Err(Error::InvalidData)
     } else {
@@ -20,49 +21,36 @@ pub fn validate_buffer_size(p: &[u32], sz: usize) -> Result<()> {
     }
 }
 
-pub fn note_from_packet(p: &[u32]) -> ux::u7 {
+pub fn note_from_packet(p: &[u32]) -> u7 {
     p[0].octet(2).truncate()
 }
 
-pub fn write_type_to_packet(t: ux::u4, p: &mut [u32]) {
+pub fn write_type_to_packet(t: u4, p: &mut [u32]) {
     p[0].set_nibble(0, t);
 }
 
-pub fn write_group_to_packet(g: ux::u4, p: &mut [u32]) {
+pub fn write_group_to_packet(g: u4, p: &mut [u32]) {
     p[0].set_nibble(1, g);
 }
 
-pub fn write_channel_to_packet(channel: ux::u4, p: &mut [u32]) {
+pub fn write_channel_to_packet(channel: u4, p: &mut [u32]) {
     p[0].set_nibble(3, channel);
 }
 
-pub fn write_op_code_to_packet(op_code: ux::u4, p: &mut [u32]) {
+pub fn write_op_code_to_packet(op_code: u4, p: &mut [u32]) {
     p[0].set_nibble(2, op_code);
 }
 
-pub fn write_note_to_packet(note: ux::u7, p: &mut [u32]) -> &mut [u32] {
+pub fn write_note_to_packet(note: u7, p: &mut [u32]) -> &mut [u32] {
     p[0].set_octet(2, note.into());
     p
 }
 
-pub fn write_data(
-    type_code: ux::u4,
-    group: ux::u4,
-    op_code: ux::u4,
-    channel: ux::u4,
-    p: &mut [u32],
-) {
-    write_type_to_packet(type_code, p);
-    write_group_to_packet(group, p);
-    write_channel_to_packet(channel, p);
-    write_op_code_to_packet(op_code, p);
-}
-
-pub fn group_from_packet(p: &[u32]) -> ux::u4 {
+pub fn group_from_packet(p: &[u32]) -> u4 {
     p[0].nibble(1)
 }
 
-pub fn channel_from_packet(p: &[u32]) -> ux::u4 {
+pub fn channel_from_packet(p: &[u32]) -> u4 {
     p[0].nibble(3)
 }
 
@@ -80,10 +68,10 @@ pub fn sysex_group_consistent_groups(buffer: &[u32], stride: usize) -> Result<()
 
 // assumes that buffer contains valid messages
 pub fn validate_sysex_group_statuses<
-    IsComplete: Fn(ux::u4) -> bool,
-    IsBegin: Fn(ux::u4) -> bool,
-    IsContinue: Fn(ux::u4) -> bool,
-    IsEnd: Fn(ux::u4) -> bool,
+    IsComplete: Fn(u4) -> bool,
+    IsBegin: Fn(u4) -> bool,
+    IsContinue: Fn(u4) -> bool,
+    IsEnd: Fn(u4) -> bool,
 >(
     buffer: &[u32],
     is_complete: IsComplete,
@@ -130,13 +118,13 @@ mod tests {
 
     #[test]
     fn test_note_from_packet() {
-        assert_eq!(note_from_packet(&[0x0000_3200]), ux::u7::new(0x32));
+        assert_eq!(note_from_packet(&[0x0000_3200]), u7::new(0x32));
     }
 
     #[test]
     fn test_write_note_to_packet() {
         assert_eq!(
-            write_note_to_packet(ux::u7::new(0x73), &mut [0x0]),
+            write_note_to_packet(u7::new(0x73), &mut [0x0]),
             &[0x0000_7300]
         );
     }

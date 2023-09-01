@@ -1,4 +1,5 @@
 use crate::{
+    *,
     message::{
         helpers as message_helpers,
         midi2_channel_voice::{
@@ -9,7 +10,7 @@ use crate::{
     util::debug,
 };
 
-const OP_CODE: ux::u4 = ux::u4::new(0b1001);
+const OP_CODE: u4 = u4::new(0b1001);
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct NoteOnMessage<'a>(&'a [u32]);
@@ -20,13 +21,13 @@ impl<'a> NoteOnMessage<'a> {
     pub fn builder(buffer: &mut [u32]) -> NoteOnBuilder {
         NoteOnBuilder::new(buffer)
     }
-    pub fn group(&self) -> ux::u4 {
+    pub fn group(&self) -> u4 {
         message_helpers::group_from_packet(self.0)
     }
-    pub fn channel(&self) -> ux::u4 {
+    pub fn channel(&self) -> u4 {
         message_helpers::channel_from_packet(self.0)
     }
-    pub fn note(&self) -> ux::u7 {
+    pub fn note(&self) -> u7 {
         message_helpers::note_from_packet(self.0)
     }
     pub fn velocity(&self) -> u16 {
@@ -57,19 +58,19 @@ impl<'a> NoteOnBuilder<'a> {
             Err(e) => Self(Err(e)),
         }
     }
-    pub fn group(&mut self, v: ux::u4) -> &mut Self {
+    pub fn group(&mut self, v: u4) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
         }
         self
     }
-    pub fn channel(&mut self, v: ux::u4) -> &mut Self {
+    pub fn channel(&mut self, v: u4) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_channel_to_packet(v, buffer);
         }
         self
     }
-    pub fn note(&mut self, v: ux::u7) -> &mut Self {
+    pub fn note(&mut self, v: u7) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_note_to_packet(v, buffer);
         }
@@ -103,13 +104,13 @@ mod tests {
     fn builder() {
         assert_eq!(
             NoteOnMessage::builder(&mut [0x0, 0x0])
-                .group(ux::u4::new(0x8))
-                .channel(ux::u4::new(0x8))
-                .note(ux::u7::new(0x5E))
+                .group(u4::new(0x8))
+                .channel(u4::new(0x8))
+                .note(u7::new(0x5E))
                 .velocity(0x6A14)
                 .attribute(attribute::Attribute::Pitch7_9 {
-                    note: ux::u7::new(0x74),
-                    pitch_up: ux::u9::new(0x18A),
+                    note: u7::new(0x74),
+                    pitch_up: u9::new(0x18A),
                 })
                 .build(),
             Ok(NoteOnMessage(&[0x4898_5E03, 0x6A14_E98A]))
@@ -120,9 +121,9 @@ mod tests {
     fn builder_no_attribute() {
         assert_eq!(
             NoteOnMessage::builder(&mut [0x0, 0x0])
-                .group(ux::u4::new(0x8))
-                .channel(ux::u4::new(0x8))
-                .note(ux::u7::new(0x5E))
+                .group(u4::new(0x8))
+                .channel(u4::new(0x8))
+                .note(u7::new(0x5E))
                 .velocity(0x6A14)
                 .build(),
             Ok(NoteOnMessage(&[0x4898_5E00, 0x6A14_0000]))
@@ -135,7 +136,7 @@ mod tests {
             NoteOnMessage::from_data(&[0x4898_5E03, 0x6A14_E98A])
                 .unwrap()
                 .group(),
-            ux::u4::new(0x8),
+            u4::new(0x8),
         );
     }
 
@@ -145,7 +146,7 @@ mod tests {
             NoteOnMessage::from_data(&[0x4898_5E03, 0x6A14_E98A])
                 .unwrap()
                 .channel(),
-            ux::u4::new(0x8),
+            u4::new(0x8),
         );
     }
 
@@ -155,7 +156,7 @@ mod tests {
             NoteOnMessage::from_data(&[0x4898_5E03, 0x6A14_E98A])
                 .unwrap()
                 .note(),
-            ux::u7::new(0x5E),
+            u7::new(0x5E),
         );
     }
 
@@ -176,8 +177,8 @@ mod tests {
                 .unwrap()
                 .attribute(),
             Some(attribute::Attribute::Pitch7_9 {
-                note: ux::u7::new(0x74),
-                pitch_up: ux::u9::new(0x18A),
+                note: u7::new(0x74),
+                pitch_up: u9::new(0x18A),
             }),
         );
     }
