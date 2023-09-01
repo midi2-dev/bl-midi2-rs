@@ -27,10 +27,10 @@ impl<'a> ControlChangeMessage<'a> {
     pub fn channel(&self) -> ux::u4 {
         message_helpers::channel_from_packet(self.0)
     }
-    pub fn controller(&self) -> ux::u7 {
+    pub fn control(&self) -> ux::u7 {
         message_helpers::note_from_packet(self.0)
     }
-    pub fn controller_data(&self) -> ux::u7 {
+    pub fn control_data(&self) -> ux::u7 {
         midi1cv_helpers::note_velocity_from_packet(self.0)
     }
     pub fn from_data(data: &'a [u32]) -> Result<Self> {
@@ -65,13 +65,13 @@ impl<'a> ControlChangeBuilder<'a> {
         }
         self
     }
-    pub fn controller(&mut self, v: ux::u7) -> &mut Self {
+    pub fn control(&mut self, v: ux::u7) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_note_to_packet(v, buffer);
         }
         self
     }
-    pub fn controller_data(&mut self, v: ux::u7) -> &mut Self {
+    pub fn control_data(&mut self, v: ux::u7) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             midi1cv_helpers::write_note_velocity_to_packet(v, buffer);
         }
@@ -95,8 +95,8 @@ mod tests {
             ControlChangeMessage::builder(&mut [0x0])
                 .group(ux::u4::new(0xA))
                 .channel(ux::u4::new(0x7))
-                .controller(ux::u7::new(0x36))
-                .controller_data(ux::u7::new(0x37))
+                .control(ux::u7::new(0x36))
+                .control_data(ux::u7::new(0x37))
                 .build(),
             Ok(ControlChangeMessage(&[0x2AB7_3637])),
         );
@@ -119,17 +119,17 @@ mod tests {
     }
 
     #[test]
-    fn controller() {
+    fn control() {
         assert_eq!(
-            ControlChangeMessage::from_data(&[0x2AB7_3637]).unwrap().controller(),
+            ControlChangeMessage::from_data(&[0x2AB7_3637]).unwrap().control(),
             ux::u7::new(0x36),
         );
     }
 
     #[test]
-    fn controller_data() {
+    fn control_data() {
         assert_eq!(
-            ControlChangeMessage::from_data(&[0x2AB7_3637]).unwrap().controller_data(),
+            ControlChangeMessage::from_data(&[0x2AB7_3637]).unwrap().control_data(),
             ux::u7::new(0x37),
         );
     }
