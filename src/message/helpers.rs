@@ -12,6 +12,18 @@ pub fn validate_packet(p: &[u32], type_code: ux::u4, op_code: ux::u4) -> Result<
     }
 }
 
+pub fn validate_buffer_size(p: &[u32], sz: usize) -> Result<()> {
+    if p.len() < sz {
+        Err(Error::BufferOverflow)
+    } else {
+        Ok(())
+    }
+}
+
+pub fn note_from_packet(p: &[u32]) -> ux::u7 {
+    p[0].octet(2).truncate()
+}
+
 pub fn write_type_to_packet(t: ux::u4, p: &mut [u32]) {
     p[0].set_nibble(0, t);
 }
@@ -26,6 +38,11 @@ pub fn write_channel_to_packet(channel: ux::u4, p: &mut [u32]) {
 
 pub fn write_op_code_to_packet(op_code: ux::u4, p: &mut [u32]) {
     p[0].set_nibble(2, op_code);
+}
+
+pub fn write_note_to_packet(note: ux::u7, p: &mut [u32]) -> &mut [u32] {
+    p[0].set_octet(2, note.into());
+    p
 }
 
 pub fn write_data(
@@ -110,4 +127,30 @@ pub fn validate_sysex_group_statuses<
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_valid_buffer_size() {
+        assert_eq!(validate_buffer_size(&[], 2), Err(Error::BufferOverflow));
+        assert_eq!(validate_buffer_size(&[0x0], 2), Err(Error::BufferOverflow));
+        assert_eq!(validate_buffer_size(&[0x0, 0x0], 2), Ok(()));
+    }
+
+    #[test]
+    fn test_note_from_packet() {
+        assert_eq!(note_from_packet(&[0x0000_3200]), ux::u7::new(0x32));
+    }
+
+    #[test]
+    fn test_write_note_to_packet() {
+        assert_eq!(
+            write_note_to_packet(ux::u7::new(0x73), &mut [0x0]),
+            &[0x0000_7300]
+        );
+    }
+
 }

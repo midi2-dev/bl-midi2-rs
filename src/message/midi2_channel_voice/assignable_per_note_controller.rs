@@ -1,7 +1,7 @@
 use crate::{
     message::{
         helpers as message_helpers,
-        midi2_channel_voice::{helpers as midi2cv_helpers, TYPE_CODE as MIDI2CV_TYPE_CODE},
+        midi2_channel_voice::TYPE_CODE as MIDI2CV_TYPE_CODE,
     },
     result::Result,
     util::{debug, BitOps},
@@ -25,7 +25,7 @@ impl<'a> AssignablePerNoteControllerMessage<'a> {
         message_helpers::channel_from_packet(self.0)
     }
     pub fn note(&self) -> ux::u7 {
-        midi2cv_helpers::note_from_packet(self.0)
+        message_helpers::note_from_packet(self.0)
     }
     pub fn index(&self) -> u8 {
         self.0[0].octet(3)
@@ -35,7 +35,7 @@ impl<'a> AssignablePerNoteControllerMessage<'a> {
     }
     pub fn from_data(data: &'a [u32]) -> Result<Self> {
         message_helpers::validate_packet(data, MIDI2CV_TYPE_CODE, OP_CODE)?;
-        midi2cv_helpers::validate_buffer_size(data, 2)?;
+        message_helpers::validate_buffer_size(data, 2)?;
         Ok(Self(data))
     }
 }
@@ -45,7 +45,7 @@ pub struct AssignablePerNoteControllerBuilder<'a>(Result<&'a mut [u32]>);
 
 impl<'a> AssignablePerNoteControllerBuilder<'a> {
     pub fn new(buffer: &'a mut [u32]) -> Self {
-        match midi2cv_helpers::validate_buffer_size(buffer, 2) {
+        match message_helpers::validate_buffer_size(buffer, 2) {
             Ok(()) => {
                 message_helpers::write_op_code_to_packet(OP_CODE, buffer);
                 message_helpers::write_type_to_packet(MIDI2CV_TYPE_CODE, buffer);
@@ -68,7 +68,7 @@ impl<'a> AssignablePerNoteControllerBuilder<'a> {
     }
     pub fn note(&mut self, v: ux::u7) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
-            midi2cv_helpers::write_note_to_packet(v, buffer);
+            message_helpers::write_note_to_packet(v, buffer);
         }
         self
     }

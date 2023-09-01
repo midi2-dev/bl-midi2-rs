@@ -38,7 +38,7 @@ impl<'a> RegisteredControllerMessage<'a> {
     }
     pub fn from_data(data: &'a [u32]) -> Result<Self> {
         message_helpers::validate_packet(data, MIDI2CV_TYPE_CODE, TYPE_CODE)?;
-        midi2cv_helpers::validate_buffer_size(data, 2)?;
+        message_helpers::validate_buffer_size(data, 2)?;
         Ok(Self(data))
     }
 }
@@ -48,7 +48,7 @@ pub struct RegisteredControllerBuilder<'a>(Result<&'a mut [u32]>);
 
 impl<'a> RegisteredControllerBuilder<'a> {
     pub fn new(buffer: &'a mut [u32]) -> Self {
-        match midi2cv_helpers::validate_buffer_size(buffer, 2) {
+        match message_helpers::validate_buffer_size(buffer, 2) {
             Ok(()) => {
                 message_helpers::write_op_code_to_packet(TYPE_CODE, buffer);
                 message_helpers::write_type_to_packet(MIDI2CV_TYPE_CODE, buffer);

@@ -24,7 +24,7 @@ impl<'a> KeyPressureMessage<'a> {
         message_helpers::channel_from_packet(self.0)
     }
     pub fn note(&self) -> ux::u7 {
-        midi2cv_helpers::note_from_packet(self.0)
+        message_helpers::note_from_packet(self.0)
     }
     pub fn key_pressure_data(&self) -> u32 {
         self.0[1]
@@ -34,7 +34,7 @@ impl<'a> KeyPressureMessage<'a> {
     }
     pub fn from_data(data: &'a [u32]) -> Result<Self> {
         midi2cv_helpers::validate_packet(data, MIDI2CV_TYPE_CODE, OP_CODE)?;
-        midi2cv_helpers::validate_buffer_size(data, 2)?;
+        message_helpers::validate_buffer_size(data, 2)?;
         Ok(Self(data))
     }
 }
@@ -66,7 +66,7 @@ impl<'a> KeyPressureBuilder<'a> {
     }
     pub fn note(&mut self, v: ux::u7) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
-            midi2cv_helpers::write_note_to_packet(v, buffer);
+            message_helpers::write_note_to_packet(v, buffer);
         }
         self
     }
