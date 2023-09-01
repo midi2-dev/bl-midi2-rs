@@ -1,92 +1,115 @@
-use super::super::helpers;
 use crate::{
-    error::Error,
-    message::Midi2Message,
-    util::{builder, getter, BitOps, Truncate},
+    message::{
+        midi1_channel_voice::TYPE_CODE as MIDI1_CHANNEL_VOICE_TYPE,
+        helpers as message_helpers,
+    },
+    result::Result,
+    util::debug,
 };
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Message {
-    group: ux::u4,
-    channel: ux::u4,
-    pressure: ux::u7,
-}
+const OP_CODE: ux::u4 = ux::u4::new(0b1101);
 
-builder::builder!(group: ux::u4, channel: ux::u4, pressure: ux::u7);
+#[derive(Clone, PartialEq, Eq)]
+pub struct ChannelPressureMessage<'a>(&'a [u32]);
 
-impl Message {
-    const TYPE_CODE: ux::u4 = super::TYPE_CODE;
-    const OP_CODE: ux::u4 = ux::u4::new(0b1101);
+debug::message_debug_impl!(ChannelPressureMessage);
 
-    getter::getter!(group, ux::u4);
-    getter::getter!(channel, ux::u4);
-    getter::getter!(pressure, ux::u7);
-    builder::builder_method!();
-}
-
-impl Midi2Message for Message {
-    fn validate_ump(bytes: &[u32]) -> Result<(), Error> {
-        helpers::validate_packet(bytes, Message::TYPE_CODE, Message::OP_CODE)
+impl<'a> ChannelPressureMessage<'a> {
+    pub fn builder(buffer: &mut [u32]) -> ChannelPressureBuilder {
+        ChannelPressureBuilder::new(buffer)
     }
+    pub fn group(&self) -> ux::u4 {
+        message_helpers::group_from_packet(self.0)
+    }
+    pub fn channel(&self) -> ux::u4 {
+        message_helpers::channel_from_packet(self.0)
+    }
+    pub fn pressure(&self) -> ux::u7 {
+        message_helpers::note_from_packet(self.0)
+    }
+    pub fn from_data(data: &'a [u32]) -> Result<Self> {
+        message_helpers::validate_packet(data, MIDI1_CHANNEL_VOICE_TYPE, OP_CODE)?;
+        Ok(Self(data))
+    }
+}
 
-    fn from_ump(bytes: &[u32]) -> Self {
-        Message {
-            group: bytes[0].nibble(1),
-            channel: bytes[0].nibble(3),
-            pressure: bytes[0].octet(2).truncate(),
+#[derive(PartialEq, Eq)]
+pub struct ChannelPressureBuilder<'a>(Result<&'a mut [u32]>);
+
+impl<'a> ChannelPressureBuilder<'a> {
+    pub fn new(buffer: &'a mut [u32]) -> Self {
+        match message_helpers::validate_buffer_size(buffer, 1) {
+            Ok(()) => {
+                message_helpers::write_op_code_to_packet(OP_CODE, buffer);
+                message_helpers::write_type_to_packet(MIDI1_CHANNEL_VOICE_TYPE, buffer);
+                Self(Ok(buffer))
+            }
+            Err(e) => Self(Err(e)),
         }
     }
-
-    fn to_ump<'a>(&self, bytes: &'a mut [u32]) -> &'a [u32] {
-        helpers::write_data(
-            Message::TYPE_CODE,
-            self.group,
-            Message::OP_CODE,
-            self.channel,
-            bytes,
-        );
-        bytes[0].set_octet(2, self.pressure.into());
-        &bytes[..1]
+    pub fn group(&mut self, v: ux::u4) -> &mut Self {
+        if let Ok(buffer) = &mut self.0 {
+            message_helpers::write_group_to_packet(v, buffer);
+        }
+        self
+    }
+    pub fn channel(&mut self, v: ux::u4) -> &mut Self {
+        if let Ok(buffer) = &mut self.0 {
+            message_helpers::write_channel_to_packet(v, buffer);
+        }
+        self
+    }
+    pub fn pressure(&mut self, v: ux::u7) -> &mut Self {
+        if let Ok(buffer) = &mut self.0 {
+            message_helpers::write_note_to_packet(v, buffer);
+        }
+        self
+    }
+    pub fn build(&'a self) -> Result<ChannelPressureMessage<'a>> {
+        match &self.0 {
+            Ok(buffer) => Ok(ChannelPressureMessage(buffer)),
+            Err(e) => Err(e.clone()),
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::message_traits_test;
-
-    message_traits_test!(Message);
 
     #[test]
-    fn wrong_status() {
+    fn builder() {
         assert_eq!(
-            Message::try_from_ump(&[0x2000_0000]),
-            Err(Error::InvalidData),
+            ChannelPressureMessage::builder(&mut [0x0])
+                .group(ux::u4::new(0xF))
+                .channel(ux::u4::new(0x6))
+                .pressure(ux::u7::new(0x09))
+                .build(),
+            Ok(ChannelPressureMessage(&[0x2FD6_0900])),
         );
     }
 
     #[test]
-    fn deserialize() {
+    fn group() {
         assert_eq!(
-            Message::try_from_ump(&[0x24D4_5300]),
-            Ok(Message {
-                group: ux::u4::new(0x4),
-                channel: ux::u4::new(4),
-                pressure: ux::u7::new(83),
-            })
+            ChannelPressureMessage::from_data(&[0x2FD6_0900]).unwrap().group(),
+            ux::u4::new(0xF),
         );
     }
 
     #[test]
-    fn serialize() {
+    fn channel() {
         assert_eq!(
-            Message {
-                group: ux::u4::new(0x5),
-                channel: ux::u4::new(0xF),
-                pressure: ux::u7::new(0x02),
-            }
-            .to_ump(&mut [0x0]),
-            &[0x25DF_0200],
+            ChannelPressureMessage::from_data(&[0x2FD6_0900]).unwrap().channel(),
+            ux::u4::new(0x6),
+        );
+    }
+
+    #[test]
+    fn pressure() {
+        assert_eq!(
+            ChannelPressureMessage::from_data(&[0x2FD6_0900]).unwrap().pressure(),
+            ux::u7::new(0x09),
         );
     }
 }
