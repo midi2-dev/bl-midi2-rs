@@ -1,6 +1,7 @@
 use crate::{
     error::Error,
     result::Result,
+    message::helpers as message_helpers,
     util::{debug, BitOps},
     *,
 };
@@ -38,11 +39,8 @@ impl<'a> NoOpMessageBuilder<'a> {
     }
     fn new(buffer: &'a mut [u32]) -> Self {
         if !buffer.is_empty() {
-            let buffer = &mut buffer[..1];
-            for v in buffer.iter_mut() {
-                *v = 0;
-            }
-            Self(Some(buffer))
+            message_helpers::clear_buffer(buffer);
+            Self(Some(&mut buffer[..1]))
         } else {
             Self(None)
         }
@@ -59,11 +57,12 @@ impl<'a> NoOpMessageBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::util::random_buffer;
 
     #[test]
     fn builder() {
         assert_eq!(
-            NoOpMessage::builder(&mut [0x0]).group(u4::new(0xB)).build(),
+            NoOpMessage::builder(&mut random_buffer::<1>()).group(u4::new(0xB)).build(),
             Ok(NoOpMessage(&[0x0B00_0000])),
         )
     }

@@ -25,6 +25,13 @@ pub fn note_from_packet(p: &[u32]) -> u7 {
     p[0].octet(2).truncate()
 }
 
+pub fn clear_buffer(p: &mut [u32]) -> &mut [u32] {
+    for i in 0..p.len() {
+        p[i] = 0x0;
+    }
+    p
+}
+
 pub fn write_type_to_packet(t: u4, p: &mut [u32]) {
     p[0].set_nibble(0, t);
 }
@@ -127,5 +134,10 @@ mod tests {
             write_note_to_packet(u7::new(0x73), &mut [0x0]),
             &[0x0000_7300]
         );
+    }
+
+    #[test]
+    fn test_clear_buffer() {
+        assert_eq!(clear_buffer(&mut [0x1234_5678, 0x8765_4321]), &[0x0, 0x0]);
     }
 }

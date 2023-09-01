@@ -49,6 +49,7 @@ impl<'a> ControlChangeBuilder<'a> {
         match buffer.len() {
             0 | 1 => Self(Err(Error::BufferOverflow)),
             _ => {
+                message_helpers::clear_buffer(buffer);
                 message_helpers::write_type_to_packet(MIDI2CV_TYPE_CODE, buffer);
                 message_helpers::write_op_code_to_packet(OP_CODE, buffer);
                 Self(Ok(buffer))
@@ -90,11 +91,12 @@ impl<'a> ControlChangeBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::util::random_buffer;
 
     #[test]
     fn builder() {
         assert_eq!(
-            ControlChangeMessage::builder(&mut [0x0, 0x0])
+            ControlChangeMessage::builder(&mut random_buffer::<2>())
                 .group(u4::new(0x3))
                 .channel(u4::new(0x9))
                 .index(u7::new(0x30))

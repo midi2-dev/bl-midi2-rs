@@ -78,11 +78,12 @@ impl<'a> PitchBendBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::util::random_buffer;
 
     #[test]
     fn builder() {
         assert_eq!(
-            PitchBendMessage::builder(&mut [0x0])
+            PitchBendMessage::builder(&mut random_buffer::<1>())
                 .group(u4::new(0x1))
                 .channel(u4::new(0xE))
                 .bend(u14::new(0x147))

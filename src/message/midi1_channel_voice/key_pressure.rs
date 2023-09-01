@@ -86,11 +86,12 @@ impl<'a> KeyPressureBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::util::random_buffer;
 
     #[test]
     fn builder() {
         assert_eq!(
-            KeyPressureMessage::builder(&mut [0x0])
+            KeyPressureMessage::builder(&mut random_buffer::<1>())
                 .group(u4::new(0xA))
                 .channel(u4::new(0x3))
                 .note(u7::new(0x7F))

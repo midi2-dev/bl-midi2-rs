@@ -47,6 +47,7 @@ impl<'a> KeyPressureBuilder<'a> {
         match buffer.len() {
             0 | 1 => Self(Err(Error::BufferOverflow)),
             _ => {
+                message_helpers::clear_buffer(buffer);
                 message_helpers::write_type_to_packet(MIDI2CV_TYPE_CODE, buffer);
                 message_helpers::write_op_code_to_packet(OP_CODE, buffer);
                 Self(Ok(buffer))
@@ -88,11 +89,12 @@ impl<'a> KeyPressureBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::util::random_buffer;
 
     #[test]
     fn builder() {
         assert_eq!(
-            KeyPressureMessage::builder(&mut [0x0, 0x0])
+            KeyPressureMessage::builder(&mut random_buffer::<2>())
                 .group(u4::new(0xB))
                 .channel(u4::new(0xC))
                 .note(u7::new(0x59))

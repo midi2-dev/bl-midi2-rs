@@ -246,13 +246,13 @@ impl<'a> DiscoveryReplyBuilder<sysex7::Sysex7MessageGroup<'a>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::debug;
+    use crate::util::{debug, random_buffer};
 
     #[test]
     fn sysex8_builder() {
         assert_eq!(
             debug::Data(
-                DiscoveryReplyMessage::<sysex8::Sysex8MessageGroup>::builder(&mut [0x0; 12])
+                DiscoveryReplyMessage::<sysex8::Sysex8MessageGroup>::builder(&mut random_buffer::<12>())
                     .group(u4::new(0x8))
                     .stream_id(0x31)
                     .source(u28::new(196099328))
@@ -543,7 +543,7 @@ mod tests {
     fn sysex7_builder() {
         assert_eq!(
             debug::Data(
-                DiscoveryReplyMessage::<sysex7::Sysex7MessageGroup>::builder(&mut [0x0; 10])
+                DiscoveryReplyMessage::<sysex7::Sysex7MessageGroup>::builder(&mut random_buffer::<10>())
                     .group(u4::new(0x8))
                     .source(u28::new(196099328))
                     .destination(u28::new(64054537))

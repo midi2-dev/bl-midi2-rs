@@ -51,6 +51,7 @@ impl<'a> AssignableControllerBuilder<'a> {
     pub fn new(buffer: &'a mut [u32]) -> Self {
         match message_helpers::validate_buffer_size(buffer, 2) {
             Ok(()) => {
+                message_helpers::clear_buffer(buffer);
                 message_helpers::write_op_code_to_packet(TYPE_CODE, buffer);
                 message_helpers::write_type_to_packet(MIDI2CV_TYPE_CODE, buffer);
                 Self(Ok(buffer))

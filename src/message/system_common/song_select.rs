@@ -38,6 +38,7 @@ impl<'a> SongSelectBuilder<'a> {
     pub fn new(buffer: &'a mut [u32]) -> Self {
         match system_common::validate_buffer_size(buffer) {
             Ok(()) => {
+                message_helpers::clear_buffer(buffer);
                 system_common::write_op_code_to_packet(buffer, OP_CODE);
                 message_helpers::write_type_to_packet(SYSTEM_COMMON_TYPE_CODE, buffer);
                 Self(Ok(buffer))
@@ -68,11 +69,12 @@ impl<'a> SongSelectBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::util::random_buffer;
 
     #[test]
     fn builder() {
         assert_eq!(
-            SongSelectMessage::builder(&mut [0x0])
+            SongSelectMessage::builder(&mut random_buffer::<1>())
                 .group(u4::new(0xA))
                 .song(u7::new(0x4F))
                 .build(),

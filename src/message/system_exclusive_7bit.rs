@@ -173,10 +173,7 @@ impl<'a> Sysex7MessageBuilder<'a> {
     }
     fn new(buffer: &'a mut [u32]) -> Self {
         if buffer.len() >= 2 {
-            let buffer = &mut buffer[..2];
-            for v in buffer.iter_mut() {
-                *v = 0;
-            }
+            message_helpers::clear_buffer(buffer);
             message_helpers::write_type_to_packet(Sysex7Message::OP_CODE, buffer);
             Self(Ok(buffer))
         } else {
@@ -425,6 +422,7 @@ impl<'a> sysex::SysexMessages for Sysex7MessageGroup<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::util::random_buffer;
 
     #[test]
     fn incorrect_message_type() {
@@ -452,8 +450,9 @@ mod tests {
 
     #[test]
     fn builder() {
+        let mut buffer = random_buffer::<2>();
         assert_eq!(
-            Sysex7Message::builder(&mut [0x0, 0x0])
+            Sysex7Message::builder(&mut buffer)
                 .group(u4::new(0x1))
                 .status(Status::Begin)
                 .payload(
@@ -468,8 +467,9 @@ mod tests {
 
     #[test]
     fn builder_invalid_payload() {
+        let mut buffer = random_buffer::<2>();
         assert_eq!(
-            Sysex7Message::builder(&mut [0x0, 0x0])
+            Sysex7Message::builder(&mut buffer)
                 .payload([u7::default(); 7].iter().copied())
                 .build(),
             Err(Error::InvalidData),
@@ -521,8 +521,9 @@ mod tests {
 
     #[test]
     fn group_builder() {
+        let mut buffer = random_buffer::<6>();
         assert_eq!(
-            Sysex7MessageGroup::builder(&mut [0x0; 6])
+            Sysex7MessageGroup::builder(&mut buffer)
                 .group(u4::new(0x4))
                 .payload((0..15).map(u7::new))
                 .build(),
@@ -540,7 +541,7 @@ mod tests {
     #[test]
     fn group_builder_group_after_payload() {
         assert_eq!(
-            Sysex7MessageGroup::builder(&mut [0x0; 6])
+            Sysex7MessageGroup::builder(&mut random_buffer::<6>())
                 .payload((0..15).map(u7::new))
                 .group(u4::new(0x4))
                 .build(),
@@ -558,18 +559,7 @@ mod tests {
     #[test]
     fn group_builder_complete() {
         assert_eq!(
-            Sysex7MessageGroup::builder(&mut [0x0; 2])
-                .group(u4::new(0x4))
-                .payload((0..4).map(u7::new))
-                .build(),
-            Ok(Sysex7MessageGroup(&[0x3404_0001, 0x0203_0000,])),
-        );
-    }
-
-    #[test]
-    fn group_builder_dirty_buffer() {
-        assert_eq!(
-            Sysex7MessageGroup::builder(&mut [0xFFFF_FFFF; 2])
+            Sysex7MessageGroup::builder(&mut random_buffer::<2>())
                 .group(u4::new(0x4))
                 .payload((0..4).map(u7::new))
                 .build(),
@@ -580,7 +570,7 @@ mod tests {
     #[test]
     fn group_builder_payload_in_batches() {
         assert_eq!(
-            Sysex7MessageGroup::builder(&mut [0x0; 4])
+            Sysex7MessageGroup::builder(&mut random_buffer::<4>())
                 .payload((0..4).map(u7::new))
                 .payload((4..8).map(u7::new))
                 .build(),

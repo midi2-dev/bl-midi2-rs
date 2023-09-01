@@ -86,11 +86,12 @@ impl<'a> NoteOffBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::util::random_buffer;
 
     #[test]
     fn builder() {
         assert_eq!(
-            NoteOffMessage::builder(&mut [0x0])
+            NoteOffMessage::builder(&mut random_buffer::<1>())
                 .group(u4::new(0x1))
                 .channel(u4::new(0xA))
                 .note(u7::new(0x68))

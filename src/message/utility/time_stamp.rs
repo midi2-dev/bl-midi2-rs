@@ -1,6 +1,7 @@
 use crate::{
     error::Error,
     result::Result,
+    message::helpers as message_helpers,
     util::{debug, BitOps, Truncate},
     *,
 };
@@ -47,12 +48,9 @@ impl<'a> TimeStampMessageBuilder<'a> {
     }
     fn new(buffer: &'a mut [u32]) -> Self {
         if !buffer.is_empty() {
-            let buffer = &mut buffer[..1];
-            for v in buffer.iter_mut() {
-                *v = 0;
-            }
+            message_helpers::clear_buffer(buffer);
             buffer[0].set_nibble(2, u4::new(2));
-            Self(Some(buffer))
+            Self(Some(&mut buffer[0..1]))
         } else {
             Self(None)
         }
@@ -69,11 +67,12 @@ impl<'a> TimeStampMessageBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::util::random_buffer;
 
     #[test]
     fn builder() {
         assert_eq!(
-            TimeStampMessage::builder(&mut [0x0])
+            TimeStampMessage::builder(&mut random_buffer::<1>())
                 .group(u4::new(0x4))
                 .time_stamp(u20::new(0xE_69AE))
                 .build(),
@@ -84,7 +83,7 @@ mod tests {
     #[test]
     fn builder_default() {
         assert_eq!(
-            TimeStampMessage::builder(&mut [0x0]).build(),
+            TimeStampMessage::builder(&mut random_buffer::<1>()).build(),
             Ok(TimeStampMessage(&[0x0020_0000])),
         );
     }
@@ -92,7 +91,7 @@ mod tests {
     #[test]
     fn builder_oversized_buffer() {
         assert_eq!(
-            TimeStampMessage::builder(&mut [0x0, 0x0]).build(),
+            TimeStampMessage::builder(&mut random_buffer::<1>()).build(),
             Ok(TimeStampMessage(&[0x0020_0000])),
         );
     }

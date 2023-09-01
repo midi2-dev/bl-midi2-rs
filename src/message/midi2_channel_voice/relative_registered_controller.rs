@@ -51,6 +51,7 @@ impl<'a> RelativeRegisteredControllerBuilder<'a> {
     pub fn new(buffer: &'a mut [u32]) -> Self {
         match message_helpers::validate_buffer_size(buffer, 2) {
             Ok(()) => {
+                message_helpers::clear_buffer(buffer);
                 message_helpers::write_op_code_to_packet(TYPE_CODE, buffer);
                 message_helpers::write_type_to_packet(MIDI2CV_TYPE_CODE, buffer);
                 Self(Ok(buffer))
@@ -99,11 +100,12 @@ impl<'a> RelativeRegisteredControllerBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::util::random_buffer;
 
     #[test]
     fn builder() {
         assert_eq!(
-            RelativeRegisteredControllerMessage::builder(&mut [0x0, 0x0])
+            RelativeRegisteredControllerMessage::builder(&mut random_buffer::<2>())
                 .group(u4::new(0x1))
                 .channel(u4::new(0xE))
                 .bank(u7::new(0x45))

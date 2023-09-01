@@ -212,10 +212,7 @@ impl<'a> Sysex8MessageBuilder<'a> {
     }
     fn new(buffer: &'a mut [u32]) -> Self {
         if buffer.len() >= 4 {
-            let buffer = &mut buffer[..4];
-            for v in buffer.iter_mut() {
-                *v = 0;
-            }
+            message_helpers::clear_buffer(buffer);
             message_helpers::write_type_to_packet(Sysex8Message::OP_CODE, buffer);
             buffer[0].set_nibble(3, u4::new(0x1)); // stream id
             Self(Ok(buffer))
@@ -512,11 +509,13 @@ impl<'a> sysex::SysexMessages for Sysex8MessageGroup<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::util::random_buffer;
 
     #[test]
     fn builder() {
+        let mut buffer = random_buffer::<4>();
         assert_eq!(
-            Sysex8Message::builder(&mut [0x0; 4])
+            Sysex8Message::builder(&mut buffer)
                 .group(u4::new(0xA))
                 .stream_id(0xC6)
                 .status(Status::Continue)
@@ -528,8 +527,9 @@ mod tests {
 
     #[test]
     fn builder_large_payload() {
+        let mut buffer = random_buffer::<4>();
         assert_eq!(
-            Sysex8Message::builder(&mut [0x0; 4])
+            Sysex8Message::builder(&mut buffer)
                 .payload([0x0; 14].iter())
                 .build(),
             Err(Error::InvalidData),
@@ -617,8 +617,9 @@ mod tests {
 
     #[test]
     fn group_builder() {
+        let mut buffer = random_buffer::<8>();
         assert_eq!(
-            Sysex8MessageGroup::builder(&mut [0x0; 8])
+            Sysex8MessageGroup::builder(&mut buffer)
                 .group(u4::new(0x4))
                 .stream_id(0xBB)
                 .payload(0..15)
@@ -638,8 +639,9 @@ mod tests {
 
     #[test]
     fn group_builder_metadata_after_payload() {
+        let mut buffer = random_buffer::<8>();
         assert_eq!(
-            Sysex8MessageGroup::builder(&mut [0x0; 8])
+            Sysex8MessageGroup::builder(&mut buffer)
                 .payload(0..15)
                 .group(u4::new(0x4))
                 .stream_id(0xBB)
@@ -659,25 +661,9 @@ mod tests {
 
     #[test]
     fn group_builder_complete() {
+        let mut buffer = random_buffer::<4>();
         assert_eq!(
-            Sysex8MessageGroup::builder(&mut [0x0; 4])
-                .payload(0x0..0xA)
-                .group(u4::new(0x4))
-                .stream_id(0xBB)
-                .build(),
-            Ok(Sysex8MessageGroup(&[
-                0x540B_BB00,
-                0x0102_0304,
-                0x0506_0708,
-                0x0900_0000,
-            ])),
-        );
-    }
-
-    #[test]
-    fn group_builder_dirty_buffer() {
-        assert_eq!(
-            Sysex8MessageGroup::builder(&mut [0xFF; 4])
+            Sysex8MessageGroup::builder(&mut buffer)
                 .payload(0x0..0xA)
                 .group(u4::new(0x4))
                 .stream_id(0xBB)
@@ -693,8 +679,9 @@ mod tests {
 
     #[test]
     fn group_builder_payload_in_batches() {
+        let mut buffer = random_buffer::<8>();
         assert_eq!(
-            Sysex8MessageGroup::builder(&mut [0x0; 8])
+            Sysex8MessageGroup::builder(&mut buffer)
                 .payload(0x0..0xA)
                 .payload(0x0..0x5)
                 .group(u4::new(0x4))

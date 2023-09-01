@@ -232,13 +232,13 @@ impl<'a> DiscoveryQueryBuilder<sysex7::Sysex7MessageGroup<'a>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::debug;
+    use crate::util::{random_buffer, debug};
 
     #[test]
     fn sysex8_builder() {
         assert_eq!(
             debug::Data(
-                DiscoveryQueryMessage::<sysex8::Sysex8MessageGroup>::builder(&mut [0x0; 12])
+                DiscoveryQueryMessage::<sysex8::Sysex8MessageGroup>::builder(&mut random_buffer::<12>())
                     .group(u4::new(0x8))
                     .stream_id(0x31)
                     .source(u28::new(196099328))
@@ -505,7 +505,7 @@ mod tests {
     fn sysex7_builder() {
         assert_eq!(
             debug::Data(
-                DiscoveryQueryMessage::<sysex7::Sysex7MessageGroup>::builder(&mut [0x0; 10])
+                DiscoveryQueryMessage::<sysex7::Sysex7MessageGroup>::builder(&mut random_buffer::<10>())
                     .group(u4::new(0x8))
                     .source(u28::new(196099328))
                     .device_manufacturer(u21::new(2054957))

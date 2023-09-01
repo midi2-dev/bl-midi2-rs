@@ -38,6 +38,7 @@ impl<'a> SongPositionPointerBuilder<'a> {
     pub fn new(buffer: &'a mut [u32]) -> Self {
         match system_common::validate_buffer_size(buffer) {
             Ok(()) => {
+                message_helpers::clear_buffer(buffer);
                 system_common::write_op_code_to_packet(buffer, OP_CODE);
                 message_helpers::write_type_to_packet(SYSTEM_COMMON_TYPE_CODE, buffer);
                 Self(Ok(buffer))
@@ -70,11 +71,12 @@ impl<'a> SongPositionPointerBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::util::random_buffer;
 
     #[test]
     fn builder() {
         assert_eq!(
-            SongPositionPointerMessage::builder(&mut [0x0])
+            SongPositionPointerMessage::builder(&mut random_buffer::<1>())
                 .group(u4::new(0xA))
                 .position(u14::new(0x367D))
                 .build(),

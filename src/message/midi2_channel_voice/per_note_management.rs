@@ -44,6 +44,7 @@ impl<'a> PerNoteManagementBuilder<'a> {
     pub fn new(buffer: &'a mut [u32]) -> Self {
         match message_helpers::validate_buffer_size(buffer, 1) {
             Ok(()) => {
+                message_helpers::clear_buffer(buffer);
                 message_helpers::write_op_code_to_packet(OP_CODE, buffer);
                 message_helpers::write_type_to_packet(MIDI2CV_TYPE_CODE, buffer);
                 Self(Ok(buffer))
@@ -92,11 +93,12 @@ impl<'a> PerNoteManagementBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::util::random_buffer;
 
     #[test]
     fn builder() {
         assert_eq!(
-            PerNoteManagementMessage::builder(&mut [0x0])
+            PerNoteManagementMessage::builder(&mut random_buffer::<1>())
                 .group(u4::new(0xB))
                 .channel(u4::new(0x9))
                 .note(u7::new(0x1C))

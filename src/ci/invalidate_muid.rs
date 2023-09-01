@@ -192,14 +192,14 @@ mod tests {
     use super::*;
     use crate::{
         message::system_exclusive_7bit as sysex7, message::system_exclusive_8bit as sysex8,
-        util::debug,
+        util::{debug, random_buffer},
     };
 
     #[test]
     fn sysex8_builder() {
         assert_eq!(
             debug::Data(
-                InvalidateMuidMessage::<sysex8::Sysex8MessageGroup>::builder(&mut [0x0; 8])
+                InvalidateMuidMessage::<sysex8::Sysex8MessageGroup>::builder(&mut random_buffer::<8>())
                     .group(u4::new(0x7))
                     .stream_id(0x4A)
                     .source(u28::new(3767028))
@@ -225,7 +225,7 @@ mod tests {
     fn sysex7_builder() {
         assert_eq!(
             debug::Data(
-                InvalidateMuidMessage::<sysex7::Sysex7MessageGroup>::builder(&mut [0x0; 8])
+                InvalidateMuidMessage::<sysex7::Sysex7MessageGroup>::builder(&mut random_buffer::<8>())
                     .group(u4::new(0x7))
                     .source(u28::new(3767028))
                     .target_muid(u28::new(226028650))

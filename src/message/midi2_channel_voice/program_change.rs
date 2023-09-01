@@ -46,6 +46,7 @@ impl<'a> ProgramChangeBuilder<'a> {
     pub fn new(buffer: &'a mut [u32]) -> Self {
         match message_helpers::validate_buffer_size(buffer, 2) {
             Ok(()) => {
+                message_helpers::clear_buffer(buffer);
                 message_helpers::write_op_code_to_packet(OP_CODE, buffer);
                 message_helpers::write_type_to_packet(MIDI2CV_TYPE_CODE, buffer);
                 Self(Ok(buffer))
@@ -91,11 +92,12 @@ impl<'a> ProgramChangeBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::util::random_buffer;
 
     #[test]
     fn builder() {
         assert_eq!(
-            ProgramChangeMessage::builder(&mut [0x0, 0x0])
+            ProgramChangeMessage::builder(&mut random_buffer::<2>())
                 .group(u4::new(0xF))
                 .channel(u4::new(0xE))
                 .program(u7::new(0x75))
@@ -108,7 +110,7 @@ mod tests {
     #[test]
     fn builder_no_bank() {
         assert_eq!(
-            ProgramChangeMessage::builder(&mut [0x0, 0x0])
+            ProgramChangeMessage::builder(&mut random_buffer::<2>())
                 .group(u4::new(0xF))
                 .channel(u4::new(0xE))
                 .program(u7::new(0x75))

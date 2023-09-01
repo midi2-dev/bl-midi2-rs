@@ -37,6 +37,7 @@ macro_rules! simple_generic_message {
             pub fn new(buffer: &'a mut [u32]) -> Self {
                 match system_common::validate_buffer_size(buffer) {
                     Ok(()) => {
+                        message_helpers::clear_buffer(buffer);
                         system_common::write_op_code_to_packet(buffer, $op_code);
                         message_helpers::write_type_to_packet(SYSTEM_COMMON_TYPE_CODE, buffer);
                         Self(Ok(buffer))
@@ -94,13 +95,14 @@ pub mod reset {
 #[cfg(test)]
 mod tests {
     use super::simple_generic_message;
+    use crate::util::random_buffer;
 
     simple_generic_message!(0xFF, TestMessage, TestBuilder);
 
     #[test]
     fn builder() {
         assert_eq!(
-            TestMessage::builder(&mut [0x0]).group(u4::new(0x9)).build(),
+            TestMessage::builder(&mut random_buffer::<1>()).group(u4::new(0x9)).build(),
             Ok(TestMessage(&[0x19FF_0000])),
         );
     }

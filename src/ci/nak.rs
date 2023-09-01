@@ -199,13 +199,13 @@ impl<'a> NakBuilder<sysex7::Sysex7MessageGroup<'a>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::debug;
+    use crate::util::{debug, random_buffer};
 
     #[test]
     fn sysex8_builder() {
         assert_eq!(
             debug::Data(
-                NakMessage::<sysex8::Sysex8MessageGroup>::builder(&mut [0x0; 4])
+                NakMessage::<sysex8::Sysex8MessageGroup>::builder(&mut random_buffer::<4>())
                     .group(u4::new(0x3))
                     .stream_id(0xB2)
                     .device_id(DeviceId::Channel(u4::new(0xD)))
@@ -223,7 +223,7 @@ mod tests {
     fn sysex7_builder() {
         assert_eq!(
             debug::Data(
-                NakMessage::<sysex7::Sysex7MessageGroup>::builder(&mut [0x0; 6])
+                NakMessage::<sysex7::Sysex7MessageGroup>::builder(&mut random_buffer::<6>())
                     .group(u4::new(0x3))
                     .device_id(DeviceId::Channel(u4::new(0xD)))
                     .source(u28::new(92027634))
