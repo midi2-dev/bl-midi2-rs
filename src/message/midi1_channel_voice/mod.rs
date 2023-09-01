@@ -21,5 +21,5 @@ pub use note_on::NoteOnBuilder;
 pub use note_on::NoteOnMessage;
 pub use pitch_bend::PitchBendBuilder;
 pub use pitch_bend::PitchBendMessage;
-pub use program_change::Builder as ProgramChangeMessageBuilder;
-pub use program_change::Message as ProgramChangeMessage;
+pub use program_change::ProgramChangeBuilder;
+pub use program_change::ProgramChangeMessage;
