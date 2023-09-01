@@ -1,14 +1,11 @@
 use crate::{
-    *,
     message::{
-        midi1_channel_voice::{
-            TYPE_CODE as MIDI1_CHANNEL_VOICE_TYPE,
-            helpers as midi1cv_helpers,
-        },
         helpers as message_helpers,
+        midi1_channel_voice::{helpers as midi1cv_helpers, TYPE_CODE as MIDI1_CHANNEL_VOICE_TYPE},
     },
     result::Result,
     util::debug,
+    *,
 };
 
 const OP_CODE: u4 = u4::new(0b1010);
@@ -106,7 +103,9 @@ mod tests {
     #[test]
     fn group() {
         assert_eq!(
-            KeyPressureMessage::from_data(&[0x2AA3_7F5C]).unwrap().group(),
+            KeyPressureMessage::from_data(&[0x2AA3_7F5C])
+                .unwrap()
+                .group(),
             u4::new(0xA),
         );
     }
@@ -114,7 +113,9 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            KeyPressureMessage::from_data(&[0x2AA3_7F5C]).unwrap().channel(),
+            KeyPressureMessage::from_data(&[0x2AA3_7F5C])
+                .unwrap()
+                .channel(),
             u4::new(0x3),
         );
     }
@@ -122,7 +123,9 @@ mod tests {
     #[test]
     fn note() {
         assert_eq!(
-            KeyPressureMessage::from_data(&[0x2AA3_7F5C]).unwrap().note(),
+            KeyPressureMessage::from_data(&[0x2AA3_7F5C])
+                .unwrap()
+                .note(),
             u7::new(0x7F),
         );
     }
@@ -130,7 +133,9 @@ mod tests {
     #[test]
     fn pressure() {
         assert_eq!(
-            KeyPressureMessage::from_data(&[0x2AA3_7F5C]).unwrap().pressure(),
+            KeyPressureMessage::from_data(&[0x2AA3_7F5C])
+                .unwrap()
+                .pressure(),
             u7::new(0x5C),
         );
     }

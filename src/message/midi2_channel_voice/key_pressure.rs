@@ -1,10 +1,10 @@
 use crate::{
-    *,
     error::Error,
     message::helpers as message_helpers,
     message::midi2_channel_voice::{helpers as midi2cv_helpers, TYPE_CODE as MIDI2CV_TYPE_CODE},
     result::Result,
     util::debug,
+    *,
 };
 
 #[derive(Clone, PartialEq, Eq)]

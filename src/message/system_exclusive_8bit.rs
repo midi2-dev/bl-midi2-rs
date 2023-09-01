@@ -1,9 +1,9 @@
 use crate::{
-    *,
     error::Error,
     message::{helpers as message_helpers, sysex},
     result::Result,
     util::{debug, BitOps, Truncate},
+    *,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]

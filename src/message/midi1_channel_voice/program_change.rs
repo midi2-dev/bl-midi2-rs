@@ -1,11 +1,10 @@
 use crate::{
-    *,
     message::{
-        midi1_channel_voice::TYPE_CODE as MIDI1_CHANNEL_VOICE_TYPE,
-        helpers as message_helpers,
+        helpers as message_helpers, midi1_channel_voice::TYPE_CODE as MIDI1_CHANNEL_VOICE_TYPE,
     },
     result::Result,
     util::debug,
+    *,
 };
 
 const OP_CODE: u4 = u4::new(0b1100);
@@ -93,7 +92,9 @@ mod tests {
     #[test]
     fn group() {
         assert_eq!(
-            ProgramChangeMessage::from_data(&[0x24C7_6300]).unwrap().group(),
+            ProgramChangeMessage::from_data(&[0x24C7_6300])
+                .unwrap()
+                .group(),
             u4::new(0x4),
         );
     }
@@ -101,7 +102,9 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            ProgramChangeMessage::from_data(&[0x24C7_6300]).unwrap().channel(),
+            ProgramChangeMessage::from_data(&[0x24C7_6300])
+                .unwrap()
+                .channel(),
             u4::new(0x7),
         );
     }
@@ -109,7 +112,9 @@ mod tests {
     #[test]
     fn program() {
         assert_eq!(
-            ProgramChangeMessage::from_data(&[0x24C7_6300]).unwrap().program(),
+            ProgramChangeMessage::from_data(&[0x24C7_6300])
+                .unwrap()
+                .program(),
             u7::new(0x63),
         );
     }

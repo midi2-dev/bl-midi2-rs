@@ -1,11 +1,8 @@
 use crate::{
-    *,
-    message::{
-        helpers as message_helpers,
-        midi2_channel_voice::TYPE_CODE as MIDI2CV_TYPE_CODE,
-    },
+    message::{helpers as message_helpers, midi2_channel_voice::TYPE_CODE as MIDI2CV_TYPE_CODE},
     result::Result,
-    util::{BitOps, debug},
+    util::{debug, BitOps},
+    *,
 };
 
 const OP_CODE: u4 = u4::new(0b1111);
@@ -113,7 +110,9 @@ mod tests {
     #[test]
     fn group() {
         assert_eq!(
-            PerNoteManagementMessage::from_data(&[0x4BF9_1C03]).unwrap().group(),
+            PerNoteManagementMessage::from_data(&[0x4BF9_1C03])
+                .unwrap()
+                .group(),
             u4::new(0xB),
         );
     }
@@ -121,7 +120,9 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            PerNoteManagementMessage::from_data(&[0x4BF9_1C03]).unwrap().channel(),
+            PerNoteManagementMessage::from_data(&[0x4BF9_1C03])
+                .unwrap()
+                .channel(),
             u4::new(0x9),
         );
     }
@@ -129,7 +130,9 @@ mod tests {
     #[test]
     fn note() {
         assert_eq!(
-            PerNoteManagementMessage::from_data(&[0x4BF9_1C03]).unwrap().note(),
+            PerNoteManagementMessage::from_data(&[0x4BF9_1C03])
+                .unwrap()
+                .note(),
             u7::new(0x1C),
         );
     }
@@ -137,7 +140,9 @@ mod tests {
     #[test]
     fn detach() {
         assert_eq!(
-            PerNoteManagementMessage::from_data(&[0x4BF9_1C03]).unwrap().detach(),
+            PerNoteManagementMessage::from_data(&[0x4BF9_1C03])
+                .unwrap()
+                .detach(),
             true,
         );
     }
@@ -145,7 +150,9 @@ mod tests {
     #[test]
     fn reset() {
         assert_eq!(
-            PerNoteManagementMessage::from_data(&[0x4BF9_1C03]).unwrap().reset(),
+            PerNoteManagementMessage::from_data(&[0x4BF9_1C03])
+                .unwrap()
+                .reset(),
             true,
         );
     }

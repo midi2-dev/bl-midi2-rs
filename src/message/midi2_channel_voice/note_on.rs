@@ -1,5 +1,4 @@
 use crate::{
-    *,
     message::{
         helpers as message_helpers,
         midi2_channel_voice::{
@@ -8,6 +7,7 @@ use crate::{
     },
     result::Result,
     util::debug,
+    *,
 };
 
 const OP_CODE: u4 = u4::new(0b1001);

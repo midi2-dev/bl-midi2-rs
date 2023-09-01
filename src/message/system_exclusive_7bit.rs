@@ -1,9 +1,9 @@
 use crate::{
-    *,
     error::Error,
     message::{helpers as message_helpers, sysex},
     result::Result,
     util::{debug, BitOps, Truncate},
+    *,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -515,12 +515,7 @@ mod tests {
         }
         assert_eq!(
             &buffer,
-            &[
-                u7::new(0x12),
-                u7::new(0x34),
-                u7::new(0x56),
-                u7::new(0x78)
-            ]
+            &[u7::new(0x12), u7::new(0x34), u7::new(0x56), u7::new(0x78)]
         );
     }
 

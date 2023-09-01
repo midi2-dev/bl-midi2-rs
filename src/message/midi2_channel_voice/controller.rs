@@ -1,4 +1,4 @@
-use crate::{*, error::Error, util::Truncate};
+use crate::{error::Error, util::Truncate, *};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 #[non_exhaustive]

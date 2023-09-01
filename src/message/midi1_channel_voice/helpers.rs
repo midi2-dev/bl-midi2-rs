@@ -1,6 +1,6 @@
 use crate::{
-    *,
     util::{BitOps, Truncate},
+    *,
 };
 
 pub fn note_velocity_from_packet(p: &[u32]) -> u7 {
@@ -23,6 +23,9 @@ mod tests {
 
     #[test]
     fn test_write_note_velocity_to_packet() {
-        assert_eq!(write_note_velocity_to_packet(u7::new(0x1A), &mut [0x0]), &[0x0000_001A]);
+        assert_eq!(
+            write_note_velocity_to_packet(u7::new(0x1A), &mut [0x0]),
+            &[0x0000_001A]
+        );
     }
 }

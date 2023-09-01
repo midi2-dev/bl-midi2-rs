@@ -1,4 +1,4 @@
-use crate::{*, util::Truncate};
+use crate::{util::Truncate, *};
 
 pub trait Encode7Bit<const N: usize>:
     Sized

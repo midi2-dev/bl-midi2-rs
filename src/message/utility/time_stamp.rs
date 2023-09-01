@@ -1,8 +1,8 @@
 use crate::{
-    *,
     error::Error,
     result::Result,
     util::{debug, BitOps, Truncate},
+    *,
 };
 
 #[derive(Clone, PartialEq, Eq)]

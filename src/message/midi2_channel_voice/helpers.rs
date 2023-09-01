@@ -1,9 +1,9 @@
 use crate::{
-    *,
     error::Error,
     message::helpers as message_helpers,
     result::Result,
     util::{BitOps, Truncate},
+    *,
 };
 
 pub fn validate_packet(p: &[u32], type_code: u4, op_code: u4) -> Result<()> {
@@ -56,18 +56,12 @@ mod tests {
 
     #[test]
     fn test_controller_bank_from_packet() {
-        assert_eq!(
-            controller_bank_from_packet(&[0x472A_5B3C]),
-            u7::new(0x5B)
-        );
+        assert_eq!(controller_bank_from_packet(&[0x472A_5B3C]), u7::new(0x5B));
     }
 
     #[test]
     fn test_controller_index_from_packet() {
-        assert_eq!(
-            controller_index_from_packet(&[0x472A_5B3C]),
-            u7::new(0x3C)
-        );
+        assert_eq!(controller_index_from_packet(&[0x472A_5B3C]), u7::new(0x3C));
     }
 
     #[test]

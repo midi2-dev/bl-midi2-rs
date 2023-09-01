@@ -245,12 +245,7 @@ mod tests {
                     .device_manufacturer(u21::new(2054957))
                     .device_family(u14::new(508))
                     .device_model_number(u14::new(7156))
-                    .software_version([
-                        u7::new(0x01),
-                        u7::new(0x06),
-                        u7::new(0x05),
-                        u7::new(0x31),
-                    ])
+                    .software_version([u7::new(0x01), u7::new(0x06), u7::new(0x05), u7::new(0x31),])
                     .protocol_negotiation_supported(true)
                     .profile_configuration_supported(true)
                     .property_exchange_supported(true)
@@ -410,12 +405,7 @@ mod tests {
             ])
             .unwrap()
             .software_version(),
-            [
-                u7::new(0x01),
-                u7::new(0x06),
-                u7::new(0x05),
-                u7::new(0x31),
-            ]
+            [u7::new(0x01), u7::new(0x06), u7::new(0x05), u7::new(0x31),]
         );
     }
 
@@ -521,12 +511,7 @@ mod tests {
                     .device_manufacturer(u21::new(2054957))
                     .device_family(u14::new(508))
                     .device_model_number(u14::new(7156))
-                    .software_version([
-                        u7::new(0x01),
-                        u7::new(0x06),
-                        u7::new(0x05),
-                        u7::new(0x31),
-                    ])
+                    .software_version([u7::new(0x01), u7::new(0x06), u7::new(0x05), u7::new(0x31),])
                     .protocol_negotiation_supported(true)
                     .profile_configuration_supported(true)
                     .property_exchange_supported(true)
@@ -672,12 +657,7 @@ mod tests {
             ])
             .unwrap()
             .software_version(),
-            [
-                u7::new(0x01),
-                u7::new(0x06),
-                u7::new(0x05),
-                u7::new(0x31),
-            ]
+            [u7::new(0x01), u7::new(0x06), u7::new(0x05), u7::new(0x31),]
         );
     }
 

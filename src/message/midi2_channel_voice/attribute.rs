@@ -1,7 +1,7 @@
 use crate::{
-    *,
     error::Error,
     util::{BitOps, Truncate},
+    *,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

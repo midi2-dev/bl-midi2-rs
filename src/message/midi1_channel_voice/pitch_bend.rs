@@ -1,11 +1,10 @@
 use crate::{
-    *,
     message::{
-        midi1_channel_voice::TYPE_CODE as MIDI1_CHANNEL_VOICE_TYPE,
-        helpers as message_helpers,
+        helpers as message_helpers, midi1_channel_voice::TYPE_CODE as MIDI1_CHANNEL_VOICE_TYPE,
     },
     result::Result,
-    util::{Encode7Bit, BitOps, Truncate, debug},
+    util::{debug, BitOps, Encode7Bit, Truncate},
+    *,
 };
 
 const OP_CODE: u4 = u4::new(0b1110);
@@ -26,10 +25,7 @@ impl<'a> PitchBendMessage<'a> {
         message_helpers::channel_from_packet(self.0)
     }
     pub fn bend(&self) -> u14 {
-        u14::from_u7s(&[
-            self.0[0].octet(2).truncate(),
-            self.0[0].octet(3).truncate(),
-        ])
+        u14::from_u7s(&[self.0[0].octet(2).truncate(), self.0[0].octet(3).truncate()])
     }
     pub fn from_data(data: &'a [u32]) -> Result<Self> {
         message_helpers::validate_packet(data, MIDI1_CHANNEL_VOICE_TYPE, OP_CODE)?;
@@ -106,7 +102,9 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            PitchBendMessage::from_data(&[0x21EE_4702]).unwrap().channel(),
+            PitchBendMessage::from_data(&[0x21EE_4702])
+                .unwrap()
+                .channel(),
             u4::new(0xE),
         );
     }

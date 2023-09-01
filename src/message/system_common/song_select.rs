@@ -1,11 +1,11 @@
 use crate::{
-    *,
     message::{
         helpers as message_helpers,
         system_common::{self, TYPE_CODE as SYSTEM_COMMON_TYPE_CODE},
     },
     result::Result,
     util::{debug, BitOps, Truncate},
+    *,
 };
 
 const OP_CODE: u8 = 0xF3;

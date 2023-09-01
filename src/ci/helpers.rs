@@ -1,11 +1,11 @@
 use crate::{
-    *,
     ci::DeviceId,
     error::Error,
     message::system_exclusive_7bit as sysex7,
     message::system_exclusive_8bit as sysex8,
     result::Result,
     util::{Encode7Bit, Truncate},
+    *,
 };
 
 pub struct StandardDataIterator {

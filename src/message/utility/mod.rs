@@ -1,4 +1,4 @@
-use crate::{*, error::Error, util::BitOps};
+use crate::{error::Error, util::BitOps, *};
 
 pub mod no_op;
 pub mod time_stamp;

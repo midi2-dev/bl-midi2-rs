@@ -1,10 +1,10 @@
 use crate::{
-    *,
     ci::{helpers as ci_helpers, DeviceId},
     error::Error,
     message::{sysex, system_exclusive_7bit as sysex7, system_exclusive_8bit as sysex8},
     result::Result,
     util::Encode7Bit,
+    *,
 };
 
 #[derive(Clone, PartialEq, Eq, Debug)]

@@ -1,11 +1,11 @@
 use crate::{
-    *,
     message::{
         helpers as message_helpers,
         midi2_channel_voice::{helpers as midi2cv_helpers, TYPE_CODE as MIDI2CV_TYPE_CODE},
     },
     result::Result,
     util::debug,
+    *,
 };
 
 const TYPE_CODE: u4 = u4::new(0b0011);

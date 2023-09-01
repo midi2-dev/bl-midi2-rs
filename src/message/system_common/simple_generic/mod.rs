@@ -1,13 +1,13 @@
 macro_rules! simple_generic_message {
     ($op_code:expr, $name:ident, $builder_name:ident) => {
         use crate::{
-            *,
             message::{
                 helpers as message_helpers,
                 system_common::{self, TYPE_CODE as SYSTEM_COMMON_TYPE_CODE},
             },
             result::Result,
             util::debug,
+            *,
         };
 
         #[derive(Clone, PartialEq, Eq)]
@@ -100,9 +100,7 @@ mod tests {
     #[test]
     fn builder() {
         assert_eq!(
-            TestMessage::builder(&mut [0x0])
-                .group(u4::new(0x9))
-                .build(),
+            TestMessage::builder(&mut [0x0]).group(u4::new(0x9)).build(),
             Ok(TestMessage(&[0x19FF_0000])),
         );
     }

@@ -1,8 +1,8 @@
 use crate::{
-    *,
     error::Error,
     result::Result,
     util::{debug, BitOps},
+    *,
 };
 
 #[derive(Clone, PartialEq, Eq)]
@@ -63,9 +63,7 @@ mod tests {
     #[test]
     fn builder() {
         assert_eq!(
-            NoOpMessage::builder(&mut [0x0])
-                .group(u4::new(0xB))
-                .build(),
+            NoOpMessage::builder(&mut [0x0]).group(u4::new(0xB)).build(),
             Ok(NoOpMessage(&[0x0B00_0000])),
         )
     }

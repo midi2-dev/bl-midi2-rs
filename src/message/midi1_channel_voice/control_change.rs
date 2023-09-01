@@ -1,14 +1,11 @@
 use crate::{
-    *,
     message::{
-        midi1_channel_voice::{
-            TYPE_CODE as MIDI1_CHANNEL_VOICE_TYPE,
-            helpers as midi1cv_helpers,
-        },
         helpers as message_helpers,
+        midi1_channel_voice::{helpers as midi1cv_helpers, TYPE_CODE as MIDI1_CHANNEL_VOICE_TYPE},
     },
     result::Result,
     util::debug,
+    *,
 };
 
 const OP_CODE: u4 = u4::new(0b1011);
@@ -106,7 +103,9 @@ mod tests {
     #[test]
     fn group() {
         assert_eq!(
-            ControlChangeMessage::from_data(&[0x2AB7_3637]).unwrap().group(),
+            ControlChangeMessage::from_data(&[0x2AB7_3637])
+                .unwrap()
+                .group(),
             u4::new(0xA),
         );
     }
@@ -114,7 +113,9 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            ControlChangeMessage::from_data(&[0x2AB7_3637]).unwrap().channel(),
+            ControlChangeMessage::from_data(&[0x2AB7_3637])
+                .unwrap()
+                .channel(),
             u4::new(0x7),
         );
     }
@@ -122,7 +123,9 @@ mod tests {
     #[test]
     fn control() {
         assert_eq!(
-            ControlChangeMessage::from_data(&[0x2AB7_3637]).unwrap().control(),
+            ControlChangeMessage::from_data(&[0x2AB7_3637])
+                .unwrap()
+                .control(),
             u7::new(0x36),
         );
     }
@@ -130,7 +133,9 @@ mod tests {
     #[test]
     fn control_data() {
         assert_eq!(
-            ControlChangeMessage::from_data(&[0x2AB7_3637]).unwrap().control_data(),
+            ControlChangeMessage::from_data(&[0x2AB7_3637])
+                .unwrap()
+                .control_data(),
             u7::new(0x37),
         );
     }

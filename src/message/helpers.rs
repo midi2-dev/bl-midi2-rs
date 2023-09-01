@@ -1,8 +1,8 @@
 use crate::{
-    *,
     error::Error,
     result::Result,
     util::{BitOps, Truncate},
+    *,
 };
 
 pub fn validate_packet(p: &[u32], type_code: u4, op_code: u4) -> Result<()> {
@@ -128,5 +128,4 @@ mod tests {
             &[0x0000_7300]
         );
     }
-
 }

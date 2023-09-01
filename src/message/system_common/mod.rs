@@ -1,4 +1,4 @@
-use crate::{*, error::Error, util::BitOps};
+use crate::{error::Error, util::BitOps, *};
 
 const TYPE_CODE: u4 = u4::new(0x1);
 
