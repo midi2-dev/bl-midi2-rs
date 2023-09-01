@@ -66,18 +66,6 @@ pub fn channel_from_packet(p: &[u32]) -> ux::u4 {
     p[0].nibble(3)
 }
 
-pub fn concatenate(lsb: ux::u7, msb: ux::u7) -> ux::u14 {
-    (ux::u14::from(msb) << 7) | ux::u14::from(lsb)
-}
-
-pub fn most_significant_bit(word_14: ux::u14) -> ux::u7 {
-    (word_14 >> 7).truncate()
-}
-
-pub fn least_significant_bit(word_14: ux::u14) -> ux::u7 {
-    (word_14 & ux::u14::new(0b00_0000_0011_1111)).truncate()
-}
-
 pub fn sysex_group_consistent_groups(buffer: &[u32], stride: usize) -> Result<()> {
     use group_from_packet as gfp;
     if buffer
