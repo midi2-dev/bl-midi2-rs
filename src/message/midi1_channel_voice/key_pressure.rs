@@ -1,109 +1,136 @@
-use super::super::helpers;
 use crate::{
-    error::Error,
-    message::Midi2Message,
-    util::{builder, getter, BitOps, Truncate},
+    message::{
+        midi1_channel_voice::{
+            TYPE_CODE as MIDI1_CHANNEL_VOICE_TYPE,
+            helpers as midi1cv_helpers,
+        },
+        helpers as message_helpers,
+    },
+    result::Result,
+    util::debug,
 };
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Message {
-    group: ux::u4,
-    channel: ux::u4,
-    note: ux::u7,
-    pressure: ux::u7,
-}
+const OP_CODE: ux::u4 = ux::u4::new(0b1010);
 
-builder::builder!(
-    group: ux::u4,
-    channel: ux::u4,
-    note: ux::u7,
-    pressure: ux::u7
-);
+#[derive(Clone, PartialEq, Eq)]
+pub struct KeyPressureMessage<'a>(&'a [u32]);
 
-impl Message {
-    const TYPE_CODE: ux::u4 = super::TYPE_CODE;
-    const OP_CODE: ux::u4 = ux::u4::new(0b1010);
-    getter::getter!(group, ux::u4);
-    getter::getter!(channel, ux::u4);
-    getter::getter!(note, ux::u7);
-    getter::getter!(pressure, ux::u7);
-    builder::builder_method!();
-}
+debug::message_debug_impl!(KeyPressureMessage);
 
-impl Midi2Message for Message {
-    fn validate_ump(bytes: &[u32]) -> Result<(), Error> {
-        helpers::validate_packet(bytes, Message::TYPE_CODE, Message::OP_CODE)
+impl<'a> KeyPressureMessage<'a> {
+    pub fn builder(buffer: &mut [u32]) -> KeyPressureBuilder {
+        KeyPressureBuilder::new(buffer)
     }
-    fn from_ump(bytes: &[u32]) -> Self {
-        Message {
-            group: bytes[0].nibble(1),
-            channel: bytes[0].nibble(3),
-            note: bytes[0].octet(2).truncate(),
-            pressure: bytes[0].octet(3).truncate(),
+    pub fn group(&self) -> ux::u4 {
+        message_helpers::group_from_packet(self.0)
+    }
+    pub fn channel(&self) -> ux::u4 {
+        message_helpers::channel_from_packet(self.0)
+    }
+    pub fn note(&self) -> ux::u7 {
+        message_helpers::note_from_packet(self.0)
+    }
+    pub fn pressure(&self) -> ux::u7 {
+        midi1cv_helpers::note_velocity_from_packet(self.0)
+    }
+    pub fn from_data(data: &'a [u32]) -> Result<Self> {
+        message_helpers::validate_packet(data, MIDI1_CHANNEL_VOICE_TYPE, OP_CODE)?;
+        Ok(Self(data))
+    }
+}
+
+#[derive(PartialEq, Eq)]
+pub struct KeyPressureBuilder<'a>(Result<&'a mut [u32]>);
+
+impl<'a> KeyPressureBuilder<'a> {
+    pub fn new(buffer: &'a mut [u32]) -> Self {
+        match message_helpers::validate_buffer_size(buffer, 1) {
+            Ok(()) => {
+                message_helpers::write_op_code_to_packet(OP_CODE, buffer);
+                message_helpers::write_type_to_packet(MIDI1_CHANNEL_VOICE_TYPE, buffer);
+                Self(Ok(buffer))
+            }
+            Err(e) => Self(Err(e)),
         }
     }
-    fn to_ump<'a>(&self, bytes: &'a mut [u32]) -> &'a [u32] {
-        helpers::write_data(
-            Message::TYPE_CODE,
-            self.group,
-            Message::OP_CODE,
-            self.channel,
-            bytes,
-        );
-        bytes[0]
-            .set_octet(2, self.note.into())
-            .set_octet(3, self.pressure.into());
-        &bytes[..1]
+    pub fn group(&mut self, v: ux::u4) -> &mut Self {
+        if let Ok(buffer) = &mut self.0 {
+            message_helpers::write_group_to_packet(v, buffer);
+        }
+        self
+    }
+    pub fn channel(&mut self, v: ux::u4) -> &mut Self {
+        if let Ok(buffer) = &mut self.0 {
+            message_helpers::write_channel_to_packet(v, buffer);
+        }
+        self
+    }
+    pub fn note(&mut self, v: ux::u7) -> &mut Self {
+        if let Ok(buffer) = &mut self.0 {
+            message_helpers::write_note_to_packet(v, buffer);
+        }
+        self
+    }
+    pub fn pressure(&mut self, v: ux::u7) -> &mut Self {
+        if let Ok(buffer) = &mut self.0 {
+            midi1cv_helpers::write_note_velocity_to_packet(v, buffer);
+        }
+        self
+    }
+    pub fn build(&'a self) -> Result<KeyPressureMessage<'a>> {
+        match &self.0 {
+            Ok(buffer) => Ok(KeyPressureMessage(buffer)),
+            Err(e) => Err(e.clone()),
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::message_traits_test;
-
-    message_traits_test!(Message);
 
     #[test]
-    fn wrong_type() {
+    fn builder() {
         assert_eq!(
-            Message::try_from_ump(&[0x1000_0000]),
-            Err(Error::InvalidData),
+            KeyPressureMessage::builder(&mut [0x0])
+                .group(ux::u4::new(0xA))
+                .channel(ux::u4::new(0x3))
+                .note(ux::u7::new(0x7F))
+                .pressure(ux::u7::new(0x5C))
+                .build(),
+            Ok(KeyPressureMessage(&[0x2AA3_7F5C])),
         );
     }
 
     #[test]
-    fn wrong_status() {
+    fn group() {
         assert_eq!(
-            Message::try_from_ump(&[0x2000_0000]),
-            Err(Error::InvalidData),
+            KeyPressureMessage::from_data(&[0x2AA3_7F5C]).unwrap().group(),
+            ux::u4::new(0xA),
         );
     }
 
     #[test]
-    fn deserialize() {
+    fn channel() {
         assert_eq!(
-            Message::try_from_ump(&[0x22A2_7F5D]),
-            Ok(Message {
-                group: ux::u4::new(0x2),
-                channel: ux::u4::new(2),
-                note: ux::u7::new(0x7F),
-                pressure: ux::u7::new(0x5D),
-            }),
+            KeyPressureMessage::from_data(&[0x2AA3_7F5C]).unwrap().channel(),
+            ux::u4::new(0x3),
         );
     }
 
     #[test]
-    fn serialize() {
+    fn note() {
         assert_eq!(
-            Message {
-                group: ux::u4::new(0x1),
-                channel: ux::u4::new(0x5),
-                note: ux::u7::new(0x7F),
-                pressure: ux::u7::new(0x40),
-            }
-            .to_ump(&mut [0x0]),
-            &[0x21A5_7F40],
+            KeyPressureMessage::from_data(&[0x2AA3_7F5C]).unwrap().note(),
+            ux::u7::new(0x7F),
+        );
+    }
+
+    #[test]
+    fn pressure() {
+        assert_eq!(
+            KeyPressureMessage::from_data(&[0x2AA3_7F5C]).unwrap().pressure(),
+            ux::u7::new(0x5C),
         );
     }
 }
