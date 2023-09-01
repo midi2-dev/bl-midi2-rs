@@ -11,8 +11,8 @@ const TYPE_CODE: ux::u4 = ux::u4::new(0x2);
 
 pub use channel_pressure::Builder as ChannelPressureMessageBuilder;
 pub use channel_pressure::Message as ChannelPressureMessage;
-pub use control_change::Builder as ControlChangeMessageBuilder;
-pub use control_change::Message as ControlChangeMessage;
+pub use control_change::ControlChangeBuilder;
+pub use control_change::ControlChangeMessage;
 pub use key_pressure::KeyPressureBuilder;
 pub use key_pressure::KeyPressureMessage;
 pub use note_off::NoteOffBuilder;
