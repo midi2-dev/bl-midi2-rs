@@ -1,74 +1,99 @@
-use super::super::helpers;
 use crate::{
-    error::Error,
-    message::Midi2Message,
-    util::{builder, getter, BitOps, Truncate},
+    message::{
+        helpers as message_helpers,
+        system_common::{self, TYPE_CODE as SYSTEM_COMMON_TYPE_CODE},
+    },
+    result::Result,
+    util::{debug, BitOps, Truncate},
 };
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Message {
-    group: ux::u4,
-    song: ux::u7,
-}
+const OP_CODE: u8 = 0xF3;
 
-builder::builder!(group: ux::u4, song: ux::u7);
+#[derive(Clone, PartialEq, Eq)]
+pub struct SongSelectMessage<'a>(&'a [u32]);
 
-impl Message {
-    const STATUS_CODE: u8 = 0xF3;
-    getter::getter!(group, ux::u4);
-    getter::getter!(song, ux::u7);
-    builder::builder_method!();
-}
+debug::message_debug_impl!(SongSelectMessage);
 
-impl Midi2Message for Message {
-    fn validate_ump(bytes: &[u32]) -> Result<(), Error> {
-        super::validate_packet(bytes, Message::STATUS_CODE)
+impl<'a> SongSelectMessage<'a> {
+    pub fn builder(buffer: &mut [u32]) -> SongSelectBuilder {
+        SongSelectBuilder::new(buffer)
     }
-    fn from_ump(bytes: &[u32]) -> Self {
-        Message {
-            group: helpers::group_from_packet(bytes),
-            song: bytes[0].octet(2).truncate(),
+    pub fn group(&self) -> ux::u4 {
+        message_helpers::group_from_packet(self.0)
+    }
+    pub fn song(&self) -> ux::u7 {
+        self.0[0].octet(2).truncate()
+    }
+    pub fn from_data(data: &'a [u32]) -> Result<Self> {
+        system_common::validate_packet(data, OP_CODE)?;
+        Ok(Self(data))
+    }
+}
+
+#[derive(PartialEq, Eq)]
+pub struct SongSelectBuilder<'a>(Result<&'a mut [u32]>);
+
+impl<'a> SongSelectBuilder<'a> {
+    pub fn new(buffer: &'a mut [u32]) -> Self {
+        match system_common::validate_buffer_size(buffer) {
+            Ok(()) => {
+                system_common::write_op_code_to_packet(buffer, OP_CODE);
+                message_helpers::write_type_to_packet(SYSTEM_COMMON_TYPE_CODE, buffer);
+                Self(Ok(buffer))
+            }
+            Err(e) => Self(Err(e)),
         }
     }
-    fn to_ump<'a>(&self, bytes: &'a mut [u32]) -> &'a [u32] {
-        super::write_data_to_packet(
-            bytes,
-            self.group,
-            Message::STATUS_CODE,
-            Some(self.song),
-            None,
-        );
-        &bytes[..1]
+    pub fn group(&mut self, v: ux::u4) -> &mut Self {
+        if let Ok(buffer) = &mut self.0 {
+            message_helpers::write_group_to_packet(v, buffer);
+        }
+        self
+    }
+    pub fn song(&mut self, v: ux::u7) -> &mut Self {
+        if let Ok(buffer) = &mut self.0 {
+            buffer[0].set_octet(2, v.into());
+        }
+        self
+    }
+    pub fn build(&'a self) -> Result<SongSelectMessage<'a>> {
+        match &self.0 {
+            Ok(buffer) => Ok(SongSelectMessage(buffer)),
+            Err(e) => Err(e.clone()),
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::message_traits_test;
-
-    message_traits_test!(Message);
 
     #[test]
-    fn deserialize() {
+    fn builder() {
         assert_eq!(
-            Message::try_from_ump(&[0x17F3_3000]),
-            Ok(Message {
-                group: ux::u4::new(0x7),
-                song: ux::u7::new(0x30),
-            })
+            SongSelectMessage::builder(&mut [0x0])
+                .group(ux::u4::new(0xA))
+                .song(ux::u7::new(0x4F))
+                .build(),
+            Ok(SongSelectMessage(&[0x1AF3_4F00])),
         );
     }
 
     #[test]
-    fn serialize() {
+    fn group() {
         assert_eq!(
-            Message {
-                group: ux::u4::new(0x5),
-                song: ux::u7::new(0x01),
-            }
-            .to_ump(&mut [0x0]),
-            &[0x15F3_0100],
+            SongSelectMessage::from_data(&[0x1AF3_4F00])
+                .unwrap()
+                .group(),
+            ux::u4::new(0xA),
+        );
+    }
+
+    #[test]
+    fn song() {
+        assert_eq!(
+            SongSelectMessage::from_data(&[0x1AF3_4F00]).unwrap().song(),
+            ux::u7::new(0x4F),
         );
     }
 }

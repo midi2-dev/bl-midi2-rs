@@ -1,22 +1,24 @@
 use crate::{
     message::{
         helpers as message_helpers,
-        midi2_channel_voice::TYPE_CODE as MIDI2CV_TYPE_CODE,
+        midi2_channel_voice::{
+            attribute, helpers as midi2cv_helpers, TYPE_CODE as MIDI2CV_TYPE_CODE,
+        },
     },
     result::Result,
-    util::{debug, BitOps},
+    util::debug,
 };
 
-const OP_CODE: ux::u4 = ux::u4::new(0b0001);
+const OP_CODE: ux::u4 = ux::u4::new(0b1000);
 
 #[derive(Clone, PartialEq, Eq)]
-pub struct AssignablePerNoteControllerMessage<'a>(&'a [u32]);
+pub struct NoteOffMessage<'a>(&'a [u32]);
 
-debug::message_debug_impl!(AssignablePerNoteControllerMessage);
+debug::message_debug_impl!(NoteOffMessage);
 
-impl<'a> AssignablePerNoteControllerMessage<'a> {
-    pub fn builder(buffer: &mut [u32]) -> AssignablePerNoteControllerBuilder {
-        AssignablePerNoteControllerBuilder::new(buffer)
+impl<'a> NoteOffMessage<'a> {
+    pub fn builder(buffer: &mut [u32]) -> NoteOffBuilder {
+        NoteOffBuilder::new(buffer)
     }
     pub fn group(&self) -> ux::u4 {
         message_helpers::group_from_packet(self.0)
@@ -27,23 +29,24 @@ impl<'a> AssignablePerNoteControllerMessage<'a> {
     pub fn note(&self) -> ux::u7 {
         message_helpers::note_from_packet(self.0)
     }
-    pub fn index(&self) -> u8 {
-        self.0[0].octet(3)
+    pub fn velocity(&self) -> u16 {
+        midi2cv_helpers::note_velocity_from_packet(self.0)
     }
-    pub fn controller_data(&self) -> u32 {
-        self.0[1]
+    pub fn attribute(&self) -> Option<attribute::Attribute> {
+        attribute::from_ump(self.0)
     }
     pub fn from_data(data: &'a [u32]) -> Result<Self> {
         message_helpers::validate_packet(data, MIDI2CV_TYPE_CODE, OP_CODE)?;
         message_helpers::validate_buffer_size(data, 2)?;
+        attribute::validate_ump(data)?;
         Ok(Self(data))
     }
 }
 
 #[derive(PartialEq, Eq)]
-pub struct AssignablePerNoteControllerBuilder<'a>(Result<&'a mut [u32]>);
+pub struct NoteOffBuilder<'a>(Result<&'a mut [u32]>);
 
-impl<'a> AssignablePerNoteControllerBuilder<'a> {
+impl<'a> NoteOffBuilder<'a> {
     pub fn new(buffer: &'a mut [u32]) -> Self {
         match message_helpers::validate_buffer_size(buffer, 2) {
             Ok(()) => {
@@ -72,21 +75,21 @@ impl<'a> AssignablePerNoteControllerBuilder<'a> {
         }
         self
     }
-    pub fn index(&mut self, v: u8) -> &mut Self {
+    pub fn velocity(&mut self, v: u16) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
-            buffer[0].set_octet(3, v);
+            midi2cv_helpers::write_note_velocity_to_packet(v, buffer);
         }
         self
     }
-    pub fn controller_data(&mut self, v: u32) -> &mut Self {
+    pub fn attribute(&mut self, v: attribute::Attribute) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
-            buffer[1] = v;
+            attribute::write_attribute(buffer, Some(v));
         }
         self
     }
-    pub fn build(&'a self) -> Result<AssignablePerNoteControllerMessage<'a>> {
+    pub fn build(&'a self) -> Result<NoteOffMessage<'a>> {
         match &self.0 {
-            Ok(buffer) => Ok(AssignablePerNoteControllerMessage(buffer)),
+            Ok(buffer) => Ok(NoteOffMessage(buffer)),
             Err(e) => Err(e.clone()),
         }
     }
@@ -99,24 +102,34 @@ mod tests {
     #[test]
     fn builder() {
         assert_eq!(
-            AssignablePerNoteControllerMessage::builder(&mut [0x0, 0x0])
+            NoteOffMessage::builder(&mut [0x0, 0x0])
                 .group(ux::u4::new(0x2))
                 .channel(ux::u4::new(0x4))
-                .note(ux::u7::new(0x6F))
-                .index(0xB1)
-                .controller_data(0x46105EE5)
+                .note(ux::u7::new(0x4E))
+                .velocity(0x9DE6)
+                .attribute(attribute::Attribute::ManufacturerSpecific(0xCC6E))
                 .build(),
-            Ok(AssignablePerNoteControllerMessage(&[
-                0x4214_6FB1,
-                0x46105EE5
-            ])),
+            Ok(NoteOffMessage(&[0x4284_4E01, 0x9DE6_CC6E]))
+        );
+    }
+
+    #[test]
+    fn builder_no_attribute() {
+        assert_eq!(
+            NoteOffMessage::builder(&mut [0x0, 0x0])
+                .group(ux::u4::new(0x2))
+                .channel(ux::u4::new(0x4))
+                .note(ux::u7::new(0x4E))
+                .velocity(0x9DE6)
+                .build(),
+            Ok(NoteOffMessage(&[0x4284_4E00, 0x9DE6_0000]))
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            AssignablePerNoteControllerMessage::from_data(&[0x4214_6FB1, 0x46105EE5])
+            NoteOffMessage::from_data(&[0x4284_4E01, 0x9DE6_CC6E])
                 .unwrap()
                 .group(),
             ux::u4::new(0x2),
@@ -126,7 +139,7 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            AssignablePerNoteControllerMessage::from_data(&[0x4214_6FB1, 0x46105EE5])
+            NoteOffMessage::from_data(&[0x4284_4E01, 0x9DE6_CC6E])
                 .unwrap()
                 .channel(),
             ux::u4::new(0x4),
@@ -136,30 +149,30 @@ mod tests {
     #[test]
     fn note() {
         assert_eq!(
-            AssignablePerNoteControllerMessage::from_data(&[0x4214_6FB1, 0x46105EE5])
+            NoteOffMessage::from_data(&[0x4284_4E01, 0x9DE6_CC6E])
                 .unwrap()
                 .note(),
-            ux::u7::new(0x6F),
+            ux::u7::new(0x4E),
         );
     }
 
     #[test]
-    fn index() {
+    fn volocity() {
         assert_eq!(
-            AssignablePerNoteControllerMessage::from_data(&[0x4214_6FB1, 0x46105EE5])
+            NoteOffMessage::from_data(&[0x4284_4E01, 0x9DE6_CC6E])
                 .unwrap()
-                .index(),
-            0xB1,
+                .velocity(),
+            0x9DE6,
         );
     }
 
     #[test]
-    fn controller_data() {
+    fn attribute() {
         assert_eq!(
-            AssignablePerNoteControllerMessage::from_data(&[0x4214_6FB1, 0x46105EE5])
+            NoteOffMessage::from_data(&[0x4284_4E01, 0x9DE6_CC6E])
                 .unwrap()
-                .controller_data(),
-            0x46105EE5,
+                .attribute(),
+            Some(attribute::Attribute::ManufacturerSpecific(0xCC6E)),
         );
     }
 }

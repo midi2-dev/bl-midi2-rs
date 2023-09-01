@@ -1,77 +1,103 @@
-use super::super::helpers;
 use crate::{
-    error::Error,
-    message::Midi2Message,
-    util::{builder, getter, BitOps, Truncate},
+    message::{
+        helpers as message_helpers,
+        system_common::{self, TYPE_CODE as SYSTEM_COMMON_TYPE_CODE},
+    },
+    result::Result,
+    util::{debug, BitOps, Encode7Bit},
 };
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Message {
-    group: ux::u4,
-    position: ux::u14,
-}
+const OP_CODE: u8 = 0xF2;
 
-builder::builder!(group: ux::u4, position: ux::u14);
+#[derive(Clone, PartialEq, Eq)]
+pub struct SongPositionPointerMessage<'a>(&'a [u32]);
 
-impl Message {
-    const STATUS_CODE: u8 = 0xF2;
-    getter::getter!(group, ux::u4);
-    getter::getter!(position, ux::u14);
-    builder::builder_method!();
-}
+debug::message_debug_impl!(SongPositionPointerMessage);
 
-impl Midi2Message for Message {
-    fn validate_ump(bytes: &[u32]) -> Result<(), Error> {
-        super::validate_packet(bytes, Message::STATUS_CODE)
+impl<'a> SongPositionPointerMessage<'a> {
+    pub fn builder(buffer: &mut [u32]) -> SongPositionPointerBuilder {
+        SongPositionPointerBuilder::new(buffer)
     }
-    fn from_ump(bytes: &[u32]) -> Self {
-        Message {
-            group: helpers::group_from_packet(bytes),
-            position: helpers::concatenate(
-                bytes[0].octet(2).truncate(),
-                bytes[0].octet(3).truncate(),
-            ),
+    pub fn group(&self) -> ux::u4 {
+        message_helpers::group_from_packet(self.0)
+    }
+    pub fn position(&self) -> ux::u14 {
+        ux::u14::from_u7s(&[self.0[0].octet(2), self.0[0].octet(3)])
+    }
+    pub fn from_data(data: &'a [u32]) -> Result<Self> {
+        system_common::validate_packet(data, OP_CODE)?;
+        Ok(Self(data))
+    }
+}
+
+#[derive(PartialEq, Eq)]
+pub struct SongPositionPointerBuilder<'a>(Result<&'a mut [u32]>);
+
+impl<'a> SongPositionPointerBuilder<'a> {
+    pub fn new(buffer: &'a mut [u32]) -> Self {
+        match system_common::validate_buffer_size(buffer) {
+            Ok(()) => {
+                system_common::write_op_code_to_packet(buffer, OP_CODE);
+                message_helpers::write_type_to_packet(SYSTEM_COMMON_TYPE_CODE, buffer);
+                Self(Ok(buffer))
+            }
+            Err(e) => Self(Err(e)),
         }
     }
-    fn to_ump<'a>(&self, bytes: &'a mut [u32]) -> &'a [u32] {
-        super::write_data_to_packet(
-            bytes,
-            self.group,
-            Message::STATUS_CODE,
-            Some(helpers::least_significant_bit(self.position)),
-            Some(helpers::most_significant_bit(self.position)),
-        );
-        &bytes[..1]
+    pub fn group(&mut self, v: ux::u4) -> &mut Self {
+        if let Ok(buffer) = &mut self.0 {
+            message_helpers::write_group_to_packet(v, buffer);
+        }
+        self
+    }
+    pub fn position(&mut self, v: ux::u14) -> &mut Self {
+        if let Ok(buffer) = &mut self.0 {
+            let u7s = v.to_u7s();
+            buffer[0].set_octet(2, u7s[0].into());
+            buffer[0].set_octet(3, u7s[1].into());
+        }
+        self
+    }
+    pub fn build(&'a self) -> Result<SongPositionPointerMessage<'a>> {
+        match &self.0 {
+            Ok(buffer) => Ok(SongPositionPointerMessage(buffer)),
+            Err(e) => Err(e.clone()),
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::message_traits_test;
-
-    message_traits_test!(Message);
 
     #[test]
-    fn deserialize() {
+    fn builder() {
         assert_eq!(
-            Message::try_from_ump(&[0x1FF2_0000 | 0b0101_1110_0011_0001]),
-            Ok(Message {
-                group: ux::u4::new(0xF),
-                position: ux::u14::new(0b01_1000_1101_1110),
-            })
+            SongPositionPointerMessage::builder(&mut [0x0])
+                .group(ux::u4::new(0xA))
+                .position(ux::u14::new(0x367D))
+                .build(),
+            Ok(SongPositionPointerMessage(&[0x1AF2_7D6C])),
         );
     }
 
     #[test]
-    fn serialize() {
+    fn group() {
         assert_eq!(
-            Message {
-                group: ux::u4::new(0x1),
-                position: ux::u14::new(0b00_1100_1011_1001)
-            }
-            .to_ump(&mut [0x0]),
-            &[0x11F2_0000 | 0b0011_1001_0001_1001],
+            SongPositionPointerMessage::from_data(&[0x1AF2_7D6C])
+                .unwrap()
+                .group(),
+            ux::u4::new(0xA),
+        );
+    }
+
+    #[test]
+    fn position() {
+        assert_eq!(
+            SongPositionPointerMessage::from_data(&[0x1AF2_7D6C])
+                .unwrap()
+                .position(),
+            ux::u14::new(0x367D),
         );
     }
 }

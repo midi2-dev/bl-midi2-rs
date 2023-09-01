@@ -1,250 +1,281 @@
 use crate::{
-    ci::{ci_message_impl, helpers as ci_helpers, DeviceId},
+    ci::{helpers as ci_helpers, DeviceId},
     error::Error,
-    util::{
-        builder, getter,
-        sysex_message::{self, SysexMessage},
-        Encode7Bit,
-    },
+    message::{sysex, system_exclusive_7bit as sysex7, system_exclusive_8bit as sysex8},
+    result::Result,
+    util::Encode7Bit,
 };
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Message {
-    group: ux::u4,
-    source: ux::u28,
-    target: ux::u28,
-}
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct InvalidateMuidMessage<Repr: sysex::SysexMessages>(Repr);
 
-builder::builder!(group: ux::u4, source: ux::u28, target: ux::u28);
+const STATUS: u8 = 0x7E;
 
-impl Message {
-    const STATUS: u8 = 0x7E;
-    const DATA_SIZE: usize = 17;
-    getter::getter!(group, ux::u4);
-    getter::getter!(source, ux::u28);
-    getter::getter!(target, ux::u28);
-    builder::builder_method!();
-}
+impl<'a> InvalidateMuidMessage<sysex8::Sysex8MessageGroup<'a>> {
+    pub fn builder(buffer: &'a mut [u32]) -> InvalidateMuidBuilder<sysex8::Sysex8MessageGroup<'a>> {
+        InvalidateMuidBuilder::<sysex8::Sysex8MessageGroup<'a>>::new(buffer)
+    }
+    pub fn group(&self) -> ux::u4 {
+        self.0.group()
+    }
+    pub fn source(&self) -> ux::u28 {
+        let mut payload = self.0.payload();
+        payload.nth(4);
+        ux::u28::from_u7s(&[
+            payload.next().unwrap(),
+            payload.next().unwrap(),
+            payload.next().unwrap(),
+            payload.next().unwrap(),
+        ])
+    }
+    pub fn target_muid(&self) -> ux::u28 {
+        let mut payload = self.0.payload();
+        payload.nth(12);
+        ux::u28::from_u7s(&[
+            payload.next().unwrap(),
+            payload.next().unwrap(),
+            payload.next().unwrap(),
+            payload.next().unwrap(),
+        ])
+    }
+    pub fn from_data(data: &'a [u32]) -> Result<Self> {
+        let messages = ci_helpers::validate_sysex8(data, STATUS)?;
 
-fn to_sysex<'a, M: SysexMessage>(message: &Message, messages: &'a mut [M]) -> &'a mut [M] {
-    ci_helpers::write_ci_data(
-        message.group,
-        DeviceId::MidiPort,
-        Message::STATUS,
-        message.source,
-        ux::u28::new(0xFFF_FFFF),
-        &message.target.to_u7s(),
-        messages,
-    )
-}
+        let mut payload = messages.payload();
+        let Some(_) = payload.nth(ci_helpers::STANDARD_DATA_SIZE + 3) else {
+            return Err(Error::InvalidData);
+        };
 
-fn from_sysex<M: SysexMessage>(messages: &[M]) -> Message {
-    let standard_data = ci_helpers::read_standard_data(messages);
-    let messages = sysex_message::SysexMessages::new(messages);
-    Message {
-        group: messages.group(),
-        source: standard_data.source,
-        target: ux::u28::from_u7s(&[
-            messages.datum(13),
-            messages.datum(14),
-            messages.datum(15),
-            messages.datum(16),
-        ]),
+        Ok(InvalidateMuidMessage(messages))
+    }
+    pub fn data(&self) -> &[u32] {
+        self.0.data()
     }
 }
 
-fn validate_sysex<M: SysexMessage>(messages: &[M]) -> Result<(), Error> {
-    ci_helpers::validate_sysex(messages, Message::STATUS)?;
-    ci_helpers::validate_buffer_size(messages, Message::DATA_SIZE)
+impl<'a> InvalidateMuidMessage<sysex7::Sysex7MessageGroup<'a>> {
+    pub fn builder(buffer: &'a mut [u32]) -> InvalidateMuidBuilder<sysex7::Sysex7MessageGroup<'a>> {
+        InvalidateMuidBuilder::<sysex7::Sysex7MessageGroup<'a>>::new(buffer)
+    }
+    pub fn group(&self) -> ux::u4 {
+        self.0.group()
+    }
+    pub fn source(&self) -> ux::u28 {
+        let mut payload = self.0.payload();
+        payload.nth(4);
+        ux::u28::from_u7s(&[
+            payload.next().unwrap().into(),
+            payload.next().unwrap().into(),
+            payload.next().unwrap().into(),
+            payload.next().unwrap().into(),
+        ])
+    }
+    pub fn target_muid(&self) -> ux::u28 {
+        let mut payload = self.0.payload();
+        payload.nth(12);
+        ux::u28::from_u7s(&[
+            payload.next().unwrap().into(),
+            payload.next().unwrap().into(),
+            payload.next().unwrap().into(),
+            payload.next().unwrap().into(),
+        ])
+    }
+    pub fn from_data(data: &'a [u32]) -> Result<Self> {
+        let messages = ci_helpers::validate_sysex7(data, STATUS)?;
+
+        let mut payload = messages.payload();
+        let Some(_) = payload.nth(ci_helpers::STANDARD_DATA_SIZE + 3) else {
+            return Err(Error::InvalidData);
+        };
+
+        Ok(InvalidateMuidMessage(messages))
+    }
+    pub fn data(&self) -> &[u32] {
+        self.0.data()
+    }
 }
 
-fn validate_to_sysex_buffer<M: SysexMessage>(_message: &Message, messages: &[M]) -> Result<(), Error> {
-    ci_helpers::validate_buffer_size(messages, Message::DATA_SIZE)
+pub struct InvalidateMuidBuilder<Repr: sysex::SysexMessages> {
+    source: ux::u28,
+    target_muid: ux::u28,
+    builder: Repr::Builder,
 }
 
-ci_message_impl!();
+impl<'a> InvalidateMuidBuilder<sysex8::Sysex8MessageGroup<'a>> {
+    pub fn group(&mut self, g: ux::u4) -> &mut Self {
+        self.builder.group(g);
+        self
+    }
+    pub fn stream_id(&mut self, id: u8) -> &mut Self {
+        self.builder.stream_id(id);
+        self
+    }
+    pub fn source(&mut self, source: ux::u28) -> &mut Self {
+        self.source = source;
+        self
+    }
+    pub fn target_muid(&mut self, muid: ux::u28) -> &mut Self {
+        self.target_muid = muid;
+        self
+    }
+    pub fn new(buffer: &'a mut [u32]) -> Self {
+        InvalidateMuidBuilder {
+            builder: sysex8::Sysex8MessageGroupBuilder::new(buffer),
+            source: Default::default(),
+            target_muid: Default::default(),
+        }
+    }
+    pub fn build(&'a mut self) -> Result<InvalidateMuidMessage<sysex8::Sysex8MessageGroup<'a>>> {
+        match self
+            .builder
+            .payload(
+                ci_helpers::StandardDataIterator::new(
+                    DeviceId::MidiPort,
+                    STATUS,
+                    self.source,
+                    ux::u28::new(0xFFFFFFF),
+                )
+                .chain(self.target_muid.to_u7s().map(u8::from)),
+            )
+            .build()
+        {
+            Ok(messages) => Ok(InvalidateMuidMessage(messages)),
+            Err(e) => Err(e),
+        }
+    }
+}
+
+impl<'a> InvalidateMuidBuilder<sysex7::Sysex7MessageGroup<'a>> {
+    pub fn group(&mut self, g: ux::u4) -> &mut Self {
+        self.builder.group(g);
+        self
+    }
+    pub fn source(&mut self, source: ux::u28) -> &mut Self {
+        self.source = source;
+        self
+    }
+    pub fn target_muid(&mut self, muid: ux::u28) -> &mut Self {
+        self.target_muid = muid;
+        self
+    }
+    pub fn new(buffer: &'a mut [u32]) -> Self {
+        InvalidateMuidBuilder {
+            builder: sysex7::Sysex7MessageGroupBuilder::new(buffer),
+            source: Default::default(),
+            target_muid: Default::default(),
+        }
+    }
+    pub fn build(&'a mut self) -> Result<InvalidateMuidMessage<sysex7::Sysex7MessageGroup<'a>>> {
+        match self
+            .builder
+            .payload(
+                ci_helpers::StandardDataIterator::new(
+                    DeviceId::MidiPort,
+                    STATUS,
+                    self.source,
+                    ux::u28::new(0xFFFFFFF),
+                )
+                .map(ux::u7::new)
+                .chain(self.target_muid.to_u7s()),
+            )
+            .build()
+        {
+            Ok(messages) => Ok(InvalidateMuidMessage(messages)),
+            Err(e) => Err(e),
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::{
-        ci::{CiMessage, VERSION},
-        message::system_exclusive_7bit as sysex7,
-        message::system_exclusive_8bit as sysex8,
+        message::system_exclusive_7bit as sysex7, message::system_exclusive_8bit as sysex8,
+        util::debug,
     };
 
     #[test]
-    #[rustfmt::skip]
-    fn try_to_sysex8() {
+    fn sysex8_builder() {
         assert_eq!(
-            Message {
-                group: ux::u4::new(0x5),
-                source: ux::u28::new(0xFABF0D5),
-                target: ux::u28::new(0xBA55B05),
-            }.try_to_sysex8(&mut [
-                    Default::default(),
-                    Default::default(),
-                ], 
-                0x33,
-            ).unwrap(),
-            &[
-                sysex8::Message::builder()
-                    .stream_id(0x33)
-                    .group(ux::u4::new(0x5))
-                    .status(sysex8::Status::Begin)
-                    .data(&[
-                        0x7E, // universal sysex
-                        0x7F, // Device ID
-                        0x0D, // universal sysex sub-id 1: midi ci
-                        0x7E, // universal sysex sub-id 2: invalidate muid
-                        VERSION,
-                        0b01010101, 0b01100001, 0b00101111, 0b01111101, // source muid
-                        0x7F, 0x7F, 0x7F,  // destination muid
-                    ])
-                    .build(),
-                sysex8::Message::builder()
-                    .stream_id(0x33)
-                    .group(ux::u4::new(0x5))
-                    .status(sysex8::Status::End)
-                    .data(&[
-                        0x7F, // destination muid
-                        0b0000101, 0b0110110, 0b0010101, 0b1011101, // target muid
-                    ])
-                    .build(),
-            ],
-        );
-    }
-
-    #[test]
-    #[rustfmt::skip]
-    fn try_from_sysex8() {
-        assert_eq!(
-            Message::try_from_sysex8(
-                &[
-                    sysex8::Message::builder()
-                        .stream_id(0x33)
-                        .group(ux::u4::new(0x5))
-                        .status(sysex8::Status::Begin)
-                        .data(&[
-                            0x7E, // universal sysex
-                            0x7F, // Device ID
-                            0x0D, // universal sysex sub-id 1: midi ci
-                            0x7E, // universal sysex sub-id 2: invalidate muid
-                            VERSION,
-                            0b01010101, 0b01100001, 0b00101111, 0b01111101, // source muid
-                            0x7F, 0x7F, 0x7F,  // destination muid
-                        ])
-                        .build(),
-                    sysex8::Message::builder()
-                        .stream_id(0x33)
-                        .group(ux::u4::new(0x5))
-                        .status(sysex8::Status::End)
-                        .data(&[
-                            0x7F, // destination muid
-                            0b0000101, 0b0110110, 0b0010101, 0b1011101, // target muid
-                        ])
-                        .build(),
-                ],
+            debug::Data(
+                InvalidateMuidMessage::<sysex8::Sysex8MessageGroup>::builder(&mut [0x0; 8])
+                    .group(ux::u4::new(0x7))
+                    .stream_id(0x4A)
+                    .source(ux::u28::new(3767028))
+                    .target_muid(ux::u28::new(226028650))
+                    .build()
+                    .unwrap()
+                    .data(),
             ),
-            Ok(Message {
-                group: ux::u4::new(0x5),
-                source: ux::u28::new(0xFABF0D5),
-                target: ux::u28::new(0xBA55B05),
-            })
+            debug::Data(&[
+                0x571E_4A7E,
+                0x7F0D_7E01,
+                0x7475_6501,
+                0x7F7F_7F7F,
+                0x5735_4A6A,
+                0x5863_6B00,
+                0x0000_0000,
+                0x0000_0000,
+            ]),
         );
     }
 
     #[test]
-    #[rustfmt::skip]
-    fn try_to_sysex7() {
+    fn sysex7_builder() {
         assert_eq!(
-            Message {
-                group: ux::u4::new(0x5),
-                source: ux::u28::new(0xFABF0D5),
-                target: ux::u28::new(0xBA55B05),
-            }.try_to_sysex7(&mut [
-                    Default::default(),
-                    Default::default(),
-                    Default::default(),
-            ]).unwrap(),
-            &[
-                sysex7::Message::builder()
-                    .group(ux::u4::new(0x5))
-                    .status(sysex7::Status::Begin)
-                    .data(&[
-                        ux::u7::new(0x7E), // universal sysex
-                        ux::u7::new(0x7F), // Device ID
-                        ux::u7::new(0x0D), // universal sysex sub-id 1: midi ci
-                        ux::u7::new(0x7E), // universal sysex sub-id 2: invalidate muid
-                        ux::u7::new(VERSION),
-                        ux::u7::new(0b01010101), // source muid
-                    ])
-                    .build(),
-                sysex7::Message::builder()
-                    .group(ux::u4::new(0x5))
-                    .status(sysex7::Status::Continue)
-                    .data(&[
-                        ux::u7::new(0b01100001),
-                        ux::u7::new(0b00101111), ux::u7::new(0b01111101), // source muid
-                        ux::u7::new(0x7F), ux::u7::new(0x7F), ux::u7::new(0x7F),  // destination muid
-                    ])
-                    .build(),
-                sysex7::Message::builder()
-                    .group(ux::u4::new(0x5))
-                    .status(sysex7::Status::End)
-                    .data(&[
-                        ux::u7::new(0x7F), // destination muid
-                        ux::u7::new(0b0000101), ux::u7::new(0b0110110),
-                        ux::u7::new(0b0010101), ux::u7::new(0b1011101), // target muid
-                    ])
-                    .build(),
-            ],
-        );
-    }
-
-    #[test]
-    #[rustfmt::skip]
-    fn try_from_sysex7() {
-        assert_eq!(
-            Message::try_from_sysex7(
-                &[
-                    sysex7::Message::builder()
-                        .group(ux::u4::new(0x5))
-                        .status(sysex7::Status::Begin)
-                        .data(&[
-                            ux::u7::new(0x7E), // universal sysex
-                            ux::u7::new(0x7F), // Device ID
-                            ux::u7::new(0x0D), // universal sysex sub-id 1: midi ci
-                            ux::u7::new(0x7E), // universal sysex sub-id 2: invalidate muid
-                            ux::u7::new(VERSION),
-                            ux::u7::new(0b01010101), // source muid
-                        ])
-                        .build(),
-                    sysex7::Message::builder()
-                        .group(ux::u4::new(0x5))
-                        .status(sysex7::Status::Continue)
-                        .data(&[
-                            ux::u7::new(0b01100001),
-                            ux::u7::new(0b00101111), ux::u7::new(0b01111101), // source muid
-                            ux::u7::new(0x7F), ux::u7::new(0x7F), ux::u7::new(0x7F),  // destination muid
-                        ])
-                        .build(),
-                    sysex7::Message::builder()
-                        .group(ux::u4::new(0x5))
-                        .status(sysex7::Status::End)
-                        .data(&[
-                            ux::u7::new(0x7F), // destination muid
-                            ux::u7::new(0b0000101), ux::u7::new(0b0110110),
-                            ux::u7::new(0b0010101), ux::u7::new(0b1011101), // target muid
-                        ])
-                        .build(),
-                ],
+            debug::Data(
+                InvalidateMuidMessage::<sysex7::Sysex7MessageGroup>::builder(&mut [0x0; 8])
+                    .group(ux::u4::new(0x7))
+                    .source(ux::u28::new(3767028))
+                    .target_muid(ux::u28::new(226028650))
+                    .build()
+                    .unwrap()
+                    .data(),
             ),
-            Ok(Message {
-                group: ux::u4::new(0x5),
-                source: ux::u28::new(0xFABF0D5),
-                target: ux::u28::new(0xBA55B05),
-            })
+            debug::Data(&[
+                0x3716_7E7F,
+                0x0D7E_0174,
+                0x3726_7565,
+                0x017F_7F7F,
+                0x3735_7F6A,
+                0x5863_6B00,
+            ]),
         );
+    }
+
+    #[test]
+    fn target_muid_sysex8() {
+        assert_eq!(
+            InvalidateMuidMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
+                0x571E_4A7E,
+                0x7F0D_7E01,
+                0x7475_6501,
+                0x7F7F_7F7F,
+                0x5735_4A6A,
+                0x5863_6B00,
+                0x0000_0000,
+                0x0000_0000,
+            ])
+            .unwrap()
+            .target_muid(),
+            ux::u28::new(226028650),
+        )
+    }
+
+    #[test]
+    fn target_muid_sysex7() {
+        assert_eq!(
+            InvalidateMuidMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
+                0x3716_7E7F,
+                0x0D7E_0174,
+                0x3726_7565,
+                0x017F_7F7F,
+                0x3735_7F6A,
+                0x5863_6B00,
+            ])
+            .unwrap()
+            .target_muid(),
+            ux::u28::new(226028650),
+        )
     }
 }

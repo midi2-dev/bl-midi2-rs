@@ -10,16 +10,16 @@ use crate::{
     util::debug,
 };
 
-const OP_CODE: ux::u4 = ux::u4::new(0b1011);
+const OP_CODE: ux::u4 = ux::u4::new(0b1000);
 
 #[derive(Clone, PartialEq, Eq)]
-pub struct ControlChangeMessage<'a>(&'a [u32]);
+pub struct NoteOffMessage<'a>(&'a [u32]);
 
-debug::message_debug_impl!(ControlChangeMessage);
+debug::message_debug_impl!(NoteOffMessage);
 
-impl<'a> ControlChangeMessage<'a> {
-    pub fn builder(buffer: &mut [u32]) -> ControlChangeBuilder {
-        ControlChangeBuilder::new(buffer)
+impl<'a> NoteOffMessage<'a> {
+    pub fn builder(buffer: &mut [u32]) -> NoteOffBuilder {
+        NoteOffBuilder::new(buffer)
     }
     pub fn group(&self) -> ux::u4 {
         message_helpers::group_from_packet(self.0)
@@ -27,10 +27,10 @@ impl<'a> ControlChangeMessage<'a> {
     pub fn channel(&self) -> ux::u4 {
         message_helpers::channel_from_packet(self.0)
     }
-    pub fn control(&self) -> ux::u7 {
+    pub fn note(&self) -> ux::u7 {
         message_helpers::note_from_packet(self.0)
     }
-    pub fn control_data(&self) -> ux::u7 {
+    pub fn velocity(&self) -> ux::u7 {
         midi1cv_helpers::note_velocity_from_packet(self.0)
     }
     pub fn from_data(data: &'a [u32]) -> Result<Self> {
@@ -40,9 +40,9 @@ impl<'a> ControlChangeMessage<'a> {
 }
 
 #[derive(PartialEq, Eq)]
-pub struct ControlChangeBuilder<'a>(Result<&'a mut [u32]>);
+pub struct NoteOffBuilder<'a>(Result<&'a mut [u32]>);
 
-impl<'a> ControlChangeBuilder<'a> {
+impl<'a> NoteOffBuilder<'a> {
     pub fn new(buffer: &'a mut [u32]) -> Self {
         match message_helpers::validate_buffer_size(buffer, 1) {
             Ok(()) => {
@@ -65,21 +65,21 @@ impl<'a> ControlChangeBuilder<'a> {
         }
         self
     }
-    pub fn control(&mut self, v: ux::u7) -> &mut Self {
+    pub fn note(&mut self, v: ux::u7) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_note_to_packet(v, buffer);
         }
         self
     }
-    pub fn control_data(&mut self, v: ux::u7) -> &mut Self {
+    pub fn velocity(&mut self, v: ux::u7) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             midi1cv_helpers::write_note_velocity_to_packet(v, buffer);
         }
         self
     }
-    pub fn build(&'a self) -> Result<ControlChangeMessage<'a>> {
+    pub fn build(&'a self) -> Result<NoteOffMessage<'a>> {
         match &self.0 {
-            Ok(buffer) => Ok(ControlChangeMessage(buffer)),
+            Ok(buffer) => Ok(NoteOffMessage(buffer)),
             Err(e) => Err(e.clone()),
         }
     }
@@ -92,45 +92,46 @@ mod tests {
     #[test]
     fn builder() {
         assert_eq!(
-            ControlChangeMessage::builder(&mut [0x0])
-                .group(ux::u4::new(0xA))
-                .channel(ux::u4::new(0x7))
-                .control(ux::u7::new(0x36))
-                .control_data(ux::u7::new(0x37))
+            NoteOffMessage::builder(&mut [0x0])
+                .group(ux::u4::new(0x1))
+                .channel(ux::u4::new(0xA))
+                .note(ux::u7::new(0x68))
+                .velocity(ux::u7::new(0x1B))
                 .build(),
-            Ok(ControlChangeMessage(&[0x2AB7_3637])),
+            Ok(NoteOffMessage(&[0x218A_681B])),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            ControlChangeMessage::from_data(&[0x2AB7_3637]).unwrap().group(),
-            ux::u4::new(0xA),
+            NoteOffMessage::from_data(&[0x218A_681B]).unwrap().group(),
+            ux::u4::new(0x1),
         );
     }
 
     #[test]
     fn channel() {
         assert_eq!(
-            ControlChangeMessage::from_data(&[0x2AB7_3637]).unwrap().channel(),
-            ux::u4::new(0x7),
+            NoteOffMessage::from_data(&[0x218A_681B]).unwrap().channel(),
+            ux::u4::new(0xA),
         );
     }
 
     #[test]
-    fn control() {
+    fn note() {
         assert_eq!(
-            ControlChangeMessage::from_data(&[0x2AB7_3637]).unwrap().control(),
-            ux::u7::new(0x36),
+            NoteOffMessage::from_data(&[0x218A_681B]).unwrap().note(),
+            ux::u7::new(0x68),
         );
     }
 
     #[test]
-    fn control_data() {
+    fn velocity() {
         assert_eq!(
-            ControlChangeMessage::from_data(&[0x2AB7_3637]).unwrap().control_data(),
-            ux::u7::new(0x37),
+            NoteOffMessage::from_data(&[0x218A_681B]).unwrap().velocity(),
+            ux::u7::new(0x1B),
         );
     }
 }
+

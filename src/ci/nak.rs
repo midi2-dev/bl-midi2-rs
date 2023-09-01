@@ -1,253 +1,300 @@
 use crate::{
-    ci::{helpers as ci_helpers, DeviceId, ci_message_impl},
+    ci::{helpers as ci_helpers, DeviceId},
     error::Error,
-    util::{builder, getter, sysex_message},
+    message::{sysex, system_exclusive_7bit as sysex7, system_exclusive_8bit as sysex8},
+    result::Result,
+    util::Encode7Bit,
 };
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Message {
-    group: ux::u4,
-    device_id: DeviceId,
-    source: ux::u28,
-    destination: ux::u28,
-}
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct NakMessage<Repr: sysex::SysexMessages>(Repr);
 
-builder::builder!(
-    group: ux::u4,
-    device_id: DeviceId,
-    source: ux::u28,
-    destination: ux::u28
-);
+const STATUS: u8 = 0x7F;
 
-impl Message {
-    const STATUS: u8 = 0x7F;
-    const DATA_SIZE: usize = 13;
-    getter::getter!(group, ux::u4);
-    getter::getter!(device_id, DeviceId);
-    getter::getter!(source, ux::u28);
-    getter::getter!(destination, ux::u28);
-    builder::builder_method!();
-}
-
-fn to_sysex<'a, M: sysex_message::SysexMessage>(message: &Message, messages: &'a mut [M]) -> &'a mut [M] {
-    ci_helpers::write_ci_data(
-        message.group,
-        message.device_id,
-        Message::STATUS,
-        message.source,
-        message.destination,
-        &[],
-        messages,
-    )
-}
-
-fn from_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Message {
-    let standard_data = ci_helpers::read_standard_data(messages);
-    let messages = sysex_message::SysexMessages::new(messages);
-    Message {
-        group: messages.group(),
-        device_id: standard_data.device_id,
-        source: standard_data.source,
-        destination: standard_data.destination,
+impl<'a> NakMessage<sysex8::Sysex8MessageGroup<'a>> {
+    pub fn builder(buffer: &'a mut [u32]) -> NakBuilder<sysex8::Sysex8MessageGroup<'a>> {
+        NakBuilder::<sysex8::Sysex8MessageGroup<'a>>::new(buffer)
+    }
+    pub fn group(&self) -> ux::u4 {
+        self.0.group()
+    }
+    pub fn source(&self) -> ux::u28 {
+        let mut payload = self.0.payload();
+        payload.nth(4);
+        ux::u28::from_u7s(&[
+            payload.next().unwrap(),
+            payload.next().unwrap(),
+            payload.next().unwrap(),
+            payload.next().unwrap(),
+        ])
+    }
+    pub fn destination(&self) -> ux::u28 {
+        let mut payload = self.0.payload();
+        payload.nth(8);
+        ux::u28::from_u7s(&[
+            payload.next().unwrap(),
+            payload.next().unwrap(),
+            payload.next().unwrap(),
+            payload.next().unwrap(),
+        ])
+    }
+    pub fn device_id(&self) -> DeviceId {
+        let mut payload = self.0.payload();
+        ci_helpers::device_id_from_u8(payload.nth(1).unwrap()).unwrap()
+    }
+    pub fn from_data(data: &'a [u32]) -> Result<Self> {
+        let messages = ci_helpers::validate_sysex8(data, STATUS)?;
+        let None = messages.payload().nth(ci_helpers::STANDARD_DATA_SIZE) else {
+            return Err(Error::InvalidData);
+        };
+        Ok(NakMessage(messages))
+    }
+    pub fn data(&self) -> &[u32] {
+        self.0.data()
     }
 }
 
-fn validate_sysex<M: sysex_message::SysexMessage>(messages: &[M]) -> Result<(), Error> {
-    ci_helpers::validate_sysex(messages, Message::STATUS)?;
-    ci_helpers::validate_buffer_size(messages, Message::DATA_SIZE)
+impl<'a> NakMessage<sysex7::Sysex7MessageGroup<'a>> {
+    pub fn builder(buffer: &'a mut [u32]) -> NakBuilder<sysex7::Sysex7MessageGroup<'a>> {
+        NakBuilder::<sysex7::Sysex7MessageGroup<'a>>::new(buffer)
+    }
+    pub fn group(&self) -> ux::u4 {
+        self.0.group()
+    }
+    pub fn source(&self) -> ux::u28 {
+        let mut payload = self.0.payload();
+        payload.nth(4);
+        ux::u28::from_u7s(&[
+            payload.next().unwrap().into(),
+            payload.next().unwrap().into(),
+            payload.next().unwrap().into(),
+            payload.next().unwrap().into(),
+        ])
+    }
+    pub fn destination(&self) -> ux::u28 {
+        let mut payload = self.0.payload();
+        payload.nth(8);
+        ux::u28::from_u7s(&[
+            payload.next().unwrap().into(),
+            payload.next().unwrap().into(),
+            payload.next().unwrap().into(),
+            payload.next().unwrap().into(),
+        ])
+    }
+    pub fn device_id(&self) -> DeviceId {
+        let mut payload = self.0.payload();
+        ci_helpers::device_id_from_u8(payload.nth(1).unwrap().into()).unwrap()
+    }
+    pub fn from_data(data: &'a [u32]) -> Result<Self> {
+        let messages = ci_helpers::validate_sysex7(data, STATUS)?;
+        let None = messages.payload().nth(ci_helpers::STANDARD_DATA_SIZE) else {
+            return Err(Error::InvalidData);
+        };
+        Ok(NakMessage(messages))
+    }
+    pub fn data(&self) -> &[u32] {
+        self.0.data()
+    }
 }
 
-fn validate_to_sysex_buffer<M: sysex_message::SysexMessage>(
-    _message: &Message,
-    messages: &[M],
-) -> Result<(), Error> {
-    ci_helpers::validate_buffer_size(messages, Message::DATA_SIZE)
+pub struct NakBuilder<Repr: sysex::SysexMessages> {
+    device_id: DeviceId,
+    source: ux::u28,
+    destination: ux::u28,
+    builder: Repr::Builder,
 }
 
-ci_message_impl!();
+impl<'a> NakBuilder<sysex8::Sysex8MessageGroup<'a>> {
+    pub fn group(&mut self, g: ux::u4) -> &mut Self {
+        self.builder.group(g);
+        self
+    }
+    pub fn stream_id(&mut self, id: u8) -> &mut Self {
+        self.builder.stream_id(id);
+        self
+    }
+    pub fn device_id(&mut self, id: DeviceId) -> &mut Self {
+        self.device_id = id;
+        self
+    }
+    pub fn source(&mut self, source: ux::u28) -> &mut Self {
+        self.source = source;
+        self
+    }
+    pub fn destination(&mut self, dest: ux::u28) -> &mut Self {
+        self.destination = dest;
+        self
+    }
+    pub fn new(buffer: &'a mut [u32]) -> Self {
+        NakBuilder {
+            builder: sysex8::Sysex8MessageGroupBuilder::new(buffer),
+            destination: Default::default(),
+            source: Default::default(),
+            device_id: DeviceId::MidiPort,
+        }
+    }
+    pub fn build(&'a mut self) -> Result<NakMessage<sysex8::Sysex8MessageGroup<'a>>> {
+        match self
+            .builder
+            .payload(ci_helpers::StandardDataIterator::new(
+                self.device_id,
+                STATUS,
+                self.source,
+                self.destination,
+            ))
+            .build()
+        {
+            Ok(messages) => Ok(NakMessage(messages)),
+            Err(e) => Err(e),
+        }
+    }
+}
+
+impl<'a> NakBuilder<sysex7::Sysex7MessageGroup<'a>> {
+    pub fn group(&mut self, g: ux::u4) -> &mut Self {
+        self.builder.group(g);
+        self
+    }
+    pub fn source(&mut self, source: ux::u28) -> &mut Self {
+        self.source = source;
+        self
+    }
+    pub fn destination(&mut self, dest: ux::u28) -> &mut Self {
+        self.destination = dest;
+        self
+    }
+    pub fn device_id(&mut self, id: DeviceId) -> &mut Self {
+        self.device_id = id;
+        self
+    }
+    pub fn new(buffer: &'a mut [u32]) -> Self {
+        NakBuilder {
+            builder: sysex7::Sysex7MessageGroupBuilder::new(buffer),
+            destination: Default::default(),
+            source: Default::default(),
+            device_id: DeviceId::MidiPort,
+        }
+    }
+    pub fn build(&'a mut self) -> Result<NakMessage<sysex7::Sysex7MessageGroup<'a>>> {
+        match self
+            .builder
+            .payload(
+                ci_helpers::StandardDataIterator::new(
+                    self.device_id,
+                    STATUS,
+                    self.source,
+                    self.destination,
+                )
+                .map(ux::u7::new),
+            )
+            .build()
+        {
+            Ok(messages) => Ok(NakMessage(messages)),
+            Err(e) => Err(e),
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        ci::{CiMessage, VERSION},
-        message::system_exclusive_7bit as sysex7,
-        message::system_exclusive_8bit as sysex8,
-    };
+    use crate::util::debug;
 
     #[test]
-    #[rustfmt::skip]
-    fn try_to_sysex8() {
+    fn sysex8_builder() {
         assert_eq!(
-            Message {
-                group: ux::u4::new(0x9),
-                device_id: DeviceId::Channel(ux::u4::new(0xC)),
-                source: ux::u28::new(126343486),
-                destination: ux::u28::new(69631782),
-            }.try_to_sysex8(
-                &mut [
-                    Default::default(),
-                    Default::default(),
-                ],
-                0xF2
-            ).unwrap(),
-            &[
-                sysex8::Message::builder()
-                    .stream_id(0xF2)
-                    .group(ux::u4::new(0x9))
-                    .status(sysex8::Status::Begin)
-                    .data(&[
-                        0x7E, // universal sysex
-                        0xC, // Device ID
-                        0x0D, // universal sysex sub-id 1: midi ci
-                        0x7F, // universal sysex sub-id 2: nak
-                        VERSION,
-                        0b00111110, 0b00110010, 0b00011111, 0b00111100, 
-                        0b00100110, 0b01111110, 0b00011001, // destination muid
-                    ])
-                    .build(),
-                sysex8::Message::builder()
-                    .stream_id(0xF2)
-                    .group(ux::u4::new(0x9))
-                    .status(sysex8::Status::End)
-                    .data(&[
-                        0b00100001, // destination muid
-                    ])
-                    .build(),
-            ]
-        )
-    }
-
-    #[test]
-    #[rustfmt::skip]
-    fn try_from_sysex8() {
-        assert_eq!(
-            Message::try_from_sysex8(
-                &[
-                    sysex8::Message::builder()
-                        .stream_id(0xF2)
-                        .group(ux::u4::new(0x9))
-                        .status(sysex8::Status::Begin)
-                        .data(&[
-                            0x7E, // universal sysex
-                            0xC, // Device ID
-                            0x0D, // universal sysex sub-id 1: midi ci
-                            0x7F, // universal sysex sub-id 2: nak
-                            VERSION,
-                            0b00111110, 0b00110010, 0b00011111, 0b00111100, // source muid
-                            0b00100110, 0b01111110, 0b00011001, // destination muid
-                        ])
-                        .build(),
-                    sysex8::Message::builder()
-                        .stream_id(0xF2)
-                        .group(ux::u4::new(0x9))
-                        .status(sysex8::Status::End)
-                        .data(&[
-                            0b00100001, // destination muid
-                        ])
-                        .build(),
-                ],
+            debug::Data(
+                NakMessage::<sysex8::Sysex8MessageGroup>::builder(&mut [0x0; 4])
+                    .group(ux::u4::new(0x3))
+                    .stream_id(0xB2)
+                    .device_id(DeviceId::Channel(ux::u4::new(0xD)))
+                    .source(ux::u28::new(92027634))
+                    .destination(ux::u28::new(139459637))
+                    .build()
+                    .unwrap()
+                    .data(),
             ),
-            Ok(Message {
-                group: ux::u4::new(0x9),
-                device_id: DeviceId::Channel(ux::u4::new(0xC)),
-                source: ux::u28::new(126343486),
-                destination: ux::u28::new(69631782),
-            })
+            debug::Data(&[0x530E_B27E, 0x0D0D_7F01, 0x7275_702B, 0x3578_3F42,]),
         );
     }
 
     #[test]
-    #[rustfmt::skip]
-    fn try_to_sysex7() {
+    fn sysex7_builder() {
         assert_eq!(
-            Message {
-                group: ux::u4::new(0x9),
-                device_id: DeviceId::Channel(ux::u4::new(0xC)),
-                source: ux::u28::new(126343486),
-                destination: ux::u28::new(69631782),
-            }.try_to_sysex7(&mut [
-                    Default::default(),
-                    Default::default(),
-                    Default::default(),
-            ]).unwrap(),
-            &[
-                sysex7::Message::builder()
-                    .group(ux::u4::new(0x9))
-                    .status(sysex7::Status::Begin)
-                    .data(&[
-                        ux::u7::new(0x7E), // universal sysex
-                        ux::u7::new(0xC), // Device ID
-                        ux::u7::new(0x0D), // universal sysex sub-id 1: midi ci
-                        ux::u7::new(0x7F), // universal sysex sub-id 2: nak
-                        ux::u7::new(VERSION),
-                        ux::u7::new(0b00111110), // source muid
-                    ])
-                    .build(),
-                sysex7::Message::builder()
-                    .group(ux::u4::new(0x9))
-                    .status(sysex7::Status::Continue)
-                    .data(&[
-                        ux::u7::new(0b00110010),
-                        ux::u7::new(0b00011111), ux::u7::new(0b00111100), // source muid
-                        ux::u7::new(0b00100110), ux::u7::new(0b01111110),
-                        ux::u7::new(0b00011001), // destination muid
-                    ])
-                    .build(),
-                sysex7::Message::builder()
-                    .group(ux::u4::new(0x9))
-                    .status(sysex7::Status::End)
-                    .data(&[
-                        ux::u7::new(0b00100001), // destination muid
-                    ])
-                    .build(),
-            ]
-        )
+            debug::Data(
+                NakMessage::<sysex7::Sysex7MessageGroup>::builder(&mut [0x0; 6])
+                    .group(ux::u4::new(0x3))
+                    .device_id(DeviceId::Channel(ux::u4::new(0xD)))
+                    .source(ux::u28::new(92027634))
+                    .destination(ux::u28::new(139459637))
+                    .build()
+                    .unwrap()
+                    .data(),
+            ),
+            debug::Data(&[
+                0x3316_7E0D,
+                0x0D7F_0172,
+                0x3326_7570,
+                0x2B35_783F,
+                0x3331_4200,
+                0x0000_0000,
+            ]),
+        );
     }
 
     #[test]
-    #[rustfmt::skip]
-    fn try_from_sysex7() {
+    fn sysex8_from_data() {
+        assert!(NakMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
+            0x530E_B27E,
+            0x0D0D_7F01,
+            0x7275_702B,
+            0x3578_3F42,
+        ])
+        .is_ok());
+    }
+
+    #[test]
+    fn sysex7_from_data() {
+        assert!(NakMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
+            0x3316_7E0D,
+            0x0D7F_0172,
+            0x3326_7570,
+            0x2B35_783F,
+            0x3331_4200,
+            0x0000_0000,
+        ])
+        .is_ok());
+    }
+
+    #[test]
+    fn device_id_syszex7() {
         assert_eq!(
-            Message::try_from_sysex7(
-                &[
-                    sysex7::Message::builder()
-                        .group(ux::u4::new(0x9))
-                        .status(sysex7::Status::Begin)
-                        .data(&[
-                            ux::u7::new(0x7E), // universal sysex
-                            ux::u7::new(0xC), // Device ID
-                            ux::u7::new(0x0D), // universal sysex sub-id 1: midi ci
-                            ux::u7::new(0x7F), // universal sysex sub-id 2: nak
-                            ux::u7::new(VERSION),
-                            ux::u7::new(0b00111110), // source muid
-                        ])
-                        .build(),
-                    sysex7::Message::builder()
-                        .group(ux::u4::new(0x9))
-                        .status(sysex7::Status::Continue)
-                        .data(&[
-                            ux::u7::new(0b00110010),
-                            ux::u7::new(0b00011111), ux::u7::new(0b00111100), // source muid
-                            ux::u7::new(0b00100110), ux::u7::new(0b01111110),
-                            ux::u7::new(0b00011001), // destination muid
-                        ])
-                        .build(),
-                    sysex7::Message::builder()
-                        .group(ux::u4::new(0x9))
-                        .status(sysex7::Status::End)
-                        .data(&[
-                            ux::u7::new(0b00100001), // destination muid
-                        ])
-                        .build(),
-                ],
-            ),
-            Ok(Message {
-                group: ux::u4::new(0x9),
-                device_id: DeviceId::Channel(ux::u4::new(0xC)),
-                source: ux::u28::new(126343486),
-                destination: ux::u28::new(69631782),
-            })
+            NakMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
+                0x3316_7E0D,
+                0x0D7F_0172,
+                0x3326_7570,
+                0x2B35_783F,
+                0x3331_4200,
+                0x0000_0000,
+            ])
+            .unwrap()
+            .device_id(),
+            DeviceId::Channel(ux::u4::new(0xD))
+        );
+    }
+
+    #[test]
+    fn device_id_syszex8() {
+        assert_eq!(
+            NakMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
+                0x530E_B27E,
+                0x0D0D_7F01,
+                0x7275_702B,
+                0x3578_3F42,
+            ])
+            .unwrap()
+            .device_id(),
+            DeviceId::Channel(ux::u4::new(0xD))
         );
     }
 }

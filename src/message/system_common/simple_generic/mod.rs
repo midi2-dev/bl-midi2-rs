@@ -1,42 +1,59 @@
 macro_rules! simple_generic_message {
-    ($op_code:expr) => {
+    ($op_code:expr, $name:ident, $builder_name:ident) => {
         use crate::{
-            error::Error,
-            message::Midi2Message,
-            util::{builder, getter},
+            message::{
+                helpers as message_helpers,
+                system_common::{self, TYPE_CODE as SYSTEM_COMMON_TYPE_CODE},
+            },
+            result::Result,
+            util::debug,
         };
 
-        #[derive(Clone, Debug, PartialEq, Eq)]
-        pub struct Message {
-            group: ux::u4,
-        }
+        #[derive(Clone, PartialEq, Eq)]
+        pub struct $name<'a>(&'a [u32]);
 
-        builder::builder!(group: ux::u4);
+        debug::message_debug_impl!($name);
 
-        impl Message {
-            const STATUS_CODE: u8 = $op_code;
-            getter::getter!(group, ux::u4);
-            builder::builder_method!();
-        }
-
-        impl Midi2Message for Message {
-            fn validate_ump(bytes: &[u32]) -> Result<(), Error> {
-                crate::message::system_common::validate_packet(bytes, Message::STATUS_CODE)
+        impl<'a> $name<'a> {
+            pub fn builder(buffer: &mut [u32]) -> $builder_name {
+                $builder_name::new(buffer)
             }
-            fn from_ump(bytes: &[u32]) -> Self {
-                Message {
-                    group: crate::message::helpers::group_from_packet(bytes),
+            pub fn group(&self) -> ux::u4 {
+                message_helpers::group_from_packet(self.0)
+            }
+            pub fn from_data(data: &'a [u32]) -> Result<Self> {
+                match system_common::validate_packet(data, $op_code) {
+                    Err(e) => Err(e),
+                    Ok(()) => Ok(Self(data)),
                 }
             }
-            fn to_ump<'a>(&self, bytes: &'a mut [u32]) -> &'a [u32] {
-                crate::message::system_common::write_data_to_packet(
-                    bytes,
-                    self.group,
-                    Message::STATUS_CODE,
-                    None,
-                    None,
-                );
-                &bytes[..1]
+        }
+
+        #[derive(PartialEq, Eq)]
+        pub struct $builder_name<'a>(Result<&'a mut [u32]>);
+
+        impl<'a> $builder_name<'a> {
+            pub fn new(buffer: &'a mut [u32]) -> Self {
+                match system_common::validate_buffer_size(buffer) {
+                    Ok(()) => {
+                        system_common::write_op_code_to_packet(buffer, $op_code);
+                        message_helpers::write_type_to_packet(SYSTEM_COMMON_TYPE_CODE, buffer);
+                        Self(Ok(buffer))
+                    }
+                    Err(e) => Self(Err(e)),
+                }
+            }
+            pub fn group(&mut self, v: ux::u4) -> &mut Self {
+                if let Ok(buffer) = &mut self.0 {
+                    message_helpers::write_group_to_packet(v, buffer);
+                }
+                self
+            }
+            pub fn build(&'a self) -> Result<$name<'a>> {
+                match &self.0 {
+                    Ok(buffer) => Ok($name(buffer)),
+                    Err(e) => Err(e.clone()),
+                }
             }
         }
     };
@@ -46,78 +63,54 @@ pub(crate) use simple_generic_message;
 
 pub mod tune_request {
     use super::simple_generic_message;
-    simple_generic_message!(0xF6);
+    simple_generic_message!(0xF6, TuneRequestMessage, TuneRequestBuilder);
 }
 pub mod timing_clock {
     use super::simple_generic_message;
-    simple_generic_message!(0xF8);
+    simple_generic_message!(0xF8, TimingClockMessage, TimingClockBuilder);
 }
 pub mod start {
     use super::simple_generic_message;
-    simple_generic_message!(0xFA);
+    simple_generic_message!(0xFA, StartMessage, StartBuilder);
 }
 pub mod cont {
     use super::simple_generic_message;
-    simple_generic_message!(0xFB);
+    simple_generic_message!(0xFB, ContinueMessage, ContinueBuilder);
 }
 pub mod stop {
     use super::simple_generic_message;
-    simple_generic_message!(0xFC);
+    simple_generic_message!(0xFC, StopMessage, StopBuilder);
 }
 pub mod active_sensing {
     use super::simple_generic_message;
-    simple_generic_message!(0xFE);
+    simple_generic_message!(0xFE, ActiveSensingMessage, ActiveSensingBuilder);
 }
 pub mod reset {
     use super::simple_generic_message;
-    simple_generic_message!(0xFF);
+    simple_generic_message!(0xFF, ResetMessage, ResetBuilder);
 }
 
 #[cfg(test)]
 mod tests {
     use super::simple_generic_message;
 
-    simple_generic_message!(0xFF);
+    simple_generic_message!(0xFF, TestMessage, TestBuilder);
 
     #[test]
-    fn serialize() {
+    fn builder() {
         assert_eq!(
-            Message {
-                group: ux::u4::new(0x2),
-            }
-            .to_ump(&mut [0x0]),
-            &[0x12FF_0000],
-        )
-    }
-
-    #[test]
-    fn deserialize() {
-        assert_eq!(
-            Message::try_from_ump(&[0x1CFF_0000]),
-            Ok(Message {
-                group: ux::u4::new(0xC)
-            }),
-        )
-    }
-
-    #[test]
-    fn build() {
-        assert_eq!(
-            Message::builder().group(ux::u4::new(0xA)).build(),
-            Message {
-                group: ux::u4::new(0xA)
-            },
+            TestMessage::builder(&mut [0x0])
+                .group(ux::u4::new(0x9))
+                .build(),
+            Ok(TestMessage(&[0x19FF_0000])),
         );
     }
 
     #[test]
-    fn getters() {
+    fn group() {
         assert_eq!(
-            Message {
-                group: ux::u4::new(0x5)
-            }
-            .group(),
-            ux::u4::new(0x5),
+            TestMessage::from_data(&[0x19FF_0000]).unwrap().group(),
+            ux::u4::new(0x9),
         );
     }
 }

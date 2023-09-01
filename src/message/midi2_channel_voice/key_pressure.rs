@@ -3,19 +3,19 @@ use crate::{
     message::helpers as message_helpers,
     message::midi2_channel_voice::{helpers as midi2cv_helpers, TYPE_CODE as MIDI2CV_TYPE_CODE},
     result::Result,
-    util::{debug, BitOps, Truncate},
+    util::debug,
 };
 
 #[derive(Clone, PartialEq, Eq)]
-pub struct ControlChangeMessage<'a>(&'a [u32]);
+pub struct KeyPressureMessage<'a>(&'a [u32]);
 
-debug::message_debug_impl!(ControlChangeMessage);
+debug::message_debug_impl!(KeyPressureMessage);
 
-const OP_CODE: ux::u4 = ux::u4::new(0b1011);
+const OP_CODE: ux::u4 = ux::u4::new(0b1010);
 
-impl<'a> ControlChangeMessage<'a> {
-    pub fn builder(buffer: &mut [u32]) -> ControlChangeBuilder {
-        ControlChangeBuilder::new(buffer)
+impl<'a> KeyPressureMessage<'a> {
+    pub fn builder(buffer: &mut [u32]) -> KeyPressureBuilder {
+        KeyPressureBuilder::new(buffer)
     }
     pub fn group(&self) -> ux::u4 {
         message_helpers::group_from_packet(self.0)
@@ -23,10 +23,10 @@ impl<'a> ControlChangeMessage<'a> {
     pub fn channel(&self) -> ux::u4 {
         message_helpers::channel_from_packet(self.0)
     }
-    pub fn index(&self) -> ux::u7 {
-        self.0[0].octet(2).truncate()
+    pub fn note(&self) -> ux::u7 {
+        message_helpers::note_from_packet(self.0)
     }
-    pub fn control_change_data(&self) -> u32 {
+    pub fn key_pressure_data(&self) -> u32 {
         self.0[1]
     }
     pub fn data(&self) -> &[u32] {
@@ -34,16 +34,14 @@ impl<'a> ControlChangeMessage<'a> {
     }
     pub fn from_data(data: &'a [u32]) -> Result<Self> {
         midi2cv_helpers::validate_packet(data, MIDI2CV_TYPE_CODE, OP_CODE)?;
-        if data.len() < 2 {
-            return Err(Error::BufferOverflow);
-        }
+        message_helpers::validate_buffer_size(data, 2)?;
         Ok(Self(data))
     }
 }
 
-pub struct ControlChangeBuilder<'a>(Result<&'a mut [u32]>);
+pub struct KeyPressureBuilder<'a>(Result<&'a mut [u32]>);
 
-impl<'a> ControlChangeBuilder<'a> {
+impl<'a> KeyPressureBuilder<'a> {
     fn new(buffer: &'a mut [u32]) -> Self {
         match buffer.len() {
             0 | 1 => Self(Err(Error::BufferOverflow)),
@@ -66,21 +64,21 @@ impl<'a> ControlChangeBuilder<'a> {
         }
         self
     }
-    pub fn index(&mut self, index: ux::u7) -> &mut Self {
+    pub fn note(&mut self, v: ux::u7) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
-            buffer[0].set_octet(2, index.into());
+            message_helpers::write_note_to_packet(v, buffer);
         }
         self
     }
-    pub fn control_change_data(&mut self, data: u32) -> &mut Self {
+    pub fn key_pressure_data(&mut self, data: u32) -> &mut Self {
         if let Ok(buffer) = &mut self.0 {
             buffer[1] = data;
         }
         self
     }
-    pub fn build(&'a self) -> Result<ControlChangeMessage<'a>> {
+    pub fn build(&'a self) -> Result<KeyPressureMessage<'a>> {
         match &self.0 {
-            Ok(buffer) => Ok(ControlChangeMessage(buffer)),
+            Ok(buffer) => Ok(KeyPressureMessage(buffer)),
             Err(e) => Err(e.clone()),
         }
     }
@@ -93,53 +91,53 @@ mod tests {
     #[test]
     fn builder() {
         assert_eq!(
-            ControlChangeMessage::builder(&mut [0x0, 0x0])
-                .group(ux::u4::new(0x3))
-                .channel(ux::u4::new(0x9))
-                .index(ux::u7::new(0x30))
-                .control_change_data(0x2468_1012)
+            KeyPressureMessage::builder(&mut [0x0, 0x0])
+                .group(ux::u4::new(0xB))
+                .channel(ux::u4::new(0xC))
+                .note(ux::u7::new(0x59))
+                .key_pressure_data(0xC0B83064)
                 .build(),
-            Ok(ControlChangeMessage(&[0x43B9_3000, 0x2468_1012]))
+            Ok(KeyPressureMessage(&[0x4BAC_5900, 0xC0B83064])),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            ControlChangeMessage::from_data(&[0x43B9_3000, 0x2468_1012])
+            KeyPressureMessage::from_data(&[0x4BAC_5900, 0xC0B83064])
                 .unwrap()
                 .group(),
-            ux::u4::new(0x3),
+            ux::u4::new(0xB),
         );
     }
 
     #[test]
     fn channel() {
         assert_eq!(
-            ControlChangeMessage::from_data(&[0x43B9_3000, 0x2468_1012])
+            KeyPressureMessage::from_data(&[0x4BAC_5900, 0xC0B83064])
                 .unwrap()
                 .channel(),
-            ux::u4::new(0x9),
+            ux::u4::new(0xC),
         );
     }
 
     #[test]
-    fn index() {
+    fn note() {
         assert_eq!(
-            ControlChangeMessage::from_data(&[0x43B9_3000, 0x2468_1012])
+            KeyPressureMessage::from_data(&[0x4BAC_5900, 0xC0B83064])
                 .unwrap()
-                .index(),
-            ux::u7::new(0x30),
+                .note(),
+            ux::u7::new(0x59),
         );
     }
 
     #[test]
-    fn control_change_data() {
+    fn key_pressure_data() {
         assert_eq!(
-            ControlChangeMessage::from_data(&[0x43B9_3000, 0x2468_1012])
+            KeyPressureMessage::from_data(&[0x4BAC_5900, 0xC0B83064])
                 .unwrap()
-                .control_change_data(),
-            0x2468_1012,
+                .key_pressure_data(),
+            0xC0B83064,
         );
     }
 }
