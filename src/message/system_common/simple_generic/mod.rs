@@ -102,7 +102,9 @@ mod tests {
     #[test]
     fn builder() {
         assert_eq!(
-            TestMessage::builder(&mut random_buffer::<1>()).group(u4::new(0x9)).build(),
+            TestMessage::builder(&mut random_buffer::<1>())
+                .group(u4::new(0x9))
+                .build(),
             Ok(TestMessage(&[0x19FF_0000])),
         );
     }

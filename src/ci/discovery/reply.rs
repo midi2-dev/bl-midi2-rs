@@ -252,22 +252,25 @@ mod tests {
     fn sysex8_builder() {
         assert_eq!(
             debug::Data(
-                DiscoveryReplyMessage::<sysex8::Sysex8MessageGroup>::builder(&mut random_buffer::<12>())
-                    .group(u4::new(0x8))
-                    .stream_id(0x31)
-                    .source(u28::new(196099328))
-                    .destination(u28::new(64054537))
-                    .device_manufacturer(u21::new(2054957))
-                    .device_family(u14::new(508))
-                    .device_model_number(u14::new(7156))
-                    .software_version([u7::new(0x01), u7::new(0x06), u7::new(0x05), u7::new(0x31),])
-                    .protocol_negotiation_supported(true)
-                    .profile_configuration_supported(true)
-                    .property_exchange_supported(true)
-                    .max_sysex_message_size(u28::new(176315622))
-                    .build()
-                    .unwrap()
-                    .data(),
+                DiscoveryReplyMessage::<sysex8::Sysex8MessageGroup>::builder(&mut random_buffer::<
+                    12,
+                >(
+                ))
+                .group(u4::new(0x8))
+                .stream_id(0x31)
+                .source(u28::new(196099328))
+                .destination(u28::new(64054537))
+                .device_manufacturer(u21::new(2054957))
+                .device_family(u14::new(508))
+                .device_model_number(u14::new(7156))
+                .software_version([u7::new(0x01), u7::new(0x06), u7::new(0x05), u7::new(0x31),])
+                .protocol_negotiation_supported(true)
+                .profile_configuration_supported(true)
+                .property_exchange_supported(true)
+                .max_sysex_message_size(u28::new(176315622))
+                .build()
+                .unwrap()
+                .data(),
             ),
             debug::Data(&[
                 0x581E_317E,
@@ -543,21 +546,24 @@ mod tests {
     fn sysex7_builder() {
         assert_eq!(
             debug::Data(
-                DiscoveryReplyMessage::<sysex7::Sysex7MessageGroup>::builder(&mut random_buffer::<10>())
-                    .group(u4::new(0x8))
-                    .source(u28::new(196099328))
-                    .destination(u28::new(64054537))
-                    .device_manufacturer(u21::new(2054957))
-                    .device_family(u14::new(508))
-                    .device_model_number(u14::new(7156))
-                    .software_version([u7::new(0x01), u7::new(0x06), u7::new(0x05), u7::new(0x31),])
-                    .protocol_negotiation_supported(true)
-                    .profile_configuration_supported(true)
-                    .property_exchange_supported(true)
-                    .max_sysex_message_size(u28::new(176315622))
-                    .build()
-                    .unwrap()
-                    .data(),
+                DiscoveryReplyMessage::<sysex7::Sysex7MessageGroup>::builder(&mut random_buffer::<
+                    10,
+                >(
+                ))
+                .group(u4::new(0x8))
+                .source(u28::new(196099328))
+                .destination(u28::new(64054537))
+                .device_manufacturer(u21::new(2054957))
+                .device_family(u14::new(508))
+                .device_model_number(u14::new(7156))
+                .software_version([u7::new(0x01), u7::new(0x06), u7::new(0x05), u7::new(0x31),])
+                .protocol_negotiation_supported(true)
+                .profile_configuration_supported(true)
+                .property_exchange_supported(true)
+                .max_sysex_message_size(u28::new(176315622))
+                .build()
+                .unwrap()
+                .data(),
             ),
             debug::Data(&[
                 0x3816_7E7F,

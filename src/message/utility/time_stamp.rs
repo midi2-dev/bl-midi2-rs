@@ -1,7 +1,7 @@
 use crate::{
     error::Error,
-    result::Result,
     message::helpers as message_helpers,
+    result::Result,
     util::{debug, BitOps, Truncate},
     *,
 };

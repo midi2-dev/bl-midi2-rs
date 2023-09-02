@@ -191,7 +191,8 @@ impl<'a> InvalidateMuidBuilder<sysex7::Sysex7MessageGroup<'a>> {
 mod tests {
     use super::*;
     use crate::{
-        message::system_exclusive_7bit as sysex7, message::system_exclusive_8bit as sysex8,
+        message::system_exclusive_7bit as sysex7,
+        message::system_exclusive_8bit as sysex8,
         util::{debug, random_buffer},
     };
 
@@ -199,14 +200,16 @@ mod tests {
     fn sysex8_builder() {
         assert_eq!(
             debug::Data(
-                InvalidateMuidMessage::<sysex8::Sysex8MessageGroup>::builder(&mut random_buffer::<8>())
-                    .group(u4::new(0x7))
-                    .stream_id(0x4A)
-                    .source(u28::new(3767028))
-                    .target_muid(u28::new(226028650))
-                    .build()
-                    .unwrap()
-                    .data(),
+                InvalidateMuidMessage::<sysex8::Sysex8MessageGroup>::builder(
+                    &mut random_buffer::<8>()
+                )
+                .group(u4::new(0x7))
+                .stream_id(0x4A)
+                .source(u28::new(3767028))
+                .target_muid(u28::new(226028650))
+                .build()
+                .unwrap()
+                .data(),
             ),
             debug::Data(&[
                 0x571E_4A7E,
@@ -225,13 +228,15 @@ mod tests {
     fn sysex7_builder() {
         assert_eq!(
             debug::Data(
-                InvalidateMuidMessage::<sysex7::Sysex7MessageGroup>::builder(&mut random_buffer::<8>())
-                    .group(u4::new(0x7))
-                    .source(u28::new(3767028))
-                    .target_muid(u28::new(226028650))
-                    .build()
-                    .unwrap()
-                    .data(),
+                InvalidateMuidMessage::<sysex7::Sysex7MessageGroup>::builder(
+                    &mut random_buffer::<8>()
+                )
+                .group(u4::new(0x7))
+                .source(u28::new(3767028))
+                .target_muid(u28::new(226028650))
+                .build()
+                .unwrap()
+                .data(),
             ),
             debug::Data(&[
                 0x3716_7E7F,

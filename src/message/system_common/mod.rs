@@ -47,10 +47,10 @@ fn validate_packet(p: &[u32], status: u8) -> Result<(), Error> {
 }
 
 fn validate_buffer_size(buffer: &[u32]) -> Result<(), Error> {
-    if buffer.len() > 0 {
-        Ok(())
-    } else {
+    if buffer.is_empty() {
         Err(Error::BufferOverflow)
+    } else {
+        Ok(())
     }
 }
 

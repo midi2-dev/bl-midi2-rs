@@ -1,7 +1,7 @@
 use crate::{
     error::Error,
-    result::Result,
     message::helpers as message_helpers,
+    result::Result,
     util::{debug, BitOps},
     *,
 };
@@ -62,7 +62,9 @@ mod tests {
     #[test]
     fn builder() {
         assert_eq!(
-            NoOpMessage::builder(&mut random_buffer::<1>()).group(u4::new(0xB)).build(),
+            NoOpMessage::builder(&mut random_buffer::<1>())
+                .group(u4::new(0xB))
+                .build(),
             Ok(NoOpMessage(&[0x0B00_0000])),
         )
     }
