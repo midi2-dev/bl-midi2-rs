@@ -1,5 +1,4 @@
 use crate::{
-    error::Error,
     util::{BitOps, Truncate},
     *,
 };
@@ -12,7 +11,7 @@ pub enum Attribute {
     Pitch7_9 { note: u7, pitch_up: u9 },
 }
 
-pub fn validate_ump(bytes: &[u32]) -> Result<(), Error> {
+pub fn validate_ump(bytes: &[u32]) -> Result<()> {
     match bytes[0].octet(3) {
         0x0 => Ok(()),
         0x1 => Ok(()),
@@ -63,7 +62,7 @@ pub fn write_attribute(bytes: &mut [u32], attr: Option<Attribute>) -> &mut [u32]
 mod tests {
     use super::*;
 
-    fn try_from_ump(bytes: &[u32]) -> Result<Option<Attribute>, Error> {
+    fn try_from_ump(bytes: &[u32]) -> Result<Option<Attribute>> {
         validate_ump(bytes)?;
         Ok(from_ump(bytes))
     }

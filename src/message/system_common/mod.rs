@@ -1,4 +1,4 @@
-use crate::{error::Error, util::BitOps, *};
+use crate::{util::BitOps, *};
 
 const TYPE_CODE: u4 = u4::new(0x1);
 
@@ -36,7 +36,7 @@ pub use timing_clock::TimingClockMessage;
 pub use tune_request::TuneRequestBuilder;
 pub use tune_request::TuneRequestMessage;
 
-fn validate_packet(p: &[u32], status: u8) -> Result<(), Error> {
+fn validate_packet(p: &[u32], status: u8) -> Result<()> {
     if p.is_empty() {
         Err(Error::BufferOverflow)
     } else if p[0].nibble(0) != TYPE_CODE || p[0].octet(1) != status {
@@ -46,7 +46,7 @@ fn validate_packet(p: &[u32], status: u8) -> Result<(), Error> {
     }
 }
 
-fn validate_buffer_size(buffer: &[u32]) -> Result<(), Error> {
+fn validate_buffer_size(buffer: &[u32]) -> Result<()> {
     if buffer.is_empty() {
         Err(Error::BufferOverflow)
     } else {

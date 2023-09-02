@@ -26,7 +26,7 @@ pub enum Controller {
     EffectDepth { index: u8, data: u32 },
 }
 
-pub fn validate_index(index: u8) -> Result<(), Error> {
+pub fn validate_index(index: u8) -> Result<()> {
     match index {
         1 => Ok(()),
         2 => Ok(()),
