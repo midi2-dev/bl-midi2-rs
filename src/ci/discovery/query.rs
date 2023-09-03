@@ -258,16 +258,16 @@ mod tests {
                 .data(),
             ),
             debug::Data(&[
-                0x581E_317E,
-                0x7F0D_7001,
-                0x007A_405D,
-                0x7F7F_7F7F,
-                0x582E_312D,
-                0x367D_7C03,
-                0x7437_0106,
-                0x0531_0E66,
-                0x5834_3139,
-                0x0954_0000,
+                0x581E_31F0,
+                0x7E7F_0D70,
+                0x0100_7A40,
+                0x5D7F_7F7F,
+                0x582E_317F,
+                0x2D36_7D7C,
+                0x0374_3701,
+                0x0605_310E,
+                0x5836_3166,
+                0x3909_54F7,
                 0x0000_0000,
                 0x0000_0000,
             ]),
@@ -278,16 +278,16 @@ mod tests {
     fn sysex8_group() {
         assert_eq!(
             DiscoveryQueryMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
-                0x581E_317E,
-                0x7F0D_7001,
-                0x007A_405D,
-                0x7F7F_7F7F,
-                0x582E_312D,
-                0x367D_7C03,
-                0x7437_0106,
-                0x0531_0E66,
-                0x5834_3139,
-                0x0954_0000,
+                0x581E_31F0,
+                0x7E7F_0D70,
+                0x0100_7A40,
+                0x5D7F_7F7F,
+                0x582E_317F,
+                0x2D36_7D7C,
+                0x0374_3701,
+                0x0605_310E,
+                0x5836_3166,
+                0x3909_54F7,
                 0x0000_0000,
                 0x0000_0000,
             ])
@@ -301,16 +301,16 @@ mod tests {
     fn sysex8_source() {
         assert_eq!(
             DiscoveryQueryMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
-                0x581E_317E,
-                0x7F0D_7001,
-                0x007A_405D,
-                0x7F7F_7F7F,
-                0x582E_312D,
-                0x367D_7C03,
-                0x7437_0106,
-                0x0531_0E66,
-                0x5834_3139,
-                0x0954_0000,
+                0x581E_31F0,
+                0x7E7F_0D70,
+                0x0100_7A40,
+                0x5D7F_7F7F,
+                0x582E_317F,
+                0x2D36_7D7C,
+                0x0374_3701,
+                0x0605_310E,
+                0x5836_3166,
+                0x3909_54F7,
                 0x0000_0000,
                 0x0000_0000,
             ])
@@ -324,16 +324,16 @@ mod tests {
     fn sysex8_device_manufacturer() {
         assert_eq!(
             DiscoveryQueryMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
-                0x581E_317E,
-                0x7F0D_7001,
-                0x007A_405D,
-                0x7F7F_7F7F,
-                0x582E_312D,
-                0x367D_7C03,
-                0x7437_0106,
-                0x0531_0E66,
-                0x5834_3139,
-                0x0954_0000,
+                0x581E_31F0,
+                0x7E7F_0D70,
+                0x0100_7A40,
+                0x5D7F_7F7F,
+                0x582E_317F,
+                0x2D36_7D7C,
+                0x0374_3701,
+                0x0605_310E,
+                0x5836_3166,
+                0x3909_54F7,
                 0x0000_0000,
                 0x0000_0000,
             ])
@@ -347,16 +347,16 @@ mod tests {
     fn sysex8_device_family() {
         assert_eq!(
             DiscoveryQueryMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
-                0x581E_317E,
-                0x7F0D_7001,
-                0x007A_405D,
-                0x7F7F_7F7F,
-                0x582E_312D,
-                0x367D_7C03,
-                0x7437_0106,
-                0x0531_0E66,
-                0x5834_3139,
-                0x0954_0000,
+                0x581E_31F0,
+                0x7E7F_0D70,
+                0x0100_7A40,
+                0x5D7F_7F7F,
+                0x582E_317F,
+                0x2D36_7D7C,
+                0x0374_3701,
+                0x0605_310E,
+                0x5836_3166,
+                0x3909_54F7,
                 0x0000_0000,
                 0x0000_0000,
             ])
@@ -370,16 +370,16 @@ mod tests {
     fn sysex8_device_model() {
         assert_eq!(
             DiscoveryQueryMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
-                0x581E_317E,
-                0x7F0D_7001,
-                0x007A_405D,
-                0x7F7F_7F7F,
-                0x582E_312D,
-                0x367D_7C03,
-                0x7437_0106,
-                0x0531_0E66,
-                0x5834_3139,
-                0x0954_0000,
+                0x581E_31F0,
+                0x7E7F_0D70,
+                0x0100_7A40,
+                0x5D7F_7F7F,
+                0x582E_317F,
+                0x2D36_7D7C,
+                0x0374_3701,
+                0x0605_310E,
+                0x5836_3166,
+                0x3909_54F7,
                 0x0000_0000,
                 0x0000_0000,
             ])
@@ -393,16 +393,16 @@ mod tests {
     fn sysex8_software_version() {
         assert_eq!(
             DiscoveryQueryMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
-                0x581E_317E,
-                0x7F0D_7001,
-                0x007A_405D,
-                0x7F7F_7F7F,
-                0x582E_312D,
-                0x367D_7C03,
-                0x7437_0106,
-                0x0531_0E66,
-                0x5834_3139,
-                0x0954_0000,
+                0x581E_31F0,
+                0x7E7F_0D70,
+                0x0100_7A40,
+                0x5D7F_7F7F,
+                0x582E_317F,
+                0x2D36_7D7C,
+                0x0374_3701,
+                0x0605_310E,
+                0x5836_3166,
+                0x3909_54F7,
                 0x0000_0000,
                 0x0000_0000,
             ])
@@ -414,70 +414,67 @@ mod tests {
 
     #[test]
     fn sysex8_protocol_negotiation_supported() {
-        assert_eq!(
+        assert!(
             DiscoveryQueryMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
-                0x581E_317E,
-                0x7F0D_7001,
-                0x007A_405D,
-                0x7F7F_7F7F,
-                0x582E_312D,
-                0x367D_7C03,
-                0x7437_0106,
-                0x0531_0E66,
-                0x5834_3139,
-                0x0954_0000,
+                0x581E_31F0,
+                0x7E7F_0D70,
+                0x0100_7A40,
+                0x5D7F_7F7F,
+                0x582E_317F,
+                0x2D36_7D7C,
+                0x0374_3701,
+                0x0605_310E,
+                0x5836_3166,
+                0x3909_54F7,
                 0x0000_0000,
                 0x0000_0000,
             ])
             .unwrap()
-            .protocol_negotiation_supported(),
-            true
+            .protocol_negotiation_supported()
         );
     }
 
     #[test]
     fn sysex8_property_exchange_supported() {
-        assert_eq!(
+        assert!(
             DiscoveryQueryMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
-                0x581E_317E,
-                0x7F0D_7001,
-                0x007A_405D,
-                0x7F7F_7F7F,
-                0x582E_312D,
-                0x367D_7C03,
-                0x7437_0106,
-                0x0531_0E66,
-                0x5834_3139,
-                0x0954_0000,
+                0x581E_31F0,
+                0x7E7F_0D70,
+                0x0100_7A40,
+                0x5D7F_7F7F,
+                0x582E_317F,
+                0x2D36_7D7C,
+                0x0374_3701,
+                0x0605_310E,
+                0x5836_3166,
+                0x3909_54F7,
                 0x0000_0000,
                 0x0000_0000,
             ])
             .unwrap()
-            .property_exchange_supported(),
-            true
+            .property_exchange_supported()
         );
     }
 
     #[test]
     fn sysex8_profile_configuration_supported() {
-        assert_eq!(
+        assert!(
             DiscoveryQueryMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
-                0x581E_317E,
-                0x7F0D_7001,
-                0x007A_405D,
-                0x7F7F_7F7F,
-                0x582E_312D,
-                0x367D_7C03,
-                0x7437_0106,
-                0x0531_0E66,
-                0x5834_3139,
-                0x0954_0000,
+                0x581E_31F0,
+                0x7E7F_0D70,
+                0x0100_7A40,
+                0x5D7F_7F7F,
+                0x582E_317F,
+                0x2D36_7D7C,
+                0x0374_3701,
+                0x0605_310E,
+                0x5836_3166,
+                0x3909_54F7,
                 0x0000_0000,
                 0x0000_0000,
             ])
             .unwrap()
-            .profile_configuration_supported(),
-            true
+            .profile_configuration_supported()
         );
     }
 
@@ -485,16 +482,16 @@ mod tests {
     fn sysex8_max_sysex_size() {
         assert_eq!(
             DiscoveryQueryMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
-                0x581E_317E,
-                0x7F0D_7001,
-                0x007A_405D,
-                0x7F7F_7F7F,
-                0x582E_312D,
-                0x367D_7C03,
-                0x7437_0106,
-                0x0531_0E66,
-                0x5834_3139,
-                0x0954_0000,
+                0x581E_31F0,
+                0x7E7F_0D70,
+                0x0100_7A40,
+                0x5D7F_7F7F,
+                0x582E_317F,
+                0x2D36_7D7C,
+                0x0374_3701,
+                0x0605_310E,
+                0x5836_3166,
+                0x3909_54F7,
                 0x0000_0000,
                 0x0000_0000,
             ])
@@ -509,7 +506,7 @@ mod tests {
         assert_eq!(
             debug::Data(
                 DiscoveryQueryMessage::<sysex7::Sysex7MessageGroup>::builder(&mut random_buffer::<
-                    10,
+                    12,
                 >(
                 ))
                 .group(u4::new(0x8))
@@ -527,16 +524,18 @@ mod tests {
                 .data(),
             ),
             debug::Data(&[
-                0x3816_7E7F,
-                0x0D70_0100,
-                0x3826_7A40,
-                0x5D7F_7F7F,
-                0x3826_7F2D,
-                0x367D_7C03,
-                0x3826_7437,
-                0x0106_0531,
-                0x3835_0E66,
-                0x3909_5400,
+                0x3816_F07E,
+                0x7F0D_7001,
+                0x3826_007A,
+                0x405D_7F7F,
+                0x3826_7F7F,
+                0x2D36_7D7C,
+                0x3826_0374,
+                0x3701_0605,
+                0x3826_310E,
+                0x6639_0954,
+                0x3831_F700,
+                0x0000_0000,
             ]),
         );
     }
@@ -545,16 +544,18 @@ mod tests {
     fn sysex7_group() {
         assert_eq!(
             DiscoveryQueryMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
-                0x3816_7E7F,
-                0x0D70_0100,
-                0x3826_7A40,
-                0x5D7F_7F7F,
-                0x3826_7F2D,
-                0x367D_7C03,
-                0x3826_7437,
-                0x0106_0531,
-                0x3835_0E66,
-                0x3909_5400,
+                0x3816_F07E,
+                0x7F0D_7001,
+                0x3826_007A,
+                0x405D_7F7F,
+                0x3826_7F7F,
+                0x2D36_7D7C,
+                0x3826_0374,
+                0x3701_0605,
+                0x3836_310E,
+                0x6639_0954,
+                0x3831_F700,
+                0x0000_0000,
             ])
             .unwrap()
             .group(),
@@ -566,16 +567,18 @@ mod tests {
     fn sysex7_source() {
         assert_eq!(
             DiscoveryQueryMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
-                0x3816_7E7F,
-                0x0D70_0100,
-                0x3826_7A40,
-                0x5D7F_7F7F,
-                0x3826_7F2D,
-                0x367D_7C03,
-                0x3826_7437,
-                0x0106_0531,
-                0x3835_0E66,
-                0x3909_5400,
+                0x3816_F07E,
+                0x7F0D_7001,
+                0x3826_007A,
+                0x405D_7F7F,
+                0x3826_7F7F,
+                0x2D36_7D7C,
+                0x3826_0374,
+                0x3701_0605,
+                0x3836_310E,
+                0x6639_0954,
+                0x3831_F700,
+                0x0000_0000,
             ])
             .unwrap()
             .source(),
@@ -587,16 +590,18 @@ mod tests {
     fn sysex7_device_manufacturer() {
         assert_eq!(
             DiscoveryQueryMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
-                0x3816_7E7F,
-                0x0D70_0100,
-                0x3826_7A40,
-                0x5D7F_7F7F,
-                0x3826_7F2D,
-                0x367D_7C03,
-                0x3826_7437,
-                0x0106_0531,
-                0x3835_0E66,
-                0x3909_5400,
+                0x3816_F07E,
+                0x7F0D_7001,
+                0x3826_007A,
+                0x405D_7F7F,
+                0x3826_7F7F,
+                0x2D36_7D7C,
+                0x3826_0374,
+                0x3701_0605,
+                0x3836_310E,
+                0x6639_0954,
+                0x3831_F700,
+                0x0000_0000,
             ])
             .unwrap()
             .device_manufacturer(),
@@ -608,16 +613,18 @@ mod tests {
     fn sysex7_device_family() {
         assert_eq!(
             DiscoveryQueryMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
-                0x3816_7E7F,
-                0x0D70_0100,
-                0x3826_7A40,
-                0x5D7F_7F7F,
-                0x3826_7F2D,
-                0x367D_7C03,
-                0x3826_7437,
-                0x0106_0531,
-                0x3835_0E66,
-                0x3909_5400,
+                0x3816_F07E,
+                0x7F0D_7001,
+                0x3826_007A,
+                0x405D_7F7F,
+                0x3826_7F7F,
+                0x2D36_7D7C,
+                0x3826_0374,
+                0x3701_0605,
+                0x3836_310E,
+                0x6639_0954,
+                0x3831_F700,
+                0x0000_0000,
             ])
             .unwrap()
             .device_family(),
@@ -629,16 +636,18 @@ mod tests {
     fn sysex7_device_model() {
         assert_eq!(
             DiscoveryQueryMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
-                0x3816_7E7F,
-                0x0D70_0100,
-                0x3826_7A40,
-                0x5D7F_7F7F,
-                0x3826_7F2D,
-                0x367D_7C03,
-                0x3826_7437,
-                0x0106_0531,
-                0x3835_0E66,
-                0x3909_5400,
+                0x3816_F07E,
+                0x7F0D_7001,
+                0x3826_007A,
+                0x405D_7F7F,
+                0x3826_7F7F,
+                0x2D36_7D7C,
+                0x3826_0374,
+                0x3701_0605,
+                0x3836_310E,
+                0x6639_0954,
+                0x3831_F700,
+                0x0000_0000,
             ])
             .unwrap()
             .device_model_number(),
@@ -650,16 +659,18 @@ mod tests {
     fn sysex7_software_version() {
         assert_eq!(
             DiscoveryQueryMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
-                0x3816_7E7F,
-                0x0D70_0100,
-                0x3826_7A40,
-                0x5D7F_7F7F,
-                0x3826_7F2D,
-                0x367D_7C03,
-                0x3826_7437,
-                0x0106_0531,
-                0x3835_0E66,
-                0x3909_5400,
+                0x3816_F07E,
+                0x7F0D_7001,
+                0x3826_007A,
+                0x405D_7F7F,
+                0x3826_7F7F,
+                0x2D36_7D7C,
+                0x3826_0374,
+                0x3701_0605,
+                0x3836_310E,
+                0x6639_0954,
+                0x3831_F700,
+                0x0000_0000,
             ])
             .unwrap()
             .software_version(),
@@ -669,64 +680,67 @@ mod tests {
 
     #[test]
     fn sysex7_protocol_negotiation_supported() {
-        assert_eq!(
+        assert!(
             DiscoveryQueryMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
-                0x3816_7E7F,
-                0x0D70_0100,
-                0x3826_7A40,
-                0x5D7F_7F7F,
-                0x3826_7F2D,
-                0x367D_7C03,
-                0x3826_7437,
-                0x0106_0531,
-                0x3835_0E66,
-                0x3909_5400,
+                0x3816_F07E,
+                0x7F0D_7001,
+                0x3826_007A,
+                0x405D_7F7F,
+                0x3826_7F7F,
+                0x2D36_7D7C,
+                0x3826_0374,
+                0x3701_0605,
+                0x3836_310E,
+                0x6639_0954,
+                0x3831_F700,
+                0x0000_0000,
             ])
             .unwrap()
-            .protocol_negotiation_supported(),
-            true
+            .protocol_negotiation_supported()
         );
     }
 
     #[test]
     fn sysex7_property_exchange_supported() {
-        assert_eq!(
+        assert!(
             DiscoveryQueryMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
-                0x3816_7E7F,
-                0x0D70_0100,
-                0x3826_7A40,
-                0x5D7F_7F7F,
-                0x3826_7F2D,
-                0x367D_7C03,
-                0x3826_7437,
-                0x0106_0531,
-                0x3835_0E66,
-                0x3909_5400,
+                0x3816_F07E,
+                0x7F0D_7001,
+                0x3826_007A,
+                0x405D_7F7F,
+                0x3826_7F7F,
+                0x2D36_7D7C,
+                0x3826_0374,
+                0x3701_0605,
+                0x3836_310E,
+                0x6639_0954,
+                0x3831_F700,
+                0x0000_0000,
             ])
             .unwrap()
-            .property_exchange_supported(),
-            true
+            .property_exchange_supported()
         );
     }
 
     #[test]
     fn sysex7_profile_configuration_supported() {
-        assert_eq!(
+        assert!(
             DiscoveryQueryMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
-                0x3816_7E7F,
-                0x0D70_0100,
-                0x3826_7A40,
-                0x5D7F_7F7F,
-                0x3826_7F2D,
-                0x367D_7C03,
-                0x3826_7437,
-                0x0106_0531,
-                0x3835_0E66,
-                0x3909_5400,
+                0x3816_F07E,
+                0x7F0D_7001,
+                0x3826_007A,
+                0x405D_7F7F,
+                0x3826_7F7F,
+                0x2D36_7D7C,
+                0x3826_0374,
+                0x3701_0605,
+                0x3836_310E,
+                0x6639_0954,
+                0x3831_F700,
+                0x0000_0000,
             ])
             .unwrap()
-            .profile_configuration_supported(),
-            true
+            .profile_configuration_supported()
         );
     }
 
@@ -734,16 +748,18 @@ mod tests {
     fn sysex7_max_sysex_size() {
         assert_eq!(
             DiscoveryQueryMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
-                0x3816_7E7F,
-                0x0D70_0100,
-                0x3826_7A40,
-                0x5D7F_7F7F,
-                0x3826_7F2D,
-                0x367D_7C03,
-                0x3826_7437,
-                0x0106_0531,
-                0x3835_0E66,
-                0x3909_5400,
+                0x3816_F07E,
+                0x7F0D_7001,
+                0x3826_007A,
+                0x405D_7F7F,
+                0x3826_7F7F,
+                0x2D36_7D7C,
+                0x3826_0374,
+                0x3701_0605,
+                0x3836_310E,
+                0x6639_0954,
+                0x3831_F700,
+                0x0000_0000,
             ])
             .unwrap()
             .max_sysex_message_size(),

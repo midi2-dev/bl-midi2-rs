@@ -1,5 +1,5 @@
 use crate::{
-    ci::{helpers as ci_helpers, DeviceId},
+    ci::{helpers as ci_helpers, DeviceId, SYSEX_END},
     error::Error,
     message::{sysex, system_exclusive_7bit as sysex7, system_exclusive_8bit as sysex8},
     result::Result,
@@ -21,6 +21,7 @@ enum DataOffsets {
     SoftwareVersion = DataOffsets::DeviceFamilyModelNumber as usize + 2,
     CiSupportFlags = DataOffsets::SoftwareVersion as usize + 4,
     MaxSysexSize = DataOffsets::CiSupportFlags as usize + 1,
+    SysexEnd = DataOffsets::MaxSysexSize as usize + 4,
 }
 
 impl<'a, const STATUS: u8> DiscoveryMessage<sysex8::Sysex8MessageGroup<'a>, STATUS> {
@@ -33,14 +34,7 @@ impl<'a, const STATUS: u8> DiscoveryMessage<sysex8::Sysex8MessageGroup<'a>, STAT
         self.0.group()
     }
     pub fn source(&self) -> u28 {
-        let mut payload = self.0.payload();
-        payload.nth(4);
-        u28::from_u7s(&[
-            payload.next().unwrap(),
-            payload.next().unwrap(),
-            payload.next().unwrap(),
-            payload.next().unwrap(),
-        ])
+        ci_helpers::source_from_payload(self.0.payload())
     }
     pub fn destination(&self) -> u28 {
         ci_helpers::destination_from_payload(self.0.payload())
@@ -111,7 +105,10 @@ impl<'a, const STATUS: u8> DiscoveryMessage<sysex8::Sysex8MessageGroup<'a>, STAT
     pub fn from_data(data: &'a [u32]) -> Result<Self> {
         let messages = ci_helpers::validate_sysex8(data, STATUS)?;
         let mut payload = messages.payload();
-        let Some(_) = payload.nth(DataOffsets::MaxSysexSize as usize) else {
+        let Some(SYSEX_END) = payload.nth(DataOffsets::SysexEnd as usize) else {
+            return Err(Error::InvalidData);
+        };
+        let None = payload.next() else {
             return Err(Error::InvalidData);
         };
         Ok(DiscoveryMessage(messages))
@@ -128,42 +125,29 @@ impl<'a, const STATUS: u8> DiscoveryMessage<sysex7::Sysex7MessageGroup<'a>, STAT
         self.0.group()
     }
     pub fn source(&self) -> u28 {
-        let mut payload = self.0.payload();
-        payload.nth(4);
-        u28::from_u7s(&[
-            payload.next().unwrap().into(),
-            payload.next().unwrap().into(),
-            payload.next().unwrap().into(),
-            payload.next().unwrap().into(),
-        ])
+        ci_helpers::source_from_payload(self.0.payload())
     }
     pub fn destination(&self) -> u28 {
-        ci_helpers::destination_from_payload(self.0.payload().map(u8::from))
+        ci_helpers::destination_from_payload(self.0.payload())
     }
     pub fn device_manufacturer(&self) -> u21 {
         let mut payload = self.0.payload();
         payload.nth(DataOffsets::DeviceManufacturer as usize - 1);
         u21::from_u7s(&[
-            payload.next().unwrap().into(),
-            payload.next().unwrap().into(),
-            payload.next().unwrap().into(),
+            payload.next().unwrap(),
+            payload.next().unwrap(),
+            payload.next().unwrap(),
         ])
     }
     pub fn device_family(&self) -> u14 {
         let mut payload = self.0.payload();
         payload.nth(DataOffsets::DeviceFamily as usize - 1);
-        u14::from_u7s(&[
-            payload.next().unwrap().into(),
-            payload.next().unwrap().into(),
-        ])
+        u14::from_u7s(&[payload.next().unwrap(), payload.next().unwrap()])
     }
     pub fn device_model_number(&self) -> u14 {
         let mut payload = self.0.payload();
         payload.nth(DataOffsets::DeviceFamilyModelNumber as usize - 1);
-        u14::from_u7s(&[
-            payload.next().unwrap().into(),
-            payload.next().unwrap().into(),
-        ])
+        u14::from_u7s(&[payload.next().unwrap(), payload.next().unwrap()])
     }
     pub fn software_version(&self) -> [u7; 4] {
         let mut payload = self.0.payload();
@@ -177,10 +161,7 @@ impl<'a, const STATUS: u8> DiscoveryMessage<sysex7::Sysex7MessageGroup<'a>, STAT
     }
     fn flags_bit(&self) -> u8 {
         let mut payload = self.0.payload();
-        payload
-            .nth(DataOffsets::CiSupportFlags as usize)
-            .unwrap()
-            .into()
+        payload.nth(DataOffsets::CiSupportFlags as usize).unwrap()
     }
     pub fn protocol_negotiation_supported(&self) -> bool {
         self.flags_bit().bit(6)
@@ -195,10 +176,10 @@ impl<'a, const STATUS: u8> DiscoveryMessage<sysex7::Sysex7MessageGroup<'a>, STAT
         let mut payload = self.0.payload();
         payload.nth(DataOffsets::MaxSysexSize as usize - 1);
         u28::from_u7s(&[
-            payload.next().unwrap().into(),
-            payload.next().unwrap().into(),
-            payload.next().unwrap().into(),
-            payload.next().unwrap().into(),
+            payload.next().unwrap(),
+            payload.next().unwrap(),
+            payload.next().unwrap(),
+            payload.next().unwrap(),
         ])
     }
     pub fn data(&self) -> &[u32] {
@@ -207,7 +188,10 @@ impl<'a, const STATUS: u8> DiscoveryMessage<sysex7::Sysex7MessageGroup<'a>, STAT
     pub fn from_data(data: &'a [u32]) -> Result<Self> {
         let messages = ci_helpers::validate_sysex7(data, STATUS)?;
         let mut payload = messages.payload();
-        let Some(_) = payload.nth(DataOffsets::MaxSysexSize as usize) else {
+        let Some(SYSEX_END) = payload.nth(DataOffsets::SysexEnd as usize) else {
+            return Err(Error::InvalidData);
+        };
+        let None = payload.next() else {
             return Err(Error::InvalidData);
         };
         Ok(DiscoveryMessage(messages))

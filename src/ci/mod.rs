@@ -15,6 +15,8 @@ mod invalidate_muid;
 mod nak;
 
 const VERSION: u8 = 0x01;
+const SYSEX_START: u8 = 0xF0;
+const SYSEX_END: u8 = 0xF7;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum DeviceId {

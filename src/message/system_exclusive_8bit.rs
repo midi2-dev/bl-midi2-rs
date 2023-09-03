@@ -365,13 +365,19 @@ pub struct Sysex8MessageGroupBuilder<'a> {
 
 impl<'a> Sysex8MessageGroupBuilder<'a> {
     pub fn new(buffer: &'a mut [u32]) -> Self {
-        Sysex8MessageGroupBuilder {
+        let mut ret = Sysex8MessageGroupBuilder {
             buffer,
             size: 0,
             error: None,
             group: u4::new(0x0),
             stream_id: 0x0,
+        };
+        ret.grow();
+        if ret.error.is_none() {
+            // set the first byte to Sysex Begin
+            ret.set_datum(0, 0, 0xF0);
         }
+        ret
     }
 
     pub fn stream_id(&mut self, id: u8) -> &mut Self {
@@ -401,29 +407,32 @@ impl<'a> Sysex8MessageGroupBuilder<'a> {
             return self;
         }
 
-        let first = iter.next();
-
-        if first.is_some() {
-            self.grow();
-        } else {
+        let Some(first) = iter.next() else {
             return self;
-        }
+        };
 
-        if self.error.is_some() {
-            return self;
-        }
+        let data_start: usize = {
+            let current_size = self.message_size(self.message_index());
+            if current_size == u4::new(14) {
+                self.grow();
+                if self.error.is_some() {
+                    return self;
+                }
+                0
+            } else {
+                u8::from(current_size) as usize - 1
+            }
+        };
 
-        let message_index = 4 * (self.size - 1);
+        let message_index = self.message_index();
         let mut stop = false;
 
-        self.buffer[message_index].set_octet(3, first.unwrap());
-        self.increment_message_size(message_index);
+        self.set_datum(message_index, data_start, first);
 
-        for i in 1..13 {
+        for i in (data_start + 1)..13 {
             match iter.next() {
                 Some(v) => {
-                    self.buffer[message_index + (i + 3) / 4].set_octet((3 + i) % 4, v);
-                    self.increment_message_size(message_index);
+                    self.set_datum(message_index, i, v);
                 }
                 None => {
                     stop = true;
@@ -439,8 +448,23 @@ impl<'a> Sysex8MessageGroupBuilder<'a> {
         }
     }
 
+    // set the ith datum value in the message at position m in the buffer
+    fn set_datum(&mut self, message_index: usize, data_index: usize, v: u8) {
+        self.buffer[message_index + (data_index + 3) / 4].set_octet((3 + data_index) % 4, v);
+        self.increment_message_size(message_index);
+    }
+
+    // the size of the sysex message beginning at index in the buffer.
+    fn message_size(&self, message_index: usize) -> u4 {
+        self.buffer[message_index].nibble(3)
+    }
+
+    // The buffer index into the last message in the group.
+    fn message_index(&self) -> usize {
+        4 * (self.size - 1)
+    }
     fn increment_message_size(&mut self, message_index: usize) {
-        let new_value = self.buffer[message_index].nibble(3) + u4::new(1);
+        let new_value = self.message_size(self.message_index()) + u4::new(1);
         self.buffer[message_index].set_nibble(3, new_value);
     }
 
@@ -482,14 +506,24 @@ impl<'a> Sysex8MessageGroupBuilder<'a> {
         self.size += 1;
     }
 
-    pub fn build(&'a self) -> Result<Sysex8MessageGroup<'a>> {
-        match &self.error {
-            None => match self.size {
-                0 => Err(Error::InvalidData),
-                _ => Ok(Sysex8MessageGroup(&self.buffer[..4 * self.size])),
-            },
-            Some(e) => Err(e.clone()),
+    pub fn build(&'a mut self) -> Result<Sysex8MessageGroup<'a>> {
+        let None = &self.error else {
+            return Err(Error::InvalidData);
+        };
+
+        if self.message_size(self.message_index()) == u4::new(13) {
+            self.grow();
+            if self.error.is_some() {
+                return Err(Error::InvalidData);
+            }
         }
+
+        {
+            let data_index = u8::from(self.message_size(self.message_index())) as usize;
+            self.set_datum(self.message_index(), data_index - 1, 0xF7);
+        }
+
+        Ok(Sysex8MessageGroup(&self.buffer[..4 * self.size]))
     }
 }
 
@@ -625,12 +659,12 @@ mod tests {
                 .payload(0..15)
                 .build(),
             Ok(Sysex8MessageGroup(&[
-                0x541E_BB00,
-                0x0102_0304,
-                0x0506_0708,
-                0x090A_0B0C,
-                0x5433_BB0D,
-                0x0E00_0000,
+                0x541E_BBF0,
+                0x0001_0203,
+                0x0405_0607,
+                0x0809_0A0B,
+                0x5435_BB0C,
+                0x0D0E_F700,
                 0x0000_0000,
                 0x0000_0000,
             ])),
@@ -647,12 +681,12 @@ mod tests {
                 .stream_id(0xBB)
                 .build(),
             Ok(Sysex8MessageGroup(&[
-                0x541E_BB00,
-                0x0102_0304,
-                0x0506_0708,
-                0x090A_0B0C,
-                0x5433_BB0D,
-                0x0E00_0000,
+                0x541E_BBF0,
+                0x0001_0203,
+                0x0405_0607,
+                0x0809_0A0B,
+                0x5435_BB0C,
+                0x0D0E_F700,
                 0x0000_0000,
                 0x0000_0000,
             ])),
@@ -669,10 +703,10 @@ mod tests {
                 .stream_id(0xBB)
                 .build(),
             Ok(Sysex8MessageGroup(&[
-                0x540B_BB00,
-                0x0102_0304,
-                0x0506_0708,
-                0x0900_0000,
+                0x540D_BBF0,
+                0x0001_0203,
+                0x0405_0607,
+                0x0809_F700,
             ])),
         );
     }
@@ -688,12 +722,12 @@ mod tests {
                 .stream_id(0xBB)
                 .build(),
             Ok(Sysex8MessageGroup(&[
-                0x541B_BB00,
-                0x0102_0304,
-                0x0506_0708,
-                0x0900_0000,
-                0x5436_BB00,
-                0x0102_0304,
+                0x541E_BBF0,
+                0x0001_0203,
+                0x0405_0607,
+                0x0809_0001,
+                0x5435_BB02,
+                0x0304_F700,
                 0x0000_0000,
                 0x0000_0000,
             ])),

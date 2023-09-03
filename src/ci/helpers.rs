@@ -1,5 +1,5 @@
 use crate::{
-    ci::DeviceId,
+    ci::{DeviceId, SYSEX_START},
     error::Error,
     message::system_exclusive_7bit as sysex7,
     message::system_exclusive_8bit as sysex8,
@@ -55,11 +55,14 @@ impl core::iter::Iterator for StandardDataIterator {
     }
 }
 
-pub const STANDARD_DATA_SIZE: usize = 13;
+pub const STANDARD_DATA_SIZE: usize = 14;
 
 pub fn validate_sysex8(buffer: &[u32], status: u8) -> Result<sysex8::Sysex8MessageGroup> {
     let messages = sysex8::Sysex8MessageGroup::from_data(buffer)?;
     let mut payload = messages.payload();
+    let Some(SYSEX_START) = payload.next() else {
+        return Err(Error::InvalidData);
+    };
     let Some(0x7E) = payload.next() else {
         return Err(Error::InvalidData);
     };
@@ -98,24 +101,25 @@ pub fn device_id_from_u8(v: u8) -> Result<DeviceId> {
 pub fn validate_sysex7(buffer: &[u32], status: u8) -> Result<sysex7::Sysex7MessageGroup> {
     let messages = sysex7::Sysex7MessageGroup::from_data(buffer)?;
     let mut payload = messages.payload();
-    if let Some(v) = payload.next() {
-        if v != u7::new(0x7E) {
-            return Err(Error::InvalidData);
-        }
+    let Some(0xF0) = payload.next() else {
+        return Err(Error::InvalidData);
+    };
+    let Some(0x7E) = payload.next() else {
+        return Err(Error::InvalidData);
     };
     if let Some(v) = payload.next() {
-        device_id_from_u8(v.into())?;
+        device_id_from_u8(v)?;
     } else {
         return Err(Error::InvalidData);
     };
     // midi ci status code
     if let Some(v) = payload.next() {
-        if u8::from(v) == status {
+        if v == status {
             return Err(Error::InvalidData);
         }
     };
     if let Some(v) = payload.next() {
-        if u8::from(v) != status {
+        if v != status {
             return Err(Error::InvalidData);
         }
     };
@@ -146,7 +150,17 @@ impl core::iter::Iterator for ProtocolDataIterator {
 }
 
 pub fn destination_from_payload<I: core::iter::Iterator<Item = u8>>(mut payload: I) -> u28 {
-    payload.nth(8);
+    payload.nth(9);
+    u28::from_u7s(&[
+        payload.next().unwrap(),
+        payload.next().unwrap(),
+        payload.next().unwrap(),
+        payload.next().unwrap(),
+    ])
+}
+
+pub fn source_from_payload<I: core::iter::Iterator<Item = u8>>(mut payload: I) -> u28 {
+    payload.nth(5);
     u28::from_u7s(&[
         payload.next().unwrap(),
         payload.next().unwrap(),

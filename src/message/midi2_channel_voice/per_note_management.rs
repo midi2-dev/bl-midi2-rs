@@ -141,21 +141,15 @@ mod tests {
 
     #[test]
     fn detach() {
-        assert_eq!(
-            PerNoteManagementMessage::from_data(&[0x4BF9_1C03])
-                .unwrap()
-                .detach(),
-            true,
-        );
+        assert!(PerNoteManagementMessage::from_data(&[0x4BF9_1C03])
+            .unwrap()
+            .detach(),);
     }
 
     #[test]
     fn reset() {
-        assert_eq!(
-            PerNoteManagementMessage::from_data(&[0x4BF9_1C03])
-                .unwrap()
-                .reset(),
-            true,
-        );
+        assert!(PerNoteManagementMessage::from_data(&[0x4BF9_1C03])
+            .unwrap()
+            .reset(),);
     }
 }

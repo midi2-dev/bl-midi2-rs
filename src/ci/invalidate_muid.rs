@@ -31,7 +31,7 @@ impl<'a> InvalidateMuidMessage<sysex8::Sysex8MessageGroup<'a>> {
     }
     pub fn target_muid(&self) -> u28 {
         let mut payload = self.0.payload();
-        payload.nth(12);
+        payload.nth(13);
         u28::from_u7s(&[
             payload.next().unwrap(),
             payload.next().unwrap(),
@@ -65,20 +65,20 @@ impl<'a> InvalidateMuidMessage<sysex7::Sysex7MessageGroup<'a>> {
         let mut payload = self.0.payload();
         payload.nth(4);
         u28::from_u7s(&[
-            payload.next().unwrap().into(),
-            payload.next().unwrap().into(),
-            payload.next().unwrap().into(),
-            payload.next().unwrap().into(),
+            payload.next().unwrap(),
+            payload.next().unwrap(),
+            payload.next().unwrap(),
+            payload.next().unwrap(),
         ])
     }
     pub fn target_muid(&self) -> u28 {
         let mut payload = self.0.payload();
-        payload.nth(12);
+        payload.nth(13);
         u28::from_u7s(&[
-            payload.next().unwrap().into(),
-            payload.next().unwrap().into(),
-            payload.next().unwrap().into(),
-            payload.next().unwrap().into(),
+            payload.next().unwrap(),
+            payload.next().unwrap(),
+            payload.next().unwrap(),
+            payload.next().unwrap(),
         ])
     }
     pub fn from_data(data: &'a [u32]) -> Result<Self> {
@@ -212,13 +212,13 @@ mod tests {
                 .data(),
             ),
             debug::Data(&[
-                0x571E_4A7E,
-                0x7F0D_7E01,
-                0x7475_6501,
-                0x7F7F_7F7F,
-                0x5735_4A6A,
-                0x5863_6B00,
-                0x0000_0000,
+                0x571E_4AF0,
+                0x7E7F_0D7E,
+                0x0174_7565,
+                0x017F_7F7F,
+                0x5737_4A7F,
+                0x6A58_636B,
+                0xF700_0000,
                 0x0000_0000,
             ]),
         );
@@ -228,9 +228,10 @@ mod tests {
     fn sysex7_builder() {
         assert_eq!(
             debug::Data(
-                InvalidateMuidMessage::<sysex7::Sysex7MessageGroup>::builder(
-                    &mut random_buffer::<8>()
-                )
+                InvalidateMuidMessage::<sysex7::Sysex7MessageGroup>::builder(&mut random_buffer::<
+                    10,
+                >(
+                ))
                 .group(u4::new(0x7))
                 .source(u28::new(3767028))
                 .target_muid(u28::new(226028650))
@@ -239,12 +240,14 @@ mod tests {
                 .data(),
             ),
             debug::Data(&[
-                0x3716_7E7F,
-                0x0D7E_0174,
-                0x3726_7565,
-                0x017F_7F7F,
-                0x3735_7F6A,
-                0x5863_6B00,
+                0x3716_F07E,
+                0x7F0D_7E01,
+                0x3726_7475,
+                0x6501_7F7F,
+                0x3726_7F7F,
+                0x6A58_636B,
+                0x3731_F700,
+                0x0000_0000,
             ]),
         );
     }
@@ -253,13 +256,13 @@ mod tests {
     fn target_muid_sysex8() {
         assert_eq!(
             InvalidateMuidMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
-                0x571E_4A7E,
-                0x7F0D_7E01,
-                0x7475_6501,
-                0x7F7F_7F7F,
-                0x5735_4A6A,
-                0x5863_6B00,
-                0x0000_0000,
+                0x571E_4AF0,
+                0x7E7F_0D7E,
+                0x0174_7565,
+                0x017F_7F7F,
+                0x5737_4A7F,
+                0x6A58_636B,
+                0xF700_0000,
                 0x0000_0000,
             ])
             .unwrap()
@@ -272,12 +275,14 @@ mod tests {
     fn target_muid_sysex7() {
         assert_eq!(
             InvalidateMuidMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
-                0x3716_7E7F,
-                0x0D7E_0174,
-                0x3726_7565,
-                0x017F_7F7F,
-                0x3735_7F6A,
-                0x5863_6B00,
+                0x3716_F07E,
+                0x7F0D_7E01,
+                0x3726_7475,
+                0x6501_7F7F,
+                0x3726_7F7F,
+                0x6A58_636B,
+                0x3731_F700,
+                0x0000_0000,
             ])
             .unwrap()
             .target_muid(),

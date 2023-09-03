@@ -1,5 +1,5 @@
 use crate::{
-    ci::{helpers as ci_helpers, DeviceId},
+    ci::{helpers as ci_helpers, DeviceId, SYSEX_END},
     error::Error,
     message::{sysex, system_exclusive_7bit as sysex7, system_exclusive_8bit as sysex8},
     result::Result,
@@ -11,6 +11,7 @@ use crate::{
 pub struct NakMessage<Repr: sysex::SysexMessages>(Repr);
 
 const STATUS: u8 = 0x7F;
+const SIZE: usize = ci_helpers::STANDARD_DATA_SIZE + 1;
 
 impl<'a> NakMessage<sysex8::Sysex8MessageGroup<'a>> {
     pub fn builder(buffer: &'a mut [u32]) -> NakBuilder<sysex8::Sysex8MessageGroup<'a>> {
@@ -41,11 +42,15 @@ impl<'a> NakMessage<sysex8::Sysex8MessageGroup<'a>> {
     }
     pub fn device_id(&self) -> DeviceId {
         let mut payload = self.0.payload();
-        ci_helpers::device_id_from_u8(payload.nth(1).unwrap()).unwrap()
+        ci_helpers::device_id_from_u8(payload.nth(2).unwrap()).unwrap()
     }
     pub fn from_data(data: &'a [u32]) -> Result<Self> {
         let messages = ci_helpers::validate_sysex8(data, STATUS)?;
-        let None = messages.payload().nth(ci_helpers::STANDARD_DATA_SIZE) else {
+        let mut payload = messages.payload();
+        let Some(SYSEX_END) = payload.nth(SIZE - 1) else {
+            return Err(Error::InvalidData);
+        };
+        let None = payload.next() else {
             return Err(Error::InvalidData);
         };
         Ok(NakMessage(messages))
@@ -66,29 +71,33 @@ impl<'a> NakMessage<sysex7::Sysex7MessageGroup<'a>> {
         let mut payload = self.0.payload();
         payload.nth(4);
         u28::from_u7s(&[
-            payload.next().unwrap().into(),
-            payload.next().unwrap().into(),
-            payload.next().unwrap().into(),
-            payload.next().unwrap().into(),
+            payload.next().unwrap(),
+            payload.next().unwrap(),
+            payload.next().unwrap(),
+            payload.next().unwrap(),
         ])
     }
     pub fn destination(&self) -> u28 {
         let mut payload = self.0.payload();
         payload.nth(8);
         u28::from_u7s(&[
-            payload.next().unwrap().into(),
-            payload.next().unwrap().into(),
-            payload.next().unwrap().into(),
-            payload.next().unwrap().into(),
+            payload.next().unwrap(),
+            payload.next().unwrap(),
+            payload.next().unwrap(),
+            payload.next().unwrap(),
         ])
     }
     pub fn device_id(&self) -> DeviceId {
         let mut payload = self.0.payload();
-        ci_helpers::device_id_from_u8(payload.nth(1).unwrap().into()).unwrap()
+        ci_helpers::device_id_from_u8(payload.nth(2).unwrap()).unwrap()
     }
     pub fn from_data(data: &'a [u32]) -> Result<Self> {
         let messages = ci_helpers::validate_sysex7(data, STATUS)?;
-        let None = messages.payload().nth(ci_helpers::STANDARD_DATA_SIZE) else {
+        let mut payload = messages.payload();
+        let Some(SYSEX_END) = payload.nth(SIZE - 1) else {
+            return Err(Error::InvalidData);
+        };
+        let None = payload.next() else {
             return Err(Error::InvalidData);
         };
         Ok(NakMessage(messages))
@@ -205,7 +214,7 @@ mod tests {
     fn sysex8_builder() {
         assert_eq!(
             debug::Data(
-                NakMessage::<sysex8::Sysex8MessageGroup>::builder(&mut random_buffer::<4>())
+                NakMessage::<sysex8::Sysex8MessageGroup>::builder(&mut random_buffer::<8>())
                     .group(u4::new(0x3))
                     .stream_id(0xB2)
                     .device_id(DeviceId::Channel(u4::new(0xD)))
@@ -215,7 +224,16 @@ mod tests {
                     .unwrap()
                     .data(),
             ),
-            debug::Data(&[0x530E_B27E, 0x0D0D_7F01, 0x7275_702B, 0x3578_3F42,]),
+            debug::Data(&[
+                0x531E_B2F0,
+                0x7E0D_0D7F,
+                0x0172_7570,
+                0x2B35_783F,
+                0x5333_B242,
+                0xF700_0000,
+                0x0000_0000,
+                0x0000_0000,
+            ]),
         );
     }
 
@@ -233,12 +251,12 @@ mod tests {
                     .data(),
             ),
             debug::Data(&[
-                0x3316_7E0D,
-                0x0D7F_0172,
-                0x3326_7570,
-                0x2B35_783F,
-                0x3331_4200,
-                0x0000_0000,
+                0x3316_F07E,
+                0x0D0D_7F01,
+                0x3326_7275,
+                0x702B_3578,
+                0x3333_3F42,
+                0xF700_0000,
             ]),
         );
     }
@@ -246,10 +264,14 @@ mod tests {
     #[test]
     fn sysex8_from_data() {
         assert!(NakMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
-            0x530E_B27E,
-            0x0D0D_7F01,
-            0x7275_702B,
-            0x3578_3F42,
+            0x531E_B2F0,
+            0x7E0D_0D7F,
+            0x0172_7570,
+            0x2B35_783F,
+            0x5333_B242,
+            0xF700_0000,
+            0x0000_0000,
+            0x0000_0000,
         ])
         .is_ok());
     }
@@ -257,26 +279,26 @@ mod tests {
     #[test]
     fn sysex7_from_data() {
         assert!(NakMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
-            0x3316_7E0D,
-            0x0D7F_0172,
-            0x3326_7570,
-            0x2B35_783F,
-            0x3331_4200,
-            0x0000_0000,
+            0x3316_F07E,
+            0x0D0D_7F01,
+            0x3326_7275,
+            0x702B_3578,
+            0x3333_3F42,
+            0xF700_0000,
         ])
         .is_ok());
     }
 
     #[test]
-    fn device_id_syszex7() {
+    fn device_id_sysex7() {
         assert_eq!(
             NakMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
-                0x3316_7E0D,
-                0x0D7F_0172,
-                0x3326_7570,
-                0x2B35_783F,
-                0x3331_4200,
-                0x0000_0000,
+                0x3316_F07E,
+                0x0D0D_7F01,
+                0x3326_7275,
+                0x702B_3578,
+                0x3333_3F42,
+                0xF700_0000,
             ])
             .unwrap()
             .device_id(),
@@ -285,13 +307,17 @@ mod tests {
     }
 
     #[test]
-    fn device_id_syszex8() {
+    fn device_id_sysex8() {
         assert_eq!(
             NakMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
-                0x530E_B27E,
-                0x0D0D_7F01,
-                0x7275_702B,
-                0x3578_3F42,
+                0x531E_B2F0,
+                0x7E0D_0D7F,
+                0x0172_7570,
+                0x2B35_783F,
+                0x5333_B242,
+                0xF700_0000,
+                0x0000_0000,
+                0x0000_0000,
             ])
             .unwrap()
             .device_id(),

@@ -3,9 +3,7 @@ where
     [u32; SIZE]: Default,
 {
     let mut ret: [u32; SIZE] = Default::default();
-    for i in 0..SIZE {
-        ret[i] = RANDOM_DATA[i];
-    }
+    ret.copy_from_slice(&RANDOM_DATA[..SIZE]);
     ret
 }
 
