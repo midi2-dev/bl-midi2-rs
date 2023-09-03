@@ -228,61 +228,58 @@ impl<'a, const STATUS: u8> DiscoveryBuilder<sysex8::Sysex8MessageGroup<'a>, STAT
             max_sysex_message_size: Default::default(),
         }
     }
-    pub fn stream_id(&mut self, id: u8) -> &mut Self {
-        self.builder.stream_id(id);
+    pub fn stream_id(mut self, id: u8) -> Self {
+        self.builder = self.builder.stream_id(id);
         self
     }
-    pub fn group(&mut self, group: u4) -> &mut Self {
-        self.builder.group(group);
+    pub fn group(mut self, group: u4) -> Self {
+        self.builder = self.builder.group(group);
         self
     }
-    pub fn source(&mut self, source: u28) -> &mut Self {
+    pub fn source(mut self, source: u28) -> Self {
         self.source = source;
         self
     }
-    pub fn destination(&mut self, dest: u28) -> &mut Self {
+    pub fn destination(mut self, dest: u28) -> Self {
         self.destination = dest;
         self
     }
-    pub fn device_manufacturer(&mut self, device_manufacturer: u21) -> &mut Self {
+    pub fn device_manufacturer(mut self, device_manufacturer: u21) -> Self {
         self.device_manufacturer = device_manufacturer;
         self
     }
-    pub fn device_family(&mut self, device_family: u14) -> &mut Self {
+    pub fn device_family(mut self, device_family: u14) -> Self {
         self.device_family = device_family;
         self
     }
-    pub fn device_model_number(&mut self, device_model_number: u14) -> &mut Self {
+    pub fn device_model_number(mut self, device_model_number: u14) -> Self {
         self.device_model_number = device_model_number;
         self
     }
-    pub fn software_version(&mut self, software_version: [u7; 4]) -> &mut Self {
+    pub fn software_version(mut self, software_version: [u7; 4]) -> Self {
         self.software_version = software_version;
         self
     }
-    pub fn protocol_negotiation_supported(
-        &mut self,
-        protocol_negotiation_supported: bool,
-    ) -> &mut Self {
+    pub fn protocol_negotiation_supported(mut self, protocol_negotiation_supported: bool) -> Self {
         self.protocol_negotiation_supported = protocol_negotiation_supported;
         self
     }
     pub fn profile_configuration_supported(
-        &mut self,
+        mut self,
         profile_configuration_supported: bool,
-    ) -> &mut Self {
+    ) -> Self {
         self.profile_configuration_supported = profile_configuration_supported;
         self
     }
-    pub fn property_exchange_supported(&mut self, property_exchange_supported: bool) -> &mut Self {
+    pub fn property_exchange_supported(mut self, property_exchange_supported: bool) -> Self {
         self.property_exchange_supported = property_exchange_supported;
         self
     }
-    pub fn max_sysex_message_size(&mut self, max_sysex_message_size: u28) -> &mut Self {
+    pub fn max_sysex_message_size(mut self, max_sysex_message_size: u28) -> Self {
         self.max_sysex_message_size = max_sysex_message_size;
         self
     }
-    pub fn build(&'a mut self) -> Result<DiscoveryMessage<sysex8::Sysex8MessageGroup<'a>, STATUS>> {
+    pub fn build(self) -> Result<DiscoveryMessage<sysex8::Sysex8MessageGroup<'a>, STATUS>> {
         let payload = ci_helpers::StandardDataIterator::new(
             DeviceId::MidiPort,
             STATUS,
@@ -336,57 +333,54 @@ impl<'a, const STATUS: u8> DiscoveryBuilder<sysex7::Sysex7MessageGroup<'a>, STAT
             max_sysex_message_size: Default::default(),
         }
     }
-    pub fn group(&mut self, group: u4) -> &mut Self {
-        self.builder.group(group);
+    pub fn group(mut self, group: u4) -> Self {
+        self.builder = self.builder.group(group);
         self
     }
-    pub fn source(&mut self, source: u28) -> &mut Self {
+    pub fn source(mut self, source: u28) -> Self {
         self.source = source;
         self
     }
-    pub fn destination(&mut self, dest: u28) -> &mut Self {
+    pub fn destination(mut self, dest: u28) -> Self {
         self.destination = dest;
         self
     }
-    pub fn device_manufacturer(&mut self, device_manufacturer: u21) -> &mut Self {
+    pub fn device_manufacturer(mut self, device_manufacturer: u21) -> Self {
         self.device_manufacturer = device_manufacturer;
         self
     }
-    pub fn device_family(&mut self, device_family: u14) -> &mut Self {
+    pub fn device_family(mut self, device_family: u14) -> Self {
         self.device_family = device_family;
         self
     }
-    pub fn device_model_number(&mut self, device_model_number: u14) -> &mut Self {
+    pub fn device_model_number(mut self, device_model_number: u14) -> Self {
         self.device_model_number = device_model_number;
         self
     }
-    pub fn software_version(&mut self, software_version: [u7; 4]) -> &mut Self {
+    pub fn software_version(mut self, software_version: [u7; 4]) -> Self {
         self.software_version = software_version;
         self
     }
-    pub fn protocol_negotiation_supported(
-        &mut self,
-        protocol_negotiation_supported: bool,
-    ) -> &mut Self {
+    pub fn protocol_negotiation_supported(mut self, protocol_negotiation_supported: bool) -> Self {
         self.protocol_negotiation_supported = protocol_negotiation_supported;
         self
     }
     pub fn profile_configuration_supported(
-        &mut self,
+        mut self,
         profile_configuration_supported: bool,
-    ) -> &mut Self {
+    ) -> Self {
         self.profile_configuration_supported = profile_configuration_supported;
         self
     }
-    pub fn property_exchange_supported(&mut self, property_exchange_supported: bool) -> &mut Self {
+    pub fn property_exchange_supported(mut self, property_exchange_supported: bool) -> Self {
         self.property_exchange_supported = property_exchange_supported;
         self
     }
-    pub fn max_sysex_message_size(&mut self, max_sysex_message_size: u28) -> &mut Self {
+    pub fn max_sysex_message_size(mut self, max_sysex_message_size: u28) -> Self {
         self.max_sysex_message_size = max_sysex_message_size;
         self
     }
-    pub fn build(&'a mut self) -> Result<DiscoveryMessage<sysex7::Sysex7MessageGroup<'a>, STATUS>> {
+    pub fn build(self) -> Result<DiscoveryMessage<sysex7::Sysex7MessageGroup<'a>, STATUS>> {
         let payload = ci_helpers::StandardDataIterator::new(
             DeviceId::MidiPort,
             STATUS,

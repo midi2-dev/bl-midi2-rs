@@ -51,32 +51,32 @@ impl<'a> ControlChangeBuilder<'a> {
             Err(e) => Self(Err(e)),
         }
     }
-    pub fn group(&mut self, v: u4) -> &mut Self {
+    pub fn group(mut self, v: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
         }
         self
     }
-    pub fn channel(&mut self, v: u4) -> &mut Self {
+    pub fn channel(mut self, v: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_channel_to_packet(v, buffer);
         }
         self
     }
-    pub fn control(&mut self, v: u7) -> &mut Self {
+    pub fn control(mut self, v: u7) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_note_to_packet(v, buffer);
         }
         self
     }
-    pub fn control_data(&mut self, v: u7) -> &mut Self {
+    pub fn control_data(mut self, v: u7) -> Self {
         if let Ok(buffer) = &mut self.0 {
             midi1cv_helpers::write_note_velocity_to_packet(v, buffer);
         }
         self
     }
-    pub fn build(&'a self) -> Result<ControlChangeMessage<'a>> {
-        match &self.0 {
+    pub fn build(self) -> Result<ControlChangeMessage<'a>> {
+        match self.0 {
             Ok(buffer) => Ok(ControlChangeMessage(buffer)),
             Err(e) => Err(e.clone()),
         }

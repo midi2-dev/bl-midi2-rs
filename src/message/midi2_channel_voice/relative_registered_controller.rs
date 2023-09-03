@@ -59,38 +59,38 @@ impl<'a> RelativeRegisteredControllerBuilder<'a> {
             Err(e) => Self(Err(e)),
         }
     }
-    pub fn group(&mut self, v: u4) -> &mut Self {
+    pub fn group(mut self, v: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
         }
         self
     }
-    pub fn channel(&mut self, v: u4) -> &mut Self {
+    pub fn channel(mut self, v: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_channel_to_packet(v, buffer);
         }
         self
     }
-    pub fn bank(&mut self, v: u7) -> &mut Self {
+    pub fn bank(mut self, v: u7) -> Self {
         if let Ok(buffer) = &mut self.0 {
             midi2cv_helpers::write_controller_bank_to_packet(v, buffer);
         }
         self
     }
-    pub fn index(&mut self, v: u7) -> &mut Self {
+    pub fn index(mut self, v: u7) -> Self {
         if let Ok(buffer) = &mut self.0 {
             midi2cv_helpers::write_controller_index_to_packet(v, buffer);
         }
         self
     }
-    pub fn controller_data(&mut self, v: u32) -> &mut Self {
+    pub fn controller_data(mut self, v: u32) -> Self {
         if let Ok(buffer) = &mut self.0 {
             midi2cv_helpers::write_controller_data_to_packet(v, buffer);
         }
         self
     }
-    pub fn build(&'a self) -> Result<RelativeRegisteredControllerMessage<'a>> {
-        match &self.0 {
+    pub fn build(self) -> Result<RelativeRegisteredControllerMessage<'a>> {
+        match self.0 {
             Ok(buffer) => Ok(RelativeRegisteredControllerMessage(buffer)),
             Err(e) => Err(e.clone()),
         }

@@ -1,4 +1,5 @@
 #![no_std]
+#![doc = include_str!("../README.md")]
 
 pub mod ci;
 pub mod message;

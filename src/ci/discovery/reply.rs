@@ -113,64 +113,64 @@ impl<'a> DiscoveryReplyBuilder<sysex8::Sysex8MessageGroup<'a>> {
     pub fn new(buffer: &'a mut [u32]) -> Self {
         Self(DiscoveryBuilder::<sysex8::Sysex8MessageGroup<'a>, STATUS>::new(buffer))
     }
-    pub fn stream_id(&mut self, id: u8) -> &mut Self {
-        self.0.stream_id(id);
+    pub fn stream_id(mut self, id: u8) -> Self {
+        self.0 = self.0.stream_id(id);
         self
     }
-    pub fn group(&mut self, group: u4) -> &mut Self {
-        self.0.group(group);
+    pub fn group(mut self, group: u4) -> Self {
+        self.0 = self.0.group(group);
         self
     }
-    pub fn source(&mut self, source: u28) -> &mut Self {
-        self.0.source(source);
+    pub fn source(mut self, source: u28) -> Self {
+        self.0 = self.0.source(source);
         self
     }
-    pub fn destination(&mut self, dest: u28) -> &mut Self {
-        self.0.destination(dest);
+    pub fn destination(mut self, dest: u28) -> Self {
+        self.0 = self.0.destination(dest);
         self
     }
-    pub fn device_manufacturer(&mut self, device_manufacturer: u21) -> &mut Self {
-        self.0.device_manufacturer(device_manufacturer);
+    pub fn device_manufacturer(mut self, device_manufacturer: u21) -> Self {
+        self.0 = self.0.device_manufacturer(device_manufacturer);
         self
     }
-    pub fn device_family(&mut self, device_family: u14) -> &mut Self {
-        self.0.device_family(device_family);
+    pub fn device_family(mut self, device_family: u14) -> Self {
+        self.0 = self.0.device_family(device_family);
         self
     }
-    pub fn device_model_number(&mut self, device_model_number: u14) -> &mut Self {
-        self.0.device_model_number(device_model_number);
+    pub fn device_model_number(mut self, device_model_number: u14) -> Self {
+        self.0 = self.0.device_model_number(device_model_number);
         self
     }
-    pub fn software_version(&mut self, software_version: [u7; 4]) -> &mut Self {
-        self.0.software_version(software_version);
+    pub fn software_version(mut self, software_version: [u7; 4]) -> Self {
+        self.0 = self.0.software_version(software_version);
         self
     }
-    pub fn protocol_negotiation_supported(
-        &mut self,
-        protocol_negotiation_supported: bool,
-    ) -> &mut Self {
-        self.0
+    pub fn protocol_negotiation_supported(mut self, protocol_negotiation_supported: bool) -> Self {
+        self.0 = self
+            .0
             .protocol_negotiation_supported(protocol_negotiation_supported);
         self
     }
     pub fn profile_configuration_supported(
-        &mut self,
+        mut self,
         profile_configuration_supported: bool,
-    ) -> &mut Self {
-        self.0
+    ) -> Self {
+        self.0 = self
+            .0
             .profile_configuration_supported(profile_configuration_supported);
         self
     }
-    pub fn property_exchange_supported(&mut self, property_exchange_supported: bool) -> &mut Self {
-        self.0
+    pub fn property_exchange_supported(mut self, property_exchange_supported: bool) -> Self {
+        self.0 = self
+            .0
             .property_exchange_supported(property_exchange_supported);
         self
     }
-    pub fn max_sysex_message_size(&mut self, max_sysex_message_size: u28) -> &mut Self {
-        self.0.max_sysex_message_size(max_sysex_message_size);
+    pub fn max_sysex_message_size(mut self, max_sysex_message_size: u28) -> Self {
+        self.0 = self.0.max_sysex_message_size(max_sysex_message_size);
         self
     }
-    pub fn build(&'a mut self) -> Result<DiscoveryReplyMessage<sysex8::Sysex8MessageGroup<'a>>> {
+    pub fn build(self) -> Result<DiscoveryReplyMessage<sysex8::Sysex8MessageGroup<'a>>> {
         match self.0.build() {
             Ok(message) => Ok(DiscoveryReplyMessage(message)),
             Err(e) => Err(e),
@@ -182,60 +182,60 @@ impl<'a> DiscoveryReplyBuilder<sysex7::Sysex7MessageGroup<'a>> {
     pub fn new(buffer: &'a mut [u32]) -> Self {
         Self(DiscoveryBuilder::<sysex7::Sysex7MessageGroup<'a>, STATUS>::new(buffer))
     }
-    pub fn group(&mut self, group: u4) -> &mut Self {
-        self.0.group(group);
+    pub fn group(mut self, group: u4) -> Self {
+        self.0 = self.0.group(group);
         self
     }
-    pub fn source(&mut self, source: u28) -> &mut Self {
-        self.0.source(source);
+    pub fn source(mut self, source: u28) -> Self {
+        self.0 = self.0.source(source);
         self
     }
-    pub fn destination(&mut self, dest: u28) -> &mut Self {
-        self.0.destination(dest);
+    pub fn destination(mut self, dest: u28) -> Self {
+        self.0 = self.0.destination(dest);
         self
     }
-    pub fn device_manufacturer(&mut self, device_manufacturer: u21) -> &mut Self {
-        self.0.device_manufacturer(device_manufacturer);
+    pub fn device_manufacturer(mut self, device_manufacturer: u21) -> Self {
+        self.0 = self.0.device_manufacturer(device_manufacturer);
         self
     }
-    pub fn device_family(&mut self, device_family: u14) -> &mut Self {
-        self.0.device_family(device_family);
+    pub fn device_family(mut self, device_family: u14) -> Self {
+        self.0 = self.0.device_family(device_family);
         self
     }
-    pub fn device_model_number(&mut self, device_model_number: u14) -> &mut Self {
-        self.0.device_model_number(device_model_number);
+    pub fn device_model_number(mut self, device_model_number: u14) -> Self {
+        self.0 = self.0.device_model_number(device_model_number);
         self
     }
-    pub fn software_version(&mut self, software_version: [u7; 4]) -> &mut Self {
-        self.0.software_version(software_version);
+    pub fn software_version(mut self, software_version: [u7; 4]) -> Self {
+        self.0 = self.0.software_version(software_version);
         self
     }
-    pub fn protocol_negotiation_supported(
-        &mut self,
-        protocol_negotiation_supported: bool,
-    ) -> &mut Self {
-        self.0
+    pub fn protocol_negotiation_supported(mut self, protocol_negotiation_supported: bool) -> Self {
+        self.0 = self
+            .0
             .protocol_negotiation_supported(protocol_negotiation_supported);
         self
     }
     pub fn profile_configuration_supported(
-        &mut self,
+        mut self,
         profile_configuration_supported: bool,
-    ) -> &mut Self {
-        self.0
+    ) -> Self {
+        self.0 = self
+            .0
             .profile_configuration_supported(profile_configuration_supported);
         self
     }
-    pub fn property_exchange_supported(&mut self, property_exchange_supported: bool) -> &mut Self {
-        self.0
+    pub fn property_exchange_supported(mut self, property_exchange_supported: bool) -> Self {
+        self.0 = self
+            .0
             .property_exchange_supported(property_exchange_supported);
         self
     }
-    pub fn max_sysex_message_size(&mut self, max_sysex_message_size: u28) -> &mut Self {
-        self.0.max_sysex_message_size(max_sysex_message_size);
+    pub fn max_sysex_message_size(mut self, max_sysex_message_size: u28) -> Self {
+        self.0 = self.0.max_sysex_message_size(max_sysex_message_size);
         self
     }
-    pub fn build(&'a mut self) -> Result<DiscoveryReplyMessage<sysex7::Sysex7MessageGroup<'a>>> {
+    pub fn build(self) -> Result<DiscoveryReplyMessage<sysex7::Sysex7MessageGroup<'a>>> {
         match self.0.build() {
             Ok(message) => Ok(DiscoveryReplyMessage(message)),
             Err(e) => Err(e),

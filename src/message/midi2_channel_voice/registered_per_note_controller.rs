@@ -54,25 +54,25 @@ impl<'a> RegisteredPerNoteControllerBuilder<'a> {
             Err(e) => Self(Err(e)),
         }
     }
-    pub fn group(&mut self, v: u4) -> &mut Self {
+    pub fn group(mut self, v: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
         }
         self
     }
-    pub fn channel(&mut self, v: u4) -> &mut Self {
+    pub fn channel(mut self, v: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_channel_to_packet(v, buffer);
         }
         self
     }
-    pub fn note(&mut self, v: u7) -> &mut Self {
+    pub fn note(mut self, v: u7) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_note_to_packet(v, buffer);
         }
         self
     }
-    pub fn controller(&mut self, v: controller::Controller) -> &mut Self {
+    pub fn controller(mut self, v: controller::Controller) -> Self {
         if let Ok(buffer) = &mut self.0 {
             let (index, data) = controller::to_index_and_data(v);
             buffer[0].set_octet(3, index);
@@ -80,8 +80,8 @@ impl<'a> RegisteredPerNoteControllerBuilder<'a> {
         }
         self
     }
-    pub fn build(&'a self) -> Result<RegisteredPerNoteControllerMessage<'a>> {
-        match &self.0 {
+    pub fn build(self) -> Result<RegisteredPerNoteControllerMessage<'a>> {
+        match self.0 {
             Ok(buffer) => {
                 controller::validate_index(buffer[0].octet(3))?;
                 Ok(RegisteredPerNoteControllerMessage(buffer))

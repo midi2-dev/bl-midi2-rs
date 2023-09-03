@@ -145,7 +145,7 @@ debug::message_debug_impl!(Sysex8Message);
 pub struct Sysex8MessageBuilder<'a>(Result<&'a mut [u32]>);
 
 impl<'a> Sysex8MessageBuilder<'a> {
-    pub fn group(&mut self, g: u4) -> &mut Self {
+    pub fn group(mut self, g: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             buffer[0].set_nibble(1, g);
         }
@@ -153,7 +153,7 @@ impl<'a> Sysex8MessageBuilder<'a> {
     }
     /// When called with `Status::UnexpectedEnd(_)` the payload buffer
     /// will be filled with zeros accordingly.
-    pub fn status(&mut self, s: Status) -> &mut Self {
+    pub fn status(mut self, s: Status) -> Self {
         if let Ok(buffer) = &mut self.0 {
             buffer[0].set_nibble(
                 2,
@@ -180,16 +180,13 @@ impl<'a> Sysex8MessageBuilder<'a> {
         }
         self
     }
-    pub fn stream_id(&mut self, id: u8) -> &mut Self {
+    pub fn stream_id(mut self, id: u8) -> Self {
         if let Ok(buffer) = &mut self.0 {
             buffer[0].set_octet(2, id);
         }
         self
     }
-    pub fn payload<'b, I: core::iter::Iterator<Item = &'b u8>>(
-        &mut self,
-        mut data: I,
-    ) -> &mut Self {
+    pub fn payload<'b, I: core::iter::Iterator<Item = &'b u8>>(mut self, mut data: I) -> Self {
         if let Ok(buffer) = &mut self.0 {
             // start at one because we always have
             // a stream id
@@ -220,8 +217,8 @@ impl<'a> Sysex8MessageBuilder<'a> {
             Self(Err(Error::BufferOverflow))
         }
     }
-    pub fn build(&'a self) -> Result<Sysex8Message<'a>> {
-        match &self.0 {
+    pub fn build(self) -> Result<Sysex8Message<'a>> {
+        match self.0 {
             Ok(buffer) => Ok(Sysex8Message(buffer)),
             Err(e) => Err(e.clone()),
         }
@@ -380,7 +377,7 @@ impl<'a> Sysex8MessageGroupBuilder<'a> {
         ret
     }
 
-    pub fn stream_id(&mut self, id: u8) -> &mut Self {
+    pub fn stream_id(mut self, id: u8) -> Self {
         if self.error.is_some() || self.stream_id == id {
             return self;
         }
@@ -391,7 +388,7 @@ impl<'a> Sysex8MessageGroupBuilder<'a> {
         self
     }
 
-    pub fn group(&mut self, g: u4) -> &mut Self {
+    pub fn group(mut self, g: u4) -> Self {
         if self.error.is_some() || self.group == g {
             return self;
         }
@@ -402,7 +399,7 @@ impl<'a> Sysex8MessageGroupBuilder<'a> {
         self
     }
 
-    pub fn payload<I: core::iter::Iterator<Item = u8>>(&mut self, mut iter: I) -> &mut Self {
+    pub fn payload<I: core::iter::Iterator<Item = u8>>(mut self, mut iter: I) -> Self {
         if self.error.is_some() {
             return self;
         }
@@ -477,14 +474,14 @@ impl<'a> Sysex8MessageGroupBuilder<'a> {
         {
             let mut builder =
                 Sysex8Message::builder(&mut self.buffer[4 * self.size..4 * (self.size + 1)]);
-            builder.group(self.group);
-            builder.stream_id(self.stream_id);
+            builder = builder.group(self.group);
+            builder = builder.stream_id(self.stream_id);
             match self.size {
                 0 => {
-                    builder.status(Status::Complete);
+                    builder = builder.status(Status::Complete);
                 }
                 _ => {
-                    builder.status(Status::End);
+                    builder = builder.status(Status::End);
                 }
             }
             builder.build().expect("successful message build");
@@ -495,10 +492,10 @@ impl<'a> Sysex8MessageGroupBuilder<'a> {
                 Sysex8MessageBuilder(Ok(&mut self.buffer[4 * (self.size - 1)..4 * self.size]));
             match self.size {
                 1 => {
-                    prev_builder.status(Status::Begin);
+                    prev_builder = prev_builder.status(Status::Begin);
                 }
                 _ => {
-                    prev_builder.status(Status::Continue);
+                    prev_builder = prev_builder.status(Status::Continue);
                 }
             }
             prev_builder.build().expect("successful message build");
@@ -506,7 +503,7 @@ impl<'a> Sysex8MessageGroupBuilder<'a> {
         self.size += 1;
     }
 
-    pub fn build(&'a mut self) -> Result<Sysex8MessageGroup<'a>> {
+    pub fn build(mut self) -> Result<Sysex8MessageGroup<'a>> {
         let None = &self.error else {
             return Err(Error::InvalidData);
         };

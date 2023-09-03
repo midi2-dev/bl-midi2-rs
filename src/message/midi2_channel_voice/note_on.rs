@@ -36,6 +36,9 @@ impl<'a> NoteOnMessage<'a> {
     pub fn attribute(&self) -> Option<attribute::Attribute> {
         attribute::from_ump(self.0)
     }
+    pub fn data(&self) -> &[u32] {
+        self.0
+    }
     pub fn from_data(data: &'a [u32]) -> Result<Self> {
         message_helpers::validate_packet(data, MIDI2CV_TYPE_CODE, OP_CODE)?;
         message_helpers::validate_buffer_size(data, 2)?;
@@ -59,38 +62,38 @@ impl<'a> NoteOnBuilder<'a> {
             Err(e) => Self(Err(e)),
         }
     }
-    pub fn group(&mut self, v: u4) -> &mut Self {
+    pub fn group(mut self, v: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
         }
         self
     }
-    pub fn channel(&mut self, v: u4) -> &mut Self {
+    pub fn channel(mut self, v: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_channel_to_packet(v, buffer);
         }
         self
     }
-    pub fn note(&mut self, v: u7) -> &mut Self {
+    pub fn note(mut self, v: u7) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_note_to_packet(v, buffer);
         }
         self
     }
-    pub fn velocity(&mut self, v: u16) -> &mut Self {
+    pub fn velocity(mut self, v: u16) -> Self {
         if let Ok(buffer) = &mut self.0 {
             midi2cv_helpers::write_note_velocity_to_packet(v, buffer);
         }
         self
     }
-    pub fn attribute(&mut self, v: attribute::Attribute) -> &mut Self {
+    pub fn attribute(mut self, v: attribute::Attribute) -> Self {
         if let Ok(buffer) = &mut self.0 {
             attribute::write_attribute(buffer, Some(v));
         }
         self
     }
-    pub fn build(&'a self) -> Result<NoteOnMessage<'a>> {
-        match &self.0 {
+    pub fn build(self) -> Result<NoteOnMessage<'a>> {
+        match self.0 {
             Ok(buffer) => Ok(NoteOnMessage(buffer)),
             Err(e) => Err(e.clone()),
         }
@@ -122,7 +125,7 @@ mod tests {
     #[test]
     fn builder_no_attribute() {
         assert_eq!(
-            NoteOnMessage::builder(&mut [0x0, 0x0])
+            NoteOnMessage::builder(&mut random_buffer::<2>())
                 .group(u4::new(0x8))
                 .channel(u4::new(0x8))
                 .note(u7::new(0x5E))

@@ -103,19 +103,19 @@ pub struct InvalidateMuidBuilder<Repr: sysex::SysexMessages> {
 }
 
 impl<'a> InvalidateMuidBuilder<sysex8::Sysex8MessageGroup<'a>> {
-    pub fn group(&mut self, g: u4) -> &mut Self {
-        self.builder.group(g);
+    pub fn group(mut self, g: u4) -> Self {
+        self.builder = self.builder.group(g);
         self
     }
-    pub fn stream_id(&mut self, id: u8) -> &mut Self {
-        self.builder.stream_id(id);
+    pub fn stream_id(mut self, id: u8) -> Self {
+        self.builder = self.builder.stream_id(id);
         self
     }
-    pub fn source(&mut self, source: u28) -> &mut Self {
+    pub fn source(mut self, source: u28) -> Self {
         self.source = source;
         self
     }
-    pub fn target_muid(&mut self, muid: u28) -> &mut Self {
+    pub fn target_muid(mut self, muid: u28) -> Self {
         self.target_muid = muid;
         self
     }
@@ -126,7 +126,7 @@ impl<'a> InvalidateMuidBuilder<sysex8::Sysex8MessageGroup<'a>> {
             target_muid: Default::default(),
         }
     }
-    pub fn build(&'a mut self) -> Result<InvalidateMuidMessage<sysex8::Sysex8MessageGroup<'a>>> {
+    pub fn build(self) -> Result<InvalidateMuidMessage<sysex8::Sysex8MessageGroup<'a>>> {
         match self
             .builder
             .payload(
@@ -147,15 +147,15 @@ impl<'a> InvalidateMuidBuilder<sysex8::Sysex8MessageGroup<'a>> {
 }
 
 impl<'a> InvalidateMuidBuilder<sysex7::Sysex7MessageGroup<'a>> {
-    pub fn group(&mut self, g: u4) -> &mut Self {
-        self.builder.group(g);
+    pub fn group(mut self, g: u4) -> Self {
+        self.builder = self.builder.group(g);
         self
     }
-    pub fn source(&mut self, source: u28) -> &mut Self {
+    pub fn source(mut self, source: u28) -> Self {
         self.source = source;
         self
     }
-    pub fn target_muid(&mut self, muid: u28) -> &mut Self {
+    pub fn target_muid(mut self, muid: u28) -> Self {
         self.target_muid = muid;
         self
     }
@@ -166,7 +166,7 @@ impl<'a> InvalidateMuidBuilder<sysex7::Sysex7MessageGroup<'a>> {
             target_muid: Default::default(),
         }
     }
-    pub fn build(&'a mut self) -> Result<InvalidateMuidMessage<sysex7::Sysex7MessageGroup<'a>>> {
+    pub fn build(self) -> Result<InvalidateMuidMessage<sysex7::Sysex7MessageGroup<'a>>> {
         match self
             .builder
             .payload(

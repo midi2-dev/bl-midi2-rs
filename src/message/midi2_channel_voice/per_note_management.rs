@@ -52,38 +52,38 @@ impl<'a> PerNoteManagementBuilder<'a> {
             Err(e) => Self(Err(e)),
         }
     }
-    pub fn group(&mut self, v: u4) -> &mut Self {
+    pub fn group(mut self, v: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
         }
         self
     }
-    pub fn channel(&mut self, v: u4) -> &mut Self {
+    pub fn channel(mut self, v: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_channel_to_packet(v, buffer);
         }
         self
     }
-    pub fn note(&mut self, v: u7) -> &mut Self {
+    pub fn note(mut self, v: u7) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_note_to_packet(v, buffer);
         }
         self
     }
-    pub fn detach(&mut self, v: bool) -> &mut Self {
+    pub fn detach(mut self, v: bool) -> Self {
         if let Ok(buffer) = &mut self.0 {
             buffer[0].set_bit(30, v);
         }
         self
     }
-    pub fn reset(&mut self, v: bool) -> &mut Self {
+    pub fn reset(mut self, v: bool) -> Self {
         if let Ok(buffer) = &mut self.0 {
             buffer[0].set_bit(31, v);
         }
         self
     }
-    pub fn build(&'a self) -> Result<PerNoteManagementMessage<'a>> {
-        match &self.0 {
+    pub fn build(self) -> Result<PerNoteManagementMessage<'a>> {
+        match self.0 {
             Ok(buffer) => Ok(PerNoteManagementMessage(buffer)),
             Err(e) => Err(e.clone()),
         }

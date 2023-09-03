@@ -31,7 +31,7 @@ debug::message_debug_impl!(NoOpMessage);
 pub struct NoOpMessageBuilder<'a>(Option<&'a mut [u32]>);
 
 impl<'a> NoOpMessageBuilder<'a> {
-    pub fn group(&mut self, g: u4) -> &mut Self {
+    pub fn group(mut self, g: u4) -> Self {
         if let Some(buffer) = &mut self.0 {
             buffer[0].set_nibble(1, g);
         }
@@ -45,8 +45,8 @@ impl<'a> NoOpMessageBuilder<'a> {
             Self(None)
         }
     }
-    pub fn build(&'a self) -> Result<NoOpMessage<'a>> {
-        if let Some(buffer) = &self.0 {
+    pub fn build(self) -> Result<NoOpMessage<'a>> {
+        if let Some(buffer) = self.0 {
             Ok(NoOpMessage(buffer))
         } else {
             Err(Error::BufferOverflow)

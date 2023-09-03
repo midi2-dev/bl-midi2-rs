@@ -46,13 +46,13 @@ impl<'a> SongPositionPointerBuilder<'a> {
             Err(e) => Self(Err(e)),
         }
     }
-    pub fn group(&mut self, v: u4) -> &mut Self {
+    pub fn group(mut self, v: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
         }
         self
     }
-    pub fn position(&mut self, v: u14) -> &mut Self {
+    pub fn position(mut self, v: u14) -> Self {
         if let Ok(buffer) = &mut self.0 {
             let u7s = v.to_u7s();
             buffer[0].set_octet(2, u7s[0].into());
@@ -60,8 +60,8 @@ impl<'a> SongPositionPointerBuilder<'a> {
         }
         self
     }
-    pub fn build(&'a self) -> Result<SongPositionPointerMessage<'a>> {
-        match &self.0 {
+    pub fn build(self) -> Result<SongPositionPointerMessage<'a>> {
+        match self.0 {
             Ok(buffer) => Ok(SongPositionPointerMessage(buffer)),
             Err(e) => Err(e.clone()),
         }

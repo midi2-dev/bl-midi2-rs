@@ -47,19 +47,19 @@ impl<'a> PitchBendBuilder<'a> {
             Err(e) => Self(Err(e)),
         }
     }
-    pub fn group(&mut self, v: u4) -> &mut Self {
+    pub fn group(mut self, v: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
         }
         self
     }
-    pub fn channel(&mut self, v: u4) -> &mut Self {
+    pub fn channel(mut self, v: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_channel_to_packet(v, buffer);
         }
         self
     }
-    pub fn bend(&mut self, v: u14) -> &mut Self {
+    pub fn bend(mut self, v: u14) -> Self {
         if let Ok(buffer) = &mut self.0 {
             let u7s = v.to_u7s();
             buffer[0].set_octet(2, u7s[0].into());
@@ -67,8 +67,8 @@ impl<'a> PitchBendBuilder<'a> {
         }
         self
     }
-    pub fn build(&'a self) -> Result<PitchBendMessage<'a>> {
-        match &self.0 {
+    pub fn build(self) -> Result<PitchBendMessage<'a>> {
+        match self.0 {
             Ok(buffer) => Ok(PitchBendMessage(buffer)),
             Err(e) => Err(e.clone()),
         }

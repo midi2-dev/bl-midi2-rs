@@ -21,18 +21,21 @@ allowing for optimisation by avoiding copies.
 
 #### Example
 
-<!-- todo: add to doc tests -->
 ```rust
-let note_on = message::midi2_channel_voice::NoteOnMessage::builder(&mut [0x0; 2])
-    .note(u7::new(0x60))
-    .velocity(0x4B57_u16)
-    .attribute(Attribute::Pitch7_9{
-        note: 0x60,
-        pitch_up: u9::new(0xB6),
-    })
+use midi2::message::midi2_channel_voice::{
+    NoteOnMessage,
+    NoteAttribute,
+};
+
+
+let mut buffer = [0x0; 2];
+let message = NoteOnMessage::builder(&mut buffer)
+    .note(midi2::u7::new(0x60))
+    .velocity(0x4B57)
+    .attribute(NoteAttribute::ManufacturerSpecific(0x63FF))
     .build();
-assert_eq!(note_on.group() == u4::default());
-assert_eq!(note_on.channel() == u4::default());
+
+assert_eq!(message.unwrap().data(), &[0x4090_6001, 0x4B57_63FF]);
 ```
 
 ### Midi2 Capability Inquiry message wrappers

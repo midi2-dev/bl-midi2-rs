@@ -48,26 +48,26 @@ impl<'a> ChannelPressureBuilder<'a> {
             Err(e) => Self(Err(e)),
         }
     }
-    pub fn group(&mut self, v: u4) -> &mut Self {
+    pub fn group(mut self, v: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
         }
         self
     }
-    pub fn channel(&mut self, v: u4) -> &mut Self {
+    pub fn channel(mut self, v: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_channel_to_packet(v, buffer);
         }
         self
     }
-    pub fn pressure(&mut self, v: u7) -> &mut Self {
+    pub fn pressure(mut self, v: u7) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_note_to_packet(v, buffer);
         }
         self
     }
-    pub fn build(&'a self) -> Result<ChannelPressureMessage<'a>> {
-        match &self.0 {
+    pub fn build(self) -> Result<ChannelPressureMessage<'a>> {
+        match self.0 {
             Ok(buffer) => Ok(ChannelPressureMessage(buffer)),
             Err(e) => Err(e.clone()),
         }

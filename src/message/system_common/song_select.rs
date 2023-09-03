@@ -46,20 +46,20 @@ impl<'a> SongSelectBuilder<'a> {
             Err(e) => Self(Err(e)),
         }
     }
-    pub fn group(&mut self, v: u4) -> &mut Self {
+    pub fn group(mut self, v: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
         }
         self
     }
-    pub fn song(&mut self, v: u7) -> &mut Self {
+    pub fn song(mut self, v: u7) -> Self {
         if let Ok(buffer) = &mut self.0 {
             buffer[0].set_octet(2, v.into());
         }
         self
     }
-    pub fn build(&'a self) -> Result<SongSelectMessage<'a>> {
-        match &self.0 {
+    pub fn build(self) -> Result<SongSelectMessage<'a>> {
+        match self.0 {
             Ok(buffer) => Ok(SongSelectMessage(buffer)),
             Err(e) => Err(e.clone()),
         }

@@ -56,32 +56,32 @@ impl<'a> ControlChangeBuilder<'a> {
             }
         }
     }
-    pub fn group(&mut self, group: u4) -> &mut Self {
+    pub fn group(mut self, group: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(group, buffer);
         }
         self
     }
-    pub fn channel(&mut self, channel: u4) -> &mut Self {
+    pub fn channel(mut self, channel: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_channel_to_packet(channel, buffer);
         }
         self
     }
-    pub fn index(&mut self, index: u7) -> &mut Self {
+    pub fn index(mut self, index: u7) -> Self {
         if let Ok(buffer) = &mut self.0 {
             buffer[0].set_octet(2, index.into());
         }
         self
     }
-    pub fn control_change_data(&mut self, data: u32) -> &mut Self {
+    pub fn control_change_data(mut self, data: u32) -> Self {
         if let Ok(buffer) = &mut self.0 {
             buffer[1] = data;
         }
         self
     }
-    pub fn build(&'a self) -> Result<ControlChangeMessage<'a>> {
-        match &self.0 {
+    pub fn build(self) -> Result<ControlChangeMessage<'a>> {
+        match self.0 {
             Ok(buffer) => Ok(ControlChangeMessage(buffer)),
             Err(e) => Err(e.clone()),
         }

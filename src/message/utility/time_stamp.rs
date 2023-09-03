@@ -34,13 +34,13 @@ debug::message_debug_impl!(TimeStampMessage);
 pub struct TimeStampMessageBuilder<'a>(Option<&'a mut [u32]>);
 
 impl<'a> TimeStampMessageBuilder<'a> {
-    pub fn group(&mut self, g: u4) -> &mut Self {
+    pub fn group(mut self, g: u4) -> Self {
         if let Some(buffer) = &mut self.0 {
             buffer[0].set_nibble(1, g);
         }
         self
     }
-    pub fn time_stamp(&mut self, time_stamp: u20) -> &mut Self {
+    pub fn time_stamp(mut self, time_stamp: u20) -> Self {
         if let Some(buffer) = &mut self.0 {
             buffer[0] |= u32::from(time_stamp);
         }
@@ -55,8 +55,8 @@ impl<'a> TimeStampMessageBuilder<'a> {
             Self(None)
         }
     }
-    pub fn build(&'a self) -> Result<TimeStampMessage<'a>> {
-        if let Some(buffer) = &self.0 {
+    pub fn build(self) -> Result<TimeStampMessage<'a>> {
+        if let Some(buffer) = self.0 {
             Ok(TimeStampMessage(buffer))
         } else {
             Err(Error::BufferOverflow)

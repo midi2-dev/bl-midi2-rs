@@ -115,23 +115,23 @@ pub struct NakBuilder<Repr: sysex::SysexMessages> {
 }
 
 impl<'a> NakBuilder<sysex8::Sysex8MessageGroup<'a>> {
-    pub fn group(&mut self, g: u4) -> &mut Self {
-        self.builder.group(g);
+    pub fn group(mut self, g: u4) -> Self {
+        self.builder = self.builder.group(g);
         self
     }
-    pub fn stream_id(&mut self, id: u8) -> &mut Self {
-        self.builder.stream_id(id);
+    pub fn stream_id(mut self, id: u8) -> Self {
+        self.builder = self.builder.stream_id(id);
         self
     }
-    pub fn device_id(&mut self, id: DeviceId) -> &mut Self {
+    pub fn device_id(mut self, id: DeviceId) -> Self {
         self.device_id = id;
         self
     }
-    pub fn source(&mut self, source: u28) -> &mut Self {
+    pub fn source(mut self, source: u28) -> Self {
         self.source = source;
         self
     }
-    pub fn destination(&mut self, dest: u28) -> &mut Self {
+    pub fn destination(mut self, dest: u28) -> Self {
         self.destination = dest;
         self
     }
@@ -143,7 +143,7 @@ impl<'a> NakBuilder<sysex8::Sysex8MessageGroup<'a>> {
             device_id: DeviceId::MidiPort,
         }
     }
-    pub fn build(&'a mut self) -> Result<NakMessage<sysex8::Sysex8MessageGroup<'a>>> {
+    pub fn build(self) -> Result<NakMessage<sysex8::Sysex8MessageGroup<'a>>> {
         match self
             .builder
             .payload(ci_helpers::StandardDataIterator::new(
@@ -161,19 +161,19 @@ impl<'a> NakBuilder<sysex8::Sysex8MessageGroup<'a>> {
 }
 
 impl<'a> NakBuilder<sysex7::Sysex7MessageGroup<'a>> {
-    pub fn group(&mut self, g: u4) -> &mut Self {
-        self.builder.group(g);
+    pub fn group(mut self, g: u4) -> Self {
+        self.builder = self.builder.group(g);
         self
     }
-    pub fn source(&mut self, source: u28) -> &mut Self {
+    pub fn source(mut self, source: u28) -> Self {
         self.source = source;
         self
     }
-    pub fn destination(&mut self, dest: u28) -> &mut Self {
+    pub fn destination(mut self, dest: u28) -> Self {
         self.destination = dest;
         self
     }
-    pub fn device_id(&mut self, id: DeviceId) -> &mut Self {
+    pub fn device_id(mut self, id: DeviceId) -> Self {
         self.device_id = id;
         self
     }
@@ -185,7 +185,7 @@ impl<'a> NakBuilder<sysex7::Sysex7MessageGroup<'a>> {
             device_id: DeviceId::MidiPort,
         }
     }
-    pub fn build(&'a mut self) -> Result<NakMessage<sysex7::Sysex7MessageGroup<'a>>> {
+    pub fn build(self) -> Result<NakMessage<sysex7::Sysex7MessageGroup<'a>>> {
         match self
             .builder
             .payload(
