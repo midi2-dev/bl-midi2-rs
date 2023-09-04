@@ -1,6 +1,6 @@
 use crate::{
     error::Error,
-    message::{helpers as message_helpers, sysex},
+    message::helpers as message_helpers,
     result::Result,
     util::{debug, BitOps, Truncate},
     *,
@@ -99,12 +99,6 @@ pub struct Sysex7Message<'a>(&'a [u32]);
 
 impl<'a> Sysex7Message<'a> {
     const OP_CODE: u4 = u4::new(0x3);
-    pub fn builder(buffer: &'a mut [u32]) -> Sysex7MessageBuilder<'a> {
-        Sysex7MessageBuilder::new(buffer)
-    }
-    pub fn group(&self) -> u4 {
-        message_helpers::group_from_packet(self.0)
-    }
     pub fn status(&self) -> Status {
         status_from_packet(self.0).expect("valid status")
     }
@@ -115,29 +109,36 @@ impl<'a> Sysex7Message<'a> {
             payload_index: 0,
         }
     }
-    pub fn from_data(data: &'a [u32]) -> Result<Self> {
+}
+
+impl<'a> Message<'a> for Sysex7Message<'a> {
+    type Builder = Sysex7Builder<'a>;
+    fn data(&self) -> &'a [u32] {
+        self.0
+    }
+    fn from_data_unchecked(data: &'a [u32]) -> Self {
+        Sysex7Message(&data[..2])
+    }
+    fn validate_data(data: &[u32]) -> Result<()> {
         validate_buffer(data)?;
         validate_type(data)?;
         status_from_packet(data)?;
         validate_data(data)?;
-        Ok(Sysex7Message(&data[..2]))
+        Ok(())
     }
-    pub fn data(&self) -> &[u32] {
-        self.0
+}
+
+impl<'a> GroupedMessage<'a> for Sysex7Message<'a> {
+    fn group(&self) -> u4 {
+        message_helpers::group_from_packet(self.0)
     }
 }
 
 debug::message_debug_impl!(Sysex7Message);
 
-pub struct Sysex7MessageBuilder<'a>(Result<&'a mut [u32]>);
+pub struct Sysex7Builder<'a>(Result<&'a mut [u32]>);
 
-impl<'a> Sysex7MessageBuilder<'a> {
-    pub fn group(mut self, g: u4) -> Self {
-        if let Ok(buffer) = &mut self.0 {
-            buffer[0].set_nibble(1, g);
-        }
-        self
-    }
+impl<'a> Sysex7Builder<'a> {
     pub fn status(mut self, s: Status) -> Self {
         if let Ok(buffer) = &mut self.0 {
             buffer[0].set_nibble(
@@ -171,6 +172,10 @@ impl<'a> Sysex7MessageBuilder<'a> {
         }
         self
     }
+}
+
+impl<'a> Builder<'a> for Sysex7Builder<'a> {
+    type Message = Sysex7Message<'a>;
     fn new(buffer: &'a mut [u32]) -> Self {
         if buffer.len() >= 2 {
             message_helpers::clear_buffer(buffer);
@@ -180,11 +185,20 @@ impl<'a> Sysex7MessageBuilder<'a> {
             Self(Err(Error::BufferOverflow))
         }
     }
-    pub fn build(self) -> Result<Sysex7Message<'a>> {
+    fn build(self) -> Result<Sysex7Message<'a>> {
         match self.0 {
             Ok(buffer) => Ok(Sysex7Message(buffer)),
             Err(e) => Err(e.clone()),
         }
+    }
+}
+
+impl<'a> GroupedBuilder<'a> for Sysex7Builder<'a> {
+    fn group(mut self, g: u4) -> Self {
+        if let Ok(buffer) = &mut self.0 {
+            buffer[0].set_nibble(1, g);
+        }
+        self
     }
 }
 
@@ -241,25 +255,17 @@ pub struct Sysex7MessageGroup<'a>(&'a [u32]);
 
 debug::message_debug_impl!(Sysex7MessageGroup);
 
-impl<'a> Sysex7MessageGroup<'a> {
-    pub fn builder(buffer: &'a mut [u32]) -> Sysex7MessageGroupBuilder<'a> {
-        Sysex7MessageGroupBuilder::new(buffer)
+impl<'a> Message<'a> for Sysex7MessageGroup<'a> {
+    type Builder = Sysex7MessageGroupBuilder<'a>;
+    fn from_data_unchecked(buffer: &'a [u32]) -> Self {
+        Sysex7MessageGroup(buffer)
     }
-    pub fn group(&self) -> u4 {
-        message_helpers::group_from_packet(self.0)
-    }
-    pub fn payload(&self) -> PayloadIterator {
-        <Self as sysex::SysexMessages>::payload(self)
-    }
-    pub fn messages(&self) -> Sysex7MessageGroupIterator<'a> {
-        Sysex7MessageGroupIterator(self.0.chunks_exact(2))
-    }
-    pub fn from_data(buffer: &'a [u32]) -> Result<Self> {
+    fn validate_data(buffer: &[u32]) -> Result<()> {
         if buffer.len() % 2 != 0 || buffer.is_empty() {
             return Err(Error::InvalidData);
         }
         for chunk in buffer.chunks(2) {
-            Sysex7Message::from_data(chunk)?;
+            Sysex7Message::validate_data(chunk)?;
         }
         message_helpers::validate_sysex_group_statuses(
             buffer,
@@ -270,10 +276,32 @@ impl<'a> Sysex7MessageGroup<'a> {
             2,
         )?;
         message_helpers::sysex_group_consistent_groups(buffer, 2)?;
-        Ok(Sysex7MessageGroup(buffer))
+        Ok(())
     }
-    pub fn data(&self) -> &[u32] {
+    fn data(&self) -> &'a [u32] {
         self.0
+    }
+}
+
+impl<'a> GroupedMessage<'a> for Sysex7MessageGroup<'a> {
+    fn group(&self) -> u4 {
+        message_helpers::group_from_packet(self.0)
+    }
+}
+
+impl<'a> SysexGroupMessage<'a> for Sysex7MessageGroup<'a> {
+    type PayloadIterator = PayloadIterator<'a>;
+    type Message = Sysex7Message<'a>;
+    type MessageIterator = Sysex7MessageGroupIterator<'a>;
+    fn payload(&self) -> Self::PayloadIterator {
+        Self::PayloadIterator {
+            data: self.0,
+            message_index: 0,
+            payload_index: 0,
+        }
+    }
+    fn messages(&self) -> Sysex7MessageGroupIterator<'a> {
+        Sysex7MessageGroupIterator(self.0.chunks_exact(2))
     }
 }
 
@@ -285,6 +313,7 @@ impl<'a> core::iter::Iterator for Sysex7MessageGroupIterator<'a> {
         self.0.next().map(Sysex7Message)
     }
 }
+
 pub struct Sysex7MessageGroupBuilder<'a> {
     buffer: &'a mut [u32],
     size: usize,
@@ -293,106 +322,6 @@ pub struct Sysex7MessageGroupBuilder<'a> {
 }
 
 impl<'a> Sysex7MessageGroupBuilder<'a> {
-    pub fn new(buffer: &'a mut [u32]) -> Self {
-        let mut ret = Sysex7MessageGroupBuilder {
-            buffer,
-            size: 0,
-            error: None,
-            group: u4::new(0x0),
-        };
-        ret.grow();
-        if ret.error.is_none() {
-            // set the first byte to Sysex Begin
-            ret.buffer[0].set_octet(2, 0xF0);
-            ret.increment_message_size(0);
-        }
-        ret
-    }
-
-    pub fn group(mut self, g: u4) -> Self {
-        if self.error.is_some() || self.group == g {
-            return self;
-        }
-        self.group = g;
-        for chunk in self.buffer[..self.size * 2].chunks_exact_mut(2) {
-            chunk[0].set_nibble(1, g);
-        }
-        self
-    }
-
-    pub fn payload<I: core::iter::Iterator<Item = u7>>(mut self, mut iter: I) -> Self {
-        if self.error.is_some() {
-            return self;
-        }
-
-        let Some(first) = iter.next() else {
-            return self;
-        };
-
-        let data_start: usize = {
-            let current_size = self.message_size(self.message_index());
-            if current_size == u4::new(6) {
-                self.grow();
-                if self.error.is_some() {
-                    return self;
-                }
-                0
-            } else {
-                u8::from(current_size) as usize
-            }
-        };
-
-        self.buffer[self.message_index() + (data_start + 2) / 4]
-            .set_octet((2 + data_start) % 4, first.into());
-        self.increment_message_size(self.message_index());
-
-        let mut stop = false;
-        for i in (data_start + 1)..6 {
-            match iter.next() {
-                Some(v) => {
-                    let index = self.message_index();
-                    self.buffer[index + (i + 2) / 4].set_octet((2 + i) % 4, v.into());
-                    self.increment_message_size(index);
-                }
-                None => {
-                    stop = true;
-                    break;
-                }
-            }
-        }
-
-        if stop {
-            self
-        } else {
-            self.payload(iter)
-        }
-    }
-
-    pub fn build(mut self) -> Result<Sysex7MessageGroup<'a>> {
-        if let Some(e) = &self.error {
-            return Err(e.clone());
-        }
-
-        if self.message_size(self.message_index()) == u4::new(6) {
-            self.grow()
-        }
-
-        if let Some(e) = &self.error {
-            return Err(e.clone());
-        }
-
-        {
-            // set the last byte to Sysex End
-            let index = self.message_index();
-            let data_end = u8::from(self.message_size(index)) as usize;
-            self.buffer[self.message_index() + (data_end + 2) / 4]
-                .set_octet((2 + data_end) % 4, 0xF7);
-            self.increment_message_size(index);
-        }
-
-        Ok(Sysex7MessageGroup(&self.buffer[..2 * self.size]))
-    }
-
     // The point in the buffer where the last most message begins.
     fn message_index(&self) -> usize {
         2 * (self.size - 1)
@@ -440,7 +369,7 @@ impl<'a> Sysex7MessageGroupBuilder<'a> {
 
         if self.size != 0 {
             let mut prev_builder =
-                Sysex7MessageBuilder(Ok(&mut self.buffer[2 * (self.size - 1)..2 * self.size]));
+                Sysex7Builder(Ok(&mut self.buffer[2 * (self.size - 1)..2 * self.size]));
             match self.size {
                 1 => {
                     prev_builder = prev_builder.status(Status::Begin);
@@ -455,15 +384,110 @@ impl<'a> Sysex7MessageGroupBuilder<'a> {
     }
 }
 
-impl<'a> sysex::SysexMessages for Sysex7MessageGroup<'a> {
-    type Builder = Sysex7MessageGroupBuilder<'a>;
-    type Byte = u8;
-    type PayloadIterator = PayloadIterator<'a>;
-    fn payload(&self) -> Self::PayloadIterator {
-        PayloadIterator {
-            data: self.0,
-            message_index: 0,
-            payload_index: 0,
+impl<'a> Builder<'a> for Sysex7MessageGroupBuilder<'a> {
+    type Message = Sysex7MessageGroup<'a>;
+    fn build(mut self) -> Result<Sysex7MessageGroup<'a>> {
+        if let Some(e) = &self.error {
+            return Err(e.clone());
+        }
+
+        if self.message_size(self.message_index()) == u4::new(6) {
+            self.grow()
+        }
+
+        if let Some(e) = &self.error {
+            return Err(e.clone());
+        }
+
+        {
+            // set the last byte to Sysex End
+            let index = self.message_index();
+            let data_end = u8::from(self.message_size(index)) as usize;
+            self.buffer[self.message_index() + (data_end + 2) / 4]
+                .set_octet((2 + data_end) % 4, 0xF7);
+            self.increment_message_size(index);
+        }
+
+        Ok(Sysex7MessageGroup(&self.buffer[..2 * self.size]))
+    }
+
+    fn new(buffer: &'a mut [u32]) -> Self {
+        let mut ret = Sysex7MessageGroupBuilder {
+            buffer,
+            size: 0,
+            error: None,
+            group: u4::new(0x0),
+        };
+        ret.grow();
+        if ret.error.is_none() {
+            // set the first byte to Sysex Begin
+            ret.buffer[0].set_octet(2, 0xF0);
+            ret.increment_message_size(0);
+        }
+        ret
+    }
+}
+
+impl<'a> GroupedBuilder<'a> for Sysex7MessageGroupBuilder<'a> {
+    fn group(mut self, g: u4) -> Self {
+        if self.error.is_some() || self.group == g {
+            return self;
+        }
+        self.group = g;
+        for chunk in self.buffer[..self.size * 2].chunks_exact_mut(2) {
+            chunk[0].set_nibble(1, g);
+        }
+        self
+    }
+}
+
+impl<'a> SysexGroupBuilder<'a> for Sysex7MessageGroupBuilder<'a> {
+    type Byte = u7;
+    fn payload<I: core::iter::Iterator<Item = u7>>(mut self, mut iter: I) -> Self {
+        if self.error.is_some() {
+            return self;
+        }
+
+        let Some(first) = iter.next() else {
+            return self;
+        };
+
+        let data_start: usize = {
+            let current_size = self.message_size(self.message_index());
+            if current_size == u4::new(6) {
+                self.grow();
+                if self.error.is_some() {
+                    return self;
+                }
+                0
+            } else {
+                u8::from(current_size) as usize
+            }
+        };
+
+        self.buffer[self.message_index() + (data_start + 2) / 4]
+            .set_octet((2 + data_start) % 4, first.into());
+        self.increment_message_size(self.message_index());
+
+        let mut stop = false;
+        for i in (data_start + 1)..6 {
+            match iter.next() {
+                Some(v) => {
+                    let index = self.message_index();
+                    self.buffer[index + (i + 2) / 4].set_octet((2 + i) % 4, v.into());
+                    self.increment_message_size(index);
+                }
+                None => {
+                    stop = true;
+                    break;
+                }
+            }
+        }
+
+        if stop {
+            self
+        } else {
+            self.payload(iter)
         }
     }
 }

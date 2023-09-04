@@ -11,41 +11,45 @@ pub struct TimeStampMessage<'a>(&'a [u32]);
 
 impl<'a> TimeStampMessage<'a> {
     const OP_CODE: u4 = u4::new(0b0010);
-    pub fn builder(buffer: &'a mut [u32]) -> TimeStampMessageBuilder<'a> {
-        TimeStampMessageBuilder::new(buffer)
-    }
-    pub fn group(&self) -> u4 {
-        self.0[0].nibble(1)
-    }
     pub fn time_stamp(&self) -> u20 {
         self.0[0].truncate()
     }
-    pub fn from_data(data: &'a [u32]) -> Result<Self> {
-        super::validate_packet(data, TimeStampMessage::OP_CODE)?;
-        Ok(TimeStampMessage(&data[..1]))
+}
+
+impl<'a> Message<'a> for TimeStampMessage<'a> {
+    type Builder = TimeStampBuilder<'a>;
+    fn from_data_unchecked(data: &'a [u32]) -> Self {
+        TimeStampMessage(&data[..1])
     }
-    pub fn data(&self) -> &[u32] {
+    fn data(&self) -> &'a [u32] {
         self.0
+    }
+    fn validate_data(buffer: &'a [u32]) -> Result<()> {
+        super::validate_packet(buffer, TimeStampMessage::OP_CODE)
+    }
+}
+
+impl<'a> GroupedMessage<'a> for TimeStampMessage<'a> {
+    fn group(&self) -> u4 {
+        self.0[0].nibble(1)
     }
 }
 
 debug::message_debug_impl!(TimeStampMessage);
 
-pub struct TimeStampMessageBuilder<'a>(Option<&'a mut [u32]>);
+pub struct TimeStampBuilder<'a>(Option<&'a mut [u32]>);
 
-impl<'a> TimeStampMessageBuilder<'a> {
-    pub fn group(mut self, g: u4) -> Self {
-        if let Some(buffer) = &mut self.0 {
-            buffer[0].set_nibble(1, g);
-        }
-        self
-    }
+impl<'a> TimeStampBuilder<'a> {
     pub fn time_stamp(mut self, time_stamp: u20) -> Self {
         if let Some(buffer) = &mut self.0 {
             buffer[0] |= u32::from(time_stamp);
         }
         self
     }
+}
+
+impl<'a> Builder<'a> for TimeStampBuilder<'a> {
+    type Message = TimeStampMessage<'a>;
     fn new(buffer: &'a mut [u32]) -> Self {
         if !buffer.is_empty() {
             message_helpers::clear_buffer(buffer);
@@ -55,12 +59,21 @@ impl<'a> TimeStampMessageBuilder<'a> {
             Self(None)
         }
     }
-    pub fn build(self) -> Result<TimeStampMessage<'a>> {
+    fn build(self) -> Result<TimeStampMessage<'a>> {
         if let Some(buffer) = self.0 {
             Ok(TimeStampMessage(buffer))
         } else {
             Err(Error::BufferOverflow)
         }
+    }
+}
+
+impl<'a> GroupedBuilder<'a> for TimeStampBuilder<'a> {
+    fn group(mut self, g: u4) -> Self {
+        if let Some(buffer) = &mut self.0 {
+            buffer[0].set_nibble(1, g);
+        }
+        self
     }
 }
 

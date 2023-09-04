@@ -11,6 +11,7 @@ mod util;
 
 pub use error::*;
 pub use result::*;
+pub use traits::*;
 
 // forward expose some numeric types from the
 // 3rd party ux crate

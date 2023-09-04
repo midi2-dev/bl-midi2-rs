@@ -16,12 +16,6 @@ pub struct AssignableControllerMessage<'a>(&'a [u32]);
 debug::message_debug_impl!(AssignableControllerMessage);
 
 impl<'a> AssignableControllerMessage<'a> {
-    pub fn builder(buffer: &mut [u32]) -> AssignableControllerBuilder {
-        AssignableControllerBuilder::new(buffer)
-    }
-    pub fn group(&self) -> u4 {
-        message_helpers::group_from_packet(self.0)
-    }
     pub fn channel(&self) -> u4 {
         message_helpers::channel_from_packet(self.0)
     }
@@ -34,13 +28,26 @@ impl<'a> AssignableControllerMessage<'a> {
     pub fn controller_data(&self) -> u32 {
         midi2cv_helpers::controller_data_from_packet(self.0)
     }
-    pub fn data(&self) -> &[u32] {
+}
+
+impl<'a> Message<'a> for AssignableControllerMessage<'a> {
+    type Builder = AssignableControllerBuilder<'a>;
+    fn data(&self) -> &'a [u32] {
         self.0
     }
-    pub fn from_data(data: &'a [u32]) -> Result<Self> {
-        message_helpers::validate_packet(data, MIDI2CV_TYPE_CODE, TYPE_CODE)?;
-        message_helpers::validate_buffer_size(data, 2)?;
-        Ok(Self(data))
+    fn validate_data(buffer: &'a [u32]) -> Result<()> {
+        message_helpers::validate_packet(buffer, MIDI2CV_TYPE_CODE, TYPE_CODE)?;
+        message_helpers::validate_buffer_size(buffer, 2)?;
+        Ok(())
+    }
+    fn from_data_unchecked(buffer: &'a [u32]) -> Self {
+        Self(buffer)
+    }
+}
+
+impl<'a> GroupedMessage<'a> for AssignableControllerMessage<'a> {
+    fn group(&self) -> u4 {
+        message_helpers::group_from_packet(self.0)
     }
 }
 
@@ -48,23 +55,6 @@ impl<'a> AssignableControllerMessage<'a> {
 pub struct AssignableControllerBuilder<'a>(Result<&'a mut [u32]>);
 
 impl<'a> AssignableControllerBuilder<'a> {
-    pub fn new(buffer: &'a mut [u32]) -> Self {
-        match message_helpers::validate_buffer_size(buffer, 2) {
-            Ok(()) => {
-                message_helpers::clear_buffer(buffer);
-                message_helpers::write_op_code_to_packet(TYPE_CODE, buffer);
-                message_helpers::write_type_to_packet(MIDI2CV_TYPE_CODE, buffer);
-                Self(Ok(buffer))
-            }
-            Err(e) => Self(Err(e)),
-        }
-    }
-    pub fn group(mut self, v: u4) -> Self {
-        if let Ok(buffer) = &mut self.0 {
-            message_helpers::write_group_to_packet(v, buffer);
-        }
-        self
-    }
     pub fn channel(mut self, v: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_channel_to_packet(v, buffer);
@@ -89,11 +79,35 @@ impl<'a> AssignableControllerBuilder<'a> {
         }
         self
     }
-    pub fn build(self) -> Result<AssignableControllerMessage<'a>> {
+}
+
+impl<'a> Builder<'a> for AssignableControllerBuilder<'a> {
+    type Message = AssignableControllerMessage<'a>;
+    fn build(self) -> Result<AssignableControllerMessage<'a>> {
         match self.0 {
             Ok(buffer) => Ok(AssignableControllerMessage(buffer)),
             Err(e) => Err(e.clone()),
         }
+    }
+    fn new(buffer: &'a mut [u32]) -> Self {
+        match message_helpers::validate_buffer_size(buffer, 2) {
+            Ok(()) => {
+                message_helpers::clear_buffer(&mut buffer[..2]);
+                message_helpers::write_op_code_to_packet(TYPE_CODE, buffer);
+                message_helpers::write_type_to_packet(MIDI2CV_TYPE_CODE, buffer);
+                Self(Ok(&mut buffer[..2]))
+            }
+            Err(e) => Self(Err(e)),
+        }
+    }
+}
+
+impl<'a> GroupedBuilder<'a> for AssignableControllerBuilder<'a> {
+    fn group(mut self, v: u4) -> Self {
+        if let Ok(buffer) = &mut self.0 {
+            message_helpers::write_group_to_packet(v, buffer);
+        }
+        self
     }
 }
 

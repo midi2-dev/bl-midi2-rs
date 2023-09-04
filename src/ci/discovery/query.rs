@@ -3,15 +3,16 @@ use super::*;
 const STATUS: u8 = 0x70;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
-pub struct DiscoveryQueryMessage<Repr: sysex::SysexMessages>(DiscoveryMessage<Repr, STATUS>);
+pub struct DiscoveryQueryMessage<'a, Repr>(DiscoveryMessage<'a, Repr, STATUS>)
+where
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
+    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>;
 
-impl<'a> DiscoveryQueryMessage<sysex8::Sysex8MessageGroup<'a>> {
-    pub fn builder(buffer: &'a mut [u32]) -> DiscoveryQueryBuilder<sysex8::Sysex8MessageGroup<'a>> {
-        DiscoveryQueryBuilder::<sysex8::Sysex8MessageGroup<'a>>::new(buffer)
-    }
-    pub fn group(&self) -> u4 {
-        self.0.group()
-    }
+impl<'a, Repr> DiscoveryQueryMessage<'a, Repr>
+where
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
+    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+{
     pub fn source(&self) -> u28 {
         self.0.source()
     }
@@ -39,200 +40,144 @@ impl<'a> DiscoveryQueryMessage<sysex8::Sysex8MessageGroup<'a>> {
     pub fn max_sysex_message_size(&self) -> u28 {
         self.0.max_sysex_message_size()
     }
-    pub fn data(&self) -> &[u32] {
+}
+
+impl<'a, Repr> Message<'a> for DiscoveryQueryMessage<'a, Repr>
+where
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
+    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+{
+    type Builder = DiscoveryQueryBuilder<'a, Repr>;
+    fn data(&self) -> &'a [u32] {
         self.0.data()
     }
-    pub fn from_data(data: &'a [u32]) -> Result<Self> {
-        // todo assert destination is defaulted
-        match DiscoveryMessage::<sysex8::Sysex8MessageGroup<'a>, STATUS>::from_data(data) {
-            Ok(message) => Ok(Self(message)),
-            Err(e) => Err(e),
-        }
+    fn from_data_unchecked(data: &'a [u32]) -> Self {
+        Self(DiscoveryMessage::<'a, Repr, STATUS>::from_data_unchecked(
+            data,
+        ))
+    }
+    fn validate_data(buffer: &'a [u32]) -> Result<()> {
+        DiscoveryMessage::<'a, Repr, STATUS>::validate_data(buffer)
     }
 }
 
-impl<'a> DiscoveryQueryMessage<sysex7::Sysex7MessageGroup<'a>> {
-    pub fn builder(buffer: &'a mut [u32]) -> DiscoveryQueryBuilder<sysex7::Sysex7MessageGroup<'a>> {
-        DiscoveryQueryBuilder::<sysex7::Sysex7MessageGroup<'a>>::new(buffer)
-    }
-    pub fn group(&self) -> u4 {
+impl<'a, Repr> GroupedMessage<'a> for DiscoveryQueryMessage<'a, Repr>
+where
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
+    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+{
+    fn group(&self) -> u4 {
         self.0.group()
     }
-    pub fn source(&self) -> u28 {
-        self.0.source()
-    }
-    pub fn device_manufacturer(&self) -> u21 {
-        self.0.device_manufacturer()
-    }
-    pub fn device_family(&self) -> u14 {
-        self.0.device_family()
-    }
-    pub fn device_model_number(&self) -> u14 {
-        self.0.device_model_number()
-    }
-    pub fn software_version(&self) -> [u7; 4] {
-        self.0.software_version()
-    }
-    pub fn protocol_negotiation_supported(&self) -> bool {
-        self.0.protocol_negotiation_supported()
-    }
-    pub fn profile_configuration_supported(&self) -> bool {
-        self.0.profile_configuration_supported()
-    }
-    pub fn property_exchange_supported(&self) -> bool {
-        self.0.property_exchange_supported()
-    }
-    pub fn max_sysex_message_size(&self) -> u28 {
-        self.0.max_sysex_message_size()
-    }
-    pub fn data(&self) -> &[u32] {
-        self.0.data()
-    }
-    pub fn from_data(data: &'a [u32]) -> Result<Self> {
-        // todo assert destination is defaulted
-        match DiscoveryMessage::<sysex7::Sysex7MessageGroup<'a>, STATUS>::from_data(data) {
-            Ok(message) => Ok(Self(message)),
-            Err(e) => Err(e),
-        }
+}
+
+impl<'a> StreamedMessage<'a> for DiscoveryQueryMessage<'a, sysex8::Sysex8MessageGroup<'a>> {
+    fn stream_id(&self) -> u8 {
+        self.0.stream_id()
     }
 }
 
-pub struct DiscoveryQueryBuilder<Repr: sysex::SysexMessages>(DiscoveryBuilder<Repr, STATUS>);
+pub struct DiscoveryQueryBuilder<'a, Repr>(DiscoveryBuilder<'a, Repr, STATUS>)
+where
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
+    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>;
 
-impl<'a> DiscoveryQueryBuilder<sysex8::Sysex8MessageGroup<'a>> {
-    pub fn new(buffer: &'a mut [u32]) -> Self {
-        let mut builder = DiscoveryBuilder::<sysex8::Sysex8MessageGroup<'a>, STATUS>::new(buffer);
+impl<'a, Repr> DiscoveryQueryBuilder<'a, Repr>
+where
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
+    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+{
+    pub fn source(mut self, source: u28) -> Self {
+        self.0 = self.0.source(source);
+        self
+    }
+    pub fn device_manufacturer(mut self, device_manufacturer: u21) -> Self {
+        self.0 = self.0.device_manufacturer(device_manufacturer);
+        self
+    }
+    pub fn device_family(mut self, device_family: u14) -> Self {
+        self.0 = self.0.device_family(device_family);
+        self
+    }
+    pub fn device_model_number(mut self, device_model_number: u14) -> Self {
+        self.0 = self.0.device_model_number(device_model_number);
+        self
+    }
+    pub fn software_version(mut self, software_version: [u7; 4]) -> Self {
+        self.0 = self.0.software_version(software_version);
+        self
+    }
+    pub fn protocol_negotiation_supported(mut self, protocol_negotiation_supported: bool) -> Self {
+        self.0 = self
+            .0
+            .protocol_negotiation_supported(protocol_negotiation_supported);
+        self
+    }
+    pub fn profile_configuration_supported(
+        mut self,
+        profile_configuration_supported: bool,
+    ) -> Self {
+        self.0 = self
+            .0
+            .profile_configuration_supported(profile_configuration_supported);
+        self
+    }
+    pub fn property_exchange_supported(mut self, property_exchange_supported: bool) -> Self {
+        self.0 = self
+            .0
+            .property_exchange_supported(property_exchange_supported);
+        self
+    }
+    pub fn max_sysex_message_size(mut self, max_sysex_message_size: u28) -> Self {
+        self.0 = self.0.max_sysex_message_size(max_sysex_message_size);
+        self
+    }
+}
+
+impl<'a, Repr> Builder<'a> for DiscoveryQueryBuilder<'a, Repr>
+where
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
+    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+{
+    type Message = DiscoveryQueryMessage<'a, Repr>;
+    fn build(self) -> Result<DiscoveryQueryMessage<'a, Repr>> {
+        match self.0.build() {
+            Ok(message) => Ok(DiscoveryQueryMessage(message)),
+            Err(e) => Err(e),
+        }
+    }
+    fn new(buffer: &'a mut [u32]) -> Self {
+        let mut builder = DiscoveryBuilder::<'a, Repr, STATUS>::new(buffer);
         builder = builder.destination(u28::max_value());
         Self(builder)
     }
-    pub fn stream_id(mut self, id: u8) -> Self {
+}
+
+impl<'a, Repr> GroupedBuilder<'a> for DiscoveryQueryBuilder<'a, Repr>
+where
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
+    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+{
+    fn group(mut self, group: u4) -> Self {
+        self.0 = self.0.group(group);
+        self
+    }
+}
+
+impl<'a> StreamedBuilder<'a> for DiscoveryQueryBuilder<'a, sysex8::Sysex8MessageGroup<'a>> {
+    fn stream_id(mut self, id: u8) -> Self {
         self.0 = self.0.stream_id(id);
         self
-    }
-    pub fn group(mut self, group: u4) -> Self {
-        self.0 = self.0.group(group);
-        self
-    }
-    pub fn source(mut self, source: u28) -> Self {
-        self.0 = self.0.source(source);
-        self
-    }
-    pub fn device_manufacturer(mut self, device_manufacturer: u21) -> Self {
-        self.0 = self.0.device_manufacturer(device_manufacturer);
-        self
-    }
-    pub fn device_family(mut self, device_family: u14) -> Self {
-        self.0 = self.0.device_family(device_family);
-        self
-    }
-    pub fn device_model_number(mut self, device_model_number: u14) -> Self {
-        self.0 = self.0.device_model_number(device_model_number);
-        self
-    }
-    pub fn software_version(mut self, software_version: [u7; 4]) -> Self {
-        self.0 = self.0.software_version(software_version);
-        self
-    }
-    pub fn protocol_negotiation_supported(mut self, protocol_negotiation_supported: bool) -> Self {
-        self.0 = self
-            .0
-            .protocol_negotiation_supported(protocol_negotiation_supported);
-        self
-    }
-    pub fn profile_configuration_supported(
-        mut self,
-        profile_configuration_supported: bool,
-    ) -> Self {
-        self.0 = self
-            .0
-            .profile_configuration_supported(profile_configuration_supported);
-        self
-    }
-    pub fn property_exchange_supported(mut self, property_exchange_supported: bool) -> Self {
-        self.0 = self
-            .0
-            .property_exchange_supported(property_exchange_supported);
-        self
-    }
-    pub fn max_sysex_message_size(mut self, max_sysex_message_size: u28) -> Self {
-        self.0 = self.0.max_sysex_message_size(max_sysex_message_size);
-        self
-    }
-    pub fn build(self) -> Result<DiscoveryQueryMessage<sysex8::Sysex8MessageGroup<'a>>> {
-        match self.0.build() {
-            Ok(message) => Ok(DiscoveryQueryMessage(message)),
-            Err(e) => Err(e),
-        }
-    }
-}
-
-impl<'a> DiscoveryQueryBuilder<sysex7::Sysex7MessageGroup<'a>> {
-    pub fn new(buffer: &'a mut [u32]) -> Self {
-        let mut builder = DiscoveryBuilder::<sysex7::Sysex7MessageGroup<'a>, STATUS>::new(buffer);
-        builder = builder.destination(u28::max_value());
-        Self(builder)
-    }
-    pub fn group(mut self, group: u4) -> Self {
-        self.0 = self.0.group(group);
-        self
-    }
-    pub fn source(mut self, source: u28) -> Self {
-        self.0 = self.0.source(source);
-        self
-    }
-    pub fn device_manufacturer(mut self, device_manufacturer: u21) -> Self {
-        self.0 = self.0.device_manufacturer(device_manufacturer);
-        self
-    }
-    pub fn device_family(mut self, device_family: u14) -> Self {
-        self.0 = self.0.device_family(device_family);
-        self
-    }
-    pub fn device_model_number(mut self, device_model_number: u14) -> Self {
-        self.0 = self.0.device_model_number(device_model_number);
-        self
-    }
-    pub fn software_version(mut self, software_version: [u7; 4]) -> Self {
-        self.0 = self.0.software_version(software_version);
-        self
-    }
-    pub fn protocol_negotiation_supported(mut self, protocol_negotiation_supported: bool) -> Self {
-        self.0 = self
-            .0
-            .protocol_negotiation_supported(protocol_negotiation_supported);
-        self
-    }
-    pub fn profile_configuration_supported(
-        mut self,
-        profile_configuration_supported: bool,
-    ) -> Self {
-        self.0 = self
-            .0
-            .profile_configuration_supported(profile_configuration_supported);
-        self
-    }
-    pub fn property_exchange_supported(mut self, property_exchange_supported: bool) -> Self {
-        self.0 = self
-            .0
-            .property_exchange_supported(property_exchange_supported);
-        self
-    }
-    pub fn max_sysex_message_size(mut self, max_sysex_message_size: u28) -> Self {
-        self.0 = self.0.max_sysex_message_size(max_sysex_message_size);
-        self
-    }
-    pub fn build(self) -> Result<DiscoveryQueryMessage<sysex7::Sysex7MessageGroup<'a>>> {
-        match self.0.build() {
-            Ok(message) => Ok(DiscoveryQueryMessage(message)),
-            Err(e) => Err(e),
-        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::{debug, random_buffer};
+    use crate::{
+        message::{system_exclusive_7bit as sysex7, system_exclusive_8bit as sysex8},
+        util::{debug, random_buffer},
+    };
 
     #[test]
     fn sysex8_builder() {

@@ -1,7 +1,7 @@
 use crate::{
     ci::{helpers as ci_helpers, DeviceId, SYSEX_END},
     error::Error,
-    message::{sysex, system_exclusive_7bit as sysex7, system_exclusive_8bit as sysex8},
+    message::system_exclusive_8bit as sysex8,
     result::Result,
     util::{BitOps, Encode7Bit, Truncate},
     *,
@@ -11,7 +11,10 @@ pub mod query;
 pub mod reply;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
-struct DiscoveryMessage<Repr: sysex::SysexMessages, const STATUS: u8>(Repr);
+pub struct DiscoveryMessage<'a, Repr, const STATUS: u8>(Repr, core::marker::PhantomData<&'a u8>)
+where
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
+    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>;
 
 #[repr(usize)]
 enum DataOffsets {
@@ -24,15 +27,11 @@ enum DataOffsets {
     SysexEnd = DataOffsets::MaxSysexSize as usize + 4,
 }
 
-impl<'a, const STATUS: u8> DiscoveryMessage<sysex8::Sysex8MessageGroup<'a>, STATUS> {
-    pub fn builder(
-        buffer: &'a mut [u32],
-    ) -> DiscoveryBuilder<sysex8::Sysex8MessageGroup<'a>, STATUS> {
-        DiscoveryBuilder::<sysex8::Sysex8MessageGroup<'a>, STATUS>::new(buffer)
-    }
-    pub fn group(&self) -> u4 {
-        self.0.group()
-    }
+impl<'a, Repr, const STATUS: u8> DiscoveryMessage<'a, Repr, STATUS>
+where
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
+    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+{
     pub fn source(&self) -> u28 {
         ci_helpers::source_from_payload(self.0.payload())
     }
@@ -99,11 +98,25 @@ impl<'a, const STATUS: u8> DiscoveryMessage<sysex8::Sysex8MessageGroup<'a>, STAT
             payload.next().unwrap(),
         ])
     }
-    pub fn data(&self) -> &[u32] {
+}
+
+impl<'a, Repr, const STATUS: u8> Message<'a> for DiscoveryMessage<'a, Repr, STATUS>
+where
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
+    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+{
+    type Builder = DiscoveryBuilder<'a, Repr, STATUS>;
+    fn data(&self) -> &'a [u32] {
         self.0.data()
     }
-    pub fn from_data(data: &'a [u32]) -> Result<Self> {
-        let messages = ci_helpers::validate_sysex8(data, STATUS)?;
+    fn from_data_unchecked(data: &'a [u32]) -> Self {
+        DiscoveryMessage(
+            <Repr as Message<'a>>::from_data_unchecked(data),
+            Default::default(),
+        )
+    }
+    fn validate_data(buffer: &'a [u32]) -> Result<()> {
+        let messages = ci_helpers::validate_sysex::<'a, Repr>(buffer, STATUS)?;
         let mut payload = messages.payload();
         let Some(SYSEX_END) = payload.nth(DataOffsets::SysexEnd as usize) else {
             return Err(Error::InvalidData);
@@ -111,94 +124,33 @@ impl<'a, const STATUS: u8> DiscoveryMessage<sysex8::Sysex8MessageGroup<'a>, STAT
         let None = payload.next() else {
             return Err(Error::InvalidData);
         };
-        Ok(DiscoveryMessage(messages))
+        Ok(())
     }
 }
 
-impl<'a, const STATUS: u8> DiscoveryMessage<sysex7::Sysex7MessageGroup<'a>, STATUS> {
-    pub fn builder(
-        buffer: &'a mut [u32],
-    ) -> DiscoveryBuilder<sysex7::Sysex7MessageGroup<'a>, STATUS> {
-        DiscoveryBuilder::<sysex7::Sysex7MessageGroup<'a>, STATUS>::new(buffer)
-    }
-    pub fn group(&self) -> u4 {
+impl<'a, Repr, const STATUS: u8> GroupedMessage<'a> for DiscoveryMessage<'a, Repr, STATUS>
+where
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
+    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+{
+    fn group(&self) -> u4 {
         self.0.group()
     }
-    pub fn source(&self) -> u28 {
-        ci_helpers::source_from_payload(self.0.payload())
-    }
-    pub fn destination(&self) -> u28 {
-        ci_helpers::destination_from_payload(self.0.payload())
-    }
-    pub fn device_manufacturer(&self) -> u21 {
-        let mut payload = self.0.payload();
-        payload.nth(DataOffsets::DeviceManufacturer as usize - 1);
-        u21::from_u7s(&[
-            payload.next().unwrap(),
-            payload.next().unwrap(),
-            payload.next().unwrap(),
-        ])
-    }
-    pub fn device_family(&self) -> u14 {
-        let mut payload = self.0.payload();
-        payload.nth(DataOffsets::DeviceFamily as usize - 1);
-        u14::from_u7s(&[payload.next().unwrap(), payload.next().unwrap()])
-    }
-    pub fn device_model_number(&self) -> u14 {
-        let mut payload = self.0.payload();
-        payload.nth(DataOffsets::DeviceFamilyModelNumber as usize - 1);
-        u14::from_u7s(&[payload.next().unwrap(), payload.next().unwrap()])
-    }
-    pub fn software_version(&self) -> [u7; 4] {
-        let mut payload = self.0.payload();
-        payload.nth(DataOffsets::SoftwareVersion as usize - 1);
-        [
-            payload.next().unwrap().truncate(),
-            payload.next().unwrap().truncate(),
-            payload.next().unwrap().truncate(),
-            payload.next().unwrap().truncate(),
-        ]
-    }
-    fn flags_bit(&self) -> u8 {
-        let mut payload = self.0.payload();
-        payload.nth(DataOffsets::CiSupportFlags as usize).unwrap()
-    }
-    pub fn protocol_negotiation_supported(&self) -> bool {
-        self.flags_bit().bit(6)
-    }
-    pub fn profile_configuration_supported(&self) -> bool {
-        self.flags_bit().bit(5)
-    }
-    pub fn property_exchange_supported(&self) -> bool {
-        self.flags_bit().bit(4)
-    }
-    pub fn max_sysex_message_size(&self) -> u28 {
-        let mut payload = self.0.payload();
-        payload.nth(DataOffsets::MaxSysexSize as usize - 1);
-        u28::from_u7s(&[
-            payload.next().unwrap(),
-            payload.next().unwrap(),
-            payload.next().unwrap(),
-            payload.next().unwrap(),
-        ])
-    }
-    pub fn data(&self) -> &[u32] {
-        self.0.data()
-    }
-    pub fn from_data(data: &'a [u32]) -> Result<Self> {
-        let messages = ci_helpers::validate_sysex7(data, STATUS)?;
-        let mut payload = messages.payload();
-        let Some(SYSEX_END) = payload.nth(DataOffsets::SysexEnd as usize) else {
-            return Err(Error::InvalidData);
-        };
-        let None = payload.next() else {
-            return Err(Error::InvalidData);
-        };
-        Ok(DiscoveryMessage(messages))
+}
+
+impl<'a, const STATUS: u8> StreamedMessage<'a>
+    for DiscoveryMessage<'a, sysex8::Sysex8MessageGroup<'a>, STATUS>
+{
+    fn stream_id(&self) -> u8 {
+        self.0.stream_id()
     }
 }
 
-struct DiscoveryBuilder<Repr: sysex::SysexMessages, const STATUS: u8> {
+pub struct DiscoveryBuilder<'a, Repr, const STATUS: u8>
+where
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
+    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+{
     source: u28,
     destination: u28,
     device_manufacturer: u21,
@@ -212,30 +164,11 @@ struct DiscoveryBuilder<Repr: sysex::SysexMessages, const STATUS: u8> {
     builder: Repr::Builder,
 }
 
-impl<'a, const STATUS: u8> DiscoveryBuilder<sysex8::Sysex8MessageGroup<'a>, STATUS> {
-    pub fn new(buffer: &'a mut [u32]) -> Self {
-        Self {
-            builder: sysex8::Sysex8MessageGroupBuilder::new(buffer),
-            source: Default::default(),
-            destination: Default::default(),
-            device_manufacturer: Default::default(),
-            device_family: Default::default(),
-            device_model_number: Default::default(),
-            software_version: Default::default(),
-            protocol_negotiation_supported: false,
-            profile_configuration_supported: false,
-            property_exchange_supported: false,
-            max_sysex_message_size: Default::default(),
-        }
-    }
-    pub fn stream_id(mut self, id: u8) -> Self {
-        self.builder = self.builder.stream_id(id);
-        self
-    }
-    pub fn group(mut self, group: u4) -> Self {
-        self.builder = self.builder.group(group);
-        self
-    }
+impl<'a, Repr, const STATUS: u8> DiscoveryBuilder<'a, Repr, STATUS>
+where
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
+    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+{
     pub fn source(mut self, source: u28) -> Self {
         self.source = source;
         self
@@ -279,24 +212,35 @@ impl<'a, const STATUS: u8> DiscoveryBuilder<sysex8::Sysex8MessageGroup<'a>, STAT
         self.max_sysex_message_size = max_sysex_message_size;
         self
     }
-    pub fn build(self) -> Result<DiscoveryMessage<sysex8::Sysex8MessageGroup<'a>, STATUS>> {
-        let payload = ci_helpers::StandardDataIterator::new(
+}
+
+impl<'a, Repr, const STATUS: u8> Builder<'a> for DiscoveryBuilder<'a, Repr, STATUS>
+where
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
+    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+{
+    type Message = DiscoveryMessage<'a, Repr, STATUS>;
+    fn build(self) -> Result<DiscoveryMessage<'a, Repr, STATUS>> {
+        let payload = ci_helpers::StandardDataIterator::<'a, Repr>::new(
             DeviceId::MidiPort,
             STATUS,
             self.source,
             self.destination,
         );
 
+        let u8_to_byte = <<Repr as Message<'a>>::Builder as SysexGroupBuilder<'a>>::Byte::from_u8;
+        let u7_to_byte = |v: u7| u8_to_byte(u8::from(v));
+
         let device_manufacturer_array = self.device_manufacturer.to_u7s();
-        let payload = payload.chain(device_manufacturer_array.iter().cloned().map(u8::from));
+        let payload = payload.chain(device_manufacturer_array.iter().cloned().map(u7_to_byte));
 
         let device_family_array = self.device_family.to_u7s();
-        let payload = payload.chain(device_family_array.iter().cloned().map(u8::from));
+        let payload = payload.chain(device_family_array.iter().cloned().map(u7_to_byte));
 
         let device_model_number_array = self.device_model_number.to_u7s();
-        let payload = payload.chain(device_model_number_array.iter().cloned().map(u8::from));
+        let payload = payload.chain(device_model_number_array.iter().cloned().map(u7_to_byte));
 
-        let payload = payload.chain(self.software_version.iter().cloned().map(u8::from));
+        let payload = payload.chain(self.software_version.iter().cloned().map(u7_to_byte));
 
         let support_flags = {
             let mut bits: u8 = 0x0;
@@ -305,22 +249,19 @@ impl<'a, const STATUS: u8> DiscoveryBuilder<sysex8::Sysex8MessageGroup<'a>, STAT
             bits.set_bit(4, self.property_exchange_supported);
             bits
         };
-        let payload = payload.chain(core::iter::once(support_flags));
+        let payload = payload.chain(core::iter::once(u8_to_byte(support_flags)));
 
         let max_sysex_size_array = self.max_sysex_message_size.to_u7s();
-        let payload = payload.chain(max_sysex_size_array.iter().cloned().map(u8::from));
+        let payload = payload.chain(max_sysex_size_array.iter().cloned().map(u7_to_byte));
 
         match self.builder.payload(payload).build() {
-            Ok(messages) => Ok(DiscoveryMessage(messages)),
+            Ok(messages) => Ok(DiscoveryMessage(messages, Default::default())),
             Err(e) => Err(e),
         }
     }
-}
-
-impl<'a, const STATUS: u8> DiscoveryBuilder<sysex7::Sysex7MessageGroup<'a>, STATUS> {
-    pub fn new(buffer: &'a mut [u32]) -> Self {
+    fn new(buffer: &'a mut [u32]) -> Self {
         Self {
-            builder: sysex7::Sysex7MessageGroupBuilder::new(buffer),
+            builder: <Repr as Message<'a>>::Builder::new(buffer),
             source: Default::default(),
             destination: Default::default(),
             device_manufacturer: Default::default(),
@@ -333,88 +274,24 @@ impl<'a, const STATUS: u8> DiscoveryBuilder<sysex7::Sysex7MessageGroup<'a>, STAT
             max_sysex_message_size: Default::default(),
         }
     }
-    pub fn group(mut self, group: u4) -> Self {
+}
+
+impl<'a, Repr, const STATUS: u8> GroupedBuilder<'a> for DiscoveryBuilder<'a, Repr, STATUS>
+where
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
+    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+{
+    fn group(mut self, group: u4) -> Self {
         self.builder = self.builder.group(group);
         self
     }
-    pub fn source(mut self, source: u28) -> Self {
-        self.source = source;
-        self
-    }
-    pub fn destination(mut self, dest: u28) -> Self {
-        self.destination = dest;
-        self
-    }
-    pub fn device_manufacturer(mut self, device_manufacturer: u21) -> Self {
-        self.device_manufacturer = device_manufacturer;
-        self
-    }
-    pub fn device_family(mut self, device_family: u14) -> Self {
-        self.device_family = device_family;
-        self
-    }
-    pub fn device_model_number(mut self, device_model_number: u14) -> Self {
-        self.device_model_number = device_model_number;
-        self
-    }
-    pub fn software_version(mut self, software_version: [u7; 4]) -> Self {
-        self.software_version = software_version;
-        self
-    }
-    pub fn protocol_negotiation_supported(mut self, protocol_negotiation_supported: bool) -> Self {
-        self.protocol_negotiation_supported = protocol_negotiation_supported;
-        self
-    }
-    pub fn profile_configuration_supported(
-        mut self,
-        profile_configuration_supported: bool,
-    ) -> Self {
-        self.profile_configuration_supported = profile_configuration_supported;
-        self
-    }
-    pub fn property_exchange_supported(mut self, property_exchange_supported: bool) -> Self {
-        self.property_exchange_supported = property_exchange_supported;
-        self
-    }
-    pub fn max_sysex_message_size(mut self, max_sysex_message_size: u28) -> Self {
-        self.max_sysex_message_size = max_sysex_message_size;
-        self
-    }
-    pub fn build(self) -> Result<DiscoveryMessage<sysex7::Sysex7MessageGroup<'a>, STATUS>> {
-        let payload = ci_helpers::StandardDataIterator::new(
-            DeviceId::MidiPort,
-            STATUS,
-            self.source,
-            self.destination,
-        )
-        .map(|v| v.truncate());
+}
 
-        let device_manufacturer_array = self.device_manufacturer.to_u7s();
-        let payload = payload.chain(device_manufacturer_array.iter().cloned());
-
-        let device_family_array = self.device_family.to_u7s();
-        let payload = payload.chain(device_family_array.iter().cloned());
-
-        let device_model_number_array = self.device_model_number.to_u7s();
-        let payload = payload.chain(device_model_number_array.iter().cloned());
-
-        let payload = payload.chain(self.software_version.iter().cloned());
-
-        let support_flags = {
-            let mut bits: u8 = 0x0;
-            bits.set_bit(6, self.protocol_negotiation_supported);
-            bits.set_bit(5, self.profile_configuration_supported);
-            bits.set_bit(4, self.property_exchange_supported);
-            bits
-        };
-        let payload = payload.chain(core::iter::once(support_flags.truncate()));
-
-        let max_sysex_size_array = self.max_sysex_message_size.to_u7s();
-        let payload = payload.chain(max_sysex_size_array.iter().cloned());
-
-        match self.builder.payload(payload).build() {
-            Ok(messages) => Ok(DiscoveryMessage(messages)),
-            Err(e) => Err(e),
-        }
+impl<'a, const STATUS: u8> StreamedBuilder<'a>
+    for DiscoveryBuilder<'a, sysex8::Sysex8MessageGroup<'a>, STATUS>
+{
+    fn stream_id(mut self, id: u8) -> Self {
+        self.builder = self.builder.stream_id(id);
+        self
     }
 }

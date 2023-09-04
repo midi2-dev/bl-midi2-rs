@@ -22,9 +22,13 @@ allowing for optimisation by avoiding copies.
 #### Example
 
 ```rust
-use midi2::message::midi2_channel_voice::{
-    NoteOnMessage,
-    NoteAttribute,
+use midi2::{
+    Message,
+    Builder,
+    message::midi2_channel_voice::{
+        NoteOnMessage,
+        NoteAttribute,
+    },
 };
 
 

@@ -13,22 +13,32 @@ pub struct ChannelPitchBendMessage<'a>(&'a [u32]);
 debug::message_debug_impl!(ChannelPitchBendMessage);
 
 impl<'a> ChannelPitchBendMessage<'a> {
-    pub fn builder(buffer: &mut [u32]) -> ChannelPitchBendBuilder {
-        ChannelPitchBendBuilder::new(buffer)
-    }
-    pub fn group(&self) -> u4 {
-        message_helpers::group_from_packet(self.0)
-    }
     pub fn channel(&self) -> u4 {
         message_helpers::channel_from_packet(self.0)
     }
     pub fn pitch_bend_data(&self) -> u32 {
         self.0[1]
     }
-    pub fn from_data(data: &'a [u32]) -> Result<Self> {
-        message_helpers::validate_packet(data, MIDI2CV_TYPE_CODE, OP_CODE)?;
-        message_helpers::validate_buffer_size(data, 2)?;
-        Ok(Self(data))
+}
+
+impl<'a> Message<'a> for ChannelPitchBendMessage<'a> {
+    type Builder = ChannelPitchBendBuilder<'a>;
+    fn data(&self) -> &'a [u32] {
+        self.0
+    }
+    fn validate_data(buffer: &'a [u32]) -> Result<()> {
+        message_helpers::validate_packet(buffer, MIDI2CV_TYPE_CODE, OP_CODE)?;
+        message_helpers::validate_buffer_size(buffer, 2)?;
+        Ok(())
+    }
+    fn from_data_unchecked(buffer: &'a [u32]) -> Self {
+        Self(buffer)
+    }
+}
+
+impl<'a> GroupedMessage<'a> for ChannelPitchBendMessage<'a> {
+    fn group(&self) -> u4 {
+        message_helpers::group_from_packet(self.0)
     }
 }
 
@@ -36,23 +46,6 @@ impl<'a> ChannelPitchBendMessage<'a> {
 pub struct ChannelPitchBendBuilder<'a>(Result<&'a mut [u32]>);
 
 impl<'a> ChannelPitchBendBuilder<'a> {
-    pub fn new(buffer: &'a mut [u32]) -> Self {
-        match message_helpers::validate_buffer_size(buffer, 2) {
-            Ok(()) => {
-                message_helpers::clear_buffer(buffer);
-                message_helpers::write_op_code_to_packet(OP_CODE, buffer);
-                message_helpers::write_type_to_packet(MIDI2CV_TYPE_CODE, buffer);
-                Self(Ok(buffer))
-            }
-            Err(e) => Self(Err(e)),
-        }
-    }
-    pub fn group(mut self, v: u4) -> Self {
-        if let Ok(buffer) = &mut self.0 {
-            message_helpers::write_group_to_packet(v, buffer);
-        }
-        self
-    }
     pub fn channel(mut self, v: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_channel_to_packet(v, buffer);
@@ -65,11 +58,35 @@ impl<'a> ChannelPitchBendBuilder<'a> {
         }
         self
     }
-    pub fn build(self) -> Result<ChannelPitchBendMessage<'a>> {
+}
+
+impl<'a> Builder<'a> for ChannelPitchBendBuilder<'a> {
+    type Message = ChannelPitchBendMessage<'a>;
+    fn build(self) -> Result<ChannelPitchBendMessage<'a>> {
         match self.0 {
             Ok(buffer) => Ok(ChannelPitchBendMessage(buffer)),
             Err(e) => Err(e.clone()),
         }
+    }
+    fn new(buffer: &'a mut [u32]) -> Self {
+        match message_helpers::validate_buffer_size(buffer, 2) {
+            Ok(()) => {
+                message_helpers::clear_buffer(&mut buffer[..2]);
+                message_helpers::write_op_code_to_packet(OP_CODE, buffer);
+                message_helpers::write_type_to_packet(MIDI2CV_TYPE_CODE, buffer);
+                Self(Ok(&mut buffer[..2]))
+            }
+            Err(e) => Self(Err(e)),
+        }
+    }
+}
+
+impl<'a> GroupedBuilder<'a> for ChannelPitchBendBuilder<'a> {
+    fn group(mut self, v: u4) -> Self {
+        if let Ok(buffer) = &mut self.0 {
+            message_helpers::write_group_to_packet(v, buffer);
+        }
+        self
     }
 }
 

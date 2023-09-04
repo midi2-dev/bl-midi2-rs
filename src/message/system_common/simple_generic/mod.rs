@@ -15,26 +15,38 @@ macro_rules! simple_generic_message {
 
         debug::message_debug_impl!($name);
 
-        impl<'a> $name<'a> {
-            pub fn builder(buffer: &mut [u32]) -> $builder_name {
-                $builder_name::new(buffer)
+        impl<'a> Message<'a> for $name<'a> {
+            type Builder = $builder_name<'a>;
+            fn data(&self) -> &'a [u32] {
+                self.0
             }
-            pub fn group(&self) -> u4 {
+            fn from_data_unchecked(data: &'a [u32]) -> Self {
+                Self(data)
+            }
+            fn validate_data(data: &[u32]) -> Result<()> {
+                system_common::validate_packet(data, $op_code)?;
+                Ok(())
+            }
+        }
+
+        impl<'a> GroupedMessage<'a> for $name<'a> {
+            fn group(&self) -> u4 {
                 message_helpers::group_from_packet(self.0)
-            }
-            pub fn from_data(data: &'a [u32]) -> Result<Self> {
-                match system_common::validate_packet(data, $op_code) {
-                    Err(e) => Err(e),
-                    Ok(()) => Ok(Self(data)),
-                }
             }
         }
 
         #[derive(PartialEq, Eq)]
         pub struct $builder_name<'a>(Result<&'a mut [u32]>);
 
-        impl<'a> $builder_name<'a> {
-            pub fn new(buffer: &'a mut [u32]) -> Self {
+        impl<'a> Builder<'a> for $builder_name<'a> {
+            type Message = $name<'a>;
+            fn build(self) -> Result<$name<'a>> {
+                match self.0 {
+                    Ok(buffer) => Ok($name(buffer)),
+                    Err(e) => Err(e.clone()),
+                }
+            }
+            fn new(buffer: &'a mut [u32]) -> Self {
                 match system_common::validate_buffer_size(buffer) {
                     Ok(()) => {
                         message_helpers::clear_buffer(buffer);
@@ -45,17 +57,14 @@ macro_rules! simple_generic_message {
                     Err(e) => Self(Err(e)),
                 }
             }
-            pub fn group(mut self, v: u4) -> Self {
+        }
+
+        impl<'a> GroupedBuilder<'a> for $builder_name<'a> {
+            fn group(mut self, v: u4) -> Self {
                 if let Ok(buffer) = &mut self.0 {
                     message_helpers::write_group_to_packet(v, buffer);
                 }
                 self
-            }
-            pub fn build(self) -> Result<$name<'a>> {
-                match self.0 {
-                    Ok(buffer) => Ok($name(buffer)),
-                    Err(e) => Err(e.clone()),
-                }
             }
         }
     };

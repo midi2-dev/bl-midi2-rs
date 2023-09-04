@@ -1,49 +1,65 @@
 use crate::{
     ci::{DeviceId, SYSEX_START},
     error::Error,
-    message::system_exclusive_7bit as sysex7,
-    message::system_exclusive_8bit as sysex8,
     result::Result,
     util::{Encode7Bit, Truncate},
     *,
 };
 
-pub struct StandardDataIterator {
-    data: [u8; 16],
+pub struct StandardDataIterator<'a, Repr>
+where
+    Repr: SysexGroupMessage<'a>,
+    <Repr as Message<'a>>::Builder: SysexGroupBuilder<'a>,
+{
+    data: [<<Repr as Message<'a>>::Builder as SysexGroupBuilder<'a>>::Byte; 16],
     i: usize,
+    _phantom: core::marker::PhantomData<&'a Repr>,
 }
 
-impl StandardDataIterator {
+impl<'a, Repr> StandardDataIterator<'a, Repr>
+where
+    Repr: SysexGroupMessage<'a>,
+    <Repr as Message<'a>>::Builder: SysexGroupBuilder<'a>,
+    <<Repr as Message<'a>>::Builder as SysexGroupBuilder<'a>>::Byte: Byte,
+{
+    fn map(v: u8) -> <<Repr as Message<'a>>::Builder as SysexGroupBuilder<'a>>::Byte {
+        <<<Repr as Message<'a>>::Builder as SysexGroupBuilder<'a>>::Byte as Byte>::from_u8(v)
+    }
     pub fn new(device_id: DeviceId, category: u8, source: u28, destination: u28) -> Self {
-        StandardDataIterator {
+        StandardDataIterator::<'a, Repr> {
             data: [
-                0x7E,
+                Self::map(0x7E),
                 match device_id {
-                    DeviceId::MidiPort => 0x7F,
-                    DeviceId::Channel(v) => v.into(),
+                    DeviceId::MidiPort => Self::map(0x7F),
+                    DeviceId::Channel(v) => Self::map(u8::from(v)),
                 },
-                0x0D,
-                category,
-                super::VERSION,
-                source.truncate::<u8>() & 0b0111_1111,
-                (source >> 7).truncate::<u8>() & 0b0111_1111,
-                (source >> 14).truncate::<u8>() & 0b0111_1111,
-                (source >> 21).truncate::<u8>() & 0b0111_1111,
-                destination.truncate::<u8>() & 0b0111_1111,
-                (destination >> 7).truncate::<u8>() & 0b0111_1111,
-                (destination >> 14).truncate::<u8>() & 0b0111_1111,
-                (destination >> 21).truncate::<u8>() & 0b0111_1111,
-                0x0,
-                0x0,
-                0x0, // padding
+                Self::map(0x0D),
+                Self::map(category),
+                Self::map(super::VERSION),
+                Self::map(source.truncate::<u8>() & 0b0111_1111),
+                Self::map((source >> 7).truncate::<u8>() & 0b0111_1111),
+                Self::map((source >> 14).truncate::<u8>() & 0b0111_1111),
+                Self::map((source >> 21).truncate::<u8>() & 0b0111_1111),
+                Self::map(destination.truncate::<u8>() & 0b0111_1111),
+                Self::map((destination >> 7).truncate::<u8>() & 0b0111_1111),
+                Self::map((destination >> 14).truncate::<u8>() & 0b0111_1111),
+                Self::map((destination >> 21).truncate::<u8>() & 0b0111_1111),
+                Self::map(0x0),
+                Self::map(0x0),
+                Self::map(0x0), // padding
             ],
             i: 0,
+            _phantom: Default::default(),
         }
     }
 }
 
-impl core::iter::Iterator for StandardDataIterator {
-    type Item = u8;
+impl<'a, Repr> core::iter::Iterator for StandardDataIterator<'a, Repr>
+where
+    Repr: SysexGroupMessage<'a>,
+    <Repr as Message<'a>>::Builder: SysexGroupBuilder<'a>,
+{
+    type Item = <<Repr as Message<'a>>::Builder as SysexGroupBuilder<'a>>::Byte;
     fn next(&mut self) -> Option<Self::Item> {
         if self.i == 13 {
             None
@@ -57,37 +73,6 @@ impl core::iter::Iterator for StandardDataIterator {
 
 pub const STANDARD_DATA_SIZE: usize = 14;
 
-pub fn validate_sysex8(buffer: &[u32], status: u8) -> Result<sysex8::Sysex8MessageGroup> {
-    let messages = sysex8::Sysex8MessageGroup::from_data(buffer)?;
-    let mut payload = messages.payload();
-    let Some(SYSEX_START) = payload.next() else {
-        return Err(Error::InvalidData);
-    };
-    let Some(0x7E) = payload.next() else {
-        return Err(Error::InvalidData);
-    };
-    if let Some(v) = payload.next() {
-        device_id_from_u8(v)?;
-    } else {
-        return Err(Error::InvalidData);
-    };
-    // midi ci status code
-    let Some(0x0D) = payload.next() else {
-        return Err(Error::InvalidData);
-    };
-    if let Some(v) = payload.next() {
-        if v != status {
-            return Err(Error::InvalidData);
-        }
-    };
-    payload.next(); // todo: version compat
-                    // source / destination
-    let Some(_) = payload.nth(7) else {
-        return Err(Error::InvalidData);
-    };
-    Ok(messages)
-}
-
 pub fn device_id_from_u8(v: u8) -> Result<DeviceId> {
     if v == 0x7F {
         Ok(DeviceId::MidiPort)
@@ -98,10 +83,14 @@ pub fn device_id_from_u8(v: u8) -> Result<DeviceId> {
     }
 }
 
-pub fn validate_sysex7(buffer: &[u32], status: u8) -> Result<sysex7::Sysex7MessageGroup> {
-    let messages = sysex7::Sysex7MessageGroup::from_data(buffer)?;
+pub fn validate_sysex<'a, Repr>(buffer: &'a [u32], status: u8) -> Result<Repr>
+where
+    Repr: SysexGroupMessage<'a>,
+    <Repr as Message<'a>>::Builder: SysexGroupBuilder<'a>,
+{
+    let messages = Repr::from_data(buffer)?;
     let mut payload = messages.payload();
-    let Some(0xF0) = payload.next() else {
+    let Some(SYSEX_START) = payload.next() else {
         return Err(Error::InvalidData);
     };
     let Some(0x7E) = payload.next() else {

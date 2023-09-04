@@ -16,9 +16,6 @@ pub struct NoteOffMessage<'a>(&'a [u32]);
 debug::message_debug_impl!(NoteOffMessage);
 
 impl<'a> NoteOffMessage<'a> {
-    pub fn builder(buffer: &mut [u32]) -> NoteOffBuilder {
-        NoteOffBuilder::new(buffer)
-    }
     pub fn group(&self) -> u4 {
         message_helpers::group_from_packet(self.0)
     }
@@ -31,9 +28,24 @@ impl<'a> NoteOffMessage<'a> {
     pub fn velocity(&self) -> u7 {
         midi1cv_helpers::note_velocity_from_packet(self.0)
     }
-    pub fn from_data(data: &'a [u32]) -> Result<Self> {
-        message_helpers::validate_packet(data, MIDI1_CHANNEL_VOICE_TYPE, OP_CODE)?;
-        Ok(Self(data))
+}
+
+impl<'a> Message<'a> for NoteOffMessage<'a> {
+    type Builder = NoteOffBuilder<'a>;
+    fn data(&self) -> &'a [u32] {
+        self.0
+    }
+    fn validate_data(buffer: &'a [u32]) -> Result<()> {
+        message_helpers::validate_packet(buffer, MIDI1_CHANNEL_VOICE_TYPE, OP_CODE)
+    }
+    fn from_data_unchecked(buffer: &'a [u32]) -> Self {
+        Self(buffer)
+    }
+}
+
+impl<'a> GroupedMessage<'a> for NoteOffMessage<'a> {
+    fn group(&self) -> u4 {
+        message_helpers::group_from_packet(self.0)
     }
 }
 
@@ -41,16 +53,6 @@ impl<'a> NoteOffMessage<'a> {
 pub struct NoteOffBuilder<'a>(Result<&'a mut [u32]>);
 
 impl<'a> NoteOffBuilder<'a> {
-    pub fn new(buffer: &'a mut [u32]) -> Self {
-        match message_helpers::validate_buffer_size(buffer, 1) {
-            Ok(()) => {
-                message_helpers::write_op_code_to_packet(OP_CODE, buffer);
-                message_helpers::write_type_to_packet(MIDI1_CHANNEL_VOICE_TYPE, buffer);
-                Self(Ok(buffer))
-            }
-            Err(e) => Self(Err(e)),
-        }
-    }
     pub fn group(mut self, v: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
@@ -75,11 +77,34 @@ impl<'a> NoteOffBuilder<'a> {
         }
         self
     }
-    pub fn build(self) -> Result<NoteOffMessage<'a>> {
+}
+
+impl<'a> Builder<'a> for NoteOffBuilder<'a> {
+    type Message = NoteOffMessage<'a>;
+    fn build(self) -> Result<NoteOffMessage<'a>> {
         match self.0 {
             Ok(buffer) => Ok(NoteOffMessage(buffer)),
             Err(e) => Err(e.clone()),
         }
+    }
+    fn new(buffer: &'a mut [u32]) -> Self {
+        match message_helpers::validate_buffer_size(buffer, 1) {
+            Ok(()) => {
+                message_helpers::write_op_code_to_packet(OP_CODE, buffer);
+                message_helpers::write_type_to_packet(MIDI1_CHANNEL_VOICE_TYPE, buffer);
+                Self(Ok(buffer))
+            }
+            Err(e) => Self(Err(e)),
+        }
+    }
+}
+
+impl<'a> GroupedBuilder<'a> for NoteOffBuilder<'a> {
+    fn group(mut self, v: u4) -> Self {
+        if let Ok(buffer) = &mut self.0 {
+            message_helpers::write_group_to_packet(v, buffer);
+        }
+        self
     }
 }
 

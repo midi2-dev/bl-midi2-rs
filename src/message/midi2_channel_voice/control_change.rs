@@ -1,7 +1,6 @@
 use crate::{
-    error::Error,
     message::helpers as message_helpers,
-    message::midi2_channel_voice::{helpers as midi2cv_helpers, TYPE_CODE as MIDI2CV_TYPE_CODE},
+    message::midi2_channel_voice::TYPE_CODE as MIDI2CV_TYPE_CODE,
     result::Result,
     util::{debug, BitOps, Truncate},
     *,
@@ -15,12 +14,6 @@ debug::message_debug_impl!(ControlChangeMessage);
 const OP_CODE: u4 = u4::new(0b1011);
 
 impl<'a> ControlChangeMessage<'a> {
-    pub fn builder(buffer: &mut [u32]) -> ControlChangeBuilder {
-        ControlChangeBuilder::new(buffer)
-    }
-    pub fn group(&self) -> u4 {
-        message_helpers::group_from_packet(self.0)
-    }
     pub fn channel(&self) -> u4 {
         message_helpers::channel_from_packet(self.0)
     }
@@ -33,35 +26,32 @@ impl<'a> ControlChangeMessage<'a> {
     pub fn data(&self) -> &[u32] {
         self.0
     }
-    pub fn from_data(data: &'a [u32]) -> Result<Self> {
-        midi2cv_helpers::validate_packet(data, MIDI2CV_TYPE_CODE, OP_CODE)?;
-        if data.len() < 2 {
-            return Err(Error::BufferOverflow);
-        }
-        Ok(Self(data))
+}
+
+impl<'a> Message<'a> for ControlChangeMessage<'a> {
+    type Builder = ControlChangeBuilder<'a>;
+    fn data(&self) -> &'a [u32] {
+        self.0
+    }
+    fn validate_data(buffer: &'a [u32]) -> Result<()> {
+        message_helpers::validate_packet(buffer, MIDI2CV_TYPE_CODE, OP_CODE)?;
+        message_helpers::validate_buffer_size(buffer, 2)?;
+        Ok(())
+    }
+    fn from_data_unchecked(buffer: &'a [u32]) -> Self {
+        Self(buffer)
+    }
+}
+
+impl<'a> GroupedMessage<'a> for ControlChangeMessage<'a> {
+    fn group(&self) -> u4 {
+        message_helpers::group_from_packet(self.0)
     }
 }
 
 pub struct ControlChangeBuilder<'a>(Result<&'a mut [u32]>);
 
 impl<'a> ControlChangeBuilder<'a> {
-    fn new(buffer: &'a mut [u32]) -> Self {
-        match buffer.len() {
-            0 | 1 => Self(Err(Error::BufferOverflow)),
-            _ => {
-                message_helpers::clear_buffer(buffer);
-                message_helpers::write_type_to_packet(MIDI2CV_TYPE_CODE, buffer);
-                message_helpers::write_op_code_to_packet(OP_CODE, buffer);
-                Self(Ok(buffer))
-            }
-        }
-    }
-    pub fn group(mut self, group: u4) -> Self {
-        if let Ok(buffer) = &mut self.0 {
-            message_helpers::write_group_to_packet(group, buffer);
-        }
-        self
-    }
     pub fn channel(mut self, channel: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_channel_to_packet(channel, buffer);
@@ -80,11 +70,35 @@ impl<'a> ControlChangeBuilder<'a> {
         }
         self
     }
-    pub fn build(self) -> Result<ControlChangeMessage<'a>> {
+}
+
+impl<'a> Builder<'a> for ControlChangeBuilder<'a> {
+    type Message = ControlChangeMessage<'a>;
+    fn build(self) -> Result<ControlChangeMessage<'a>> {
         match self.0 {
             Ok(buffer) => Ok(ControlChangeMessage(buffer)),
             Err(e) => Err(e.clone()),
         }
+    }
+    fn new(buffer: &'a mut [u32]) -> Self {
+        match message_helpers::validate_buffer_size(buffer, 2) {
+            Ok(()) => {
+                message_helpers::clear_buffer(&mut buffer[..2]);
+                message_helpers::write_op_code_to_packet(OP_CODE, buffer);
+                message_helpers::write_type_to_packet(MIDI2CV_TYPE_CODE, buffer);
+                Self(Ok(&mut buffer[..2]))
+            }
+            Err(e) => Self(Err(e)),
+        }
+    }
+}
+
+impl<'a> GroupedBuilder<'a> for ControlChangeBuilder<'a> {
+    fn group(mut self, v: u4) -> Self {
+        if let Ok(buffer) = &mut self.0 {
+            message_helpers::write_group_to_packet(v, buffer);
+        }
+        self
     }
 }
 

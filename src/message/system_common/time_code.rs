@@ -16,18 +16,27 @@ pub struct TimeCodeMessage<'a>(&'a [u32]);
 debug::message_debug_impl!(TimeCodeMessage);
 
 impl<'a> TimeCodeMessage<'a> {
-    pub fn builder(buffer: &mut [u32]) -> TimeCodeBuilder {
-        TimeCodeBuilder::new(buffer)
-    }
-    pub fn group(&self) -> u4 {
-        message_helpers::group_from_packet(self.0)
-    }
     pub fn time_code(&self) -> u7 {
         self.0[0].octet(2).truncate()
     }
-    pub fn from_data(data: &'a [u32]) -> Result<Self> {
-        system_common::validate_packet(data, OP_CODE)?;
-        Ok(Self(data))
+}
+
+impl<'a> Message<'a> for TimeCodeMessage<'a> {
+    type Builder = TimeCodeBuilder<'a>;
+    fn from_data_unchecked(data: &'a [u32]) -> Self {
+        Self(data)
+    }
+    fn validate_data(buffer: &'a [u32]) -> Result<()> {
+        system_common::validate_packet(buffer, OP_CODE)
+    }
+    fn data(&self) -> &'a [u32] {
+        self.0
+    }
+}
+
+impl<'a> GroupedMessage<'a> for TimeCodeMessage<'a> {
+    fn group(&self) -> u4 {
+        message_helpers::group_from_packet(self.0)
     }
 }
 
@@ -35,7 +44,17 @@ impl<'a> TimeCodeMessage<'a> {
 pub struct TimeCodeBuilder<'a>(Result<&'a mut [u32]>);
 
 impl<'a> TimeCodeBuilder<'a> {
-    pub fn new(buffer: &'a mut [u32]) -> Self {
+    pub fn time_code(mut self, v: u7) -> Self {
+        if let Ok(buffer) = &mut self.0 {
+            buffer[0].set_octet(2, v.into());
+        }
+        self
+    }
+}
+
+impl<'a> Builder<'a> for TimeCodeBuilder<'a> {
+    type Message = TimeCodeMessage<'a>;
+    fn new(buffer: &'a mut [u32]) -> Self {
         match system_common::validate_buffer_size(buffer) {
             Ok(()) => {
                 message_helpers::clear_buffer(buffer);
@@ -46,23 +65,20 @@ impl<'a> TimeCodeBuilder<'a> {
             Err(e) => Self(Err(e)),
         }
     }
-    pub fn group(mut self, v: u4) -> Self {
-        if let Ok(buffer) = &mut self.0 {
-            message_helpers::write_group_to_packet(v, buffer);
-        }
-        self
-    }
-    pub fn time_code(mut self, v: u7) -> Self {
-        if let Ok(buffer) = &mut self.0 {
-            buffer[0].set_octet(2, v.into());
-        }
-        self
-    }
-    pub fn build(self) -> Result<TimeCodeMessage<'a>> {
+    fn build(self) -> Result<TimeCodeMessage<'a>> {
         match self.0 {
             Ok(buffer) => Ok(TimeCodeMessage(buffer)),
             Err(e) => Err(e.clone()),
         }
+    }
+}
+
+impl<'a> GroupedBuilder<'a> for TimeCodeBuilder<'a> {
+    fn group(mut self, v: u4) -> Self {
+        if let Ok(buffer) = &mut self.0 {
+            message_helpers::write_group_to_packet(v, buffer);
+        }
+        self
     }
 }
 

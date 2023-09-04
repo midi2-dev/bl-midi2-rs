@@ -16,18 +16,28 @@ pub struct SongPositionPointerMessage<'a>(&'a [u32]);
 debug::message_debug_impl!(SongPositionPointerMessage);
 
 impl<'a> SongPositionPointerMessage<'a> {
-    pub fn builder(buffer: &mut [u32]) -> SongPositionPointerBuilder {
-        SongPositionPointerBuilder::new(buffer)
-    }
-    pub fn group(&self) -> u4 {
-        message_helpers::group_from_packet(self.0)
-    }
     pub fn position(&self) -> u14 {
         u14::from_u7s(&[self.0[0].octet(2), self.0[0].octet(3)])
     }
-    pub fn from_data(data: &'a [u32]) -> Result<Self> {
-        system_common::validate_packet(data, OP_CODE)?;
-        Ok(Self(data))
+}
+
+impl<'a> Message<'a> for SongPositionPointerMessage<'a> {
+    type Builder = SongPositionPointerBuilder<'a>;
+    fn from_data_unchecked(data: &'a [u32]) -> Self {
+        Self(data)
+    }
+    fn data(&self) -> &'a [u32] {
+        self.0
+    }
+    fn validate_data(buffer: &'a [u32]) -> Result<()> {
+        system_common::validate_packet(buffer, OP_CODE)?;
+        Ok(())
+    }
+}
+
+impl<'a> GroupedMessage<'a> for SongPositionPointerMessage<'a> {
+    fn group(&self) -> u4 {
+        message_helpers::group_from_packet(self.0)
     }
 }
 
@@ -35,7 +45,25 @@ impl<'a> SongPositionPointerMessage<'a> {
 pub struct SongPositionPointerBuilder<'a>(Result<&'a mut [u32]>);
 
 impl<'a> SongPositionPointerBuilder<'a> {
-    pub fn new(buffer: &'a mut [u32]) -> Self {
+    pub fn position(mut self, v: u14) -> Self {
+        if let Ok(buffer) = &mut self.0 {
+            let u7s = v.to_u7s();
+            buffer[0].set_octet(2, u7s[0].into());
+            buffer[0].set_octet(3, u7s[1].into());
+        }
+        self
+    }
+}
+
+impl<'a> Builder<'a> for SongPositionPointerBuilder<'a> {
+    type Message = SongPositionPointerMessage<'a>;
+    fn build(self) -> Result<SongPositionPointerMessage<'a>> {
+        match self.0 {
+            Ok(buffer) => Ok(SongPositionPointerMessage(buffer)),
+            Err(e) => Err(e.clone()),
+        }
+    }
+    fn new(buffer: &'a mut [u32]) -> Self {
         match system_common::validate_buffer_size(buffer) {
             Ok(()) => {
                 message_helpers::clear_buffer(buffer);
@@ -46,25 +74,14 @@ impl<'a> SongPositionPointerBuilder<'a> {
             Err(e) => Self(Err(e)),
         }
     }
-    pub fn group(mut self, v: u4) -> Self {
+}
+
+impl<'a> GroupedBuilder<'a> for SongPositionPointerBuilder<'a> {
+    fn group(mut self, v: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
         }
         self
-    }
-    pub fn position(mut self, v: u14) -> Self {
-        if let Ok(buffer) = &mut self.0 {
-            let u7s = v.to_u7s();
-            buffer[0].set_octet(2, u7s[0].into());
-            buffer[0].set_octet(3, u7s[1].into());
-        }
-        self
-    }
-    pub fn build(self) -> Result<SongPositionPointerMessage<'a>> {
-        match self.0 {
-            Ok(buffer) => Ok(SongPositionPointerMessage(buffer)),
-            Err(e) => Err(e.clone()),
-        }
     }
 }
 

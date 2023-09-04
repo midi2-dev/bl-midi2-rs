@@ -1,18 +1,7 @@
 use crate::{
-    error::Error,
-    message::helpers as message_helpers,
-    result::Result,
     util::{BitOps, Truncate},
     *,
 };
-
-pub fn validate_packet(p: &[u32], type_code: u4, op_code: u4) -> Result<()> {
-    if p.len() < 2 {
-        Err(Error::BufferOverflow)
-    } else {
-        message_helpers::validate_packet(p, type_code, op_code)
-    }
-}
 
 pub fn controller_bank_from_packet(p: &[u32]) -> u7 {
     p[0].octet(2).truncate()
