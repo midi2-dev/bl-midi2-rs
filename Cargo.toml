@@ -1,8 +1,12 @@
 [package]
 name = "midi2"
 version = "0.1.0"
+description = "A helper library for dealing with midi 2 byte data."
 edition = "2021"
 readme = "README.md"
+authors = [
+    "Ben Leadbetter <ben.leadbetter@hotmail.com>",
+]
 
 [dependencies]
 ux = "0.1.5"
