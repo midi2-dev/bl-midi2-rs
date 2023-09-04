@@ -4,7 +4,7 @@ Contributions are more than welcome!
 The library is still in its early development phase. 
 There is not even a definite road map at this point.
 Please utilise the Issues feature on GitHub 
-or open a PR from your own branch to start a discussion ☺️.
+or open a PR from your own fork to start a discussion ☺️.
 
 ## Hooks
 
@@ -21,9 +21,16 @@ The best way to do this is via a virtual environment.
 
 ## Building
 
-To build and run the tests, simply follow the usual cargo flow.
+To build , simply follow the usual cargo flow.
+```shell
+> cargo build
+```
+
+## Tests
+
 The project currently has a good unit tests coverage,
 but no integration test coverage yet.
+To run the tests, follow the usual cargo flow.
 
 ```shell
 > cargo test
