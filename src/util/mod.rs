@@ -3,7 +3,6 @@ pub mod debug;
 mod bit_ops;
 mod bounded;
 mod encode_7bit;
-mod slice_data;
 mod truncate;
 
 #[cfg(test)]
@@ -14,5 +13,4 @@ pub use bounded::Bounded;
 pub use encode_7bit::Encode7Bit;
 #[cfg(test)]
 pub use random_buffer::random_buffer;
-pub use slice_data::SliceData;
 pub use truncate::Truncate;
