@@ -1,10 +1,31 @@
-pub fn random_buffer<const SIZE: usize>() -> [u32; SIZE]
-where
-    [u32; SIZE]: Default,
-{
-    let mut ret: [u32; SIZE] = Default::default();
-    ret.copy_from_slice(&RANDOM_DATA[..SIZE]);
-    ret
+use crate::buffer::{Bytes, Ump};
+
+pub trait RandomBuffer<T> {
+    fn random_buffer<'a, const SIZE: usize>() -> [T; SIZE]
+    where
+        [T; SIZE]: core::default::Default;
+}
+
+impl RandomBuffer<u32> for Ump {
+    fn random_buffer<'a, const SIZE: usize>() -> [u32; SIZE]
+    where
+        [u32; SIZE]: core::default::Default,
+    {
+        let mut ret: [u32; SIZE] = Default::default();
+        ret.copy_from_slice(&RANDOM_DATA[..SIZE]);
+        ret
+    }
+}
+
+impl RandomBuffer<u8> for Bytes {
+    fn random_buffer<'a, const SIZE: usize>() -> [u8; SIZE]
+    where
+        [u8; SIZE]: core::default::Default,
+    {
+        let mut ret: [u8; SIZE] = Default::default();
+        ret.copy_from_slice(&RANDOM_BYTES[..SIZE]);
+        ret
+    }
 }
 
 const RANDOM_DATA: [u32; 50] = [
@@ -15,4 +36,11 @@ const RANDOM_DATA: [u32; 50] = [
     0xa6e72fd1, 0xc3773cfb, 0xcddd9ea6, 0x8119ea08, 0x3a006253, 0x5d07cb53, 0xdebc503e, 0xac9c833b,
     0x388e7843, 0x8c1495ba, 0x1afe8b04, 0x1b61366a, 0x3a10b330, 0x5bbd9cfe, 0x1a5921f4, 0xfb93d58c,
     0x20e1d602, 0x8b2bf8e3,
+];
+
+const RANDOM_BYTES: [u8; 50] = [
+    0x80, 0xA1, 0x10, 0x9E, 0x35, 0x21, 0xE1, 0x77, 0x0, 0x7A, 0x29, 0xAF, 0x3B, 0x27, 0xA3, 0xD1,
+    0x38, 0xBE, 0x84, 0xD5, 0x7C, 0xE, 0x2, 0x18, 0x25, 0x2D, 0x7F, 0xD0, 0xFB, 0xF0, 0xCB, 0x18,
+    0x32, 0xF6, 0xB, 0xFC, 0x23, 0xC8, 0x6C, 0xDB, 0xB9, 0x10, 0xDD, 0xA, 0x20, 0x32, 0x2C, 0xE2,
+    0x3A, 0xEF,
 ];

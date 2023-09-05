@@ -4,24 +4,28 @@ use crate::{
         system_common::{self, TYPE_CODE as SYSTEM_COMMON_TYPE_CODE},
     },
     result::Result,
-    util::{debug, BitOps, Encode7Bit},
+    util::{BitOps, Encode7Bit},
     *,
 };
 
 const OP_CODE: u8 = 0xF2;
 
-#[derive(Clone, PartialEq, Eq)]
-pub struct SongPositionPointerMessage<'a>(&'a [u32]);
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SongPositionPointerMessage<'a, B: Buffer>(&'a B::Data);
 
-debug::message_debug_impl!(SongPositionPointerMessage);
-
-impl<'a> SongPositionPointerMessage<'a> {
+impl<'a> SongPositionPointerMessage<'a, Ump> {
     pub fn position(&self) -> u14 {
         u14::from_u7s(&[self.0[0].octet(2), self.0[0].octet(3)])
     }
 }
 
-impl<'a> Message<'a> for SongPositionPointerMessage<'a> {
+impl<'a> SongPositionPointerMessage<'a, Bytes> {
+    pub fn position(&self) -> u14 {
+        u14::from_u7s(&[self.0[1], self.0[2]])
+    }
+}
+
+impl<'a> Message<'a, Ump> for SongPositionPointerMessage<'a, Ump> {
     fn from_data_unchecked(data: &'a [u32]) -> Self {
         Self(data)
     }
@@ -34,20 +38,37 @@ impl<'a> Message<'a> for SongPositionPointerMessage<'a> {
     }
 }
 
-impl<'a> Buildable<'a> for SongPositionPointerMessage<'a> {
-    type Builder = SongPositionPointerBuilder<'a>;
+impl<'a> Buildable<'a, Ump> for SongPositionPointerMessage<'a, Ump> {
+    type Builder = SongPositionPointerBuilder<'a, Ump>;
 }
 
-impl<'a> GroupedMessage<'a> for SongPositionPointerMessage<'a> {
+impl<'a> Buildable<'a, Bytes> for SongPositionPointerMessage<'a, Bytes> {
+    type Builder = SongPositionPointerBuilder<'a, Bytes>;
+}
+
+impl<'a> Message<'a, Bytes> for SongPositionPointerMessage<'a, Bytes> {
+    fn data(&self) -> &'a <Bytes as Buffer>::Data {
+        self.0
+    }
+    fn validate_data(buffer: &'a <Bytes as Buffer>::Data) -> Result<()> {
+        system_common::validate_bytes(buffer, OP_CODE, 3)?;
+        Ok(())
+    }
+    fn from_data_unchecked(buffer: &'a <Bytes as Buffer>::Data) -> Self {
+        Self(buffer)
+    }
+}
+
+impl<'a> GroupedMessage<'a> for SongPositionPointerMessage<'a, Ump> {
     fn group(&self) -> u4 {
         message_helpers::group_from_packet(self.0)
     }
 }
 
 #[derive(PartialEq, Eq)]
-pub struct SongPositionPointerBuilder<'a>(Result<&'a mut [u32]>);
+pub struct SongPositionPointerBuilder<'a, B: Buffer>(Result<&'a mut B::Data>);
 
-impl<'a> SongPositionPointerBuilder<'a> {
+impl<'a> SongPositionPointerBuilder<'a, Ump> {
     pub fn position(mut self, v: u14) -> Self {
         if let Ok(buffer) = &mut self.0 {
             let u7s = v.to_u7s();
@@ -58,9 +79,20 @@ impl<'a> SongPositionPointerBuilder<'a> {
     }
 }
 
-impl<'a> Builder<'a> for SongPositionPointerBuilder<'a> {
-    type Message = SongPositionPointerMessage<'a>;
-    fn build(self) -> Result<SongPositionPointerMessage<'a>> {
+impl<'a> SongPositionPointerBuilder<'a, Bytes> {
+    pub fn position(mut self, v: u14) -> Self {
+        if let Ok(buffer) = &mut self.0 {
+            let u7s = v.to_u7s();
+            buffer[1] = u7s[0].into();
+            buffer[2] = u7s[1].into();
+        }
+        self
+    }
+}
+
+impl<'a> Builder<'a, Ump> for SongPositionPointerBuilder<'a, Ump> {
+    type Message = SongPositionPointerMessage<'a, Ump>;
+    fn build(self) -> Result<SongPositionPointerMessage<'a, Ump>> {
         match self.0 {
             Ok(buffer) => Ok(SongPositionPointerMessage(buffer)),
             Err(e) => Err(e.clone()),
@@ -79,7 +111,26 @@ impl<'a> Builder<'a> for SongPositionPointerBuilder<'a> {
     }
 }
 
-impl<'a> GroupedBuilder<'a> for SongPositionPointerBuilder<'a> {
+impl<'a> Builder<'a, Bytes> for SongPositionPointerBuilder<'a, Bytes> {
+    type Message = SongPositionPointerMessage<'a, Bytes>;
+    fn new(buffer: &'a mut <Bytes as Buffer>::Data) -> Self {
+        if buffer.len() >= 3 {
+            message_helpers::clear_buffer(buffer);
+            buffer[0] = OP_CODE;
+            Self(Ok(buffer))
+        } else {
+            Self(Err(Error::BufferOverflow))
+        }
+    }
+    fn build(self) -> Result<Self::Message> {
+        match self.0 {
+            Ok(buffer) => Ok(SongPositionPointerMessage(buffer)),
+            Err(e) => Err(e.clone()),
+        }
+    }
+}
+
+impl<'a> GroupedBuilder<'a> for SongPositionPointerBuilder<'a, Ump> {
     fn group(mut self, v: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
@@ -91,23 +142,23 @@ impl<'a> GroupedBuilder<'a> for SongPositionPointerBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::random_buffer;
+    use crate::util::RandomBuffer;
 
     #[test]
     fn builder() {
         assert_eq!(
-            SongPositionPointerMessage::builder(&mut random_buffer::<1>())
+            SongPositionPointerMessage::<Ump>::builder(&mut Ump::random_buffer::<1>())
                 .group(u4::new(0xA))
                 .position(u14::new(0x367D))
                 .build(),
-            Ok(SongPositionPointerMessage(&[0x1AF2_7D6C])),
+            Ok(SongPositionPointerMessage::<Ump>(&[0x1AF2_7D6C])),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            SongPositionPointerMessage::from_data(&[0x1AF2_7D6C])
+            SongPositionPointerMessage::<Ump>::from_data(&[0x1AF2_7D6C])
                 .unwrap()
                 .group(),
             u4::new(0xA),
@@ -117,7 +168,27 @@ mod tests {
     #[test]
     fn position() {
         assert_eq!(
-            SongPositionPointerMessage::from_data(&[0x1AF2_7D6C])
+            SongPositionPointerMessage::<Ump>::from_data(&[0x1AF2_7D6C])
+                .unwrap()
+                .position(),
+            u14::new(0x367D),
+        );
+    }
+
+    #[test]
+    fn bytes_builder() {
+        assert_eq!(
+            SongPositionPointerMessage::<Bytes>::builder(&mut Bytes::random_buffer::<3>())
+                .position(u14::new(0x367D))
+                .build(),
+            Ok(SongPositionPointerMessage::<Bytes>(&[0xF2, 0x7D, 0x6C])),
+        );
+    }
+
+    #[test]
+    fn bytes_position() {
+        assert_eq!(
+            SongPositionPointerMessage::<Bytes>::from_data(&[0xF2, 0x7D, 0x6C])
                 .unwrap()
                 .position(),
             u14::new(0x367D),

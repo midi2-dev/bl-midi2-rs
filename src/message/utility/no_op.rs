@@ -1,19 +1,13 @@
-use crate::{
-    error::Error,
-    message::helpers as message_helpers,
-    result::Result,
-    util::{debug, BitOps},
-    *,
-};
+use crate::{error::Error, message::helpers as message_helpers, result::Result, util::BitOps, *};
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct NoOpMessage<'a>(&'a [u32]);
 
 impl<'a> NoOpMessage<'a> {
     const OP_CODE: u4 = u4::new(0x0);
 }
 
-impl<'a> Message<'a> for NoOpMessage<'a> {
+impl<'a> Message<'a, Ump> for NoOpMessage<'a> {
     fn from_data_unchecked(data: &'a [u32]) -> Self {
         NoOpMessage(&data[..1])
     }
@@ -21,11 +15,11 @@ impl<'a> Message<'a> for NoOpMessage<'a> {
         self.0
     }
     fn validate_data(buffer: &'a [u32]) -> Result<()> {
-        super::validate_packet(buffer, NoOpMessage::OP_CODE)
+        super::validate_packet(buffer, NoOpMessage::<'a>::OP_CODE)
     }
 }
 
-impl<'a> Buildable<'a> for NoOpMessage<'a> {
+impl<'a> Buildable<'a, Ump> for NoOpMessage<'a> {
     type Builder = NoOpBuilder<'a>;
 }
 
@@ -35,11 +29,9 @@ impl<'a> GroupedMessage<'a> for NoOpMessage<'a> {
     }
 }
 
-debug::message_debug_impl!(NoOpMessage);
-
 pub struct NoOpBuilder<'a>(Option<&'a mut [u32]>);
 
-impl<'a> Builder<'a> for NoOpBuilder<'a> {
+impl<'a> Builder<'a, Ump> for NoOpBuilder<'a> {
     type Message = NoOpMessage<'a>;
     fn new(buffer: &'a mut [u32]) -> Self {
         if !buffer.is_empty() {
@@ -70,12 +62,12 @@ impl<'a> GroupedBuilder<'a> for NoOpBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::random_buffer;
+    use crate::util::RandomBuffer;
 
     #[test]
     fn builder() {
         assert_eq!(
-            NoOpMessage::builder(&mut random_buffer::<1>())
+            NoOpMessage::builder(&mut Ump::random_buffer::<1>())
                 .group(u4::new(0xB))
                 .build(),
             Ok(NoOpMessage(&[0x0B00_0000])),

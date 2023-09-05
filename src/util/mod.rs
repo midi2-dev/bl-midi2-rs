@@ -12,5 +12,5 @@ pub use bit_ops::BitOps;
 pub use bounded::Bounded;
 pub use encode_7bit::Encode7Bit;
 #[cfg(test)]
-pub use random_buffer::random_buffer;
+pub use random_buffer::*;
 pub use truncate::Truncate;

@@ -30,7 +30,7 @@ impl<'a> RegisteredControllerMessage<'a> {
     }
 }
 
-impl<'a> Message<'a> for RegisteredControllerMessage<'a> {
+impl<'a> Message<'a, Ump> for RegisteredControllerMessage<'a> {
     fn data(&self) -> &'a [u32] {
         self.0
     }
@@ -44,7 +44,7 @@ impl<'a> Message<'a> for RegisteredControllerMessage<'a> {
     }
 }
 
-impl<'a> Buildable<'a> for RegisteredControllerMessage<'a> {
+impl<'a> Buildable<'a, Ump> for RegisteredControllerMessage<'a> {
     type Builder = RegisteredControllerBuilder<'a>;
 }
 
@@ -84,7 +84,7 @@ impl<'a> RegisteredControllerBuilder<'a> {
     }
 }
 
-impl<'a> Builder<'a> for RegisteredControllerBuilder<'a> {
+impl<'a> Builder<'a, Ump> for RegisteredControllerBuilder<'a> {
     type Message = RegisteredControllerMessage<'a>;
     fn build(self) -> Result<RegisteredControllerMessage<'a>> {
         match self.0 {
@@ -117,12 +117,12 @@ impl<'a> GroupedBuilder<'a> for RegisteredControllerBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::random_buffer;
+    use crate::util::RandomBuffer;
 
     #[test]
     fn builder() {
         assert_eq!(
-            RegisteredControllerMessage::builder(&mut random_buffer::<2>())
+            RegisteredControllerMessage::builder(&mut Ump::random_buffer::<2>())
                 .group(u4::new(0xA))
                 .channel(u4::new(0xB))
                 .bank(u7::new(0x7D))

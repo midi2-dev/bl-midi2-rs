@@ -25,9 +25,9 @@ pub fn note_from_packet(p: &[u32]) -> u7 {
     p[0].octet(2).truncate()
 }
 
-pub fn clear_buffer(p: &mut [u32]) -> &mut [u32] {
+pub fn clear_buffer<T: core::default::Default>(p: &mut [T]) -> &mut [T] {
     for d in &mut *p {
-        *d = 0x0;
+        *d = Default::default();
     }
     p
 }
@@ -138,6 +138,14 @@ mod tests {
 
     #[test]
     fn test_clear_buffer() {
-        assert_eq!(clear_buffer(&mut [0x1234_5678, 0x8765_4321]), &[0x0, 0x0]);
+        assert_eq!(
+            clear_buffer(&mut [0x1234_5678_u32, 0x8765_4321_u32]),
+            &[0x0, 0x0]
+        );
+    }
+
+    #[test]
+    fn test_clear_buffer_bytes() {
+        assert_eq!(clear_buffer(&mut [0x12u8, 0x34u8]), &[0x0, 0x0]);
     }
 }

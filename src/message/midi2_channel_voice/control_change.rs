@@ -25,7 +25,7 @@ impl<'a> ControlChangeMessage<'a> {
     }
 }
 
-impl<'a> Message<'a> for ControlChangeMessage<'a> {
+impl<'a> Message<'a, Ump> for ControlChangeMessage<'a> {
     fn data(&self) -> &'a [u32] {
         self.0
     }
@@ -39,7 +39,7 @@ impl<'a> Message<'a> for ControlChangeMessage<'a> {
     }
 }
 
-impl<'a> Buildable<'a> for ControlChangeMessage<'a> {
+impl<'a> Buildable<'a, Ump> for ControlChangeMessage<'a> {
     type Builder = ControlChangeBuilder<'a>;
 }
 
@@ -72,7 +72,7 @@ impl<'a> ControlChangeBuilder<'a> {
     }
 }
 
-impl<'a> Builder<'a> for ControlChangeBuilder<'a> {
+impl<'a> Builder<'a, Ump> for ControlChangeBuilder<'a> {
     type Message = ControlChangeMessage<'a>;
     fn build(self) -> Result<ControlChangeMessage<'a>> {
         match self.0 {
@@ -105,12 +105,12 @@ impl<'a> GroupedBuilder<'a> for ControlChangeBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::random_buffer;
+    use crate::util::RandomBuffer;
 
     #[test]
     fn builder() {
         assert_eq!(
-            ControlChangeMessage::builder(&mut random_buffer::<2>())
+            ControlChangeMessage::builder(&mut Ump::random_buffer::<2>())
                 .group(u4::new(0x3))
                 .channel(u4::new(0x9))
                 .index(u7::new(0x30))

@@ -27,7 +27,7 @@ impl<'a> PerNoteManagementMessage<'a> {
     }
 }
 
-impl<'a> Message<'a> for PerNoteManagementMessage<'a> {
+impl<'a> Message<'a, Ump> for PerNoteManagementMessage<'a> {
     fn data(&self) -> &'a [u32] {
         self.0
     }
@@ -40,7 +40,7 @@ impl<'a> Message<'a> for PerNoteManagementMessage<'a> {
     }
 }
 
-impl<'a> Buildable<'a> for PerNoteManagementMessage<'a> {
+impl<'a> Buildable<'a, Ump> for PerNoteManagementMessage<'a> {
     type Builder = PerNoteManagementBuilder<'a>;
 }
 
@@ -86,7 +86,7 @@ impl<'a> PerNoteManagementBuilder<'a> {
     }
 }
 
-impl<'a> Builder<'a> for PerNoteManagementBuilder<'a> {
+impl<'a> Builder<'a, Ump> for PerNoteManagementBuilder<'a> {
     type Message = PerNoteManagementMessage<'a>;
     fn build(self) -> Result<PerNoteManagementMessage<'a>> {
         match self.0 {
@@ -119,12 +119,12 @@ impl<'a> GroupedBuilder<'a> for PerNoteManagementBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::random_buffer;
+    use crate::util::RandomBuffer;
 
     #[test]
     fn builder() {
         assert_eq!(
-            PerNoteManagementMessage::builder(&mut random_buffer::<1>())
+            PerNoteManagementMessage::builder(&mut Ump::random_buffer::<1>())
                 .group(u4::new(0xB))
                 .channel(u4::new(0x9))
                 .note(u7::new(0x1C))

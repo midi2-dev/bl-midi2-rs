@@ -91,7 +91,7 @@ const REGISTERED_PER_NOTE_CONTROLLER_CODE: u8 = 0b0000;
 const RELATIVE_ASSIGNABLE_CONTROLLER_CODE: u8 = 0b0101;
 const RELATIVE_REGISTERED_CONTROLLER_CODE: u8 = 0b0100;
 
-impl<'a> Message<'a> for Midi2ChannelVoiceMessage<'a> {
+impl<'a> Message<'a, Ump> for Midi2ChannelVoiceMessage<'a> {
     fn validate_data(buffer: &'a [u32]) -> Result<()> {
         match u8::from(buffer[0].nibble(2)) {
             ASSIGNABLE_CONTROLLER_CODE => AssignableControllerMessage::validate_data(buffer),

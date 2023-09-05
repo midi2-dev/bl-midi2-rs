@@ -32,7 +32,7 @@ impl<'a> NoteOffMessage<'a> {
     }
 }
 
-impl<'a> Message<'a> for NoteOffMessage<'a> {
+impl<'a> Message<'a, Ump> for NoteOffMessage<'a> {
     fn data(&self) -> &'a [u32] {
         self.0
     }
@@ -47,7 +47,7 @@ impl<'a> Message<'a> for NoteOffMessage<'a> {
     }
 }
 
-impl<'a> Buildable<'a> for NoteOffMessage<'a> {
+impl<'a> Buildable<'a, Ump> for NoteOffMessage<'a> {
     type Builder = NoteOffBuilder<'a>;
 }
 
@@ -87,7 +87,7 @@ impl<'a> NoteOffBuilder<'a> {
     }
 }
 
-impl<'a> Builder<'a> for NoteOffBuilder<'a> {
+impl<'a> Builder<'a, Ump> for NoteOffBuilder<'a> {
     type Message = NoteOffMessage<'a>;
     fn build(self) -> Result<NoteOffMessage<'a>> {
         match self.0 {
@@ -120,12 +120,12 @@ impl<'a> GroupedBuilder<'a> for NoteOffBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::random_buffer;
+    use crate::util::RandomBuffer;
 
     #[test]
     fn builder() {
         assert_eq!(
-            NoteOffMessage::builder(&mut random_buffer::<2>())
+            NoteOffMessage::builder(&mut Ump::random_buffer::<2>())
                 .group(u4::new(0x2))
                 .channel(u4::new(0x4))
                 .note(u7::new(0x4E))

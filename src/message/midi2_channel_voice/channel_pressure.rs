@@ -21,7 +21,7 @@ impl<'a> ChannelPressureMessage<'a> {
     }
 }
 
-impl<'a> Message<'a> for ChannelPressureMessage<'a> {
+impl<'a> Message<'a, Ump> for ChannelPressureMessage<'a> {
     fn data(&self) -> &'a [u32] {
         self.0
     }
@@ -35,7 +35,7 @@ impl<'a> Message<'a> for ChannelPressureMessage<'a> {
     }
 }
 
-impl<'a> Buildable<'a> for ChannelPressureMessage<'a> {
+impl<'a> Buildable<'a, Ump> for ChannelPressureMessage<'a> {
     type Builder = ChannelPressureBuilder<'a>;
 }
 
@@ -63,7 +63,7 @@ impl<'a> ChannelPressureBuilder<'a> {
     }
 }
 
-impl<'a> Builder<'a> for ChannelPressureBuilder<'a> {
+impl<'a> Builder<'a, Ump> for ChannelPressureBuilder<'a> {
     type Message = ChannelPressureMessage<'a>;
     fn build(self) -> Result<ChannelPressureMessage<'a>> {
         match self.0 {
@@ -96,12 +96,12 @@ impl<'a> GroupedBuilder<'a> for ChannelPressureBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::random_buffer;
+    use crate::util::RandomBuffer;
 
     #[test]
     fn builder() {
         assert_eq!(
-            ChannelPressureMessage::builder(&mut random_buffer::<2>())
+            ChannelPressureMessage::builder(&mut Ump::random_buffer::<2>())
                 .group(u4::new(0xE))
                 .channel(u4::new(0xD))
                 .channel_pressure_data(0xDE0DE0F2)

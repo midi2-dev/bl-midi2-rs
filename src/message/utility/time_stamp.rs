@@ -2,11 +2,11 @@ use crate::{
     error::Error,
     message::helpers as message_helpers,
     result::Result,
-    util::{debug, BitOps, Truncate},
+    util::{BitOps, Truncate},
     *,
 };
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TimeStampMessage<'a>(&'a [u32]);
 
 impl<'a> TimeStampMessage<'a> {
@@ -16,7 +16,7 @@ impl<'a> TimeStampMessage<'a> {
     }
 }
 
-impl<'a> Message<'a> for TimeStampMessage<'a> {
+impl<'a> Message<'a, Ump> for TimeStampMessage<'a> {
     fn from_data_unchecked(data: &'a [u32]) -> Self {
         TimeStampMessage(&data[..1])
     }
@@ -28,7 +28,7 @@ impl<'a> Message<'a> for TimeStampMessage<'a> {
     }
 }
 
-impl<'a> Buildable<'a> for TimeStampMessage<'a> {
+impl<'a> Buildable<'a, Ump> for TimeStampMessage<'a> {
     type Builder = TimeStampBuilder<'a>;
 }
 
@@ -37,8 +37,6 @@ impl<'a> GroupedMessage<'a> for TimeStampMessage<'a> {
         self.0[0].nibble(1)
     }
 }
-
-debug::message_debug_impl!(TimeStampMessage);
 
 pub struct TimeStampBuilder<'a>(Option<&'a mut [u32]>);
 
@@ -51,7 +49,7 @@ impl<'a> TimeStampBuilder<'a> {
     }
 }
 
-impl<'a> Builder<'a> for TimeStampBuilder<'a> {
+impl<'a> Builder<'a, Ump> for TimeStampBuilder<'a> {
     type Message = TimeStampMessage<'a>;
     fn new(buffer: &'a mut [u32]) -> Self {
         if !buffer.is_empty() {
@@ -83,12 +81,12 @@ impl<'a> GroupedBuilder<'a> for TimeStampBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::random_buffer;
+    use crate::util::RandomBuffer;
 
     #[test]
     fn builder() {
         assert_eq!(
-            TimeStampMessage::builder(&mut random_buffer::<1>())
+            TimeStampMessage::builder(&mut Ump::random_buffer::<1>())
                 .group(u4::new(0x4))
                 .time_stamp(u20::new(0xE_69AE))
                 .build(),
@@ -99,7 +97,7 @@ mod tests {
     #[test]
     fn builder_default() {
         assert_eq!(
-            TimeStampMessage::builder(&mut random_buffer::<1>()).build(),
+            TimeStampMessage::builder(&mut Ump::random_buffer::<1>()).build(),
             Ok(TimeStampMessage(&[0x0020_0000])),
         );
     }
@@ -107,7 +105,7 @@ mod tests {
     #[test]
     fn builder_oversized_buffer() {
         assert_eq!(
-            TimeStampMessage::builder(&mut random_buffer::<1>()).build(),
+            TimeStampMessage::builder(&mut Ump::random_buffer::<1>()).build(),
             Ok(TimeStampMessage(&[0x0020_0000])),
         );
     }

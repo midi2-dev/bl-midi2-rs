@@ -6,16 +6,14 @@ macro_rules! simple_generic_message {
                 system_common::{self, TYPE_CODE as SYSTEM_COMMON_TYPE_CODE},
             },
             result::Result,
-            util::debug,
             *,
         };
 
-        #[derive(Clone, PartialEq, Eq)]
-        pub struct $name<'a>(&'a [u32]);
+        #[derive(Clone, Debug, PartialEq, Eq)]
+        pub struct $name<'a, B: Buffer>(&'a B::Data);
 
-        debug::message_debug_impl!($name);
 
-        impl<'a> Message<'a> for $name<'a> {
+        impl<'a> Message<'a, Ump> for $name<'a, Ump> {
             fn data(&self) -> &'a [u32] {
                 self.0
             }
@@ -28,22 +26,39 @@ macro_rules! simple_generic_message {
             }
         }
 
-        impl<'a> Buildable<'a> for $name<'a> {
-            type Builder = $builder_name<'a>;
+        impl<'a> Buildable<'a, Ump> for $name<'a, Ump> {
+            type Builder = $builder_name<'a, Ump>;
         }
 
-        impl<'a> GroupedMessage<'a> for $name<'a> {
+        impl<'a> Buildable<'a, Bytes> for $name<'a, Bytes> {
+            type Builder = $builder_name<'a, Bytes>;
+        }
+
+        impl<'a> Message<'a, Bytes> for $name<'a, Bytes> {
+            fn data(&self) -> &'a [u8] {
+                self.0
+            }
+            fn from_data_unchecked(data: &'a [u8]) -> Self {
+                Self(data)
+            }
+            fn validate_data(data: &[u8]) -> Result<()> {
+                system_common::validate_bytes(data, $op_code, 1)?;
+                Ok(())
+            }
+        }
+
+        impl<'a> GroupedMessage<'a> for $name<'a, Ump> {
             fn group(&self) -> u4 {
                 message_helpers::group_from_packet(self.0)
             }
         }
 
         #[derive(PartialEq, Eq)]
-        pub struct $builder_name<'a>(Result<&'a mut [u32]>);
+        pub struct $builder_name<'a, B: Buffer>(Result<&'a mut B::Data>);
 
-        impl<'a> Builder<'a> for $builder_name<'a> {
-            type Message = $name<'a>;
-            fn build(self) -> Result<$name<'a>> {
+        impl<'a> Builder<'a, Ump> for $builder_name<'a, Ump> {
+            type Message = $name<'a, Ump>;
+            fn build(self) -> Result<$name<'a, Ump>> {
                 match self.0 {
                     Ok(buffer) => Ok($name(buffer)),
                     Err(e) => Err(e.clone()),
@@ -62,7 +77,26 @@ macro_rules! simple_generic_message {
             }
         }
 
-        impl<'a> GroupedBuilder<'a> for $builder_name<'a> {
+        impl<'a> Builder<'a, Bytes> for $builder_name<'a, Bytes> {
+            type Message = $name<'a, Bytes>;
+            fn new(buffer: &'a mut [u8]) -> Self {
+                if buffer.len() >= 1 {
+                    message_helpers::clear_buffer(buffer);
+                    buffer[0] = $op_code;
+                    Self(Ok(&mut buffer[..1]))
+                } else {
+                    Self(Err(Error::BufferOverflow))
+                }
+            }
+            fn build(self) -> Result<Self::Message> {
+                match self.0 {
+                    Ok(buffer) => Ok($name(buffer)),
+                    Err(e) => Err(e.clone()),
+                }
+            }
+        }
+
+        impl<'a> GroupedBuilder<'a> for $builder_name<'a, Ump> {
             fn group(mut self, v: u4) -> Self {
                 if let Ok(buffer) = &mut self.0 {
                     message_helpers::write_group_to_packet(v, buffer);
@@ -107,25 +141,43 @@ pub mod reset {
 #[cfg(test)]
 mod tests {
     use super::simple_generic_message;
-    use crate::util::random_buffer;
+    use crate::util::RandomBuffer;
 
     simple_generic_message!(0xFF, TestMessage, TestBuilder);
 
     #[test]
     fn builder() {
         assert_eq!(
-            TestMessage::builder(&mut random_buffer::<1>())
+            TestMessage::<Ump>::builder(&mut Ump::random_buffer::<1>())
                 .group(u4::new(0x9))
                 .build(),
-            Ok(TestMessage(&[0x19FF_0000])),
+            Ok(TestMessage::<Ump>(&[0x19FF_0000])),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            TestMessage::from_data(&[0x19FF_0000]).unwrap().group(),
+            TestMessage::<Ump>::from_data(&[0x19FF_0000])
+                .unwrap()
+                .group(),
             u4::new(0x9),
         );
+    }
+
+    #[test]
+    fn bytes_builder() {
+        assert_eq!(
+            TestMessage::<Bytes>::builder(&mut Bytes::random_buffer::<3>()).build(),
+            Ok(TestMessage::<Bytes>(&[0xFF])),
+        );
+    }
+
+    #[test]
+    fn bytes_from_data() {
+        assert_eq!(
+            TestMessage::<Bytes>::from_data(&[0xFF]),
+            Ok(TestMessage::<Bytes>(&[0xFF])),
+        )
     }
 }

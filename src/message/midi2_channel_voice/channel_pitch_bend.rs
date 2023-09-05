@@ -21,7 +21,7 @@ impl<'a> ChannelPitchBendMessage<'a> {
     }
 }
 
-impl<'a> Message<'a> for ChannelPitchBendMessage<'a> {
+impl<'a> Message<'a, Ump> for ChannelPitchBendMessage<'a> {
     fn data(&self) -> &'a [u32] {
         self.0
     }
@@ -35,7 +35,7 @@ impl<'a> Message<'a> for ChannelPitchBendMessage<'a> {
     }
 }
 
-impl<'a> Buildable<'a> for ChannelPitchBendMessage<'a> {
+impl<'a> Buildable<'a, Ump> for ChannelPitchBendMessage<'a> {
     type Builder = ChannelPitchBendBuilder<'a>;
 }
 
@@ -63,7 +63,7 @@ impl<'a> ChannelPitchBendBuilder<'a> {
     }
 }
 
-impl<'a> Builder<'a> for ChannelPitchBendBuilder<'a> {
+impl<'a> Builder<'a, Ump> for ChannelPitchBendBuilder<'a> {
     type Message = ChannelPitchBendMessage<'a>;
     fn build(self) -> Result<ChannelPitchBendMessage<'a>> {
         match self.0 {
@@ -96,12 +96,12 @@ impl<'a> GroupedBuilder<'a> for ChannelPitchBendBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::random_buffer;
+    use crate::util::RandomBuffer;
 
     #[test]
     fn builder() {
         assert_eq!(
-            ChannelPitchBendMessage::builder(&mut random_buffer::<2>())
+            ChannelPitchBendMessage::builder(&mut Ump::random_buffer::<2>())
                 .group(u4::new(0xB))
                 .channel(u4::new(0x9))
                 .pitch_bend_data(0x08306AF8)

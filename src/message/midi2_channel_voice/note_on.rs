@@ -32,7 +32,7 @@ impl<'a> NoteOnMessage<'a> {
     }
 }
 
-impl<'a> Message<'a> for NoteOnMessage<'a> {
+impl<'a> Message<'a, Ump> for NoteOnMessage<'a> {
     fn data(&self) -> &'a [u32] {
         self.0
     }
@@ -47,7 +47,7 @@ impl<'a> Message<'a> for NoteOnMessage<'a> {
     }
 }
 
-impl<'a> Buildable<'a> for NoteOnMessage<'a> {
+impl<'a> Buildable<'a, Ump> for NoteOnMessage<'a> {
     type Builder = NoteOnBuilder<'a>;
 }
 
@@ -87,7 +87,7 @@ impl<'a> NoteOnBuilder<'a> {
     }
 }
 
-impl<'a> Builder<'a> for NoteOnBuilder<'a> {
+impl<'a> Builder<'a, Ump> for NoteOnBuilder<'a> {
     type Message = NoteOnMessage<'a>;
     fn build(self) -> Result<NoteOnMessage<'a>> {
         match self.0 {
@@ -120,12 +120,12 @@ impl<'a> GroupedBuilder<'a> for NoteOnBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::random_buffer;
+    use crate::util::RandomBuffer;
 
     #[test]
     fn builder() {
         assert_eq!(
-            NoteOnMessage::builder(&mut random_buffer::<2>())
+            NoteOnMessage::builder(&mut Ump::random_buffer::<2>())
                 .group(u4::new(0x8))
                 .channel(u4::new(0x8))
                 .note(u7::new(0x5E))
@@ -142,7 +142,7 @@ mod tests {
     #[test]
     fn builder_no_attribute() {
         assert_eq!(
-            NoteOnMessage::builder(&mut random_buffer::<2>())
+            NoteOnMessage::builder(&mut Ump::random_buffer::<2>())
                 .group(u4::new(0x8))
                 .channel(u4::new(0x8))
                 .note(u7::new(0x5E))

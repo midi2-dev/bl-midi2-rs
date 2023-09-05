@@ -22,7 +22,7 @@ impl<'a> KeyPressureMessage<'a> {
     }
 }
 
-impl<'a> Message<'a> for KeyPressureMessage<'a> {
+impl<'a> Message<'a, Ump> for KeyPressureMessage<'a> {
     fn data(&self) -> &'a [u32] {
         self.0
     }
@@ -36,7 +36,7 @@ impl<'a> Message<'a> for KeyPressureMessage<'a> {
     }
 }
 
-impl<'a> Buildable<'a> for KeyPressureMessage<'a> {
+impl<'a> Buildable<'a, Ump> for KeyPressureMessage<'a> {
     type Builder = KeyPressureBuilder<'a>;
 }
 
@@ -69,7 +69,7 @@ impl<'a> KeyPressureBuilder<'a> {
     }
 }
 
-impl<'a> Builder<'a> for KeyPressureBuilder<'a> {
+impl<'a> Builder<'a, Ump> for KeyPressureBuilder<'a> {
     type Message = KeyPressureMessage<'a>;
     fn build(self) -> Result<KeyPressureMessage<'a>> {
         match self.0 {
@@ -102,12 +102,12 @@ impl<'a> GroupedBuilder<'a> for KeyPressureBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::random_buffer;
+    use crate::util::RandomBuffer;
 
     #[test]
     fn builder() {
         assert_eq!(
-            KeyPressureMessage::builder(&mut random_buffer::<2>())
+            KeyPressureMessage::builder(&mut Ump::random_buffer::<2>())
                 .group(u4::new(0xB))
                 .channel(u4::new(0xC))
                 .note(u7::new(0x59))

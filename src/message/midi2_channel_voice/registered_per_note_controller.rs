@@ -27,7 +27,7 @@ impl<'a> RegisteredPerNoteControllerMessage<'a> {
     }
 }
 
-impl<'a> Message<'a> for RegisteredPerNoteControllerMessage<'a> {
+impl<'a> Message<'a, Ump> for RegisteredPerNoteControllerMessage<'a> {
     fn data(&self) -> &'a [u32] {
         self.0
     }
@@ -42,7 +42,7 @@ impl<'a> Message<'a> for RegisteredPerNoteControllerMessage<'a> {
     }
 }
 
-impl<'a> Buildable<'a> for RegisteredPerNoteControllerMessage<'a> {
+impl<'a> Buildable<'a, Ump> for RegisteredPerNoteControllerMessage<'a> {
     type Builder = RegisteredPerNoteControllerBuilder<'a>;
 }
 
@@ -78,7 +78,7 @@ impl<'a> RegisteredPerNoteControllerBuilder<'a> {
     }
 }
 
-impl<'a> Builder<'a> for RegisteredPerNoteControllerBuilder<'a> {
+impl<'a> Builder<'a, Ump> for RegisteredPerNoteControllerBuilder<'a> {
     type Message = RegisteredPerNoteControllerMessage<'a>;
     fn build(self) -> Result<RegisteredPerNoteControllerMessage<'a>> {
         match self.0 {
@@ -114,12 +114,12 @@ impl<'a> GroupedBuilder<'a> for RegisteredPerNoteControllerBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::random_buffer;
+    use crate::util::RandomBuffer;
 
     #[test]
     fn builder() {
         assert_eq!(
-            RegisteredPerNoteControllerMessage::builder(&mut random_buffer::<2>())
+            RegisteredPerNoteControllerMessage::builder(&mut Ump::random_buffer::<2>())
                 .group(u4::new(0x4))
                 .channel(u4::new(0x5))
                 .note(u7::new(0x6C))

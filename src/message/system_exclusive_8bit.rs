@@ -120,7 +120,7 @@ impl<'a> Sysex8Message<'a> {
     }
 }
 
-impl<'a> Message<'a> for Sysex8Message<'a> {
+impl<'a> Message<'a, Ump> for Sysex8Message<'a> {
     fn data(&self) -> &'a [u32] {
         self.0
     }
@@ -138,7 +138,7 @@ impl<'a> Message<'a> for Sysex8Message<'a> {
     }
 }
 
-impl<'a> Buildable<'a> for Sysex8Message<'a> {
+impl<'a> Buildable<'a, Ump> for Sysex8Message<'a> {
     type Builder = Sysex8Builder<'a>;
 }
 
@@ -211,7 +211,7 @@ impl<'a> Sysex8Builder<'a> {
     }
 }
 
-impl<'a> Builder<'a> for Sysex8Builder<'a> {
+impl<'a> Builder<'a, Ump> for Sysex8Builder<'a> {
     type Message = Sysex8Message<'a>;
     fn build(self) -> Result<Sysex8Message<'a>> {
         match self.0 {
@@ -338,7 +338,7 @@ pub struct Sysex8MessageGroup<'a>(&'a [u32]);
 
 debug::message_debug_impl!(Sysex8MessageGroup);
 
-impl<'a> Message<'a> for Sysex8MessageGroup<'a> {
+impl<'a> Message<'a, Ump> for Sysex8MessageGroup<'a> {
     fn data(&self) -> &'a [u32] {
         self.0
     }
@@ -365,7 +365,7 @@ impl<'a> Message<'a> for Sysex8MessageGroup<'a> {
     }
 }
 
-impl<'a> Buildable<'a> for Sysex8MessageGroup<'a> {
+impl<'a> Buildable<'a, Ump> for Sysex8MessageGroup<'a> {
     type Builder = Sysex8MessageGroupBuilder<'a>;
 }
 
@@ -381,7 +381,7 @@ impl<'a> StreamedMessage<'a> for Sysex8MessageGroup<'a> {
     }
 }
 
-impl<'a> SysexGroupMessage<'a> for Sysex8MessageGroup<'a> {
+impl<'a> SysexGroupMessage<'a, Ump> for Sysex8MessageGroup<'a> {
     type PayloadIterator = PayloadIterator<'a>;
     type Message = Sysex8Message<'a>;
     type MessageIterator = Sysex8MessageGroupIterator<'a>;
@@ -474,7 +474,7 @@ impl<'a> Sysex8MessageGroupBuilder<'a> {
     }
 }
 
-impl<'a> Builder<'a> for Sysex8MessageGroupBuilder<'a> {
+impl<'a> Builder<'a, Ump> for Sysex8MessageGroupBuilder<'a> {
     type Message = Sysex8MessageGroup<'a>;
     fn new(buffer: &'a mut [u32]) -> Self {
         let mut ret = Sysex8MessageGroupBuilder {
@@ -539,7 +539,7 @@ impl<'a> StreamedBuilder<'a> for Sysex8MessageGroupBuilder<'a> {
     }
 }
 
-impl<'a> SysexGroupBuilder<'a> for Sysex8MessageGroupBuilder<'a> {
+impl<'a> SysexGroupBuilder<'a, Ump> for Sysex8MessageGroupBuilder<'a> {
     type Byte = u8;
     fn payload<I: core::iter::Iterator<Item = u8>>(mut self, mut iter: I) -> Self {
         if self.error.is_some() {
@@ -591,11 +591,11 @@ impl<'a> SysexGroupBuilder<'a> for Sysex8MessageGroupBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::random_buffer;
+    use crate::util::RandomBuffer;
 
     #[test]
     fn builder() {
-        let mut buffer = random_buffer::<4>();
+        let mut buffer = Ump::random_buffer::<4>();
         assert_eq!(
             Sysex8Message::builder(&mut buffer)
                 .group(u4::new(0xA))
@@ -609,7 +609,7 @@ mod tests {
 
     #[test]
     fn builder_large_payload() {
-        let mut buffer = random_buffer::<4>();
+        let mut buffer = Ump::random_buffer::<4>();
         assert_eq!(
             Sysex8Message::builder(&mut buffer)
                 .payload([0x0; 14].iter())
@@ -699,7 +699,7 @@ mod tests {
 
     #[test]
     fn group_builder() {
-        let mut buffer = random_buffer::<8>();
+        let mut buffer = Ump::random_buffer::<8>();
         assert_eq!(
             Sysex8MessageGroup::builder(&mut buffer)
                 .group(u4::new(0x4))
@@ -721,7 +721,7 @@ mod tests {
 
     #[test]
     fn group_builder_metadata_after_payload() {
-        let mut buffer = random_buffer::<8>();
+        let mut buffer = Ump::random_buffer::<8>();
         assert_eq!(
             Sysex8MessageGroup::builder(&mut buffer)
                 .payload(0..15)
@@ -743,7 +743,7 @@ mod tests {
 
     #[test]
     fn group_builder_complete() {
-        let mut buffer = random_buffer::<4>();
+        let mut buffer = Ump::random_buffer::<4>();
         assert_eq!(
             Sysex8MessageGroup::builder(&mut buffer)
                 .payload(0x0..0xA)
@@ -761,7 +761,7 @@ mod tests {
 
     #[test]
     fn group_builder_payload_in_batches() {
-        let mut buffer = random_buffer::<8>();
+        let mut buffer = Ump::random_buffer::<8>();
         assert_eq!(
             Sysex8MessageGroup::builder(&mut buffer)
                 .payload(0x0..0xA)

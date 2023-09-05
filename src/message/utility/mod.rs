@@ -16,7 +16,7 @@ pub enum UtilityMessage<'a> {
 const NO_OP_CODE: u8 = 0b0000;
 const TIME_STAMP_CODE: u8 = 0b0010;
 
-impl<'a> Message<'a> for UtilityMessage<'a> {
+impl<'a> Message<'a, Ump> for UtilityMessage<'a> {
     fn data(&self) -> &'a [u32] {
         use UtilityMessage::*;
         match self {

@@ -28,7 +28,7 @@ impl<'a> ProgramChangeMessage<'a> {
     }
 }
 
-impl<'a> Message<'a> for ProgramChangeMessage<'a> {
+impl<'a> Message<'a, Ump> for ProgramChangeMessage<'a> {
     fn data(&self) -> &'a [u32] {
         self.0
     }
@@ -42,7 +42,7 @@ impl<'a> Message<'a> for ProgramChangeMessage<'a> {
     }
 }
 
-impl<'a> Buildable<'a> for ProgramChangeMessage<'a> {
+impl<'a> Buildable<'a, Ump> for ProgramChangeMessage<'a> {
     type Builder = ProgramChangeBuilder<'a>;
 }
 
@@ -79,7 +79,7 @@ impl<'a> ProgramChangeBuilder<'a> {
     }
 }
 
-impl<'a> Builder<'a> for ProgramChangeBuilder<'a> {
+impl<'a> Builder<'a, Ump> for ProgramChangeBuilder<'a> {
     type Message = ProgramChangeMessage<'a>;
     fn build(self) -> Result<ProgramChangeMessage<'a>> {
         match self.0 {
@@ -112,12 +112,12 @@ impl<'a> GroupedBuilder<'a> for ProgramChangeBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::random_buffer;
+    use crate::util::RandomBuffer;
 
     #[test]
     fn builder() {
         assert_eq!(
-            ProgramChangeMessage::builder(&mut random_buffer::<2>())
+            ProgramChangeMessage::builder(&mut Ump::random_buffer::<2>())
                 .group(u4::new(0xF))
                 .channel(u4::new(0xE))
                 .program(u7::new(0x75))
@@ -130,7 +130,7 @@ mod tests {
     #[test]
     fn builder_no_bank() {
         assert_eq!(
-            ProgramChangeMessage::builder(&mut random_buffer::<2>())
+            ProgramChangeMessage::builder(&mut Ump::random_buffer::<2>())
                 .group(u4::new(0xF))
                 .channel(u4::new(0xE))
                 .program(u7::new(0x75))

@@ -22,7 +22,7 @@ impl<'a> PerNotePitchBendMessage<'a> {
     }
 }
 
-impl<'a> Message<'a> for PerNotePitchBendMessage<'a> {
+impl<'a> Message<'a, Ump> for PerNotePitchBendMessage<'a> {
     fn data(&self) -> &'a [u32] {
         self.0
     }
@@ -36,7 +36,7 @@ impl<'a> Message<'a> for PerNotePitchBendMessage<'a> {
     }
 }
 
-impl<'a> Buildable<'a> for PerNotePitchBendMessage<'a> {
+impl<'a> Buildable<'a, Ump> for PerNotePitchBendMessage<'a> {
     type Builder = PerNotePitchBendBuilder<'a>;
 }
 
@@ -69,7 +69,7 @@ impl<'a> PerNotePitchBendBuilder<'a> {
     }
 }
 
-impl<'a> Builder<'a> for PerNotePitchBendBuilder<'a> {
+impl<'a> Builder<'a, Ump> for PerNotePitchBendBuilder<'a> {
     type Message = PerNotePitchBendMessage<'a>;
     fn build(self) -> Result<PerNotePitchBendMessage<'a>> {
         match self.0 {
@@ -102,12 +102,12 @@ impl<'a> GroupedBuilder<'a> for PerNotePitchBendBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::random_buffer;
+    use crate::util::RandomBuffer;
 
     #[test]
     fn builder() {
         assert_eq!(
-            PerNotePitchBendMessage::builder(&mut random_buffer::<2>())
+            PerNotePitchBendMessage::builder(&mut Ump::random_buffer::<2>())
                 .group(u4::new(0x9))
                 .channel(u4::new(0x2))
                 .note(u7::new(0x76))

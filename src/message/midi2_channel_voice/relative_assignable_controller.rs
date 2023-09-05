@@ -30,7 +30,7 @@ impl<'a> RelativeAssignableControllerMessage<'a> {
     }
 }
 
-impl<'a> Message<'a> for RelativeAssignableControllerMessage<'a> {
+impl<'a> Message<'a, Ump> for RelativeAssignableControllerMessage<'a> {
     fn data(&self) -> &'a [u32] {
         self.0
     }
@@ -44,7 +44,7 @@ impl<'a> Message<'a> for RelativeAssignableControllerMessage<'a> {
     }
 }
 
-impl<'a> Buildable<'a> for RelativeAssignableControllerMessage<'a> {
+impl<'a> Buildable<'a, Ump> for RelativeAssignableControllerMessage<'a> {
     type Builder = RelativeAssignableControllerBuilder<'a>;
 }
 
@@ -84,7 +84,7 @@ impl<'a> RelativeAssignableControllerBuilder<'a> {
     }
 }
 
-impl<'a> Builder<'a> for RelativeAssignableControllerBuilder<'a> {
+impl<'a> Builder<'a, Ump> for RelativeAssignableControllerBuilder<'a> {
     type Message = RelativeAssignableControllerMessage<'a>;
     fn build(self) -> Result<RelativeAssignableControllerMessage<'a>> {
         match self.0 {
@@ -117,12 +117,12 @@ impl<'a> GroupedBuilder<'a> for RelativeAssignableControllerBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::random_buffer;
+    use crate::util::RandomBuffer;
 
     #[test]
     fn builder() {
         assert_eq!(
-            RelativeAssignableControllerMessage::builder(&mut random_buffer::<2>())
+            RelativeAssignableControllerMessage::builder(&mut Ump::random_buffer::<2>())
                 .group(u4::new(0x3))
                 .channel(u4::new(0x1))
                 .bank(u7::new(0x24))

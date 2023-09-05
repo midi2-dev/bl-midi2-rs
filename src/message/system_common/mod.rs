@@ -36,17 +36,17 @@ pub use timing_clock::TimingClockMessage;
 pub use tune_request::TuneRequestBuilder;
 pub use tune_request::TuneRequestMessage;
 
-pub enum SystemCommonMessage<'a> {
-    ActiveSensing(ActiveSensingMessage<'a>),
-    Continue(ContinueMessage<'a>),
-    Reset(ResetMessage<'a>),
-    SongPositionPointer(SongPositionPointerMessage<'a>),
-    SongSelect(SongSelectMessage<'a>),
-    Start(StartMessage<'a>),
-    Stop(StopMessage<'a>),
-    TimeCode(TimeCodeMessage<'a>),
-    TimingClock(TimingClockMessage<'a>),
-    TuneRequest(TuneRequestMessage<'a>),
+pub enum SystemCommonMessage<'a, B: Buffer> {
+    ActiveSensing(ActiveSensingMessage<'a, B>),
+    Continue(ContinueMessage<'a, B>),
+    Reset(ResetMessage<'a, B>),
+    SongPositionPointer(SongPositionPointerMessage<'a, B>),
+    SongSelect(SongSelectMessage<'a, B>),
+    Start(StartMessage<'a, B>),
+    Stop(StopMessage<'a, B>),
+    TimeCode(TimeCodeMessage<'a, B>),
+    TimingClock(TimingClockMessage<'a, B>),
+    TuneRequest(TuneRequestMessage<'a, B>),
 }
 
 use SystemCommonMessage::*;
@@ -62,7 +62,7 @@ const TIME_CODE: u8 = 0xF1;
 const TIMING_CLOCK: u8 = 0xF8;
 const TUNE_REQUEST: u8 = 0xF6;
 
-impl<'a> Message<'a> for SystemCommonMessage<'a> {
+impl<'a> Message<'a, Ump> for SystemCommonMessage<'a, Ump> {
     fn data(&self) -> &'a [u32] {
         match self {
             ActiveSensing(m) => m.data(),
@@ -79,16 +79,16 @@ impl<'a> Message<'a> for SystemCommonMessage<'a> {
     }
     fn validate_data(data: &[u32]) -> Result<()> {
         match data[0].octet(1) {
-            ACTIVE_SENSING => ActiveSensingMessage::validate_data(data),
-            CONTINUE => ContinueMessage::validate_data(data),
-            RESET => ResetMessage::validate_data(data),
-            SONG_POSITION_POINTER => SongPositionPointerMessage::validate_data(data),
-            SONG_SELECT => SongSelectMessage::validate_data(data),
-            START => StartMessage::validate_data(data),
-            STOP => StopMessage::validate_data(data),
-            TIME_CODE => TimeCodeMessage::validate_data(data),
-            TIMING_CLOCK => TimingClockMessage::validate_data(data),
-            TUNE_REQUEST => TuneRequestMessage::validate_data(data),
+            ACTIVE_SENSING => ActiveSensingMessage::<Ump>::validate_data(data),
+            CONTINUE => ContinueMessage::<Ump>::validate_data(data),
+            RESET => ResetMessage::<Ump>::validate_data(data),
+            SONG_POSITION_POINTER => SongPositionPointerMessage::<Ump>::validate_data(data),
+            SONG_SELECT => SongSelectMessage::<Ump>::validate_data(data),
+            START => StartMessage::<Ump>::validate_data(data),
+            STOP => StopMessage::<Ump>::validate_data(data),
+            TIME_CODE => TimeCodeMessage::<Ump>::validate_data(data),
+            TIMING_CLOCK => TimingClockMessage::<Ump>::validate_data(data),
+            TUNE_REQUEST => TuneRequestMessage::<Ump>::validate_data(data),
             _ => Err(Error::InvalidData),
         }
     }
@@ -119,6 +119,17 @@ fn validate_packet(p: &[u32], status: u8) -> Result<()> {
     } else {
         Ok(())
     }
+}
+
+fn validate_bytes(b: &[u8], status: u8, min_size: usize) -> Result<()> {
+    let len = b.len();
+    if len < min_size || len > 3 {
+        return Err(Error::BufferOverflow);
+    }
+    if b[0] != status {
+        return Err(Error::InvalidData);
+    }
+    Ok(())
 }
 
 fn validate_buffer_size(buffer: &[u32]) -> Result<()> {
