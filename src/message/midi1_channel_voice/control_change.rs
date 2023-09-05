@@ -81,9 +81,10 @@ impl<'a> Builder<'a> for ControlChangeBuilder<'a> {
     fn new(buffer: &'a mut [u32]) -> Self {
         match message_helpers::validate_buffer_size(buffer, 1) {
             Ok(()) => {
+                message_helpers::clear_buffer(&mut buffer[..1]);
                 message_helpers::write_op_code_to_packet(OP_CODE, buffer);
                 message_helpers::write_type_to_packet(MIDI1_CHANNEL_VOICE_TYPE, buffer);
-                Self(Ok(buffer))
+                Self(Ok(&mut buffer[..1]))
             }
             Err(e) => Self(Err(e)),
         }

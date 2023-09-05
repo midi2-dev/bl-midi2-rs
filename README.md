@@ -23,18 +23,14 @@ allowing for optimisation by avoiding copies.
 
 ```rust
 use midi2::{
-    Message,
-    Builder,
-    message::midi2_channel_voice::{
-        NoteOnMessage,
-        NoteAttribute,
-    },
+    prelude::*,
+    midi2_channel_voice::NoteOnMessage,
+    midi2_channel_voice::NoteAttribute,
 };
-
 
 let mut buffer = [0x0; 2];
 let message = NoteOnMessage::builder(&mut buffer)
-    .note(midi2::u7::new(0x60))
+    .note(u7::new(0x60))
     .velocity(0x4B57)
     .attribute(NoteAttribute::ManufacturerSpecific(0x63FF))
     .build();
