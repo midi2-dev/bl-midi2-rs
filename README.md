@@ -46,5 +46,6 @@ system exclusive messages.
 ### `#![no_std]`
 The library is entirely no_std, which guarantees that 
 it will never allocate memory under the hood.
-This makes it suitable for use on realtime audio threads.
+This makes it suitable for use on realtime audio threads
+or embedded environments.
 
