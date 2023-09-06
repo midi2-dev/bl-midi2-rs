@@ -16,6 +16,7 @@ where
     pub fn source(&self) -> u28 {
         self.0.source()
     }
+    // todo: array of 3 u7s
     pub fn device_manufacturer(&self) -> u21 {
         self.0.device_manufacturer()
     }
