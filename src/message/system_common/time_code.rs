@@ -22,7 +22,6 @@ impl<'a> TimeCodeMessage<'a> {
 }
 
 impl<'a> Message<'a> for TimeCodeMessage<'a> {
-    type Builder = TimeCodeBuilder<'a>;
     fn from_data_unchecked(data: &'a [u32]) -> Self {
         Self(data)
     }
@@ -32,6 +31,10 @@ impl<'a> Message<'a> for TimeCodeMessage<'a> {
     fn data(&self) -> &'a [u32] {
         self.0
     }
+}
+
+impl<'a> Buildable<'a> for TimeCodeMessage<'a> {
+    type Builder = TimeCodeBuilder<'a>;
 }
 
 impl<'a> GroupedMessage<'a> for TimeCodeMessage<'a> {

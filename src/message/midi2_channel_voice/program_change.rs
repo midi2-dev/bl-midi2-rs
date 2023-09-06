@@ -29,7 +29,6 @@ impl<'a> ProgramChangeMessage<'a> {
 }
 
 impl<'a> Message<'a> for ProgramChangeMessage<'a> {
-    type Builder = ProgramChangeBuilder<'a>;
     fn data(&self) -> &'a [u32] {
         self.0
     }
@@ -41,6 +40,10 @@ impl<'a> Message<'a> for ProgramChangeMessage<'a> {
     fn from_data_unchecked(buffer: &'a [u32]) -> Self {
         Self(buffer)
     }
+}
+
+impl<'a> Buildable<'a> for ProgramChangeMessage<'a> {
+    type Builder = ProgramChangeBuilder<'a>;
 }
 
 impl<'a> GroupedMessage<'a> for ProgramChangeMessage<'a> {

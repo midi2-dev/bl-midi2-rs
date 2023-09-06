@@ -28,7 +28,6 @@ impl<'a> RegisteredPerNoteControllerMessage<'a> {
 }
 
 impl<'a> Message<'a> for RegisteredPerNoteControllerMessage<'a> {
-    type Builder = RegisteredPerNoteControllerBuilder<'a>;
     fn data(&self) -> &'a [u32] {
         self.0
     }
@@ -41,6 +40,10 @@ impl<'a> Message<'a> for RegisteredPerNoteControllerMessage<'a> {
     fn from_data_unchecked(buffer: &'a [u32]) -> Self {
         Self(buffer)
     }
+}
+
+impl<'a> Buildable<'a> for RegisteredPerNoteControllerMessage<'a> {
+    type Builder = RegisteredPerNoteControllerBuilder<'a>;
 }
 
 impl<'a> GroupedMessage<'a> for RegisteredPerNoteControllerMessage<'a> {

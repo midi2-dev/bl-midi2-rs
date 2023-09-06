@@ -13,8 +13,8 @@ pub mod reply;
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct DiscoveryMessage<'a, Repr, const STATUS: u8>(Repr, core::marker::PhantomData<&'a u8>)
 where
-    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
-    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>;
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>;
 
 #[repr(usize)]
 enum DataOffsets {
@@ -29,8 +29,8 @@ enum DataOffsets {
 
 impl<'a, Repr, const STATUS: u8> DiscoveryMessage<'a, Repr, STATUS>
 where
-    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
-    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
 {
     pub fn source(&self) -> u28 {
         ci_helpers::source_from_payload(self.0.payload())
@@ -102,10 +102,9 @@ where
 
 impl<'a, Repr, const STATUS: u8> Message<'a> for DiscoveryMessage<'a, Repr, STATUS>
 where
-    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
-    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
 {
-    type Builder = DiscoveryBuilder<'a, Repr, STATUS>;
     fn data(&self) -> &'a [u32] {
         self.0.data()
     }
@@ -128,10 +127,18 @@ where
     }
 }
 
+impl<'a, Repr, const STATUS: u8> Buildable<'a> for DiscoveryMessage<'a, Repr, STATUS>
+where
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+{
+    type Builder = DiscoveryBuilder<'a, Repr, STATUS>;
+}
+
 impl<'a, Repr, const STATUS: u8> GroupedMessage<'a> for DiscoveryMessage<'a, Repr, STATUS>
 where
-    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
-    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
 {
     fn group(&self) -> u4 {
         self.0.group()
@@ -148,8 +155,8 @@ impl<'a, const STATUS: u8> StreamedMessage<'a>
 
 pub struct DiscoveryBuilder<'a, Repr, const STATUS: u8>
 where
-    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
-    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
 {
     source: u28,
     destination: u28,
@@ -166,8 +173,8 @@ where
 
 impl<'a, Repr, const STATUS: u8> DiscoveryBuilder<'a, Repr, STATUS>
 where
-    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
-    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
 {
     pub fn source(mut self, source: u28) -> Self {
         self.source = source;
@@ -216,8 +223,8 @@ where
 
 impl<'a, Repr, const STATUS: u8> Builder<'a> for DiscoveryBuilder<'a, Repr, STATUS>
 where
-    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
-    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
 {
     type Message = DiscoveryMessage<'a, Repr, STATUS>;
     fn build(self) -> Result<DiscoveryMessage<'a, Repr, STATUS>> {
@@ -228,7 +235,7 @@ where
             self.destination,
         );
 
-        let u8_to_byte = <<Repr as Message<'a>>::Builder as SysexGroupBuilder<'a>>::Byte::from_u8;
+        let u8_to_byte = <<Repr as Buildable<'a>>::Builder as SysexGroupBuilder<'a>>::Byte::from_u8;
         let u7_to_byte = |v: u7| u8_to_byte(u8::from(v));
 
         let device_manufacturer_array = self.device_manufacturer.to_u7s();
@@ -261,7 +268,7 @@ where
     }
     fn new(buffer: &'a mut [u32]) -> Self {
         Self {
-            builder: <Repr as Message<'a>>::Builder::new(buffer),
+            builder: <Repr as Buildable<'a>>::Builder::new(buffer),
             source: Default::default(),
             destination: Default::default(),
             device_manufacturer: Default::default(),
@@ -278,8 +285,8 @@ where
 
 impl<'a, Repr, const STATUS: u8> GroupedBuilder<'a> for DiscoveryBuilder<'a, Repr, STATUS>
 where
-    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
-    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
 {
     fn group(mut self, group: u4) -> Self {
         self.builder = self.builder.group(group);

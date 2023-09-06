@@ -10,15 +10,15 @@ use crate::{
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct InvalidateMuidMessage<'a, Repr>(Repr, core::marker::PhantomData<&'a u8>)
 where
-    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
-    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>;
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>;
 
 const STATUS: u8 = 0x7E;
 
 impl<'a, Repr> InvalidateMuidMessage<'a, Repr>
 where
-    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
-    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
 {
     pub fn builder(buffer: &'a mut [u32]) -> InvalidateMuidBuilder<'a, Repr> {
         InvalidateMuidBuilder::<'a, Repr>::new(buffer)
@@ -40,10 +40,9 @@ where
 
 impl<'a, Repr> Message<'a> for InvalidateMuidMessage<'a, Repr>
 where
-    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
-    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
 {
-    type Builder = InvalidateMuidBuilder<'a, Repr>;
     fn data(&self) -> &'a [u32] {
         self.0.data()
     }
@@ -63,10 +62,18 @@ where
     }
 }
 
+impl<'a, Repr> Buildable<'a> for InvalidateMuidMessage<'a, Repr>
+where
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+{
+    type Builder = InvalidateMuidBuilder<'a, Repr>;
+}
+
 impl<'a, Repr> GroupedMessage<'a> for InvalidateMuidMessage<'a, Repr>
 where
-    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
-    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
 {
     fn group(&self) -> u4 {
         self.0.group()
@@ -81,8 +88,8 @@ impl<'a> StreamedMessage<'a> for InvalidateMuidMessage<'a, sysex8::Sysex8Message
 
 pub struct InvalidateMuidBuilder<'a, Repr>
 where
-    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
-    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
 {
     source: u28,
     target_muid: u28,
@@ -91,8 +98,8 @@ where
 
 impl<'a, Repr> InvalidateMuidBuilder<'a, Repr>
 where
-    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
-    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
 {
     pub fn source(mut self, source: u28) -> Self {
         self.source = source;
@@ -106,13 +113,13 @@ where
 
 impl<'a, Repr> Builder<'a> for InvalidateMuidBuilder<'a, Repr>
 where
-    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
-    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
 {
     type Message = InvalidateMuidMessage<'a, Repr>;
     fn new(buffer: &'a mut [u32]) -> Self {
         InvalidateMuidBuilder {
-            builder: <Repr as Message<'a>>::Builder::new(buffer),
+            builder: <Repr as Buildable<'a>>::Builder::new(buffer),
             source: Default::default(),
             target_muid: Default::default(),
         }
@@ -127,11 +134,9 @@ where
                     self.source,
                     u28::new(0xFFFFFFF),
                 )
-                .chain(
-                    self.target_muid.to_u7s().map(u8::from).map(
-                        <<Repr as Message<'a>>::Builder as SysexGroupBuilder<'a>>::Byte::from_u8,
-                    ),
-                ),
+                .chain(self.target_muid.to_u7s().map(u8::from).map(
+                    <<Repr as Buildable<'a>>::Builder as SysexGroupBuilder<'a>>::Byte::from_u8,
+                )),
             )
             .build()
         {
@@ -143,8 +148,8 @@ where
 
 impl<'a, Repr> GroupedBuilder<'a> for InvalidateMuidBuilder<'a, Repr>
 where
-    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
-    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
 {
     fn group(mut self, g: u4) -> Self {
         self.builder = self.builder.group(g);

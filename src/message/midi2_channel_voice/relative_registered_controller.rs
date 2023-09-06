@@ -31,7 +31,6 @@ impl<'a> RelativeRegisteredControllerMessage<'a> {
 }
 
 impl<'a> Message<'a> for RelativeRegisteredControllerMessage<'a> {
-    type Builder = RelativeRegisteredControllerBuilder<'a>;
     fn data(&self) -> &'a [u32] {
         self.0
     }
@@ -43,6 +42,10 @@ impl<'a> Message<'a> for RelativeRegisteredControllerMessage<'a> {
     fn from_data_unchecked(buffer: &'a [u32]) -> Self {
         Self(buffer)
     }
+}
+
+impl<'a> Buildable<'a> for RelativeRegisteredControllerMessage<'a> {
+    type Builder = RelativeRegisteredControllerBuilder<'a>;
 }
 
 impl<'a> GroupedMessage<'a> for RelativeRegisteredControllerMessage<'a> {

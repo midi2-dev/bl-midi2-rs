@@ -112,7 +112,6 @@ impl<'a> Sysex7Message<'a> {
 }
 
 impl<'a> Message<'a> for Sysex7Message<'a> {
-    type Builder = Sysex7Builder<'a>;
     fn data(&self) -> &'a [u32] {
         self.0
     }
@@ -126,6 +125,10 @@ impl<'a> Message<'a> for Sysex7Message<'a> {
         validate_data(data)?;
         Ok(())
     }
+}
+
+impl<'a> Buildable<'a> for Sysex7Message<'a> {
+    type Builder = Sysex7Builder<'a>;
 }
 
 impl<'a> GroupedMessage<'a> for Sysex7Message<'a> {
@@ -256,7 +259,6 @@ pub struct Sysex7MessageGroup<'a>(&'a [u32]);
 debug::message_debug_impl!(Sysex7MessageGroup);
 
 impl<'a> Message<'a> for Sysex7MessageGroup<'a> {
-    type Builder = Sysex7MessageGroupBuilder<'a>;
     fn from_data_unchecked(buffer: &'a [u32]) -> Self {
         Sysex7MessageGroup(buffer)
     }
@@ -281,6 +283,10 @@ impl<'a> Message<'a> for Sysex7MessageGroup<'a> {
     fn data(&self) -> &'a [u32] {
         self.0
     }
+}
+
+impl<'a> Buildable<'a> for Sysex7MessageGroup<'a> {
+    type Builder = Sysex7MessageGroupBuilder<'a>;
 }
 
 impl<'a> GroupedMessage<'a> for Sysex7MessageGroup<'a> {

@@ -16,7 +16,6 @@ macro_rules! simple_generic_message {
         debug::message_debug_impl!($name);
 
         impl<'a> Message<'a> for $name<'a> {
-            type Builder = $builder_name<'a>;
             fn data(&self) -> &'a [u32] {
                 self.0
             }
@@ -27,6 +26,10 @@ macro_rules! simple_generic_message {
                 system_common::validate_packet(data, $op_code)?;
                 Ok(())
             }
+        }
+
+        impl<'a> Buildable<'a> for $name<'a> {
+            type Builder = $builder_name<'a>;
         }
 
         impl<'a> GroupedMessage<'a> for $name<'a> {

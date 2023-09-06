@@ -24,7 +24,6 @@ impl<'a> ChannelPressureMessage<'a> {
 }
 
 impl<'a> Message<'a> for ChannelPressureMessage<'a> {
-    type Builder = ChannelPressureBuilder<'a>;
     fn from_data_unchecked(data: &'a [u32]) -> Self {
         Self(data)
     }
@@ -34,6 +33,10 @@ impl<'a> Message<'a> for ChannelPressureMessage<'a> {
     fn data(&self) -> &'a [u32] {
         self.0
     }
+}
+
+impl<'a> Buildable<'a> for ChannelPressureMessage<'a> {
+    type Builder = ChannelPressureBuilder<'a>;
 }
 
 impl<'a> GroupedMessage<'a> for ChannelPressureMessage<'a> {

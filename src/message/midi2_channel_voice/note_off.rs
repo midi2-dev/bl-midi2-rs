@@ -33,7 +33,6 @@ impl<'a> NoteOffMessage<'a> {
 }
 
 impl<'a> Message<'a> for NoteOffMessage<'a> {
-    type Builder = NoteOffBuilder<'a>;
     fn data(&self) -> &'a [u32] {
         self.0
     }
@@ -46,6 +45,10 @@ impl<'a> Message<'a> for NoteOffMessage<'a> {
     fn from_data_unchecked(buffer: &'a [u32]) -> Self {
         Self(buffer)
     }
+}
+
+impl<'a> Buildable<'a> for NoteOffMessage<'a> {
+    type Builder = NoteOffBuilder<'a>;
 }
 
 impl<'a> GroupedMessage<'a> for NoteOffMessage<'a> {

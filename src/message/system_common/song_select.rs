@@ -22,7 +22,6 @@ impl<'a> SongSelectMessage<'a> {
 }
 
 impl<'a> Message<'a> for SongSelectMessage<'a> {
-    type Builder = SongSelectBuilder<'a>;
     fn from_data_unchecked(data: &'a [u32]) -> Self {
         Self(data)
     }
@@ -33,6 +32,10 @@ impl<'a> Message<'a> for SongSelectMessage<'a> {
     fn data(&self) -> &'a [u32] {
         self.0
     }
+}
+
+impl<'a> Buildable<'a> for SongSelectMessage<'a> {
+    type Builder = SongSelectBuilder<'a>;
 }
 
 impl<'a> GroupedMessage<'a> for SongSelectMessage<'a> {

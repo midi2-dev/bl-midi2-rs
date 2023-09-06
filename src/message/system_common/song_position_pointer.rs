@@ -22,7 +22,6 @@ impl<'a> SongPositionPointerMessage<'a> {
 }
 
 impl<'a> Message<'a> for SongPositionPointerMessage<'a> {
-    type Builder = SongPositionPointerBuilder<'a>;
     fn from_data_unchecked(data: &'a [u32]) -> Self {
         Self(data)
     }
@@ -33,6 +32,10 @@ impl<'a> Message<'a> for SongPositionPointerMessage<'a> {
         system_common::validate_packet(buffer, OP_CODE)?;
         Ok(())
     }
+}
+
+impl<'a> Buildable<'a> for SongPositionPointerMessage<'a> {
+    type Builder = SongPositionPointerBuilder<'a>;
 }
 
 impl<'a> GroupedMessage<'a> for SongPositionPointerMessage<'a> {

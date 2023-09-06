@@ -28,7 +28,6 @@ impl<'a> PerNoteManagementMessage<'a> {
 }
 
 impl<'a> Message<'a> for PerNoteManagementMessage<'a> {
-    type Builder = PerNoteManagementBuilder<'a>;
     fn data(&self) -> &'a [u32] {
         self.0
     }
@@ -39,6 +38,10 @@ impl<'a> Message<'a> for PerNoteManagementMessage<'a> {
     fn from_data_unchecked(buffer: &'a [u32]) -> Self {
         Self(buffer)
     }
+}
+
+impl<'a> Buildable<'a> for PerNoteManagementMessage<'a> {
+    type Builder = PerNoteManagementBuilder<'a>;
 }
 
 impl<'a> GroupedMessage<'a> for PerNoteManagementMessage<'a> {

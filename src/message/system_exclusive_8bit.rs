@@ -121,7 +121,6 @@ impl<'a> Sysex8Message<'a> {
 }
 
 impl<'a> Message<'a> for Sysex8Message<'a> {
-    type Builder = Sysex8Builder<'a>;
     fn data(&self) -> &'a [u32] {
         self.0
     }
@@ -137,6 +136,10 @@ impl<'a> Message<'a> for Sysex8Message<'a> {
         validate_packet(buffer)?;
         Ok(())
     }
+}
+
+impl<'a> Buildable<'a> for Sysex8Message<'a> {
+    type Builder = Sysex8Builder<'a>;
 }
 
 impl<'a> GroupedMessage<'a> for Sysex8Message<'a> {
@@ -336,7 +339,6 @@ pub struct Sysex8MessageGroup<'a>(&'a [u32]);
 debug::message_debug_impl!(Sysex8MessageGroup);
 
 impl<'a> Message<'a> for Sysex8MessageGroup<'a> {
-    type Builder = Sysex8MessageGroupBuilder<'a>;
     fn data(&self) -> &'a [u32] {
         self.0
     }
@@ -361,6 +363,10 @@ impl<'a> Message<'a> for Sysex8MessageGroup<'a> {
         )?;
         Ok(())
     }
+}
+
+impl<'a> Buildable<'a> for Sysex8MessageGroup<'a> {
+    type Builder = Sysex8MessageGroupBuilder<'a>;
 }
 
 impl<'a> GroupedMessage<'a> for Sysex8MessageGroup<'a> {

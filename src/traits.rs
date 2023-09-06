@@ -1,10 +1,6 @@
 use crate::{util::Truncate, *};
 
 pub trait Message<'a>: Sized {
-    type Builder: Builder<'a, Message = Self>;
-    fn builder(buffer: &'a mut [u32]) -> Self::Builder {
-        Self::Builder::new(buffer)
-    }
     fn data(&self) -> &'a [u32];
     fn from_data(buffer: &'a [u32]) -> Result<Self> {
         match Self::validate_data(buffer) {
@@ -16,17 +12,20 @@ pub trait Message<'a>: Sized {
     fn validate_data(buffer: &'a [u32]) -> Result<()>;
 }
 
+pub trait Buildable<'a>: Message<'a> {
+    type Builder: Builder<'a, Message = Self>;
+    fn builder(buffer: &'a mut [u32]) -> Self::Builder {
+        Self::Builder::new(buffer)
+    }
+}
+
 pub trait Builder<'a> {
     type Message;
     fn new(buffer: &'a mut [u32]) -> Self;
     fn build(self) -> Result<Self::Message>;
 }
 
-pub trait GroupedMessage<'a>
-where
-    Self: Message<'a>,
-    <Self as Message<'a>>::Builder: GroupedBuilder<'a>,
-{
+pub trait GroupedMessage<'a>: Message<'a> {
     fn group(&self) -> u4;
 }
 
@@ -34,11 +33,7 @@ pub trait GroupedBuilder<'a>: Builder<'a> {
     fn group(self, group: u4) -> Self;
 }
 
-pub trait SysexGroupMessage<'a>
-where
-    Self: Message<'a>,
-    <Self as Message<'a>>::Builder: SysexGroupBuilder<'a>,
-{
+pub trait SysexGroupMessage<'a>: Message<'a> {
     type PayloadIterator: core::iter::Iterator<Item = u8>;
     type Message: Message<'a>;
     type MessageIterator: core::iter::Iterator<Item = Self::Message>;
@@ -74,11 +69,7 @@ pub trait SysexGroupBuilder<'a>: Builder<'a> {
     fn payload<I: core::iter::Iterator<Item = Self::Byte>>(self, data: I) -> Self;
 }
 
-pub trait StreamedMessage<'a>
-where
-    Self: Message<'a>,
-    <Self as Message<'a>>::Builder: StreamedBuilder<'a>,
-{
+pub trait StreamedMessage<'a>: Message<'a> {
     fn stream_id(&self) -> u8;
 }
 

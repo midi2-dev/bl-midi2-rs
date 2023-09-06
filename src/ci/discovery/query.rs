@@ -5,13 +5,13 @@ const STATUS: u8 = 0x70;
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct DiscoveryQueryMessage<'a, Repr>(DiscoveryMessage<'a, Repr, STATUS>)
 where
-    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
-    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>;
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>;
 
 impl<'a, Repr> DiscoveryQueryMessage<'a, Repr>
 where
-    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
-    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
 {
     pub fn source(&self) -> u28 {
         self.0.source()
@@ -45,10 +45,9 @@ where
 
 impl<'a, Repr> Message<'a> for DiscoveryQueryMessage<'a, Repr>
 where
-    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
-    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
 {
-    type Builder = DiscoveryQueryBuilder<'a, Repr>;
     fn data(&self) -> &'a [u32] {
         self.0.data()
     }
@@ -62,10 +61,18 @@ where
     }
 }
 
+impl<'a, Repr> Buildable<'a> for DiscoveryQueryMessage<'a, Repr>
+where
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+{
+    type Builder = DiscoveryQueryBuilder<'a, Repr>;
+}
+
 impl<'a, Repr> GroupedMessage<'a> for DiscoveryQueryMessage<'a, Repr>
 where
-    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
-    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
 {
     fn group(&self) -> u4 {
         self.0.group()
@@ -80,13 +87,13 @@ impl<'a> StreamedMessage<'a> for DiscoveryQueryMessage<'a, sysex8::Sysex8Message
 
 pub struct DiscoveryQueryBuilder<'a, Repr>(DiscoveryBuilder<'a, Repr, STATUS>)
 where
-    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
-    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>;
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>;
 
 impl<'a, Repr> DiscoveryQueryBuilder<'a, Repr>
 where
-    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
-    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
 {
     pub fn source(mut self, source: u28) -> Self {
         self.0 = self.0.source(source);
@@ -137,8 +144,8 @@ where
 
 impl<'a, Repr> Builder<'a> for DiscoveryQueryBuilder<'a, Repr>
 where
-    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
-    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
 {
     type Message = DiscoveryQueryMessage<'a, Repr>;
     fn build(self) -> Result<DiscoveryQueryMessage<'a, Repr>> {
@@ -156,8 +163,8 @@ where
 
 impl<'a, Repr> GroupedBuilder<'a> for DiscoveryQueryBuilder<'a, Repr>
 where
-    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a>,
-    <Repr as Message<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
 {
     fn group(mut self, group: u4) -> Self {
         self.0 = self.0.group(group);

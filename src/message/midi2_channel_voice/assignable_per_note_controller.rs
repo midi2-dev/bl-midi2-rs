@@ -28,7 +28,6 @@ impl<'a> AssignablePerNoteControllerMessage<'a> {
 }
 
 impl<'a> Message<'a> for AssignablePerNoteControllerMessage<'a> {
-    type Builder = AssignablePerNoteControllerBuilder<'a>;
     fn data(&self) -> &'a [u32] {
         self.0
     }
@@ -40,6 +39,10 @@ impl<'a> Message<'a> for AssignablePerNoteControllerMessage<'a> {
     fn from_data_unchecked(buffer: &'a [u32]) -> Self {
         Self(buffer)
     }
+}
+
+impl<'a> Buildable<'a> for AssignablePerNoteControllerMessage<'a> {
+    type Builder = AssignablePerNoteControllerBuilder<'a>;
 }
 
 impl<'a> GroupedMessage<'a> for AssignablePerNoteControllerMessage<'a> {

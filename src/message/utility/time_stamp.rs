@@ -17,7 +17,6 @@ impl<'a> TimeStampMessage<'a> {
 }
 
 impl<'a> Message<'a> for TimeStampMessage<'a> {
-    type Builder = TimeStampBuilder<'a>;
     fn from_data_unchecked(data: &'a [u32]) -> Self {
         TimeStampMessage(&data[..1])
     }
@@ -27,6 +26,10 @@ impl<'a> Message<'a> for TimeStampMessage<'a> {
     fn validate_data(buffer: &'a [u32]) -> Result<()> {
         super::validate_packet(buffer, TimeStampMessage::OP_CODE)
     }
+}
+
+impl<'a> Buildable<'a> for TimeStampMessage<'a> {
+    type Builder = TimeStampBuilder<'a>;
 }
 
 impl<'a> GroupedMessage<'a> for TimeStampMessage<'a> {

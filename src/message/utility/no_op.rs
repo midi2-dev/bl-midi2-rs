@@ -14,7 +14,6 @@ impl<'a> NoOpMessage<'a> {
 }
 
 impl<'a> Message<'a> for NoOpMessage<'a> {
-    type Builder = NoOpBuilder<'a>;
     fn from_data_unchecked(data: &'a [u32]) -> Self {
         NoOpMessage(&data[..1])
     }
@@ -24,6 +23,10 @@ impl<'a> Message<'a> for NoOpMessage<'a> {
     fn validate_data(buffer: &'a [u32]) -> Result<()> {
         super::validate_packet(buffer, NoOpMessage::OP_CODE)
     }
+}
+
+impl<'a> Buildable<'a> for NoOpMessage<'a> {
+    type Builder = NoOpBuilder<'a>;
 }
 
 impl<'a> GroupedMessage<'a> for NoOpMessage<'a> {

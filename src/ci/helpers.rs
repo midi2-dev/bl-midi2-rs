@@ -8,22 +8,22 @@ use crate::{
 
 pub struct StandardDataIterator<'a, Repr>
 where
-    Repr: SysexGroupMessage<'a>,
-    <Repr as Message<'a>>::Builder: SysexGroupBuilder<'a>,
+    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
 {
-    data: [<<Repr as Message<'a>>::Builder as SysexGroupBuilder<'a>>::Byte; 16],
+    data: [<<Repr as Buildable<'a>>::Builder as SysexGroupBuilder<'a>>::Byte; 16],
     i: usize,
     _phantom: core::marker::PhantomData<&'a Repr>,
 }
 
 impl<'a, Repr> StandardDataIterator<'a, Repr>
 where
-    Repr: SysexGroupMessage<'a>,
-    <Repr as Message<'a>>::Builder: SysexGroupBuilder<'a>,
-    <<Repr as Message<'a>>::Builder as SysexGroupBuilder<'a>>::Byte: Byte,
+    Repr: SysexGroupMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    <<Repr as Buildable<'a>>::Builder as SysexGroupBuilder<'a>>::Byte: Byte,
 {
-    fn map(v: u8) -> <<Repr as Message<'a>>::Builder as SysexGroupBuilder<'a>>::Byte {
-        <<<Repr as Message<'a>>::Builder as SysexGroupBuilder<'a>>::Byte as Byte>::from_u8(v)
+    fn map(v: u8) -> <<Repr as Buildable<'a>>::Builder as SysexGroupBuilder<'a>>::Byte {
+        <<<Repr as Buildable<'a>>::Builder as SysexGroupBuilder<'a>>::Byte as Byte>::from_u8(v)
     }
     pub fn new(device_id: DeviceId, category: u8, source: u28, destination: u28) -> Self {
         StandardDataIterator::<'a, Repr> {
@@ -56,10 +56,10 @@ where
 
 impl<'a, Repr> core::iter::Iterator for StandardDataIterator<'a, Repr>
 where
-    Repr: SysexGroupMessage<'a>,
-    <Repr as Message<'a>>::Builder: SysexGroupBuilder<'a>,
+    Repr: SysexGroupMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
 {
-    type Item = <<Repr as Message<'a>>::Builder as SysexGroupBuilder<'a>>::Byte;
+    type Item = <<Repr as Buildable<'a>>::Builder as SysexGroupBuilder<'a>>::Byte;
     fn next(&mut self) -> Option<Self::Item> {
         if self.i == 13 {
             None
@@ -85,8 +85,8 @@ pub fn device_id_from_u8(v: u8) -> Result<DeviceId> {
 
 pub fn validate_sysex<'a, Repr>(buffer: &'a [u32], status: u8) -> Result<Repr>
 where
-    Repr: SysexGroupMessage<'a>,
-    <Repr as Message<'a>>::Builder: SysexGroupBuilder<'a>,
+    Repr: SysexGroupMessage<'a> + Buildable<'a>,
+    <Repr as Buildable<'a>>::Builder: SysexGroupBuilder<'a>,
 {
     let messages = Repr::from_data(buffer)?;
     let mut payload = messages.payload();

@@ -28,7 +28,6 @@ impl<'a> ControlChangeMessage<'a> {
 }
 
 impl<'a> Message<'a> for ControlChangeMessage<'a> {
-    type Builder = ControlChangeBuilder<'a>;
     fn data(&self) -> &'a [u32] {
         self.0
     }
@@ -38,6 +37,10 @@ impl<'a> Message<'a> for ControlChangeMessage<'a> {
     fn from_data_unchecked(buffer: &'a [u32]) -> Self {
         Self(buffer)
     }
+}
+
+impl<'a> Buildable<'a> for ControlChangeMessage<'a> {
+    type Builder = ControlChangeBuilder<'a>;
 }
 
 impl<'a> GroupedMessage<'a> for ControlChangeMessage<'a> {
