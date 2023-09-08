@@ -8,7 +8,7 @@ use crate::{
 
 pub struct StandardDataIterator<'a, Repr>
 where
-    Repr: 'a + SysexGroupMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
+    Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
     <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
 {
     data: [<<Repr as Buildable<'a>>::Builder as SysexGroupBuilder<'a>>::Byte; 16],
@@ -18,7 +18,7 @@ where
 
 impl<'a, Repr> StandardDataIterator<'a, Repr>
 where
-    Repr: SysexGroupMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
+    Repr: SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
     <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
     <<Repr as Buildable<'a>>::Builder as SysexGroupBuilder<'a>>::Byte: Byte,
 {
@@ -56,7 +56,7 @@ where
 
 impl<'a, Repr> core::iter::Iterator for StandardDataIterator<'a, Repr>
 where
-    Repr: SysexGroupMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
+    Repr: SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
     <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
 {
     type Item = <<Repr as Buildable<'a>>::Builder as SysexGroupBuilder<'a>>::Byte;
@@ -85,7 +85,7 @@ pub fn device_id_from_u8(v: u8) -> Result<DeviceId> {
 
 pub fn validate_sysex<'a, Repr>(buffer: &'a [u32], status: u8) -> Result<Repr>
 where
-    Repr: SysexGroupMessage<'a> + Buildable<'a>,
+    Repr: SysexMessage<'a> + Buildable<'a>,
     <Repr as Buildable<'a>>::Builder: SysexGroupBuilder<'a>,
 {
     let messages = Repr::from_data(buffer)?;

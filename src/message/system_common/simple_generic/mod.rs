@@ -12,7 +12,6 @@ macro_rules! simple_generic_message {
         #[derive(Clone, Debug, PartialEq, Eq)]
         pub struct $name<'a, B: Buffer>(&'a B::Data);
 
-
         impl<'a> Message<'a, Ump> for $name<'a, Ump> {
             fn data(&self) -> &'a [u32] {
                 self.0

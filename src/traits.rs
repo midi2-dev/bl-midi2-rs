@@ -33,12 +33,9 @@ pub trait GroupedBuilder<'a>: Builder<'a, Ump> {
     fn group(self, group: u4) -> Self;
 }
 
-pub trait SysexGroupMessage<'a, B: Buffer>: Message<'a, B> {
+pub trait SysexMessage<'a, B: Buffer>: Message<'a, B> {
     type PayloadIterator: core::iter::Iterator<Item = u8>;
-    type Message: Message<'a, B>;
-    type MessageIterator: core::iter::Iterator<Item = Self::Message>;
     fn payload(&self) -> Self::PayloadIterator;
-    fn messages(&self) -> Self::MessageIterator;
 }
 
 pub trait Byte: Copy {

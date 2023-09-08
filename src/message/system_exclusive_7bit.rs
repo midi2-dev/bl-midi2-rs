@@ -254,6 +254,12 @@ fn validate_data(p: &[u32]) -> Result<()> {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Sysex7MessageGroup<'a>(&'a [u32]);
 
+impl<'a> Sysex7MessageGroup<'a> {
+    pub fn messages(&self) -> Sysex7MessageGroupIterator<'a> {
+        Sysex7MessageGroupIterator(self.0.chunks_exact(2))
+    }
+}
+
 impl<'a> Message<'a, Ump> for Sysex7MessageGroup<'a> {
     fn from_data_unchecked(buffer: &'a [u32]) -> Self {
         Sysex7MessageGroup(buffer)
@@ -291,19 +297,14 @@ impl<'a> GroupedMessage<'a> for Sysex7MessageGroup<'a> {
     }
 }
 
-impl<'a> SysexGroupMessage<'a, Ump> for Sysex7MessageGroup<'a> {
+impl<'a> SysexMessage<'a, Ump> for Sysex7MessageGroup<'a> {
     type PayloadIterator = PayloadIterator<'a>;
-    type Message = Sysex7Message<'a, Ump>;
-    type MessageIterator = Sysex7MessageGroupIterator<'a>;
     fn payload(&self) -> Self::PayloadIterator {
         Self::PayloadIterator {
             data: self.0,
             message_index: 0,
             payload_index: 0,
         }
-    }
-    fn messages(&self) -> Sysex7MessageGroupIterator<'a> {
-        Sysex7MessageGroupIterator(self.0.chunks_exact(2))
     }
 }
 

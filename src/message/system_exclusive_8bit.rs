@@ -338,6 +338,12 @@ pub struct Sysex8MessageGroup<'a>(&'a [u32]);
 
 debug::message_debug_impl!(Sysex8MessageGroup);
 
+impl<'a> Sysex8MessageGroup<'a> {
+    pub fn messages(&self) -> Sysex8MessageGroupIterator {
+        Sysex8MessageGroupIterator(self.0.chunks_exact(4))
+    }
+}
+
 impl<'a> Message<'a, Ump> for Sysex8MessageGroup<'a> {
     fn data(&self) -> &'a [u32] {
         self.0
@@ -381,19 +387,14 @@ impl<'a> StreamedMessage<'a> for Sysex8MessageGroup<'a> {
     }
 }
 
-impl<'a> SysexGroupMessage<'a, Ump> for Sysex8MessageGroup<'a> {
+impl<'a> SysexMessage<'a, Ump> for Sysex8MessageGroup<'a> {
     type PayloadIterator = PayloadIterator<'a>;
-    type Message = Sysex8Message<'a>;
-    type MessageIterator = Sysex8MessageGroupIterator<'a>;
     fn payload(&self) -> Self::PayloadIterator {
         PayloadIterator {
             data: self.0,
             message_index: 0,
             payload_index: 0,
         }
-    }
-    fn messages(&self) -> Self::MessageIterator {
-        Sysex8MessageGroupIterator(self.0.chunks_exact(4))
     }
 }
 
