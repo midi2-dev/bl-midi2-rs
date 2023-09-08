@@ -1,13 +1,13 @@
 use crate::buffer::{Bytes, Ump};
 
 pub trait RandomBuffer<T> {
-    fn random_buffer<'a, const SIZE: usize>() -> [T; SIZE]
+    fn random_buffer<const SIZE: usize>() -> [T; SIZE]
     where
         [T; SIZE]: core::default::Default;
 }
 
 impl RandomBuffer<u32> for Ump {
-    fn random_buffer<'a, const SIZE: usize>() -> [u32; SIZE]
+    fn random_buffer<const SIZE: usize>() -> [u32; SIZE]
     where
         [u32; SIZE]: core::default::Default,
     {
@@ -18,7 +18,7 @@ impl RandomBuffer<u32> for Ump {
 }
 
 impl RandomBuffer<u8> for Bytes {
-    fn random_buffer<'a, const SIZE: usize>() -> [u8; SIZE]
+    fn random_buffer<const SIZE: usize>() -> [u8; SIZE]
     where
         [u8; SIZE]: core::default::Default,
     {

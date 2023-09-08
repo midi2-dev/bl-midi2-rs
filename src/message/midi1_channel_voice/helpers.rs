@@ -12,6 +12,14 @@ pub fn write_note_velocity_to_packet(velocity: u7, p: &mut [u32]) -> &mut [u32] 
     p
 }
 
+pub fn validate_bytes(b: &[u8], op_code: u4, size: usize) -> Result<()> {
+    if b.len() != size || b[0].nibble(0) != op_code {
+        Err(Error::InvalidData)
+    } else {
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

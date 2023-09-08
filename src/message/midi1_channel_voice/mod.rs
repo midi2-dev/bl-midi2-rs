@@ -74,7 +74,7 @@ impl<'a> Message<'a, Ump> for Midi1ChannelVoiceMessage<'a, Ump> {
     }
     fn validate_data(buffer: &'a [u32]) -> Result<()> {
         match u8::from(buffer[0].nibble(2)) {
-            CHANNEL_PRESSURE_CODE => ChannelPressureMessage::validate_data(buffer),
+            CHANNEL_PRESSURE_CODE => ChannelPressureMessage::<Ump>::validate_data(buffer),
             CONTROL_CHANGE_CODE => ControlChangeMessage::validate_data(buffer),
             KEY_PRESSURE_CODE => KeyPressureMessage::validate_data(buffer),
             NOTE_OFF_CODE => NoteOffMessage::validate_data(buffer),
