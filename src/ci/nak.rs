@@ -10,7 +10,7 @@ use crate::{
 pub struct NakMessage<'a, Repr: 'a>(Repr, core::marker::PhantomData<&'a u8>)
 where
     Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>;
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>;
 
 const STATUS: u8 = 0x7F;
 const SIZE: usize = ci_helpers::STANDARD_DATA_SIZE + 1;
@@ -18,7 +18,7 @@ const SIZE: usize = ci_helpers::STANDARD_DATA_SIZE + 1;
 impl<'a, Repr> NakMessage<'a, Repr>
 where
     Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>,
 {
     pub fn source(&self) -> u28 {
         ci_helpers::source_from_payload(self.0.payload())
@@ -35,7 +35,7 @@ where
 impl<'a, Repr> Message<'a> for NakMessage<'a, Repr>
 where
     Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>,
 {
     fn data(&self) -> &'a [u32] {
         self.0.data()
@@ -59,7 +59,7 @@ where
 impl<'a, Repr> Buildable<'a> for NakMessage<'a, Repr>
 where
     Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>,
 {
     type Builder = NakBuilder<'a, Repr>;
 }
@@ -67,7 +67,7 @@ where
 impl<'a, Repr> GroupedMessage<'a> for NakMessage<'a, Repr>
 where
     Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>,
 {
     fn group(&self) -> u4 {
         self.0.group()
@@ -83,7 +83,7 @@ impl<'a> StreamedMessage<'a> for NakMessage<'a, sysex8::Sysex8MessageGroup<'a>> 
 pub struct NakBuilder<'a, Repr>
 where
     Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>,
 {
     device_id: DeviceId,
     source: u28,
@@ -94,7 +94,7 @@ where
 impl<'a, Repr> NakBuilder<'a, Repr>
 where
     Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>,
 {
     pub fn device_id(mut self, id: DeviceId) -> Self {
         self.device_id = id;
@@ -113,7 +113,7 @@ where
 impl<'a, Repr> Builder<'a> for NakBuilder<'a, Repr>
 where
     Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>,
 {
     type Message = NakMessage<'a, Repr>;
     fn new(buffer: &'a mut [u32]) -> Self {
@@ -144,7 +144,7 @@ where
 impl<'a, Repr> GroupedBuilder<'a> for NakBuilder<'a, Repr>
 where
     Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>,
 {
     fn group(mut self, g: u4) -> Self {
         self.builder = self.builder.group(g);

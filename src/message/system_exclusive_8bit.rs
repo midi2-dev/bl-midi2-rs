@@ -540,7 +540,7 @@ impl<'a> StreamedBuilder<'a> for Sysex8MessageGroupBuilder<'a> {
     }
 }
 
-impl<'a> SysexGroupBuilder<'a, Ump> for Sysex8MessageGroupBuilder<'a> {
+impl<'a> SysexBuilder<'a, Ump> for Sysex8MessageGroupBuilder<'a> {
     type Byte = u8;
     fn payload<I: core::iter::Iterator<Item = u8>>(mut self, mut iter: I) -> Self {
         if self.error.is_some() {

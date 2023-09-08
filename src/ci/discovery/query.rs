@@ -6,12 +6,12 @@ const STATUS: u8 = 0x70;
 pub struct DiscoveryQueryMessage<'a, Repr>(DiscoveryMessage<'a, Repr, STATUS>)
 where
     Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>;
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>;
 
 impl<'a, Repr> DiscoveryQueryMessage<'a, Repr>
 where
     Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>,
 {
     pub fn source(&self) -> u28 {
         self.0.source()
@@ -46,7 +46,7 @@ where
 impl<'a, Repr> Message<'a> for DiscoveryQueryMessage<'a, Repr>
 where
     Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>,
 {
     fn data(&self) -> &'a [u32] {
         self.0.data()
@@ -64,7 +64,7 @@ where
 impl<'a, Repr> Buildable<'a> for DiscoveryQueryMessage<'a, Repr>
 where
     Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>,
 {
     type Builder = DiscoveryQueryBuilder<'a, Repr>;
 }
@@ -72,7 +72,7 @@ where
 impl<'a, Repr> GroupedMessage<'a> for DiscoveryQueryMessage<'a, Repr>
 where
     Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>,
 {
     fn group(&self) -> u4 {
         self.0.group()
@@ -88,12 +88,12 @@ impl<'a> StreamedMessage<'a> for DiscoveryQueryMessage<'a, sysex8::Sysex8Message
 pub struct DiscoveryQueryBuilder<'a, Repr>(DiscoveryBuilder<'a, Repr, STATUS>)
 where
     Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>;
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>;
 
 impl<'a, Repr> DiscoveryQueryBuilder<'a, Repr>
 where
     Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>,
 {
     pub fn source(mut self, source: u28) -> Self {
         self.0 = self.0.source(source);
@@ -145,7 +145,7 @@ where
 impl<'a, Repr> Builder<'a> for DiscoveryQueryBuilder<'a, Repr>
 where
     Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>,
 {
     type Message = DiscoveryQueryMessage<'a, Repr>;
     fn build(self) -> Result<DiscoveryQueryMessage<'a, Repr>> {
@@ -164,7 +164,7 @@ where
 impl<'a, Repr> GroupedBuilder<'a> for DiscoveryQueryBuilder<'a, Repr>
 where
     Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexGroupBuilder<'a>,
+    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>,
 {
     fn group(mut self, group: u4) -> Self {
         self.0 = self.0.group(group);

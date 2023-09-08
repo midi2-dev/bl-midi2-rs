@@ -97,6 +97,33 @@ impl<'a> core::iter::Iterator for PayloadIterator<'a> {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Sysex7Message<'a, B: Buffer>(&'a B::Data);
 
+impl<'a> Message<'a, Bytes> for Sysex7Message<'a, Bytes> {
+    fn data(&self) -> &'a <Bytes as Buffer>::Data {
+        self.0
+    }
+    fn validate_data(buffer: &'a <Bytes as Buffer>::Data) -> Result<()> {
+        if buffer.len() < 2 || buffer[0] != 0xF0 || buffer[buffer.len() - 1] != 0xF7 {
+            Err(Error::InvalidData)
+        } else {
+            Ok(())
+        }
+    }
+    fn from_data_unchecked(buffer: &'a <Bytes as Buffer>::Data) -> Self {
+        Self(buffer)
+    }
+}
+
+impl<'a> Buildable<'a, Bytes> for Sysex7Message<'a, Bytes> {
+    type Builder = Sysex7BuilderBytes<'a>;
+}
+
+impl<'a> SysexMessage<'a, Bytes> for Sysex7Message<'a, Bytes> {
+    type PayloadIterator = core::iter::Cloned<core::slice::Iter<'a, u8>>;
+    fn payload(&self) -> Self::PayloadIterator {
+        self.0[1..self.0.len() - 1].iter().cloned()
+    }
+}
+
 impl<'a> Sysex7Message<'a, Ump> {
     const OP_CODE: u4 = u4::new(0x3);
     pub fn status(&self) -> Status {
@@ -128,7 +155,7 @@ impl<'a> Message<'a, Ump> for Sysex7Message<'a, Ump> {
 }
 
 impl<'a> Buildable<'a, Ump> for Sysex7Message<'a, Ump> {
-    type Builder = Sysex7Builder<'a, Ump>;
+    type Builder = Sysex7BuilderUmp<'a>;
 }
 
 impl<'a> GroupedMessage<'a> for Sysex7Message<'a, Ump> {
@@ -137,9 +164,65 @@ impl<'a> GroupedMessage<'a> for Sysex7Message<'a, Ump> {
     }
 }
 
-pub struct Sysex7Builder<'a, B: Buffer>(Result<&'a mut B::Data>);
+pub struct Sysex7BuilderUmp<'a>(Result<&'a mut [u32]>);
 
-impl<'a> Sysex7Builder<'a, Ump> {
+pub struct Sysex7BuilderBytes<'a>(Result<&'a mut [u8]>, usize);
+
+impl<'a> Sysex7BuilderBytes<'a> {
+    fn grow(&mut self) {
+        if let Ok(buffer) = &self.0 {
+            if buffer.len() < self.1 + 1 {
+                self.0 = Err(Error::BufferOverflow);
+            } else {
+                self.1 += 1;
+            }
+        }
+    }
+}
+
+impl<'a> Builder<'a, Bytes> for Sysex7BuilderBytes<'a> {
+    type Message = Sysex7Message<'a, Bytes>;
+    fn new(buffer: &'a mut <Bytes as Buffer>::Data) -> Self {
+        if buffer.len() < 2 {
+            Self(Err(Error::BufferOverflow), 0)
+        } else {
+            buffer[0] = 0xF0;
+            Self(Ok(buffer), 1)
+        }
+    }
+    fn build(mut self) -> Result<Self::Message> {
+        if self.0.is_ok() {
+            self.grow();
+        }
+        match self.0 {
+            Ok(buffer) => {
+                buffer[self.1 - 1] = 0xF7;
+                Ok(Sysex7Message::<Bytes>(&buffer[..self.1]))
+            }
+            Err(e) => Err(e.clone()),
+        }
+    }
+}
+
+impl<'a> SysexBuilder<'a, Bytes> for Sysex7BuilderBytes<'a> {
+    type Byte = u8;
+    fn payload<I: core::iter::Iterator<Item = Self::Byte>>(mut self, data: I) -> Self {
+        for d in data {
+            self.grow();
+            match &mut self.0 {
+                Ok(buffer) => {
+                    buffer[self.1 - 1] = d;
+                }
+                Err(_) => {
+                    break;
+                }
+            }
+        }
+        self
+    }
+}
+
+impl<'a> Sysex7BuilderUmp<'a> {
     pub fn status(mut self, s: Status) -> Self {
         if let Ok(buffer) = &mut self.0 {
             buffer[0].set_nibble(
@@ -175,7 +258,7 @@ impl<'a> Sysex7Builder<'a, Ump> {
     }
 }
 
-impl<'a> Builder<'a, Ump> for Sysex7Builder<'a, Ump> {
+impl<'a> Builder<'a, Ump> for Sysex7BuilderUmp<'a> {
     type Message = Sysex7Message<'a, Ump>;
     fn new(buffer: &'a mut [u32]) -> Self {
         if buffer.len() >= 2 {
@@ -194,7 +277,7 @@ impl<'a> Builder<'a, Ump> for Sysex7Builder<'a, Ump> {
     }
 }
 
-impl<'a> GroupedBuilder<'a> for Sysex7Builder<'a, Ump> {
+impl<'a> GroupedBuilder<'a> for Sysex7BuilderUmp<'a> {
     fn group(mut self, g: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             buffer[0].set_nibble(1, g);
@@ -269,7 +352,7 @@ impl<'a> Message<'a, Ump> for Sysex7MessageGroup<'a> {
             return Err(Error::InvalidData);
         }
         for chunk in buffer.chunks(2) {
-            Sysex7Message::validate_data(chunk)?;
+            Sysex7Message::<Ump>::validate_data(chunk)?;
         }
         message_helpers::validate_sysex_group_statuses(
             buffer,
@@ -357,7 +440,7 @@ impl<'a> Sysex7MessageGroupBuilder<'a> {
 
         {
             let mut builder =
-                Sysex7Message::builder(&mut self.buffer[2 * self.size..2 * (self.size + 1)]);
+                Sysex7Message::<Ump>::builder(&mut self.buffer[2 * self.size..2 * (self.size + 1)]);
             builder = builder.group(self.group);
             match self.size {
                 0 => {
@@ -372,7 +455,7 @@ impl<'a> Sysex7MessageGroupBuilder<'a> {
 
         if self.size != 0 {
             let mut prev_builder =
-                Sysex7Builder(Ok(&mut self.buffer[2 * (self.size - 1)..2 * self.size]));
+                Sysex7BuilderUmp(Ok(&mut self.buffer[2 * (self.size - 1)..2 * self.size]));
             match self.size {
                 1 => {
                     prev_builder = prev_builder.status(Status::Begin);
@@ -444,7 +527,7 @@ impl<'a> GroupedBuilder<'a> for Sysex7MessageGroupBuilder<'a> {
     }
 }
 
-impl<'a> SysexGroupBuilder<'a, Ump> for Sysex7MessageGroupBuilder<'a> {
+impl<'a> SysexBuilder<'a, Ump> for Sysex7MessageGroupBuilder<'a> {
     type Byte = u7;
     fn payload<I: core::iter::Iterator<Item = u7>>(mut self, mut iter: I) -> Self {
         if self.error.is_some() {
@@ -782,5 +865,72 @@ mod tests {
         for (actual, expected) in group.payload().zip(expected_payload) {
             assert_eq!(actual, expected);
         }
+    }
+
+    #[test]
+    fn bytes_builder() {
+        assert_eq!(
+            Sysex7Message::<Bytes>::builder(&mut Bytes::random_buffer::<22>())
+                .payload((0u8..20u8).map(|v| v.truncate()))
+                .build(),
+            Ok(Sysex7Message::<Bytes>(&[
+                0xF0, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C,
+                0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0xF7,
+            ])),
+        );
+    }
+
+    #[test]
+    fn bytes_builder_buffer_overflow() {
+        assert_eq!(
+            Sysex7Message::<Bytes>::builder(&mut Bytes::random_buffer::<21>())
+                .payload((0u8..20u8).map(|v| v.truncate()))
+                .build(),
+            Err(Error::BufferOverflow),
+        );
+    }
+
+    #[test]
+    fn bytes_from_data_missing_start() {
+        assert_eq!(
+            Sysex7Message::<Bytes>::from_data(&[
+                0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D,
+                0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0xF7,
+            ]),
+            Err(Error::InvalidData),
+        );
+    }
+
+    #[test]
+    fn bytes_from_data_missing_end() {
+        assert_eq!(
+            Sysex7Message::<Bytes>::from_data(&[
+                0xF0, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C,
+                0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13,
+            ]),
+            Err(Error::InvalidData),
+        );
+    }
+
+    #[test]
+    fn bytes_payload() {
+        let actual: [u8; 20] = {
+            let payload = Sysex7Message::<Bytes>::from_data(&[
+                0xF0, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C,
+                0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0xF7,
+            ])
+            .unwrap()
+            .payload();
+            let mut buffer: [u8; 20] = Default::default();
+            for (i, d) in payload.enumerate() {
+                buffer[i] = d;
+            }
+            buffer
+        };
+        let expected: [u8; 20] = [
+            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D,
+            0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13,
+        ];
+        assert_eq!(actual, expected);
     }
 }

@@ -63,7 +63,7 @@ impl<'a> Message<'a, Ump> for MidiMessage<'a, Ump> {
         match u8::from(buffer[0].nibble(0)) {
             // MIDI1_CHANNEL_VOICE_CODE => Midi1ChannelVoiceMessage::validate_data(buffer),
             MIDI2_CHANNEL_VOICE_CODE => Midi2ChannelVoiceMessage::validate_data(buffer),
-            SYSEX7_CODE => Sysex7Message::validate_data(buffer),
+            SYSEX7_CODE => Sysex7Message::<Ump>::validate_data(buffer),
             SYSEX8_CODE => Sysex8Message::validate_data(buffer),
             UTILITY_CODE => UtilityMessage::validate_data(buffer),
             SYSTEM_COMMON_CODE => SystemCommonMessage::<Ump>::validate_data(buffer),

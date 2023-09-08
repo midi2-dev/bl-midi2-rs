@@ -61,7 +61,7 @@ impl Byte for u7 {
     }
 }
 
-pub trait SysexGroupBuilder<'a, B: Buffer>: Builder<'a, B> {
+pub trait SysexBuilder<'a, B: Buffer>: Builder<'a, B> {
     type Byte: Byte;
     fn payload<I: core::iter::Iterator<Item = Self::Byte>>(self, data: I) -> Self;
 }
