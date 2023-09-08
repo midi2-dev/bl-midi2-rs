@@ -4,18 +4,15 @@ use crate::{
         midi1_channel_voice::{helpers as midi1cv_helpers, TYPE_CODE as MIDI1_CHANNEL_VOICE_TYPE},
     },
     result::Result,
-    util::debug,
     *,
 };
 
 const OP_CODE: u4 = u4::new(0b1000);
 
-#[derive(Clone, PartialEq, Eq)]
-pub struct NoteOffMessage<'a>(&'a [u32]);
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct NoteOffMessage<'a, B: Buffer>(&'a B::Data);
 
-debug::message_debug_impl!(NoteOffMessage);
-
-impl<'a> NoteOffMessage<'a> {
+impl<'a> NoteOffMessage<'a, Ump> {
     pub fn group(&self) -> u4 {
         message_helpers::group_from_packet(self.0)
     }
@@ -30,7 +27,7 @@ impl<'a> NoteOffMessage<'a> {
     }
 }
 
-impl<'a> Message<'a> for NoteOffMessage<'a> {
+impl<'a> Message<'a, Ump> for NoteOffMessage<'a, Ump> {
     fn data(&self) -> &'a [u32] {
         self.0
     }
@@ -42,20 +39,20 @@ impl<'a> Message<'a> for NoteOffMessage<'a> {
     }
 }
 
-impl<'a> Buildable<'a> for NoteOffMessage<'a> {
-    type Builder = NoteOffBuilder<'a>;
+impl<'a> Buildable<'a, Ump> for NoteOffMessage<'a, Ump> {
+    type Builder = NoteOffBuilder<'a, Ump>;
 }
 
-impl<'a> GroupedMessage<'a> for NoteOffMessage<'a> {
+impl<'a> GroupedMessage<'a> for NoteOffMessage<'a, Ump> {
     fn group(&self) -> u4 {
         message_helpers::group_from_packet(self.0)
     }
 }
 
 #[derive(PartialEq, Eq)]
-pub struct NoteOffBuilder<'a>(Result<&'a mut [u32]>);
+pub struct NoteOffBuilder<'a, B: Buffer>(Result<&'a mut B::Data>);
 
-impl<'a> NoteOffBuilder<'a> {
+impl<'a> NoteOffBuilder<'a, Ump> {
     pub fn group(mut self, v: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
@@ -82,9 +79,9 @@ impl<'a> NoteOffBuilder<'a> {
     }
 }
 
-impl<'a> Builder<'a> for NoteOffBuilder<'a> {
-    type Message = NoteOffMessage<'a>;
-    fn build(self) -> Result<NoteOffMessage<'a>> {
+impl<'a> Builder<'a, Ump> for NoteOffBuilder<'a, Ump> {
+    type Message = NoteOffMessage<'a, Ump>;
+    fn build(self) -> Result<Self::Message> {
         match self.0 {
             Ok(buffer) => Ok(NoteOffMessage(buffer)),
             Err(e) => Err(e.clone()),
@@ -102,7 +99,7 @@ impl<'a> Builder<'a> for NoteOffBuilder<'a> {
     }
 }
 
-impl<'a> GroupedBuilder<'a> for NoteOffBuilder<'a> {
+impl<'a> GroupedBuilder<'a> for NoteOffBuilder<'a, Ump> {
     fn group(mut self, v: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
@@ -114,18 +111,18 @@ impl<'a> GroupedBuilder<'a> for NoteOffBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::random_buffer;
+    use crate::util::RandomBuffer;
 
     #[test]
     fn builder() {
         assert_eq!(
-            NoteOffMessage::builder(&mut random_buffer::<1>())
+            NoteOffMessage::builder(&mut Ump::random_buffer::<1>())
                 .group(u4::new(0x1))
                 .channel(u4::new(0xA))
                 .note(u7::new(0x68))
                 .velocity(u7::new(0x1B))
                 .build(),
-            Ok(NoteOffMessage(&[0x218A_681B])),
+            Ok(NoteOffMessage::<Ump>(&[0x218A_681B])),
         );
     }
 

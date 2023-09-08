@@ -26,14 +26,14 @@ pub use pitch_bend::PitchBendMessage;
 pub use program_change::ProgramChangeBuilder;
 pub use program_change::ProgramChangeMessage;
 
-pub enum Midi1ChannelVoiceMessage<'a> {
-    ChannelPressure(ChannelPressureMessage<'a>),
-    ControlChange(ControlChangeMessage<'a>),
-    KeyPressure(KeyPressureMessage<'a>),
-    NoteOff(NoteOffMessage<'a>),
-    NoteOn(NoteOnMessage<'a>),
-    PitchBend(PitchBendMessage<'a>),
-    ProgramChange(ProgramChangeMessage<'a>),
+pub enum Midi1ChannelVoiceMessage<'a, B: Buffer> {
+    ChannelPressure(ChannelPressureMessage<'a, B>),
+    ControlChange(ControlChangeMessage<'a, B>),
+    KeyPressure(KeyPressureMessage<'a, B>),
+    NoteOff(NoteOffMessage<'a, B>),
+    NoteOn(NoteOnMessage<'a, B>),
+    PitchBend(PitchBendMessage<'a, B>),
+    ProgramChange(ProgramChangeMessage<'a, B>),
 }
 
 const CHANNEL_PRESSURE_CODE: u8 = 0b1101;
@@ -46,7 +46,7 @@ const PROGRAM_CHANGE_CODE: u8 = 0b1100;
 
 use Midi1ChannelVoiceMessage::*;
 
-impl<'a> Message<'a> for Midi1ChannelVoiceMessage<'a> {
+impl<'a> Message<'a, Ump> for Midi1ChannelVoiceMessage<'a, Ump> {
     fn data(&self) -> &'a [u32] {
         match self {
             ChannelPressure(m) => m.data(),

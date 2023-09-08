@@ -3,18 +3,15 @@ use crate::{
         helpers as message_helpers, midi1_channel_voice::TYPE_CODE as MIDI1_CHANNEL_VOICE_TYPE,
     },
     result::Result,
-    util::debug,
     *,
 };
 
 const OP_CODE: u4 = u4::new(0b1100);
 
-#[derive(Clone, PartialEq, Eq)]
-pub struct ProgramChangeMessage<'a>(&'a [u32]);
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ProgramChangeMessage<'a, B: Buffer>(&'a B::Data);
 
-debug::message_debug_impl!(ProgramChangeMessage);
-
-impl<'a> ProgramChangeMessage<'a> {
+impl<'a> ProgramChangeMessage<'a, Ump> {
     pub fn channel(&self) -> u4 {
         message_helpers::channel_from_packet(self.0)
     }
@@ -23,7 +20,7 @@ impl<'a> ProgramChangeMessage<'a> {
     }
 }
 
-impl<'a> Message<'a> for ProgramChangeMessage<'a> {
+impl<'a> Message<'a, Ump> for ProgramChangeMessage<'a, Ump> {
     fn data(&self) -> &'a [u32] {
         self.0
     }
@@ -35,20 +32,20 @@ impl<'a> Message<'a> for ProgramChangeMessage<'a> {
     }
 }
 
-impl<'a> Buildable<'a> for ProgramChangeMessage<'a> {
-    type Builder = ProgramChangeBuilder<'a>;
+impl<'a> Buildable<'a, Ump> for ProgramChangeMessage<'a, Ump> {
+    type Builder = ProgramChangeBuilder<'a, Ump>;
 }
 
-impl<'a> GroupedMessage<'a> for ProgramChangeMessage<'a> {
+impl<'a> GroupedMessage<'a> for ProgramChangeMessage<'a, Ump> {
     fn group(&self) -> u4 {
         message_helpers::group_from_packet(self.0)
     }
 }
 
 #[derive(PartialEq, Eq)]
-pub struct ProgramChangeBuilder<'a>(Result<&'a mut [u32]>);
+pub struct ProgramChangeBuilder<'a, B: Buffer>(Result<&'a mut B::Data>);
 
-impl<'a> ProgramChangeBuilder<'a> {
+impl<'a> ProgramChangeBuilder<'a, Ump> {
     pub fn group(mut self, v: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
@@ -69,9 +66,9 @@ impl<'a> ProgramChangeBuilder<'a> {
     }
 }
 
-impl<'a> Builder<'a> for ProgramChangeBuilder<'a> {
-    type Message = ProgramChangeMessage<'a>;
-    fn build(self) -> Result<ProgramChangeMessage<'a>> {
+impl<'a> Builder<'a, Ump> for ProgramChangeBuilder<'a, Ump> {
+    type Message = ProgramChangeMessage<'a, Ump>;
+    fn build(self) -> Result<ProgramChangeMessage<'a, Ump>> {
         match self.0 {
             Ok(buffer) => Ok(ProgramChangeMessage(buffer)),
             Err(e) => Err(e.clone()),
@@ -90,7 +87,7 @@ impl<'a> Builder<'a> for ProgramChangeBuilder<'a> {
     }
 }
 
-impl<'a> GroupedBuilder<'a> for ProgramChangeBuilder<'a> {
+impl<'a> GroupedBuilder<'a> for ProgramChangeBuilder<'a, Ump> {
     fn group(mut self, v: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
@@ -102,17 +99,17 @@ impl<'a> GroupedBuilder<'a> for ProgramChangeBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::random_buffer;
+    use crate::util::RandomBuffer;
 
     #[test]
     fn builder() {
         assert_eq!(
-            ProgramChangeMessage::builder(&mut random_buffer::<1>())
+            ProgramChangeMessage::builder(&mut Ump::random_buffer::<1>())
                 .group(u4::new(0x4))
                 .channel(u4::new(0x7))
                 .program(u7::new(0x63))
                 .build(),
-            Ok(ProgramChangeMessage(&[0x24C7_6300])),
+            Ok(ProgramChangeMessage::<Ump>(&[0x24C7_6300])),
         );
     }
 

@@ -4,18 +4,15 @@ use crate::{
         midi1_channel_voice::{helpers as midi1cv_helpers, TYPE_CODE as MIDI1_CHANNEL_VOICE_TYPE},
     },
     result::Result,
-    util::debug,
     *,
 };
 
 const OP_CODE: u4 = u4::new(0b1011);
 
-#[derive(Clone, PartialEq, Eq)]
-pub struct ControlChangeMessage<'a>(&'a [u32]);
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ControlChangeMessage<'a, B: Buffer>(&'a B::Data);
 
-debug::message_debug_impl!(ControlChangeMessage);
-
-impl<'a> ControlChangeMessage<'a> {
+impl<'a> ControlChangeMessage<'a, Ump> {
     pub fn channel(&self) -> u4 {
         message_helpers::channel_from_packet(self.0)
     }
@@ -27,7 +24,7 @@ impl<'a> ControlChangeMessage<'a> {
     }
 }
 
-impl<'a> Message<'a> for ControlChangeMessage<'a> {
+impl<'a> Message<'a, Ump> for ControlChangeMessage<'a, Ump> {
     fn data(&self) -> &'a [u32] {
         self.0
     }
@@ -39,20 +36,20 @@ impl<'a> Message<'a> for ControlChangeMessage<'a> {
     }
 }
 
-impl<'a> Buildable<'a> for ControlChangeMessage<'a> {
-    type Builder = ControlChangeBuilder<'a>;
+impl<'a> Buildable<'a, Ump> for ControlChangeMessage<'a, Ump> {
+    type Builder = ControlChangeBuilder<'a, Ump>;
 }
 
-impl<'a> GroupedMessage<'a> for ControlChangeMessage<'a> {
+impl<'a> GroupedMessage<'a> for ControlChangeMessage<'a, Ump> {
     fn group(&self) -> u4 {
         message_helpers::group_from_packet(self.0)
     }
 }
 
 #[derive(PartialEq, Eq)]
-pub struct ControlChangeBuilder<'a>(Result<&'a mut [u32]>);
+pub struct ControlChangeBuilder<'a, B: Buffer>(Result<&'a mut B::Data>);
 
-impl<'a> ControlChangeBuilder<'a> {
+impl<'a> ControlChangeBuilder<'a, Ump> {
     pub fn channel(mut self, v: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_channel_to_packet(v, buffer);
@@ -73,9 +70,9 @@ impl<'a> ControlChangeBuilder<'a> {
     }
 }
 
-impl<'a> Builder<'a> for ControlChangeBuilder<'a> {
-    type Message = ControlChangeMessage<'a>;
-    fn build(self) -> Result<ControlChangeMessage<'a>> {
+impl<'a> Builder<'a, Ump> for ControlChangeBuilder<'a, Ump> {
+    type Message = ControlChangeMessage<'a, Ump>;
+    fn build(self) -> Result<Self::Message> {
         match self.0 {
             Ok(buffer) => Ok(ControlChangeMessage(buffer)),
             Err(e) => Err(e.clone()),
@@ -94,7 +91,7 @@ impl<'a> Builder<'a> for ControlChangeBuilder<'a> {
     }
 }
 
-impl<'a> GroupedBuilder<'a> for ControlChangeBuilder<'a> {
+impl<'a> GroupedBuilder<'a> for ControlChangeBuilder<'a, Ump> {
     fn group(mut self, v: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
@@ -106,18 +103,18 @@ impl<'a> GroupedBuilder<'a> for ControlChangeBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::random_buffer;
+    use crate::util::RandomBuffer;
 
     #[test]
     fn builder() {
         assert_eq!(
-            ControlChangeMessage::builder(&mut random_buffer::<1>())
+            ControlChangeMessage::builder(&mut Ump::random_buffer::<1>())
                 .group(u4::new(0xA))
                 .channel(u4::new(0x7))
                 .control(u7::new(0x36))
                 .control_data(u7::new(0x37))
                 .build(),
-            Ok(ControlChangeMessage(&[0x2AB7_3637])),
+            Ok(ControlChangeMessage::<Ump>(&[0x2AB7_3637])),
         );
     }
 

@@ -3,18 +3,16 @@ use crate::{
         helpers as message_helpers, midi1_channel_voice::TYPE_CODE as MIDI1_CHANNEL_VOICE_TYPE,
     },
     result::Result,
-    util::{debug, BitOps, Encode7Bit, Truncate},
+    util::{BitOps, Encode7Bit, Truncate},
     *,
 };
 
 const OP_CODE: u4 = u4::new(0b1110);
 
-#[derive(Clone, PartialEq, Eq)]
-pub struct PitchBendMessage<'a>(&'a [u32]);
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PitchBendMessage<'a, B: Buffer>(&'a B::Data);
 
-debug::message_debug_impl!(PitchBendMessage);
-
-impl<'a> PitchBendMessage<'a> {
+impl<'a> PitchBendMessage<'a, Ump> {
     pub fn channel(&self) -> u4 {
         message_helpers::channel_from_packet(self.0)
     }
@@ -23,7 +21,7 @@ impl<'a> PitchBendMessage<'a> {
     }
 }
 
-impl<'a> Message<'a> for PitchBendMessage<'a> {
+impl<'a> Message<'a, Ump> for PitchBendMessage<'a, Ump> {
     fn data(&self) -> &'a [u32] {
         self.0
     }
@@ -35,20 +33,20 @@ impl<'a> Message<'a> for PitchBendMessage<'a> {
     }
 }
 
-impl<'a> Buildable<'a> for PitchBendMessage<'a> {
-    type Builder = PitchBendBuilder<'a>;
+impl<'a> Buildable<'a, Ump> for PitchBendMessage<'a, Ump> {
+    type Builder = PitchBendBuilder<'a, Ump>;
 }
 
-impl<'a> GroupedMessage<'a> for PitchBendMessage<'a> {
+impl<'a> GroupedMessage<'a> for PitchBendMessage<'a, Ump> {
     fn group(&self) -> u4 {
         message_helpers::group_from_packet(self.0)
     }
 }
 
 #[derive(PartialEq, Eq)]
-pub struct PitchBendBuilder<'a>(Result<&'a mut [u32]>);
+pub struct PitchBendBuilder<'a, B: Buffer>(Result<&'a mut B::Data>);
 
-impl<'a> PitchBendBuilder<'a> {
+impl<'a> PitchBendBuilder<'a, Ump> {
     pub fn channel(mut self, v: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_channel_to_packet(v, buffer);
@@ -65,9 +63,9 @@ impl<'a> PitchBendBuilder<'a> {
     }
 }
 
-impl<'a> Builder<'a> for PitchBendBuilder<'a> {
-    type Message = PitchBendMessage<'a>;
-    fn build(self) -> Result<PitchBendMessage<'a>> {
+impl<'a> Builder<'a, Ump> for PitchBendBuilder<'a, Ump> {
+    type Message = PitchBendMessage<'a, Ump>;
+    fn build(self) -> Result<Self::Message> {
         match self.0 {
             Ok(buffer) => Ok(PitchBendMessage(buffer)),
             Err(e) => Err(e.clone()),
@@ -86,7 +84,7 @@ impl<'a> Builder<'a> for PitchBendBuilder<'a> {
     }
 }
 
-impl<'a> GroupedBuilder<'a> for PitchBendBuilder<'a> {
+impl<'a> GroupedBuilder<'a> for PitchBendBuilder<'a, Ump> {
     fn group(mut self, v: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
@@ -98,17 +96,17 @@ impl<'a> GroupedBuilder<'a> for PitchBendBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::random_buffer;
+    use crate::util::RandomBuffer;
 
     #[test]
     fn builder() {
         assert_eq!(
-            PitchBendMessage::builder(&mut random_buffer::<1>())
+            PitchBendMessage::builder(&mut Ump::random_buffer::<1>())
                 .group(u4::new(0x1))
                 .channel(u4::new(0xE))
                 .bend(u14::new(0x147))
                 .build(),
-            Ok(PitchBendMessage(&[0x21EE_4702])),
+            Ok(PitchBendMessage::<Ump>(&[0x21EE_4702])),
         );
     }
 

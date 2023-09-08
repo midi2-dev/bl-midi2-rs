@@ -4,18 +4,15 @@ use crate::{
         midi1_channel_voice::{helpers as midi1cv_helpers, TYPE_CODE as MIDI1_CHANNEL_VOICE_TYPE},
     },
     result::Result,
-    util::debug,
     *,
 };
 
 const OP_CODE: u4 = u4::new(0b1010);
 
-#[derive(Clone, PartialEq, Eq)]
-pub struct KeyPressureMessage<'a>(&'a [u32]);
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct KeyPressureMessage<'a, B: Buffer>(&'a B::Data);
 
-debug::message_debug_impl!(KeyPressureMessage);
-
-impl<'a> KeyPressureMessage<'a> {
+impl<'a> KeyPressureMessage<'a, Ump> {
     pub fn channel(&self) -> u4 {
         message_helpers::channel_from_packet(self.0)
     }
@@ -27,7 +24,7 @@ impl<'a> KeyPressureMessage<'a> {
     }
 }
 
-impl<'a> Message<'a> for KeyPressureMessage<'a> {
+impl<'a> Message<'a, Ump> for KeyPressureMessage<'a, Ump> {
     fn data(&self) -> &'a [u32] {
         self.0
     }
@@ -39,20 +36,20 @@ impl<'a> Message<'a> for KeyPressureMessage<'a> {
     }
 }
 
-impl<'a> Buildable<'a> for KeyPressureMessage<'a> {
-    type Builder = KeyPressureBuilder<'a>;
+impl<'a> Buildable<'a, Ump> for KeyPressureMessage<'a, Ump> {
+    type Builder = KeyPressureBuilder<'a, Ump>;
 }
 
-impl<'a> GroupedMessage<'a> for KeyPressureMessage<'a> {
+impl<'a> GroupedMessage<'a> for KeyPressureMessage<'a, Ump> {
     fn group(&self) -> u4 {
         message_helpers::group_from_packet(self.0)
     }
 }
 
 #[derive(PartialEq, Eq)]
-pub struct KeyPressureBuilder<'a>(Result<&'a mut [u32]>);
+pub struct KeyPressureBuilder<'a, B: Buffer>(Result<&'a mut B::Data>);
 
-impl<'a> KeyPressureBuilder<'a> {
+impl<'a> KeyPressureBuilder<'a, Ump> {
     pub fn group(mut self, v: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
@@ -79,9 +76,9 @@ impl<'a> KeyPressureBuilder<'a> {
     }
 }
 
-impl<'a> Builder<'a> for KeyPressureBuilder<'a> {
-    type Message = KeyPressureMessage<'a>;
-    fn build(self) -> Result<KeyPressureMessage<'a>> {
+impl<'a> Builder<'a, Ump> for KeyPressureBuilder<'a, Ump> {
+    type Message = KeyPressureMessage<'a, Ump>;
+    fn build(self) -> Result<Self::Message> {
         match self.0 {
             Ok(buffer) => Ok(KeyPressureMessage(buffer)),
             Err(e) => Err(e.clone()),
@@ -100,7 +97,7 @@ impl<'a> Builder<'a> for KeyPressureBuilder<'a> {
     }
 }
 
-impl<'a> GroupedBuilder<'a> for KeyPressureBuilder<'a> {
+impl<'a> GroupedBuilder<'a> for KeyPressureBuilder<'a, Ump> {
     fn group(mut self, v: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
@@ -112,18 +109,18 @@ impl<'a> GroupedBuilder<'a> for KeyPressureBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::random_buffer;
+    use crate::util::RandomBuffer;
 
     #[test]
     fn builder() {
         assert_eq!(
-            KeyPressureMessage::builder(&mut random_buffer::<1>())
+            KeyPressureMessage::builder(&mut Ump::random_buffer::<1>())
                 .group(u4::new(0xA))
                 .channel(u4::new(0x3))
                 .note(u7::new(0x7F))
                 .pressure(u7::new(0x5C))
                 .build(),
-            Ok(KeyPressureMessage(&[0x2AA3_7F5C])),
+            Ok(KeyPressureMessage::<Ump>(&[0x2AA3_7F5C])),
         );
     }
 

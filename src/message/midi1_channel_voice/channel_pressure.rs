@@ -3,18 +3,15 @@ use crate::{
         helpers as message_helpers, midi1_channel_voice::TYPE_CODE as MIDI1_CHANNEL_VOICE_TYPE,
     },
     result::Result,
-    util::debug,
     *,
 };
 
 const OP_CODE: u4 = u4::new(0b1101);
 
-#[derive(Clone, PartialEq, Eq)]
-pub struct ChannelPressureMessage<'a>(&'a [u32]);
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ChannelPressureMessage<'a, B: Buffer>(&'a B::Data);
 
-debug::message_debug_impl!(ChannelPressureMessage);
-
-impl<'a> ChannelPressureMessage<'a> {
+impl<'a> ChannelPressureMessage<'a, Ump> {
     pub fn channel(&self) -> u4 {
         message_helpers::channel_from_packet(self.0)
     }
@@ -23,7 +20,7 @@ impl<'a> ChannelPressureMessage<'a> {
     }
 }
 
-impl<'a> Message<'a> for ChannelPressureMessage<'a> {
+impl<'a> Message<'a, Ump> for ChannelPressureMessage<'a, Ump> {
     fn from_data_unchecked(data: &'a [u32]) -> Self {
         Self(data)
     }
@@ -35,20 +32,20 @@ impl<'a> Message<'a> for ChannelPressureMessage<'a> {
     }
 }
 
-impl<'a> Buildable<'a> for ChannelPressureMessage<'a> {
-    type Builder = ChannelPressureBuilder<'a>;
+impl<'a> Buildable<'a, Ump> for ChannelPressureMessage<'a, Ump> {
+    type Builder = ChannelPressureBuilder<'a, Ump>;
 }
 
-impl<'a> GroupedMessage<'a> for ChannelPressureMessage<'a> {
+impl<'a> GroupedMessage<'a> for ChannelPressureMessage<'a, Ump> {
     fn group(&self) -> u4 {
         message_helpers::group_from_packet(self.0)
     }
 }
 
 #[derive(PartialEq, Eq)]
-pub struct ChannelPressureBuilder<'a>(Result<&'a mut [u32]>);
+pub struct ChannelPressureBuilder<'a, B: Buffer>(Result<&'a mut B::Data>);
 
-impl<'a> ChannelPressureBuilder<'a> {
+impl<'a> ChannelPressureBuilder<'a, Ump> {
     pub fn channel(mut self, v: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_channel_to_packet(v, buffer);
@@ -63,8 +60,8 @@ impl<'a> ChannelPressureBuilder<'a> {
     }
 }
 
-impl<'a> Builder<'a> for ChannelPressureBuilder<'a> {
-    type Message = ChannelPressureMessage<'a>;
+impl<'a> Builder<'a, Ump> for ChannelPressureBuilder<'a, Ump> {
+    type Message = ChannelPressureMessage<'a, Ump>;
     fn new(buffer: &'a mut [u32]) -> Self {
         match message_helpers::validate_buffer_size(buffer, 1) {
             Ok(()) => {
@@ -76,7 +73,7 @@ impl<'a> Builder<'a> for ChannelPressureBuilder<'a> {
             Err(e) => Self(Err(e)),
         }
     }
-    fn build(self) -> Result<ChannelPressureMessage<'a>> {
+    fn build(self) -> Result<ChannelPressureMessage<'a, Ump>> {
         match self.0 {
             Ok(buffer) => Ok(ChannelPressureMessage(buffer)),
             Err(e) => Err(e.clone()),
@@ -84,7 +81,7 @@ impl<'a> Builder<'a> for ChannelPressureBuilder<'a> {
     }
 }
 
-impl<'a> GroupedBuilder<'a> for ChannelPressureBuilder<'a> {
+impl<'a> GroupedBuilder<'a> for ChannelPressureBuilder<'a, Ump> {
     fn group(mut self, v: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             message_helpers::write_group_to_packet(v, buffer);
@@ -96,17 +93,17 @@ impl<'a> GroupedBuilder<'a> for ChannelPressureBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::random_buffer;
+    use crate::util::RandomBuffer;
 
     #[test]
     fn builder() {
         assert_eq!(
-            ChannelPressureMessage::builder(&mut random_buffer::<1>())
+            ChannelPressureMessage::builder(&mut Ump::random_buffer::<1>())
                 .group(u4::new(0xF))
                 .channel(u4::new(0x6))
                 .pressure(u7::new(0x09))
                 .build(),
-            Ok(ChannelPressureMessage(&[0x2FD6_0900])),
+            Ok(ChannelPressureMessage::<Ump>(&[0x2FD6_0900])),
         );
     }
 

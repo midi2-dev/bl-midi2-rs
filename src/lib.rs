@@ -15,7 +15,7 @@ pub use error::*;
 pub use result::*;
 pub use traits::*;
 
-// pub use message::midi1_channel_voice;
+pub use message::midi1_channel_voice;
 pub use message::midi2_channel_voice;
 pub use message::system_common;
 pub use message::system_exclusive_7bit;
