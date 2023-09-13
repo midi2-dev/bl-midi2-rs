@@ -9,4 +9,5 @@ authors = [
 ]
 
 [dependencies]
+midi2_attr = { version = "0.1.0", path = "midi2_attr" }
 ux = "0.1.5"

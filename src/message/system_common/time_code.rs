@@ -1,137 +1,20 @@
-use crate::{
-    message::{
-        helpers as message_helpers,
-        system_common::{self, TYPE_CODE as SYSTEM_COMMON_TYPE_CODE},
-    },
-    result::Result,
-    util::{BitOps, Truncate},
-    *,
-};
+use crate::message::system_common::TYPE_CODE as SYSTEM_COMMON_TYPE_CODE;
 
-const OP_CODE: u8 = 0xF1;
+const OP_CODE: u32 = 0xF1;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct TimeCodeMessage<'a, B: Buffer>(&'a B::Data);
-
-impl<'a> TimeCodeMessage<'a, Ump> {
-    pub fn time_code(&self) -> u7 {
-        self.0[0].octet(2).truncate()
-    }
-}
-
-impl<'a> Message<'a, Ump> for TimeCodeMessage<'a, Ump> {
-    fn from_data_unchecked(data: &'a [u32]) -> Self {
-        Self(data)
-    }
-    fn validate_data(buffer: &'a [u32]) -> Result<()> {
-        system_common::validate_packet(buffer, OP_CODE)
-    }
-    fn data(&self) -> &'a [u32] {
-        self.0
-    }
-}
-
-impl<'a> Buildable<'a, Ump> for TimeCodeMessage<'a, Ump> {
-    type Builder = TimeCodeBuilder<'a, Ump>;
-}
-
-impl<'a> Buildable<'a, Bytes> for TimeCodeMessage<'a, Bytes> {
-    type Builder = TimeCodeBuilder<'a, Bytes>;
-}
-
-impl<'a> GroupedMessage<'a> for TimeCodeMessage<'a, Ump> {
-    fn group(&self) -> u4 {
-        message_helpers::group_from_packet(self.0)
-    }
-}
-
-#[derive(PartialEq, Eq)]
-pub struct TimeCodeBuilder<'a, B: Buffer>(Result<&'a mut B::Data>);
-
-impl<'a> TimeCodeBuilder<'a, Ump> {
-    pub fn time_code(mut self, v: u7) -> Self {
-        if let Ok(buffer) = &mut self.0 {
-            buffer[0].set_octet(2, v.into());
-        }
-        self
-    }
-}
-
-impl<'a> Builder<'a, Ump> for TimeCodeBuilder<'a, Ump> {
-    type Message = TimeCodeMessage<'a, Ump>;
-    fn new(buffer: &'a mut [u32]) -> Self {
-        match system_common::validate_buffer_size(buffer) {
-            Ok(()) => {
-                message_helpers::clear_buffer(buffer);
-                system_common::write_op_code_to_packet(buffer, OP_CODE);
-                message_helpers::write_type_to_packet(SYSTEM_COMMON_TYPE_CODE, buffer);
-                Self(Ok(buffer))
-            }
-            Err(e) => Self(Err(e)),
-        }
-    }
-    fn build(self) -> Result<Self::Message> {
-        match self.0 {
-            Ok(buffer) => Ok(TimeCodeMessage(buffer)),
-            Err(e) => Err(e.clone()),
-        }
-    }
-}
-
-impl<'a> GroupedBuilder<'a> for TimeCodeBuilder<'a, Ump> {
-    fn group(mut self, v: u4) -> Self {
-        if let Ok(buffer) = &mut self.0 {
-            message_helpers::write_group_to_packet(v, buffer);
-        }
-        self
-    }
-}
-
-impl<'a> TimeCodeMessage<'a, Bytes> {
-    pub fn time_code(&self) -> u7 {
-        self.0[1].truncate()
-    }
-}
-
-impl<'a> TimeCodeBuilder<'a, Bytes> {
-    pub fn time_code(mut self, v: u7) -> Self {
-        if let Ok(buffer) = &mut self.0 {
-            buffer[1] = v.into();
-        }
-        self
-    }
-}
-
-impl<'a> Message<'a, Bytes> for TimeCodeMessage<'a, Bytes> {
-    fn data(&self) -> &'a <Bytes as Buffer>::Data {
-        self.0
-    }
-    fn from_data_unchecked(buffer: &'a <Bytes as Buffer>::Data) -> Self {
-        Self(buffer)
-    }
-    fn validate_data(buffer: &'a <Bytes as Buffer>::Data) -> Result<()> {
-        system_common::validate_bytes(buffer, OP_CODE, 2)?;
-        Ok(())
-    }
-}
-
-impl<'a> Builder<'a, Bytes> for TimeCodeBuilder<'a, Bytes> {
-    type Message = TimeCodeMessage<'a, Bytes>;
-    fn new(buffer: &'a mut [u8]) -> Self {
-        if buffer.len() >= 2 {
-            message_helpers::clear_buffer(buffer);
-            buffer[0] = OP_CODE;
-            Self(Ok(buffer))
-        } else {
-            Self(Err(Error::BufferOverflow))
-        }
-    }
-    fn build(self) -> Result<Self::Message> {
-        match self.0 {
-            Ok(buffer) => Ok(TimeCodeMessage(buffer)),
-            Err(e) => Err(e.clone()),
-        }
-    }
+#[midi2_attr::generate_message]
+struct TimeCode {
+    ump_type: Property<
+        NumericalConstant<SYSTEM_COMMON_TYPE_CODE>,
+        UmpSchema<0xF000_0000, 0x0, 0x0, 0x0>,
+        (),
+    >,
+    status: Property<
+        NumericalConstant<OP_CODE>,
+        UmpSchema<0x00FF_0000, 0x0, 0x0, 0x0>,
+        BytesSchema<0xFF, 0x0, 0x0>,
+    >,
+    time_code: Property<u7, UmpSchema<0x0000_7F00, 0x0, 0x0, 0x0>, BytesSchema<0x0, 0x7F, 0x0>>,
 }
 
 #[cfg(test)]
@@ -142,18 +25,18 @@ mod tests {
     #[test]
     fn builder() {
         assert_eq!(
-            TimeCodeMessage::<Ump>::builder(&mut Ump::random_buffer::<1>())
+            TimeCodeMessage::<Ump>::builder(&mut Ump::random_buffer::<4>())
                 .group(u4::new(0x5))
                 .time_code(u7::new(0x5F))
                 .build(),
-            Ok(TimeCodeMessage::<Ump>(&[0x15F1_5F00])),
+            Ok(TimeCodeMessage::<Ump>(&[0x15F1_5F00, 0x0, 0x0, 0x0])),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            TimeCodeMessage::<Ump>::from_data(&[0x15F1_5F00])
+            TimeCodeMessage::<Ump>::from_data(&[0x15F1_5F00, 0x0, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0x5),
@@ -163,7 +46,7 @@ mod tests {
     #[test]
     fn time_code() {
         assert_eq!(
-            TimeCodeMessage::<Ump>::from_data(&[0x15F1_5F00])
+            TimeCodeMessage::<Ump>::from_data(&[0x15F1_5F00, 0x0, 0x0, 0x0])
                 .unwrap()
                 .time_code(),
             u7::new(0x5F),

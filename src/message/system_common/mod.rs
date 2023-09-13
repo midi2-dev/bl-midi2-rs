@@ -1,6 +1,6 @@
 use crate::{util::BitOps, *};
 
-const TYPE_CODE: u4 = u4::new(0x1);
+const TYPE_CODE: u32 = 0x1;
 
 mod simple_generic;
 mod song_position_pointer;
@@ -109,37 +109,4 @@ impl<'a> Message<'a, Ump> for SystemCommonMessage<'a, Ump> {
             _ => panic!(),
         }
     }
-}
-
-fn validate_packet(p: &[u32], status: u8) -> Result<()> {
-    if p.is_empty() {
-        Err(Error::BufferOverflow)
-    } else if p[0].nibble(0) != TYPE_CODE || p[0].octet(1) != status {
-        Err(Error::InvalidData)
-    } else {
-        Ok(())
-    }
-}
-
-fn validate_bytes(b: &[u8], status: u8, min_size: usize) -> Result<()> {
-    let len = b.len();
-    if len < min_size || len > 3 {
-        return Err(Error::BufferOverflow);
-    }
-    if b[0] != status {
-        return Err(Error::InvalidData);
-    }
-    Ok(())
-}
-
-fn validate_buffer_size(buffer: &[u32]) -> Result<()> {
-    if buffer.is_empty() {
-        Err(Error::BufferOverflow)
-    } else {
-        Ok(())
-    }
-}
-
-fn write_op_code_to_packet(buffer: &mut [u32], op_code: u8) {
-    buffer[0].set_octet(1, op_code);
 }
