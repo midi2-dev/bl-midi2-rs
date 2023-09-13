@@ -1,103 +1,22 @@
-use crate::{
-    message::{
-        helpers as message_helpers,
-        midi1_channel_voice::{helpers as midi1cv_helpers, TYPE_CODE as MIDI1_CHANNEL_VOICE_TYPE},
-    },
-    result::Result,
-    *,
-};
+use crate::message::midi1_channel_voice::TYPE_CODE as MIDI1_CHANNEL_VOICE_TYPE;
 
-const OP_CODE: u4 = u4::new(0b1001);
+const OP_CODE: u32 = 0b1001;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct NoteOnMessage<'a, B: Buffer>(&'a B::Data);
-
-impl<'a> NoteOnMessage<'a, Ump> {
-    pub fn channel(&self) -> u4 {
-        message_helpers::channel_from_packet(self.0)
-    }
-    pub fn note(&self) -> u7 {
-        message_helpers::note_from_packet(self.0)
-    }
-    pub fn velocity(&self) -> u7 {
-        midi1cv_helpers::note_velocity_from_packet(self.0)
-    }
-}
-
-impl<'a> Message<'a, Ump> for NoteOnMessage<'a, Ump> {
-    fn data(&self) -> &'a [u32] {
-        self.0
-    }
-    fn validate_data(buffer: &'a [u32]) -> Result<()> {
-        message_helpers::validate_packet(buffer, MIDI1_CHANNEL_VOICE_TYPE, OP_CODE)
-    }
-    fn from_data_unchecked(buffer: &'a [u32]) -> Self {
-        Self(buffer)
-    }
-}
-
-impl<'a> Buildable<'a, Ump> for NoteOnMessage<'a, Ump> {
-    type Builder = NoteOnBuilder<'a, Ump>;
-}
-
-impl<'a> GroupedMessage<'a> for NoteOnMessage<'a, Ump> {
-    fn group(&self) -> u4 {
-        message_helpers::group_from_packet(self.0)
-    }
-}
-
-#[derive(PartialEq, Eq)]
-pub struct NoteOnBuilder<'a, B: Buffer>(Result<&'a mut B::Data>);
-
-impl<'a> NoteOnBuilder<'a, Ump> {
-    pub fn channel(mut self, v: u4) -> Self {
-        if let Ok(buffer) = &mut self.0 {
-            message_helpers::write_channel_to_packet(v, buffer);
-        }
-        self
-    }
-    pub fn note(mut self, v: u7) -> Self {
-        if let Ok(buffer) = &mut self.0 {
-            message_helpers::write_note_to_packet(v, buffer);
-        }
-        self
-    }
-    pub fn velocity(mut self, v: u7) -> Self {
-        if let Ok(buffer) = &mut self.0 {
-            midi1cv_helpers::write_note_velocity_to_packet(v, buffer);
-        }
-        self
-    }
-}
-
-impl<'a> Builder<'a, Ump> for NoteOnBuilder<'a, Ump> {
-    type Message = NoteOnMessage<'a, Ump>;
-    fn build(self) -> Result<Self::Message> {
-        match self.0 {
-            Ok(buffer) => Ok(NoteOnMessage(buffer)),
-            Err(e) => Err(e.clone()),
-        }
-    }
-    fn new(buffer: &'a mut [u32]) -> Self {
-        match message_helpers::validate_buffer_size(buffer, 1) {
-            Ok(()) => {
-                message_helpers::clear_buffer(&mut buffer[..1]);
-                message_helpers::write_op_code_to_packet(OP_CODE, buffer);
-                message_helpers::write_type_to_packet(MIDI1_CHANNEL_VOICE_TYPE, buffer);
-                Self(Ok(&mut buffer[..1]))
-            }
-            Err(e) => Self(Err(e)),
-        }
-    }
-}
-
-impl<'a> GroupedBuilder<'a> for NoteOnBuilder<'a, Ump> {
-    fn group(mut self, v: u4) -> Self {
-        if let Ok(buffer) = &mut self.0 {
-            message_helpers::write_group_to_packet(v, buffer);
-        }
-        self
-    }
+#[midi2_attr::generate_message]
+struct NoteOn {
+    ump_type: Property<
+        NumericalConstant<MIDI1_CHANNEL_VOICE_TYPE>,
+        UmpSchema<0xF000_0000, 0x0, 0x0, 0x0>,
+        (),
+    >,
+    status: Property<
+        NumericalConstant<OP_CODE>,
+        UmpSchema<0x00F0_0000, 0x0, 0x0, 0x0>,
+        BytesSchema<0xF0, 0x0, 0x0>,
+    >,
+    channel: Property<u4, UmpSchema<0x000F_0000, 0x0, 0x0, 0x0>, BytesSchema<0x0F, 0x0, 0x0>>,
+    note: Property<u7, UmpSchema<0x0000_7F00, 0x0, 0x0, 0x0>, BytesSchema<0x0, 0x7F, 0x0>>,
+    velocity: Property<u7, UmpSchema<0x0000_007F, 0x0, 0x0, 0x0>, BytesSchema<0x0, 0x0, 0x7F>>,
 }
 
 #[cfg(test)]
@@ -108,20 +27,22 @@ mod tests {
     #[test]
     fn builder() {
         assert_eq!(
-            NoteOnMessage::builder(&mut Ump::random_buffer::<1>())
+            NoteOnMessage::<Ump>::builder(&mut Ump::random_buffer::<4>())
                 .group(u4::new(0xD))
                 .channel(u4::new(0xE))
                 .note(u7::new(0x75))
                 .velocity(u7::new(0x3D))
                 .build(),
-            Ok(NoteOnMessage::<Ump>(&[0x2D9E_753D])),
+            Ok(NoteOnMessage::<Ump>(&[0x2D9E_753D, 0x0, 0x0, 0x0])),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            NoteOnMessage::from_data(&[0x2D9E_753D]).unwrap().group(),
+            NoteOnMessage::<Ump>::from_data(&[0x2D9E_753D, 0x0, 0x0, 0x0])
+                .unwrap()
+                .group(),
             u4::new(0xD),
         );
     }
@@ -129,7 +50,9 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            NoteOnMessage::from_data(&[0x2D9E_753D]).unwrap().channel(),
+            NoteOnMessage::<Ump>::from_data(&[0x2D9E_753D, 0x0, 0x0, 0x0])
+                .unwrap()
+                .channel(),
             u4::new(0xE),
         );
     }
@@ -137,7 +60,9 @@ mod tests {
     #[test]
     fn note() {
         assert_eq!(
-            NoteOnMessage::from_data(&[0x2D9E_753D]).unwrap().note(),
+            NoteOnMessage::<Ump>::from_data(&[0x2D9E_753D, 0x0, 0x0, 0x0])
+                .unwrap()
+                .note(),
             u7::new(0x75),
         );
     }
@@ -145,7 +70,51 @@ mod tests {
     #[test]
     fn velocity() {
         assert_eq!(
-            NoteOnMessage::from_data(&[0x2D9E_753D]).unwrap().velocity(),
+            NoteOnMessage::<Ump>::from_data(&[0x2D9E_753D, 0x0, 0x0, 0x0])
+                .unwrap()
+                .velocity(),
+            u7::new(0x3D),
+        );
+    }
+
+    #[test]
+    fn builder_bytes() {
+        assert_eq!(
+            NoteOnMessage::<Bytes>::builder(&mut Bytes::random_buffer::<3>())
+                .channel(u4::new(0xE))
+                .note(u7::new(0x75))
+                .velocity(u7::new(0x3D))
+                .build(),
+            Ok(NoteOnMessage::<Bytes>(&[0x9E, 0x75, 0x3D])),
+        );
+    }
+
+    #[test]
+    fn channel_bytes() {
+        assert_eq!(
+            NoteOnMessage::<Bytes>::from_data(&[0x9E, 0x75, 0x3D])
+                .unwrap()
+                .channel(),
+            u4::new(0xE),
+        );
+    }
+
+    #[test]
+    fn note_bytes() {
+        assert_eq!(
+            NoteOnMessage::<Bytes>::from_data(&[0x9E, 0x75, 0x3D])
+                .unwrap()
+                .note(),
+            u7::new(0x75),
+        );
+    }
+
+    #[test]
+    fn velocity_bytes() {
+        assert_eq!(
+            NoteOnMessage::<Bytes>::from_data(&[0x9E, 0x75, 0x3D])
+                .unwrap()
+                .velocity(),
             u7::new(0x3D),
         );
     }

@@ -177,7 +177,7 @@ fn message_impl(
         Ump => {
             let mut methods = TokenStream::new();
             for property in properties.iter().filter(|p| !p.constant) {
-                methods.extend(message_impl_method(property, Repr::Ump));
+                methods.extend(message_impl_method(property, Repr::Ump, true));
             }
             quote! {
                 impl<'a> #ident<'a> {
@@ -189,8 +189,8 @@ fn message_impl(
             let mut ump_methods = TokenStream::new();
             let mut byte_methods = TokenStream::new();
             for property in properties.iter().filter(|p| !p.constant) {
-                ump_methods.extend(message_impl_method(property, Repr::Ump));
-                byte_methods.extend(message_impl_method(property, Repr::Bytes));
+                ump_methods.extend(message_impl_method(property, Repr::Ump, true));
+                byte_methods.extend(message_impl_method(property, Repr::Bytes, true));
             }
             quote! {
                 impl<'a> #ident<'a, Ump> {
@@ -210,7 +210,7 @@ enum Repr {
     Bytes,
 }
 
-fn message_impl_method(property: &Property, repr: Repr) -> TokenStream {
+fn message_impl_method(property: &Property, repr: Repr, public: bool) -> TokenStream {
     let name = &property.name;
     let ty = &property.ty;
     let layout = match repr {
@@ -221,8 +221,15 @@ fn message_impl_method(property: &Property, repr: Repr) -> TokenStream {
         Repr::Ump => parse_str("Ump").unwrap(),
         Repr::Bytes => parse_str("Bytes").unwrap(),
     };
+    let visibility = {
+        let mut ret = TokenStream::new();
+        if public {
+            ret.extend(parse_str::<TokenStream>("pub").unwrap());
+        }
+        ret
+    };
     quote! {
-        fn #name(&self) -> #ty {
+        #visibility fn #name(&self) -> #ty {
             <#ty as Converter<#buffer_type, #layout>>::from_buffer(self.0)
         }
     }
@@ -239,7 +246,7 @@ fn builder_impl(
         Ump => {
             let mut methods = TokenStream::new();
             for property in properties.iter().filter(|p| !p.constant) {
-                methods.extend(builder_impl_method(property, Repr::Ump));
+                methods.extend(builder_impl_method(property, Repr::Ump, true));
             }
             quote! {
                 impl<'a> #ident<'a> {
@@ -251,8 +258,8 @@ fn builder_impl(
             let mut ump_methods = TokenStream::new();
             let mut byte_methods = TokenStream::new();
             for property in properties.iter().filter(|p| !p.constant) {
-                ump_methods.extend(builder_impl_method(property, Repr::Ump));
-                byte_methods.extend(builder_impl_method(property, Repr::Bytes));
+                ump_methods.extend(builder_impl_method(property, Repr::Ump, true));
+                byte_methods.extend(builder_impl_method(property, Repr::Bytes, true));
             }
             quote! {
                 impl<'a> #ident<'a, Ump> {
@@ -266,7 +273,7 @@ fn builder_impl(
     }
 }
 
-fn builder_impl_method(property: &Property, repr: Repr) -> TokenStream {
+fn builder_impl_method(property: &Property, repr: Repr, public: bool) -> TokenStream {
     let name = &property.name;
     let ty = &property.ty;
     let Some(layout) = (match repr {
@@ -279,8 +286,15 @@ fn builder_impl_method(property: &Property, repr: Repr) -> TokenStream {
         Repr::Ump => parse_str("Ump").unwrap(),
         Repr::Bytes => parse_str("Bytes").unwrap(),
     };
+    let visibility = {
+        let mut ret = TokenStream::new();
+        if public {
+            ret.extend(parse_str::<TokenStream>("pub").unwrap());
+        }
+        ret
+    };
     quote! {
-        fn #name(mut self, v: #ty) -> Self {
+        #visibility fn #name(mut self, v: #ty) -> Self {
             if let Some(buffer) = &mut self.0 {
                 <#ty as Converter<#buffer_type, #layout>>::to_buffer(&v, buffer);
             }
@@ -513,6 +527,7 @@ fn grouped_builder_trait_impl(
             bytes_representation: None,
         },
         Repr::Ump,
+        false,
     );
     quote! {
         impl<'a> GroupedBuilder<'a> for #builder_type {

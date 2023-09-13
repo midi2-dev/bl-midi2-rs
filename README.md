@@ -28,14 +28,14 @@ use midi2::{
     midi2_channel_voice::NoteAttribute,
 };
 
-let mut buffer = [0x0; 2];
+let mut buffer = [0x0; 4];
 let message = NoteOnMessage::builder(&mut buffer)
     .note(u7::new(0x60))
     .velocity(0x4B57)
-    .attribute(NoteAttribute::ManufacturerSpecific(0x63FF))
+    .attribute(Some(NoteAttribute::ManufacturerSpecific(0x63FF)))
     .build();
 
-assert_eq!(message.unwrap().data(), &[0x4090_6001, 0x4B57_63FF]);
+assert_eq!(message.unwrap().data(), &[0x4090_6001, 0x4B57_63FF, 0x0, 0x0]);
 ```
 
 ### Midi2 Capability Inquiry message wrappers

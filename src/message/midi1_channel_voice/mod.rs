@@ -2,14 +2,13 @@ use crate::{util::BitOps, *};
 
 mod channel_pressure;
 mod control_change;
-mod helpers;
 mod key_pressure;
 mod note_off;
 mod note_on;
 mod pitch_bend;
 mod program_change;
 
-const TYPE_CODE: u4 = u4::new(0x2);
+const TYPE_CODE: u32 = 0x2;
 
 pub use channel_pressure::ChannelPressureBuilder;
 pub use channel_pressure::ChannelPressureMessage;
@@ -75,12 +74,12 @@ impl<'a> Message<'a, Ump> for Midi1ChannelVoiceMessage<'a, Ump> {
     fn validate_data(buffer: &'a [u32]) -> Result<()> {
         match u8::from(buffer[0].nibble(2)) {
             CHANNEL_PRESSURE_CODE => ChannelPressureMessage::<Ump>::validate_data(buffer),
-            CONTROL_CHANGE_CODE => ControlChangeMessage::validate_data(buffer),
-            KEY_PRESSURE_CODE => KeyPressureMessage::validate_data(buffer),
-            NOTE_OFF_CODE => NoteOffMessage::validate_data(buffer),
-            NOTE_ON_CODE => NoteOnMessage::validate_data(buffer),
-            PITCH_BEND_CODE => PitchBendMessage::validate_data(buffer),
-            PROGRAM_CHANGE_CODE => ProgramChangeMessage::validate_data(buffer),
+            CONTROL_CHANGE_CODE => ControlChangeMessage::<Ump>::validate_data(buffer),
+            KEY_PRESSURE_CODE => KeyPressureMessage::<Ump>::validate_data(buffer),
+            NOTE_OFF_CODE => NoteOffMessage::<Ump>::validate_data(buffer),
+            NOTE_ON_CODE => NoteOnMessage::<Ump>::validate_data(buffer),
+            PITCH_BEND_CODE => PitchBendMessage::<Ump>::validate_data(buffer),
+            PROGRAM_CHANGE_CODE => ProgramChangeMessage::<Ump>::validate_data(buffer),
             _ => Err(Error::InvalidData),
         }
     }

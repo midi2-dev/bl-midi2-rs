@@ -1,4 +1,8 @@
-use crate::{error::Error, util::Truncate, *};
+use crate::{
+    error::Error,
+    util::{converter::Converter, schema::UmpSchema, BitOps, Truncate},
+    *,
+};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 #[non_exhaustive]
@@ -123,5 +127,19 @@ pub fn to_index_and_data(c: Controller) -> (u8, u32) {
         Controller::ChorusSendLevel(data) => (91, data),
         Controller::EffectDepth { index: 4, data } => (94, data),
         _ => unreachable!(),
+    }
+}
+
+impl Converter<Ump, UmpSchema<0x0000_00FF, 0xFFFF_FFFF, 0x0, 0x0>> for Controller {
+    fn from_buffer(data: &<Ump as Buffer>::Data) -> Self {
+        from_index_and_data(data[0].octet(3), data[1])
+    }
+    fn to_buffer(&self, data: &mut <Ump as Buffer>::Data) {
+        let (index, controller_data) = to_index_and_data(*self);
+        data[0].set_octet(3, index);
+        data[1] = controller_data;
+    }
+    fn validate(data: &<Ump as Buffer>::Data) -> Result<()> {
+        validate_index(data[0].octet(3))
     }
 }

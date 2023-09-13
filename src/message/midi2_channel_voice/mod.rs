@@ -7,7 +7,6 @@ mod channel_pitch_bend;
 mod channel_pressure;
 mod control_change;
 mod controller;
-mod helpers;
 mod key_pressure;
 mod note_off;
 mod note_on;
@@ -18,8 +17,6 @@ mod registered_controller;
 mod registered_per_note_controller;
 mod relative_assignable_controller;
 mod relative_registered_controller;
-
-pub(crate) const TYPE_CODE: u4 = u4::new(0x4);
 
 pub use attribute::Attribute as NoteAttribute;
 pub use controller::Controller;
