@@ -1,6 +1,9 @@
 use crate::{
     buffer::Ump,
-    util::{converter::Converter, schema::UmpSchema, BitOps, Truncate},
+    util::{
+        schema::{Property, UmpSchema},
+        BitOps, Truncate,
+    },
     *,
 };
 
@@ -59,12 +62,12 @@ pub fn write_attribute(bytes: &mut [u32], attr: Option<Attribute>) -> &mut [u32]
     &mut bytes[..2]
 }
 
-impl Converter<Ump, UmpSchema<0x0000_00FF, 0x0000_FFFF, 0x0, 0x0>> for Option<Attribute> {
-    fn from_buffer(data: &<Ump as Buffer>::Data) -> Self {
+impl Property<Option<Attribute>, UmpSchema<0x0000_00FF, 0x0000_FFFF, 0x0, 0x0>, ()> for Ump {
+    fn get(data: &<Ump as Buffer>::Data) -> Option<Attribute> {
         from_ump(data)
     }
-    fn to_buffer(&self, data: &mut <Ump as Buffer>::Data) {
-        write_attribute(data, *self);
+    fn write(data: &mut <Ump as Buffer>::Data, v: Option<Attribute>) {
+        write_attribute(data, v);
     }
     fn validate(data: &<Ump as Buffer>::Data) -> Result<()> {
         validate_ump(data)

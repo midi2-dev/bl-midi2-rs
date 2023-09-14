@@ -1,4 +1,7 @@
-use crate::{util::BitOps, *};
+use crate::{
+    util::{schema::*, BitOps},
+    *,
+};
 
 mod helpers;
 pub mod midi1_channel_voice;
@@ -15,7 +18,96 @@ pub use system_exclusive_7bit::Sysex7Message;
 pub use system_exclusive_8bit::Sysex8Message;
 pub use utility::UtilityMessage;
 
-pub enum MidiMessage<'a, B: Buffer> {
+pub enum MidiMessage<'a, B>
+where
+    B: Buffer
+        + Property<
+            NumericalConstant<{ midi1_channel_voice::CHANNEL_PRESSURE_CODE }>,
+            UmpSchema<0x00F0_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xF0, 0x0, 0x0>,
+        > + Property<
+            NumericalConstant<{ midi1_channel_voice::CONTROL_CHANGE_CODE }>,
+            UmpSchema<0x00F0_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xF0, 0x0, 0x0>,
+        > + Property<
+            NumericalConstant<{ midi1_channel_voice::KEY_PRESSURE_CODE }>,
+            UmpSchema<0x00F0_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xF0, 0x0, 0x0>,
+        > + Property<
+            NumericalConstant<{ midi1_channel_voice::NOTE_OFF_CODE }>,
+            UmpSchema<0x00F0_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xF0, 0x0, 0x0>,
+        > + Property<
+            NumericalConstant<{ midi1_channel_voice::NOTE_ON_CODE }>,
+            UmpSchema<0x00F0_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xF0, 0x0, 0x0>,
+        > + Property<
+            NumericalConstant<{ midi1_channel_voice::PITCH_BEND_CODE }>,
+            UmpSchema<0x00F0_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xF0, 0x0, 0x0>,
+        > + Property<
+            NumericalConstant<{ midi1_channel_voice::PROGRAM_CHANGE_CODE }>,
+            UmpSchema<0x00F0_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xF0, 0x0, 0x0>,
+        > + Property<
+            NumericalConstant<{ midi1_channel_voice::TYPE_CODE }>,
+            UmpSchema<0xF000_0000, 0x0, 0x0, 0x0>,
+            (),
+        > + Property<
+            NumericalConstant<{ system_common::ACTIVE_SENSING }>,
+            UmpSchema<0x00FF_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xFF, 0x0, 0x0>,
+        > + Property<
+            NumericalConstant<{ system_common::CONTINUE }>,
+            UmpSchema<0x00FF_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xFF, 0x0, 0x0>,
+        > + Property<
+            NumericalConstant<{ system_common::RESET }>,
+            UmpSchema<0x00FF_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xFF, 0x0, 0x0>,
+        > + Property<
+            NumericalConstant<{ system_common::SONG_POSITION_POINTER }>,
+            UmpSchema<0x00FF_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xFF, 0x0, 0x0>,
+        > + Property<
+            NumericalConstant<{ system_common::SONG_SELECT }>,
+            UmpSchema<0x00FF_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xFF, 0x0, 0x0>,
+        > + Property<
+            NumericalConstant<{ system_common::START }>,
+            UmpSchema<0x00FF_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xFF, 0x0, 0x0>,
+        > + Property<
+            NumericalConstant<{ system_common::STOP }>,
+            UmpSchema<0x00FF_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xFF, 0x0, 0x0>,
+        > + Property<
+            NumericalConstant<{ system_common::TIME_CODE }>,
+            UmpSchema<0x00FF_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xFF, 0x0, 0x0>,
+        > + Property<
+            NumericalConstant<{ system_common::TIME_CODE }>,
+            UmpSchema<0x00FF_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xFF, 0x0, 0x0>,
+        > + Property<
+            NumericalConstant<{ system_common::TIMING_CLOCK }>,
+            UmpSchema<0x00FF_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xFF, 0x0, 0x0>,
+        > + Property<
+            NumericalConstant<{ system_common::TUNE_REQUEST }>,
+            UmpSchema<0x00FF_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xFF, 0x0, 0x0>,
+        > + Property<
+            NumericalConstant<{ system_common::TYPE_CODE }>,
+            UmpSchema<0xF000_0000, 0x0, 0x0, 0x0>,
+            (),
+        > + Property<u14, UmpSchema<0x0000_7F7F, 0x0, 0x0, 0x0>, BytesSchema<0x0, 0x7F, 0x7F>>
+        + Property<u14, UmpSchema<0x0000_7F7F, 0x0, 0x0, 0x0>, BytesSchema<0x0, 0x7F, 0x7F>>
+        + Property<u4, UmpSchema<0x000F_0000, 0x0, 0x0, 0x0>, BytesSchema<0x0F, 0x0, 0x0>>
+        + Property<u7, UmpSchema<0x0000_007F, 0x0, 0x0, 0x0>, BytesSchema<0x0, 0x0, 0x7F>>
+        + Property<u7, UmpSchema<0x0000_7F00, 0x0, 0x0, 0x0>, BytesSchema<0x0, 0x7F, 0x0>>
+        + Property<u7, UmpSchema<0x0000_7F00, 0x0, 0x0, 0x0>, BytesSchema<0x0, 0x7F, 0x0>>,
+{
     Midi1ChannelVoice(Midi1ChannelVoiceMessage<'a, B>),
     Midi2ChannelVoice(Midi2ChannelVoiceMessage<'a>),
     Sysex7(Sysex7Message<'a, B>),

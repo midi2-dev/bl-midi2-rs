@@ -262,7 +262,7 @@ impl<'a> Builder<'a, Ump> for Sysex7BuilderUmp<'a> {
     type Message = Sysex7Message<'a, Ump>;
     fn new(buffer: &'a mut [u32]) -> Self {
         if buffer.len() >= 2 {
-            message_helpers::clear_buffer(buffer);
+            <Ump as Buffer>::clear(buffer);
             message_helpers::write_type_to_packet(Sysex7Message::OP_CODE, buffer);
             Self(Ok(buffer))
         } else {

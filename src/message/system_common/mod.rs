@@ -1,6 +1,9 @@
-use crate::{util::BitOps, *};
+use crate::{
+    util::{schema::*, BitOps},
+    *,
+};
 
-const TYPE_CODE: u32 = 0x1;
+pub const TYPE_CODE: u32 = 0x1;
 
 mod simple_generic;
 mod song_position_pointer;
@@ -36,7 +39,57 @@ pub use timing_clock::TimingClockMessage;
 pub use tune_request::TuneRequestBuilder;
 pub use tune_request::TuneRequestMessage;
 
-pub enum SystemCommonMessage<'a, B: Buffer> {
+pub enum SystemCommonMessage<'a, B>
+where
+    B: Buffer
+        + Property<
+            NumericalConstant<ACTIVE_SENSING>,
+            UmpSchema<0x00FF_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xFF, 0x0, 0x0>,
+        > + Property<
+            NumericalConstant<CONTINUE>,
+            UmpSchema<0x00FF_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xFF, 0x0, 0x0>,
+        > + Property<
+            NumericalConstant<RESET>,
+            UmpSchema<0x00FF_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xFF, 0x0, 0x0>,
+        > + Property<
+            NumericalConstant<SONG_POSITION_POINTER>,
+            UmpSchema<0x00FF_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xFF, 0x0, 0x0>,
+        > + Property<
+            NumericalConstant<SONG_SELECT>,
+            UmpSchema<0x00FF_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xFF, 0x0, 0x0>,
+        > + Property<
+            NumericalConstant<START>,
+            UmpSchema<0x00FF_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xFF, 0x0, 0x0>,
+        > + Property<
+            NumericalConstant<STOP>,
+            UmpSchema<0x00FF_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xFF, 0x0, 0x0>,
+        > + Property<
+            NumericalConstant<TIME_CODE>,
+            UmpSchema<0x00FF_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xFF, 0x0, 0x0>,
+        > + Property<
+            NumericalConstant<TIME_CODE>,
+            UmpSchema<0x00FF_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xFF, 0x0, 0x0>,
+        > + Property<
+            NumericalConstant<TIMING_CLOCK>,
+            UmpSchema<0x00FF_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xFF, 0x0, 0x0>,
+        > + Property<
+            NumericalConstant<TUNE_REQUEST>,
+            UmpSchema<0x00FF_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xFF, 0x0, 0x0>,
+        > + Property<NumericalConstant<TYPE_CODE>, UmpSchema<0xF000_0000, 0x0, 0x0, 0x0>, ()>
+        + Property<u14, UmpSchema<0x0000_7F7F, 0x0, 0x0, 0x0>, BytesSchema<0x0, 0x7F, 0x7F>>
+        + Property<u7, UmpSchema<0x0000_7F00, 0x0, 0x0, 0x0>, BytesSchema<0x0, 0x7F, 0x0>>,
+{
     ActiveSensing(ActiveSensingMessage<'a, B>),
     Continue(ContinueMessage<'a, B>),
     Reset(ResetMessage<'a, B>),
@@ -51,16 +104,16 @@ pub enum SystemCommonMessage<'a, B: Buffer> {
 
 use SystemCommonMessage::*;
 
-const ACTIVE_SENSING: u8 = 0xFE;
-const CONTINUE: u8 = 0xFB;
-const RESET: u8 = 0xFF;
-const SONG_POSITION_POINTER: u8 = 0xF2;
-const SONG_SELECT: u8 = 0xF3;
-const START: u8 = 0xFA;
-const STOP: u8 = 0xFC;
-const TIME_CODE: u8 = 0xF1;
-const TIMING_CLOCK: u8 = 0xF8;
-const TUNE_REQUEST: u8 = 0xF6;
+pub const ACTIVE_SENSING: u32 = 0xFE;
+pub const CONTINUE: u32 = 0xFB;
+pub const RESET: u32 = 0xFF;
+pub const SONG_POSITION_POINTER: u32 = 0xF2;
+pub const SONG_SELECT: u32 = 0xF3;
+pub const START: u32 = 0xFA;
+pub const STOP: u32 = 0xFC;
+pub const TIME_CODE: u32 = 0xF1;
+pub const TIMING_CLOCK: u32 = 0xF8;
+pub const TUNE_REQUEST: u32 = 0xF6;
 
 impl<'a> Message<'a, Ump> for SystemCommonMessage<'a, Ump> {
     fn data(&self) -> &'a [u32] {
@@ -78,7 +131,7 @@ impl<'a> Message<'a, Ump> for SystemCommonMessage<'a, Ump> {
         }
     }
     fn validate_data(data: &[u32]) -> Result<()> {
-        match data[0].octet(1) {
+        match data[0].octet(1).into() {
             ACTIVE_SENSING => ActiveSensingMessage::<Ump>::validate_data(data),
             CONTINUE => ContinueMessage::<Ump>::validate_data(data),
             RESET => ResetMessage::<Ump>::validate_data(data),
@@ -93,7 +146,7 @@ impl<'a> Message<'a, Ump> for SystemCommonMessage<'a, Ump> {
         }
     }
     fn from_data_unchecked(data: &'a [u32]) -> Self {
-        match data[0].octet(1) {
+        match data[0].octet(1).into() {
             ACTIVE_SENSING => ActiveSensing(ActiveSensingMessage::from_data_unchecked(data)),
             CONTINUE => Continue(ContinueMessage::from_data_unchecked(data)),
             RESET => Reset(ResetMessage::from_data_unchecked(data)),

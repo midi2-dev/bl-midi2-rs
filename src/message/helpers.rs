@@ -1,12 +1,5 @@
 use crate::{error::Error, result::Result, util::BitOps, *};
 
-pub fn clear_buffer<T: core::default::Default>(p: &mut [T]) -> &mut [T] {
-    for d in &mut *p {
-        *d = Default::default();
-    }
-    p
-}
-
 pub fn write_type_to_packet(t: u4, p: &mut [u32]) {
     p[0].set_nibble(0, t);
 }
@@ -64,22 +57,4 @@ pub fn validate_sysex_group_statuses<
     }
 
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_clear_buffer() {
-        assert_eq!(
-            clear_buffer(&mut [0x1234_5678_u32, 0x8765_4321_u32]),
-            &[0x0, 0x0]
-        );
-    }
-
-    #[test]
-    fn test_clear_buffer_bytes() {
-        assert_eq!(clear_buffer(&mut [0x12u8, 0x34u8]), &[0x0, 0x0]);
-    }
 }

@@ -221,7 +221,7 @@ impl<'a> Builder<'a, Ump> for Sysex8Builder<'a> {
     }
     fn new(buffer: &'a mut [u32]) -> Self {
         if buffer.len() >= 4 {
-            message_helpers::clear_buffer(buffer);
+            <Ump as Buffer>::clear(buffer);
             message_helpers::write_type_to_packet(Sysex8Message::OP_CODE, buffer);
             buffer[0].set_nibble(3, u4::new(0x1)); // stream id
             Self(Ok(buffer))
