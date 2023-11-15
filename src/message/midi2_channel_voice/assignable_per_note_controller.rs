@@ -23,14 +23,14 @@ mod tests {
     #[test]
     fn builder() {
         assert_eq!(
-            AssignablePerNoteControllerOwned::builder()
+            AssignablePerNoteControllerOwnedPrivate::builder()
                 .group(u4::new(0x2))
                 .channel(u4::new(0x4))
                 .note(u7::new(0x6F))
                 .index(0xB1)
                 .controller_data(0x46105EE5)
                 .build(),
-            Ok(AssignablePerNoteControllerOwned(arr![
+            Ok(AssignablePerNoteControllerOwnedPrivate(arr![
                 0x4214_6FB1,
                 0x46105EE5,
                 0x0,
@@ -42,7 +42,7 @@ mod tests {
     #[test]
     fn group() {
         assert_eq!(
-            AssignablePerNoteControllerBorrowed::<Ump>::from_data(&[
+            AssignablePerNoteControllerBorrowedPrivate::<Ump>::from_data(&[
                 0x4214_6FB1,
                 0x46105EE5,
                 0x0,
@@ -57,7 +57,7 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            AssignablePerNoteControllerBorrowed::<Ump>::from_data(&[
+            AssignablePerNoteControllerBorrowedPrivate::<Ump>::from_data(&[
                 0x4214_6FB1,
                 0x46105EE5,
                 0x0,
@@ -72,7 +72,7 @@ mod tests {
     #[test]
     fn note() {
         assert_eq!(
-            AssignablePerNoteControllerBorrowed::<Ump>::from_data(&[
+            AssignablePerNoteControllerBorrowedPrivate::<Ump>::from_data(&[
                 0x4214_6FB1,
                 0x46105EE5,
                 0x0,
@@ -87,7 +87,7 @@ mod tests {
     #[test]
     fn index() {
         assert_eq!(
-            AssignablePerNoteControllerBorrowed::<Ump>::from_data(&[
+            AssignablePerNoteControllerBorrowedPrivate::<Ump>::from_data(&[
                 0x4214_6FB1,
                 0x46105EE5,
                 0x0,
@@ -102,7 +102,7 @@ mod tests {
     #[test]
     fn controller_data() {
         assert_eq!(
-            AssignablePerNoteControllerBorrowed::<Ump>::from_data(&[
+            AssignablePerNoteControllerBorrowedPrivate::<Ump>::from_data(&[
                 0x4214_6FB1,
                 0x46105EE5,
                 0x0,

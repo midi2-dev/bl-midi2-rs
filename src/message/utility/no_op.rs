@@ -12,15 +12,15 @@ mod tests {
     #[test]
     fn builder() {
         assert_eq!(
-            NoOpOwned::builder().group(u4::new(0xB)).build(),
-            Ok(NoOpOwned(arr![0x0B00_0000, 0x0, 0x0, 0x0])),
+            NoOpOwnedPrivate::builder().group(u4::new(0xB)).build(),
+            Ok(NoOpOwnedPrivate(arr![0x0B00_0000, 0x0, 0x0, 0x0])),
         )
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            NoOpBorrowed::from_data(&[0x0900_0000, 0x0, 0x0, 0x0])
+            NoOpBorrowedPrivate::from_data(&[0x0900_0000, 0x0, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0x9),

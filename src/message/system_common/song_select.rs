@@ -25,18 +25,23 @@ mod tests {
     #[test]
     fn builder() {
         assert_eq!(
-            SongSelectOwned::<Ump>::builder()
+            SongSelectOwnedPrivate::<Ump>::builder()
                 .group(u4::new(0xA))
                 .song(u7::new(0x4F))
                 .build(),
-            Ok(SongSelectOwned::<Ump>(arr![0x1AF3_4F00, 0x0, 0x0, 0x0])),
+            Ok(SongSelectOwnedPrivate::<Ump>(arr![
+                0x1AF3_4F00,
+                0x0,
+                0x0,
+                0x0
+            ])),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            SongSelectBorrowed::<Ump>::from_data(&[0x1AF3_4F00, 0x0, 0x0, 0x0])
+            SongSelectBorrowedPrivate::<Ump>::from_data(&[0x1AF3_4F00, 0x0, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0xA),
@@ -46,7 +51,7 @@ mod tests {
     #[test]
     fn song() {
         assert_eq!(
-            SongSelectBorrowed::<Ump>::from_data(&[0x1AF3_4F00, 0x0, 0x0, 0x0])
+            SongSelectBorrowedPrivate::<Ump>::from_data(&[0x1AF3_4F00, 0x0, 0x0, 0x0])
                 .unwrap()
                 .song(),
             u7::new(0x4F),
@@ -56,17 +61,17 @@ mod tests {
     #[test]
     fn bytes_builder() {
         assert_eq!(
-            SongSelectOwned::<Bytes>::builder()
+            SongSelectOwnedPrivate::<Bytes>::builder()
                 .song(u7::new(0x4F))
                 .build(),
-            Ok(SongSelectOwned::<Bytes>(arr![0xF3, 0x4F, 0x00])),
+            Ok(SongSelectOwnedPrivate::<Bytes>(arr![0xF3, 0x4F, 0x00])),
         );
     }
 
     #[test]
     fn bytes_song() {
         assert_eq!(
-            SongSelectBorrowed::<Bytes>::from_data(&[0xF3, 0x4F, 0x00])
+            SongSelectBorrowedPrivate::<Bytes>::from_data(&[0xF3, 0x4F, 0x00])
                 .unwrap()
                 .song(),
             u7::new(0x4F),

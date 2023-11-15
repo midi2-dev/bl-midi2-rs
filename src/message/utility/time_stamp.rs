@@ -13,26 +13,26 @@ mod tests {
     #[test]
     fn builder() {
         assert_eq!(
-            TimeStampOwned::builder()
+            TimeStampOwnedPrivate::builder()
                 .group(u4::new(0x4))
                 .time_stamp(u20::new(0xE_69AE))
                 .build(),
-            Ok(TimeStampOwned(arr![0x042E_69AE, 0x0, 0x0, 0x0])),
+            Ok(TimeStampOwnedPrivate(arr![0x042E_69AE, 0x0, 0x0, 0x0])),
         );
     }
 
     #[test]
     fn builder_default() {
         assert_eq!(
-            TimeStampOwned::<Ump>::builder().build(),
-            Ok(TimeStampOwned(arr![0x0020_0000, 0x0, 0x0, 0x0])),
+            TimeStampOwnedPrivate::<Ump>::builder().build(),
+            Ok(TimeStampOwnedPrivate(arr![0x0020_0000, 0x0, 0x0, 0x0])),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            TimeStampBorrowed::from_data(&[0x0F20_0000, 0x0, 0x0, 0x0])
+            TimeStampBorrowedPrivate::from_data(&[0x0F20_0000, 0x0, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0xF),
@@ -42,7 +42,7 @@ mod tests {
     #[test]
     fn time_stamp() {
         assert_eq!(
-            TimeStampBorrowed::<Ump>::from_data(&[0x0021_2345, 0x0, 0x0, 0x0])
+            TimeStampBorrowedPrivate::<Ump>::from_data(&[0x0021_2345, 0x0, 0x0, 0x0])
                 .unwrap()
                 .time_stamp(),
             u20::new(0x12345),

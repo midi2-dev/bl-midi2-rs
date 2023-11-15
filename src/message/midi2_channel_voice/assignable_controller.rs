@@ -23,14 +23,14 @@ mod tests {
     #[test]
     fn builder() {
         assert_eq!(
-            AssignableControllerOwned::builder()
+            AssignableControllerOwnedPrivate::builder()
                 .group(u4::new(0xC))
                 .channel(u4::new(0x8))
                 .bank(u7::new(0x51))
                 .index(u7::new(0x38))
                 .controller_data(0x3F3ADD42)
                 .build(),
-            Ok(AssignableControllerOwned(arr![
+            Ok(AssignableControllerOwnedPrivate(arr![
                 0x4C38_5138,
                 0x3F3ADD42,
                 0x0,
@@ -42,9 +42,14 @@ mod tests {
     #[test]
     fn group() {
         assert_eq!(
-            AssignableControllerBorrowed::<Ump>::from_data(&[0x4C38_5138, 0x3F3ADD42, 0x0, 0x0])
-                .unwrap()
-                .group(),
+            AssignableControllerBorrowedPrivate::<Ump>::from_data(&[
+                0x4C38_5138,
+                0x3F3ADD42,
+                0x0,
+                0x0
+            ])
+            .unwrap()
+            .group(),
             u4::new(0xC),
         );
     }
@@ -52,9 +57,14 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            AssignableControllerBorrowed::<Ump>::from_data(&[0x4C38_5138, 0x3F3ADD42, 0x0, 0x0])
-                .unwrap()
-                .channel(),
+            AssignableControllerBorrowedPrivate::<Ump>::from_data(&[
+                0x4C38_5138,
+                0x3F3ADD42,
+                0x0,
+                0x0
+            ])
+            .unwrap()
+            .channel(),
             u4::new(0x8),
         );
     }
@@ -62,9 +72,14 @@ mod tests {
     #[test]
     pub fn bank() {
         assert_eq!(
-            AssignableControllerBorrowed::<Ump>::from_data(&[0x4C38_5138, 0x3F3ADD42, 0x0, 0x0])
-                .unwrap()
-                .bank(),
+            AssignableControllerBorrowedPrivate::<Ump>::from_data(&[
+                0x4C38_5138,
+                0x3F3ADD42,
+                0x0,
+                0x0
+            ])
+            .unwrap()
+            .bank(),
             u7::new(0x51),
         );
     }
@@ -72,9 +87,14 @@ mod tests {
     #[test]
     pub fn index() {
         assert_eq!(
-            AssignableControllerBorrowed::<Ump>::from_data(&[0x4C38_5138, 0x3F3ADD42, 0x0, 0x0])
-                .unwrap()
-                .index(),
+            AssignableControllerBorrowedPrivate::<Ump>::from_data(&[
+                0x4C38_5138,
+                0x3F3ADD42,
+                0x0,
+                0x0
+            ])
+            .unwrap()
+            .index(),
             u7::new(0x38),
         );
     }
@@ -82,9 +102,14 @@ mod tests {
     #[test]
     pub fn controller_data() {
         assert_eq!(
-            AssignableControllerBorrowed::<Ump>::from_data(&[0x4C38_5138, 0x3F3ADD42, 0x0, 0x0])
-                .unwrap()
-                .controller_data(),
+            AssignableControllerBorrowedPrivate::<Ump>::from_data(&[
+                0x4C38_5138,
+                0x3F3ADD42,
+                0x0,
+                0x0
+            ])
+            .unwrap()
+            .controller_data(),
             0x3F3ADD42,
         );
     }

@@ -23,14 +23,14 @@ mod tests {
     #[test]
     fn builder() {
         assert_eq!(
-            RelativeAssignableControllerOwned::builder()
+            RelativeAssignableControllerOwnedPrivate::builder()
                 .group(u4::new(0x3))
                 .channel(u4::new(0x1))
                 .bank(u7::new(0x24))
                 .index(u7::new(0x52))
                 .controller_data(0x898874E4)
                 .build(),
-            Ok(RelativeAssignableControllerOwned(arr![
+            Ok(RelativeAssignableControllerOwnedPrivate(arr![
                 0x4351_2452,
                 0x898874E4,
                 0x0,
@@ -42,7 +42,7 @@ mod tests {
     #[test]
     fn group() {
         assert_eq!(
-            RelativeAssignableControllerBorrowed::<Ump>::from_data(&[
+            RelativeAssignableControllerBorrowedPrivate::<Ump>::from_data(&[
                 0x4351_2452,
                 0x898874E4,
                 0x0,
@@ -57,7 +57,7 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            RelativeAssignableControllerBorrowed::<Ump>::from_data(&[
+            RelativeAssignableControllerBorrowedPrivate::<Ump>::from_data(&[
                 0x4351_2452,
                 0x898874E4,
                 0x0,
@@ -72,7 +72,7 @@ mod tests {
     #[test]
     pub fn bank() {
         assert_eq!(
-            RelativeAssignableControllerBorrowed::<Ump>::from_data(&[
+            RelativeAssignableControllerBorrowedPrivate::<Ump>::from_data(&[
                 0x4351_2452,
                 0x898874E4,
                 0x0,
@@ -87,7 +87,7 @@ mod tests {
     #[test]
     pub fn index() {
         assert_eq!(
-            RelativeAssignableControllerBorrowed::<Ump>::from_data(&[
+            RelativeAssignableControllerBorrowedPrivate::<Ump>::from_data(&[
                 0x4351_2452,
                 0x898874E4,
                 0x0,
@@ -102,7 +102,7 @@ mod tests {
     #[test]
     pub fn controller_data() {
         assert_eq!(
-            RelativeAssignableControllerBorrowed::<Ump>::from_data(&[
+            RelativeAssignableControllerBorrowedPrivate::<Ump>::from_data(&[
                 0x4351_2452,
                 0x898874E4,
                 0x0,

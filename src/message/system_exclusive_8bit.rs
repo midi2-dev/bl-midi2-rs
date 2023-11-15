@@ -105,8 +105,8 @@ pub struct Sysex8Message<'a>(&'a [u32]);
 
 impl<'a> Sysex8Message<'a> {
     const OP_CODE: u4 = u4::new(0x5);
-    pub fn builder(buffer: &'a mut [u32]) -> Sysex8Builder<'a> {
-        Sysex8Builder::new(buffer)
+    pub fn builder(buffer: &'a mut [u32]) -> Sysex8BuilderPrivate<'a> {
+        Sysex8BuilderPrivate::new(buffer)
     }
     pub fn status(&self) -> Status {
         try_status_from_packet(self.0).expect("Valid status")
@@ -139,7 +139,7 @@ impl<'a> Message<'a, Ump> for Sysex8Message<'a> {
 }
 
 impl<'a> Buildable<'a, Ump> for Sysex8Message<'a> {
-    type Builder = Sysex8Builder<'a>;
+    type BuilderPrivate = Sysex8BuilderPrivate<'a>;
 }
 
 impl<'a> GroupedMessage<'a> for Sysex8Message<'a> {
@@ -156,9 +156,9 @@ impl<'a> StreamedMessage<'a> for Sysex8Message<'a> {
 
 debug::message_debug_impl!(Sysex8Message);
 
-pub struct Sysex8Builder<'a>(Result<&'a mut [u32]>);
+pub struct Sysex8BuilderPrivate<'a>(Result<&'a mut [u32]>);
 
-impl<'a> Sysex8Builder<'a> {
+impl<'a> Sysex8BuilderPrivate<'a> {
     /// When called with `Status::UnexpectedEnd(_)` the payload buffer
     /// will be filled with zeros accordingly.
     pub fn status(mut self, s: Status) -> Self {
@@ -211,7 +211,7 @@ impl<'a> Sysex8Builder<'a> {
     }
 }
 
-impl<'a> Builder<'a, Ump> for Sysex8Builder<'a> {
+impl<'a> BuilderPrivate<'a, Ump> for Sysex8BuilderPrivate<'a> {
     type Message = Sysex8Message<'a>;
     fn build(self) -> Result<Sysex8Message<'a>> {
         match self.0 {
@@ -231,7 +231,7 @@ impl<'a> Builder<'a, Ump> for Sysex8Builder<'a> {
     }
 }
 
-impl<'a> GroupedBuilder<'a> for Sysex8Builder<'a> {
+impl<'a> GroupedBuilderPrivate<'a> for Sysex8BuilderPrivate<'a> {
     fn group(mut self, g: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             buffer[0].set_nibble(1, g);
@@ -240,7 +240,7 @@ impl<'a> GroupedBuilder<'a> for Sysex8Builder<'a> {
     }
 }
 
-impl<'a> StreamedBuilder<'a> for Sysex8Builder<'a> {
+impl<'a> StreamedBuilderPrivate<'a> for Sysex8BuilderPrivate<'a> {
     fn stream_id(mut self, id: u8) -> Self {
         if let Ok(buffer) = &mut self.0 {
             buffer[0].set_octet(2, id);
@@ -372,7 +372,7 @@ impl<'a> Message<'a, Ump> for Sysex8MessageGroup<'a> {
 }
 
 impl<'a> Buildable<'a, Ump> for Sysex8MessageGroup<'a> {
-    type Builder = Sysex8MessageGroupBuilder<'a>;
+    type BuilderPrivate = Sysex8MessageGroupBuilderPrivate<'a>;
 }
 
 impl<'a> GroupedMessage<'a> for Sysex8MessageGroup<'a> {
@@ -407,7 +407,7 @@ impl<'a> core::iter::Iterator for Sysex8MessageGroupIterator<'a> {
     }
 }
 
-pub struct Sysex8MessageGroupBuilder<'a> {
+pub struct Sysex8MessageGroupBuilderPrivate<'a> {
     buffer: &'a mut [u32],
     size: usize,
     error: Option<Error>,
@@ -415,7 +415,7 @@ pub struct Sysex8MessageGroupBuilder<'a> {
     stream_id: u8,
 }
 
-impl<'a> Sysex8MessageGroupBuilder<'a> {
+impl<'a> Sysex8MessageGroupBuilderPrivate<'a> {
     // set the ith datum value in the message at position m in the buffer
     fn set_datum(&mut self, message_index: usize, data_index: usize, v: u8) {
         self.buffer[message_index + (data_index + 3) / 4].set_octet((3 + data_index) % 4, v);
@@ -460,7 +460,7 @@ impl<'a> Sysex8MessageGroupBuilder<'a> {
 
         if self.size != 0 {
             let mut prev_builder =
-                Sysex8Builder(Ok(&mut self.buffer[4 * (self.size - 1)..4 * self.size]));
+                Sysex8BuilderPrivate(Ok(&mut self.buffer[4 * (self.size - 1)..4 * self.size]));
             match self.size {
                 1 => {
                     prev_builder = prev_builder.status(Status::Begin);
@@ -475,10 +475,10 @@ impl<'a> Sysex8MessageGroupBuilder<'a> {
     }
 }
 
-impl<'a> Builder<'a, Ump> for Sysex8MessageGroupBuilder<'a> {
+impl<'a> BuilderPrivate<'a, Ump> for Sysex8MessageGroupBuilderPrivate<'a> {
     type Message = Sysex8MessageGroup<'a>;
     fn new(buffer: &'a mut [u32]) -> Self {
-        let mut ret = Sysex8MessageGroupBuilder {
+        let mut ret = Sysex8MessageGroupBuilderPrivate {
             buffer,
             size: 0,
             error: None,
@@ -514,7 +514,7 @@ impl<'a> Builder<'a, Ump> for Sysex8MessageGroupBuilder<'a> {
     }
 }
 
-impl<'a> GroupedBuilder<'a> for Sysex8MessageGroupBuilder<'a> {
+impl<'a> GroupedBuilderPrivate<'a> for Sysex8MessageGroupBuilderPrivate<'a> {
     fn group(mut self, g: u4) -> Self {
         if self.error.is_some() || self.group == g {
             return self;
@@ -527,7 +527,7 @@ impl<'a> GroupedBuilder<'a> for Sysex8MessageGroupBuilder<'a> {
     }
 }
 
-impl<'a> StreamedBuilder<'a> for Sysex8MessageGroupBuilder<'a> {
+impl<'a> StreamedBuilderPrivate<'a> for Sysex8MessageGroupBuilderPrivate<'a> {
     fn stream_id(mut self, id: u8) -> Self {
         if self.error.is_some() || self.stream_id == id {
             return self;
@@ -540,7 +540,7 @@ impl<'a> StreamedBuilder<'a> for Sysex8MessageGroupBuilder<'a> {
     }
 }
 
-impl<'a> SysexBuilder<'a, Ump> for Sysex8MessageGroupBuilder<'a> {
+impl<'a> SysexBuilderPrivate<'a, Ump> for Sysex8MessageGroupBuilderPrivate<'a> {
     type Byte = u8;
     fn payload<I: core::iter::Iterator<Item = u8>>(mut self, mut iter: I) -> Self {
         if self.error.is_some() {

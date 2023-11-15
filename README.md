@@ -28,7 +28,7 @@ use midi2::{
     midi2_channel_voice::NoteAttribute,
 };
 
-let message = NoteOnOwned::<Ump>::builder()
+let message = NoteOnOwned::builder()
     .note(u7::new(0x60))
     .velocity(0x4B57)
     .attribute(Some(NoteAttribute::ManufacturerSpecific(0x63FF)))
@@ -36,6 +36,8 @@ let message = NoteOnOwned::<Ump>::builder()
 
 assert_eq!(message.unwrap().data(), &[0x4090_6001, 0x4B57_63FF, 0x0, 0x0]);
 ```
+
+### Use Borrowed or Owned messages to avoid needlessly copying data
 
 ### Midi2 Capability Inquiry message wrappers
 Wrappers around the special midi2 Capability Inquiry.

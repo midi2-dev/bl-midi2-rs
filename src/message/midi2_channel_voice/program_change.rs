@@ -22,32 +22,42 @@ mod tests {
     #[test]
     fn builder() {
         assert_eq!(
-            ProgramChangeOwned::builder()
+            ProgramChangeOwnedPrivate::builder()
                 .group(u4::new(0xF))
                 .channel(u4::new(0xE))
                 .program(u7::new(0x75))
                 .bank(Some(u14::new(0x1F5E)))
                 .build(),
-            Ok(ProgramChangeOwned(arr![0x4FCE_0001, 0x7500_5E3E, 0x0, 0x0])),
+            Ok(ProgramChangeOwnedPrivate(arr![
+                0x4FCE_0001,
+                0x7500_5E3E,
+                0x0,
+                0x0
+            ])),
         );
     }
 
     #[test]
     fn builder_no_bank() {
         assert_eq!(
-            ProgramChangeOwned::builder()
+            ProgramChangeOwnedPrivate::builder()
                 .group(u4::new(0xF))
                 .channel(u4::new(0xE))
                 .program(u7::new(0x75))
                 .build(),
-            Ok(ProgramChangeOwned(arr![0x4FCE_0000, 0x7500_0000, 0x0, 0x0])),
+            Ok(ProgramChangeOwnedPrivate(arr![
+                0x4FCE_0000,
+                0x7500_0000,
+                0x0,
+                0x0
+            ])),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            ProgramChangeBorrowed::<Ump>::from_data(&[0x4FCE_0001, 0x7500_5E3E, 0x0, 0x0])
+            ProgramChangeBorrowedPrivate::<Ump>::from_data(&[0x4FCE_0001, 0x7500_5E3E, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0xF),
@@ -57,7 +67,7 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            ProgramChangeBorrowed::<Ump>::from_data(&[0x4FCE_0001, 0x7500_5E3E, 0x0, 0x0])
+            ProgramChangeBorrowedPrivate::<Ump>::from_data(&[0x4FCE_0001, 0x7500_5E3E, 0x0, 0x0])
                 .unwrap()
                 .channel(),
             u4::new(0xE),
@@ -67,7 +77,7 @@ mod tests {
     #[test]
     fn program() {
         assert_eq!(
-            ProgramChangeBorrowed::<Ump>::from_data(&[0x4FCE_0001, 0x7500_5E3E, 0x0, 0x0])
+            ProgramChangeBorrowedPrivate::<Ump>::from_data(&[0x4FCE_0001, 0x7500_5E3E, 0x0, 0x0])
                 .unwrap()
                 .program(),
             u7::new(0x75),
@@ -77,7 +87,7 @@ mod tests {
     #[test]
     fn bank() {
         assert_eq!(
-            ProgramChangeBorrowed::<Ump>::from_data(&[0x4FCE_0001, 0x7500_5E3E, 0x0, 0x0])
+            ProgramChangeBorrowedPrivate::<Ump>::from_data(&[0x4FCE_0001, 0x7500_5E3E, 0x0, 0x0])
                 .unwrap()
                 .bank(),
             Some(u14::new(0x1F5E)),
@@ -87,7 +97,7 @@ mod tests {
     #[test]
     fn no_bank() {
         assert_eq!(
-            ProgramChangeBorrowed::<Ump>::from_data(&[0x4FCE_0000, 0x7500_0000, 0x0, 0x0])
+            ProgramChangeBorrowedPrivate::<Ump>::from_data(&[0x4FCE_0000, 0x7500_0000, 0x0, 0x0])
                 .unwrap()
                 .bank(),
             None,

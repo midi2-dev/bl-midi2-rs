@@ -66,16 +66,32 @@ fn is_constant_property(ty: &Type) -> bool {
     ident == "NumericalConstant"
 }
 
-fn message_owned_ident(root_ident: &Ident) -> Ident {
+fn message_owned_ident_public(root_ident: &Ident) -> Ident {
     Ident::new(&format!("{}Owned", root_ident), Span::call_site())
 }
 
-fn message_borrowed_ident(root_ident: &Ident) -> Ident {
+fn message_borrowed_ident_public(root_ident: &Ident) -> Ident {
     Ident::new(&format!("{}Borrowed", root_ident), Span::call_site())
 }
 
-fn builder_ident(root_ident: &Ident) -> Ident {
+fn builder_ident_public(root_ident: &Ident) -> Ident {
     Ident::new(&format!("{}Builder", root_ident), Span::call_site())
+}
+
+fn privatise(ident: &Ident) -> Ident {
+    Ident::new(&format!("{}Private", ident), Span::call_site())
+}
+
+fn message_owned_ident(root_ident: &Ident) -> Ident {
+    privatise(&message_owned_ident_public(root_ident))
+}
+
+fn message_borrowed_ident(root_ident: &Ident) -> Ident {
+    privatise(&message_borrowed_ident_public(root_ident))
+}
+
+fn builder_ident(root_ident: &Ident) -> Ident {
+    privatise(&builder_ident_public(root_ident))
 }
 
 fn imports() -> TokenStream {
@@ -145,7 +161,16 @@ fn message_owned(root_ident: &Ident, properties: &Vec<Property>) -> TokenStream 
     let buffer_type = buffer_generic_with_constraints(properties);
     quote! {
         #[derive(Clone, PartialEq, Eq)]
-        pub struct #ident<#buffer_type>(generic_array::GenericArray<B::Data, B::Size>);
+        pub(crate) struct #ident<#buffer_type>(generic_array::GenericArray<B::Data, B::Size>);
+    }
+}
+
+fn message_owned_public(root_ident: &Ident) -> TokenStream {
+    let ident = message_owned_ident_public(root_ident);
+    let private_ident = message_owned_ident(root_ident);
+    quote! {
+        #[derive(Clone, PartialEq, Eq)]
+        pub struct #ident(#private_ident<Ump>);
     }
 }
 
@@ -162,12 +187,33 @@ fn message_owned_impl(root_ident: &Ident, properties: &Vec<Property>) -> TokenSt
     }
 }
 
+fn message_owned_impl_public(root_ident: &Ident) -> TokenStream {
+    let ident = message_owned_ident_public(root_ident);
+    let builder_ident = builder_ident_public(root_ident);
+    quote! {
+        impl #ident {
+             pub fn builder() -> #builder_ident {
+                #builder_ident::new()
+            }
+        }
+    }
+}
+
 fn message_borrowed(root_ident: &Ident, properties: &Vec<Property>) -> TokenStream {
     let ident = message_borrowed_ident(root_ident);
     let buffer_type = buffer_generic_with_constraints(properties);
     quote! {
         #[derive(Clone, PartialEq, Eq)]
-        pub struct #ident<'a, #buffer_type>(&'a [B::Data]);
+        pub(crate) struct #ident<'a, #buffer_type>(&'a [B::Data]);
+    }
+}
+
+fn message_borrowed_public(root_ident: &Ident) -> TokenStream {
+    let ident = message_borrowed_ident_public(root_ident);
+    let private_ident = message_borrowed_ident(root_ident);
+    quote! {
+        #[derive(Clone, PartialEq, Eq)]
+        pub struct #ident<'a>(#private_ident<'a, Ump>);
     }
 }
 
@@ -175,7 +221,15 @@ fn builder(root_ident: &Ident, properties: &Vec<Property>) -> TokenStream {
     let ident = builder_ident(root_ident);
     let buffer_type = buffer_generic_with_constraints(properties);
     quote! {
-        pub struct #ident<#buffer_type>(Option<generic_array::GenericArray<B::Data, B::Size>>);
+        pub(crate) struct #ident<#buffer_type>(Option<generic_array::GenericArray<B::Data, B::Size>>);
+    }
+}
+
+fn builder_public(root_ident: &Ident) -> TokenStream {
+    let ident = builder_ident_public(root_ident);
+    let private_ident = builder_ident(root_ident);
+    quote! {
+        pub struct #ident(#private_ident<Ump>);
     }
 }
 
@@ -214,6 +268,23 @@ fn specialized_message_trait_impl_owned(
     }
 }
 
+fn specialized_message_trait_impl_owned_public(
+    root_ident: &Ident,
+    properties: &Vec<Property>,
+) -> TokenStream {
+    let mut methods = TokenStream::new();
+    for property in properties.iter().filter(|p| !p.constant) {
+        methods.extend(message_impl_method_public(property, false));
+    }
+    let message_ident = message_owned_ident_public(root_ident);
+    let trait_ident = specialised_message_trait_ident(root_ident);
+    quote! {
+        impl #trait_ident for #message_ident {
+            #methods
+        }
+    }
+}
+
 fn specialized_message_trait_impl_borrowed(
     root_ident: &Ident,
     properties: &Vec<Property>,
@@ -227,6 +298,23 @@ fn specialized_message_trait_impl_borrowed(
     let trait_ident = specialised_message_trait_ident(root_ident);
     quote! {
         impl<'a, #buffer_type> #trait_ident for #message_ident<'a, B> {
+            #methods
+        }
+    }
+}
+
+fn specialized_message_trait_impl_borrowed_public(
+    root_ident: &Ident,
+    properties: &Vec<Property>,
+) -> TokenStream {
+    let mut methods = TokenStream::new();
+    for property in properties.iter().filter(|p| !p.constant) {
+        methods.extend(message_impl_method_public(property, false));
+    }
+    let message_ident = message_borrowed_ident_public(root_ident);
+    let trait_ident = specialised_message_trait_ident(root_ident);
+    quote! {
+        impl<'a> #trait_ident for #message_ident<'a> {
             #methods
         }
     }
@@ -259,6 +347,23 @@ fn message_impl_method(property: &Property, public: bool) -> TokenStream {
     }
 }
 
+fn message_impl_method_public(property: &Property, public: bool) -> TokenStream {
+    let name = &property.name;
+    let ty = &property.ty;
+    let visibility = {
+        let mut ret = TokenStream::new();
+        if public {
+            ret.extend(parse_str::<TokenStream>("pub").unwrap());
+        }
+        ret
+    };
+    quote! {
+        #visibility fn #name(&self) -> #ty {
+            self.0.#name()
+        }
+    }
+}
+
 fn builder_impl(root_ident: &Ident, properties: &Vec<Property>) -> TokenStream {
     let ident = builder_ident(root_ident);
     let mut methods = TokenStream::new();
@@ -287,6 +392,30 @@ fn builder_impl(root_ident: &Ident, properties: &Vec<Property>) -> TokenStream {
     }
 }
 
+fn builder_impl_public(root_ident: &Ident, properties: &Vec<Property>) -> TokenStream {
+    let ident = builder_ident_public(root_ident);
+    let private_ident = builder_ident(root_ident);
+    let mut methods = TokenStream::new();
+    for property in properties.iter().filter(|p| !p.constant) {
+        methods.extend(builder_impl_method_public(property, true));
+    }
+    let message_ident = message_owned_ident_public(root_ident);
+    quote! {
+        impl #ident {
+            #methods
+            pub fn new() -> Self {
+                Self(#private_ident::<Ump>::new())
+            }
+            pub fn build(self) -> Result<#message_ident> {
+                match self.0.build() {
+                    Ok(message) => Ok(#message_ident(message)),
+                    Err(e) => Err(e),
+                }
+            }
+        }
+    }
+}
+
 fn grouped_builder_impl(root_ident: &Ident) -> TokenStream {
     let ident = builder_ident(root_ident);
     quote! {
@@ -295,6 +424,18 @@ fn grouped_builder_impl(root_ident: &Ident) -> TokenStream {
                 if let Some(buffer) = &mut self.0 {
                     <Ump as Property<u4, UmpSchema<0x0F00_0000, 0x0, 0x0, 0x0>, ()>>::write(buffer, v);
                 }
+                self
+            }
+        }
+    }
+}
+
+fn grouped_builder_impl_public(root_ident: &Ident) -> TokenStream {
+    let ident = builder_ident_public(root_ident);
+    quote! {
+        impl GroupedBuilder for #ident {
+            fn group(mut self, v: u4) -> Self {
+                self.0 = self.0.group(v);
                 self
             }
         }
@@ -323,11 +464,29 @@ fn builder_impl_method(property: &Property, public: bool) -> TokenStream {
     }
 }
 
+fn builder_impl_method_public(property: &Property, public: bool) -> TokenStream {
+    let name = &property.name;
+    let ty = &property.ty;
+    let visibility = {
+        let mut ret = TokenStream::new();
+        if public {
+            ret.extend(parse_str::<TokenStream>("pub").unwrap());
+        }
+        ret
+    };
+    quote! {
+        #visibility fn #name(mut self, v: #ty) -> Self {
+            self.0 = self.0.#name(v);
+            self
+        }
+    }
+}
+
 fn data_trait_impl_owned(root_ident: &Ident, properties: &Vec<Property>) -> TokenStream {
     let message_ident = message_owned_ident(root_ident);
     let buffer_type = buffer_generic_with_constraints(properties);
     quote! {
-        impl<#buffer_type> Data<B> for #message_ident<B> {
+        impl<#buffer_type> DataPrivate<B> for #message_ident<B> {
             fn data(&self) -> &[B::Data] {
                 &self.0[..]
             }
@@ -339,9 +498,31 @@ fn data_trait_impl_borrowed(root_ident: &Ident, properties: &Vec<Property>) -> T
     let message_ident = message_borrowed_ident(root_ident);
     let buffer_type = buffer_generic_with_constraints(properties);
     quote! {
-        impl<'a, #buffer_type> Data<B> for #message_ident<'a, B> {
+        impl<'a, #buffer_type> DataPrivate<B> for #message_ident<'a, B> {
             fn data(&self) -> &[B::Data] {
                 self.0
+            }
+        }
+    }
+}
+
+fn data_trait_impl_owned_public(root_ident: &Ident) -> TokenStream {
+    let message_ident = message_owned_ident_public(root_ident);
+    quote! {
+        impl Data for #message_ident {
+            fn data(&self) -> &[u32] {
+                &self.0.0[..]
+            }
+        }
+    }
+}
+
+fn data_trait_impl_borrowed_public(root_ident: &Ident) -> TokenStream {
+    let message_ident = message_borrowed_ident_public(root_ident);
+    quote! {
+        impl<'a> Data for #message_ident<'a> {
+            fn data(&self) -> &[u32] {
+                self.0.0
             }
         }
     }
@@ -352,7 +533,7 @@ fn from_data_trait_impl(root_ident: &Ident, properties: &Vec<Property>) -> Token
     let validation_steps = validation_steps(properties);
     let buffer_type = buffer_generic_with_constraints(properties);
     quote! {
-        impl<'a, #buffer_type> FromData<'a, B> for #message_ident<'a, B> {
+        impl<'a, #buffer_type> FromDataPrivate<'a, B> for #message_ident<'a, B> {
             fn from_data_unchecked(data: &'a [<B as Buffer>::Data]) -> Self {
                 #message_ident(data)
             }
@@ -362,6 +543,21 @@ fn from_data_trait_impl(root_ident: &Ident, properties: &Vec<Property>) -> Token
                     return Err(Error::InvalidData);
                 }
                 Ok(())
+            }
+        }
+    }
+}
+
+fn from_data_trait_impl_public(root_ident: &Ident) -> TokenStream {
+    let message_ident = message_borrowed_ident_public(root_ident);
+    let private_message_ident = message_borrowed_ident(root_ident);
+    quote! {
+        impl<'a> FromData<'a> for #message_ident<'a> {
+            fn from_data_unchecked(data: &'a [u32]) -> Self {
+                #message_ident(<#private_message_ident<Ump> as FromDataPrivate<Ump>>::from_data_unchecked(data))
+            }
+            fn validate_data(buffer: &'a [u32]) -> Result<()> {
+                <#private_message_ident<Ump> as FromDataPrivate<Ump>>::validate_data(buffer)
             }
         }
     }
@@ -404,12 +600,34 @@ fn grouped_message_trait_impl_owned(root_ident: &Ident) -> TokenStream {
     }
 }
 
+fn grouped_message_trait_impl_owned_public(root_ident: &Ident) -> TokenStream {
+    let message_ident = message_owned_ident_public(root_ident);
+    quote! {
+        impl Grouped for #message_ident {
+            fn group(&self) -> u4 {
+                self.0.group()
+            }
+        }
+    }
+}
+
 fn grouped_message_trait_impl_borrowed(root_ident: &Ident) -> TokenStream {
     let message_ident = message_borrowed_ident(root_ident);
     quote! {
         impl<'a> Grouped for #message_ident<'a, Ump> {
             fn group(&self) -> u4 {
                 self.0[0].nibble(1)
+            }
+        }
+    }
+}
+
+fn grouped_message_trait_impl_borrowed_public(root_ident: &Ident) -> TokenStream {
+    let message_ident = message_borrowed_ident_public(root_ident);
+    quote! {
+        impl<'a> Grouped for #message_ident<'a> {
+            fn group(&self) -> u4 {
+                self.0.group()
             }
         }
     }
@@ -447,6 +665,18 @@ fn debug_impl_owned(root_ident: &Ident) -> TokenStream {
     }
 }
 
+fn debug_impl_owned_public(root_ident: &Ident) -> TokenStream {
+    let message_ident = message_owned_ident_public(root_ident);
+    let private_message_ident = message_owned_ident(root_ident);
+    quote! {
+        impl core::fmt::Debug for #message_ident {
+            fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
+                <#private_message_ident<Ump> as core::fmt::Debug>::fmt(&self.0, fmt)
+            }
+        }
+    }
+}
+
 fn debug_impl_borrowed(root_ident: &Ident) -> TokenStream {
     let message_ident = message_borrowed_ident(root_ident);
     quote! {
@@ -479,6 +709,18 @@ fn debug_impl_borrowed(root_ident: &Ident) -> TokenStream {
     }
 }
 
+fn debug_impl_borrowed_public(root_ident: &Ident) -> TokenStream {
+    let message_ident = message_borrowed_ident_public(root_ident);
+    let private_message_ident = message_borrowed_ident(root_ident);
+    quote! {
+        impl<'a> core::fmt::Debug for #message_ident<'a> {
+            fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
+                <#private_message_ident<'a, Ump> as core::fmt::Debug>::fmt(&self.0, fmt)
+            }
+        }
+    }
+}
+
 #[proc_macro_attribute]
 pub fn generate_message(_attrs: TokenStream1, item: TokenStream1) -> TokenStream1 {
     let input = parse_macro_input!(item as ItemStruct);
@@ -497,10 +739,11 @@ pub fn generate_message(_attrs: TokenStream1, item: TokenStream1) -> TokenStream
     };
 
     let imports = imports();
+    let specialized_message = specialized_message_trait(&root_ident, &properties);
+
     let message_owned = message_owned(&root_ident, &properties);
     let message_owned_impl = message_owned_impl(&root_ident, &properties);
     let message_borrowed = message_borrowed(&root_ident, &properties);
-    let specialized_message = specialized_message_trait(&root_ident, &properties);
     let specialized_message_trait_impl_owned =
         specialized_message_trait_impl_owned(&root_ident, &properties);
     let specialized_message_trait_impl_borrowed =
@@ -516,12 +759,33 @@ pub fn generate_message(_attrs: TokenStream1, item: TokenStream1) -> TokenStream
     let debug_impl_owned = debug_impl_owned(&root_ident);
     let debug_impl_borrowed = debug_impl_borrowed(&root_ident);
 
+    let message_owned_public = message_owned_public(&root_ident);
+    let message_owned_impl_public = message_owned_impl_public(&root_ident);
+    let message_borrowed_public = message_borrowed_public(&root_ident);
+    let specialized_message_trait_impl_owned_public =
+        specialized_message_trait_impl_owned_public(&root_ident, &properties);
+    let specialized_message_trait_impl_borrowed_public =
+        specialized_message_trait_impl_borrowed_public(&root_ident, &properties);
+    let builder_public = builder_public(&root_ident);
+    let builder_impl_public = builder_impl_public(&root_ident, &properties);
+    let grouped_builder_impl_public = grouped_builder_impl_public(&root_ident);
+    let data_trait_impl_owned_public = data_trait_impl_owned_public(&root_ident);
+    let data_trait_impl_borrowed_public = data_trait_impl_borrowed_public(&root_ident);
+    let from_data_trait_impl_public = from_data_trait_impl_public(&root_ident);
+    let grouped_message_trait_impl_owned_public =
+        grouped_message_trait_impl_owned_public(&root_ident);
+    let grouped_message_trait_impl_borrowed_public =
+        grouped_message_trait_impl_borrowed_public(&root_ident);
+    let debug_impl_owned_public = debug_impl_owned_public(&root_ident);
+    let debug_impl_borrowed_public = debug_impl_borrowed_public(&root_ident);
+
     quote! {
         #imports
+        #specialized_message
+
         #message_owned
         #message_owned_impl
         #message_borrowed
-        #specialized_message
         #specialized_message_trait_impl_owned
         #specialized_message_trait_impl_borrowed
         #builder
@@ -534,6 +798,22 @@ pub fn generate_message(_attrs: TokenStream1, item: TokenStream1) -> TokenStream
         #grouped_message_trait_impl_borrowed
         #debug_impl_owned
         #debug_impl_borrowed
+
+        #message_owned_public
+        #message_owned_impl_public
+        #message_borrowed_public
+        #specialized_message_trait_impl_owned_public
+        #specialized_message_trait_impl_borrowed_public
+        #builder_public
+        #builder_impl_public
+        #grouped_builder_impl_public
+        #data_trait_impl_owned_public
+        #data_trait_impl_borrowed_public
+        #from_data_trait_impl_public
+        #grouped_message_trait_impl_owned_public
+        #grouped_message_trait_impl_borrowed_public
+        #debug_impl_owned_public
+        #debug_impl_borrowed_public
     }
     .into()
 }

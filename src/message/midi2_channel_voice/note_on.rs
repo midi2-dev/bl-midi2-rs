@@ -25,7 +25,7 @@ mod tests {
     #[test]
     fn builder() {
         assert_eq!(
-            NoteOnOwned::builder()
+            NoteOnOwnedPrivate::builder()
                 .group(u4::new(0x8))
                 .channel(u4::new(0x8))
                 .note(u7::new(0x5E))
@@ -35,27 +35,27 @@ mod tests {
                     pitch_up: u9::new(0x18A),
                 }))
                 .build(),
-            Ok(NoteOnOwned(arr![0x4898_5E03, 0x6A14_E98A, 0x0, 0x0]))
+            Ok(NoteOnOwnedPrivate(arr![0x4898_5E03, 0x6A14_E98A, 0x0, 0x0]))
         );
     }
 
     #[test]
     fn builder_no_attribute() {
         assert_eq!(
-            NoteOnOwned::builder()
+            NoteOnOwnedPrivate::builder()
                 .group(u4::new(0x8))
                 .channel(u4::new(0x8))
                 .note(u7::new(0x5E))
                 .velocity(0x6A14)
                 .build(),
-            Ok(NoteOnOwned(arr![0x4898_5E00, 0x6A14_0000, 0x0, 0x0]))
+            Ok(NoteOnOwnedPrivate(arr![0x4898_5E00, 0x6A14_0000, 0x0, 0x0]))
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            NoteOnBorrowed::<Ump>::from_data(&[0x4898_5E03, 0x6A14_E98A, 0x0, 0x0])
+            NoteOnBorrowedPrivate::<Ump>::from_data(&[0x4898_5E03, 0x6A14_E98A, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0x8),
@@ -65,7 +65,7 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            NoteOnBorrowed::<Ump>::from_data(&[0x4898_5E03, 0x6A14_E98A, 0x0, 0x0])
+            NoteOnBorrowedPrivate::<Ump>::from_data(&[0x4898_5E03, 0x6A14_E98A, 0x0, 0x0])
                 .unwrap()
                 .channel(),
             u4::new(0x8),
@@ -75,7 +75,7 @@ mod tests {
     #[test]
     fn note() {
         assert_eq!(
-            NoteOnBorrowed::<Ump>::from_data(&[0x4898_5E03, 0x6A14_E98A, 0x0, 0x0])
+            NoteOnBorrowedPrivate::<Ump>::from_data(&[0x4898_5E03, 0x6A14_E98A, 0x0, 0x0])
                 .unwrap()
                 .note(),
             u7::new(0x5E),
@@ -85,7 +85,7 @@ mod tests {
     #[test]
     fn volocity() {
         assert_eq!(
-            NoteOnBorrowed::<Ump>::from_data(&[0x4898_5E03, 0x6A14_E98A, 0x0, 0x0])
+            NoteOnBorrowedPrivate::<Ump>::from_data(&[0x4898_5E03, 0x6A14_E98A, 0x0, 0x0])
                 .unwrap()
                 .velocity(),
             0x6A14,
@@ -95,7 +95,7 @@ mod tests {
     #[test]
     fn attribute() {
         assert_eq!(
-            NoteOnBorrowed::<Ump>::from_data(&[0x4898_5E03, 0x6A14_E98A, 0x0, 0x0])
+            NoteOnBorrowedPrivate::<Ump>::from_data(&[0x4898_5E03, 0x6A14_E98A, 0x0, 0x0])
                 .unwrap()
                 .attribute(),
             Some(Attribute::Pitch7_9 {

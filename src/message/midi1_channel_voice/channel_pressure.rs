@@ -26,12 +26,12 @@ mod tests {
     #[test]
     fn builder() {
         assert_eq!(
-            ChannelPressureOwned::<Ump>::builder()
+            ChannelPressureOwnedPrivate::<Ump>::builder()
                 .group(u4::new(0xF))
                 .channel(u4::new(0x6))
                 .pressure(u7::new(0x09))
                 .build(),
-            Ok(ChannelPressureOwned::<Ump>(arr![
+            Ok(ChannelPressureOwnedPrivate::<Ump>(arr![
                 0x2FD6_0900,
                 0x0,
                 0x0,
@@ -43,7 +43,7 @@ mod tests {
     #[test]
     fn group() {
         assert_eq!(
-            ChannelPressureBorrowed::<Ump>::from_data(&[0x2FD6_0900, 0x0, 0x0, 0x0])
+            ChannelPressureBorrowedPrivate::<Ump>::from_data(&[0x2FD6_0900, 0x0, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0xF),
@@ -53,7 +53,7 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            ChannelPressureBorrowed::<Ump>::from_data(&[0x2FD6_0900, 0x0, 0x0, 0x0])
+            ChannelPressureBorrowedPrivate::<Ump>::from_data(&[0x2FD6_0900, 0x0, 0x0, 0x0])
                 .unwrap()
                 .channel(),
             u4::new(0x6),
@@ -63,7 +63,7 @@ mod tests {
     #[test]
     fn pressure() {
         assert_eq!(
-            ChannelPressureBorrowed::<Ump>::from_data(&[0x2FD6_0900, 0x0, 0x0, 0x0])
+            ChannelPressureBorrowedPrivate::<Ump>::from_data(&[0x2FD6_0900, 0x0, 0x0, 0x0])
                 .unwrap()
                 .pressure(),
             u7::new(0x09),
@@ -73,11 +73,11 @@ mod tests {
     #[test]
     fn bytes_builder() {
         assert_eq!(
-            ChannelPressureOwned::<Bytes>::builder()
+            ChannelPressureOwnedPrivate::<Bytes>::builder()
                 .channel(u4::new(0x6))
                 .pressure(u7::new(0x09))
                 .build(),
-            Ok(ChannelPressureOwned::<Bytes>(arr![0xD6, 0x09, 0x0])),
+            Ok(ChannelPressureOwnedPrivate::<Bytes>(arr![0xD6, 0x09, 0x0])),
         );
     }
 }

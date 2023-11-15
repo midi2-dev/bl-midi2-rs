@@ -22,20 +22,25 @@ mod tests {
     #[test]
     fn builder() {
         assert_eq!(
-            KeyPressureOwned::builder()
+            KeyPressureOwnedPrivate::builder()
                 .group(u4::new(0xB))
                 .channel(u4::new(0xC))
                 .note(u7::new(0x59))
                 .key_pressure_data(0xC0B83064)
                 .build(),
-            Ok(KeyPressureOwned(arr![0x4BAC_5900, 0xC0B83064, 0x0, 0x0])),
+            Ok(KeyPressureOwnedPrivate(arr![
+                0x4BAC_5900,
+                0xC0B83064,
+                0x0,
+                0x0
+            ])),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            KeyPressureBorrowed::<Ump>::from_data(&[0x4BAC_5900, 0xC0B83064, 0x0, 0x0])
+            KeyPressureBorrowedPrivate::<Ump>::from_data(&[0x4BAC_5900, 0xC0B83064, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0xB),
@@ -45,7 +50,7 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            KeyPressureBorrowed::<Ump>::from_data(&[0x4BAC_5900, 0xC0B83064, 0x0, 0x0])
+            KeyPressureBorrowedPrivate::<Ump>::from_data(&[0x4BAC_5900, 0xC0B83064, 0x0, 0x0])
                 .unwrap()
                 .channel(),
             u4::new(0xC),
@@ -55,7 +60,7 @@ mod tests {
     #[test]
     fn note() {
         assert_eq!(
-            KeyPressureBorrowed::<Ump>::from_data(&[0x4BAC_5900, 0xC0B83064, 0x0, 0x0])
+            KeyPressureBorrowedPrivate::<Ump>::from_data(&[0x4BAC_5900, 0xC0B83064, 0x0, 0x0])
                 .unwrap()
                 .note(),
             u7::new(0x59),
@@ -65,7 +70,7 @@ mod tests {
     #[test]
     fn key_pressure_data() {
         assert_eq!(
-            KeyPressureBorrowed::<Ump>::from_data(&[0x4BAC_5900, 0xC0B83064, 0x0, 0x0])
+            KeyPressureBorrowedPrivate::<Ump>::from_data(&[0x4BAC_5900, 0xC0B83064, 0x0, 0x0])
                 .unwrap()
                 .key_pressure_data(),
             0xC0B83064,

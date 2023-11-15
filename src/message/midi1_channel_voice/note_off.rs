@@ -27,20 +27,20 @@ mod tests {
     #[test]
     fn builder() {
         assert_eq!(
-            NoteOffOwned::<Ump>::builder()
+            NoteOffOwnedPrivate::<Ump>::builder()
                 .group(u4::new(0x1))
                 .channel(u4::new(0xA))
                 .note(u7::new(0x68))
                 .velocity(u7::new(0x1B))
                 .build(),
-            Ok(NoteOffOwned::<Ump>(arr![0x218A_681B, 0x0, 0x0, 0x0])),
+            Ok(NoteOffOwnedPrivate::<Ump>(arr![0x218A_681B, 0x0, 0x0, 0x0])),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            NoteOffBorrowed::<Ump>::from_data(&[0x218A_681B, 0x0, 0x0, 0x0])
+            NoteOffBorrowedPrivate::<Ump>::from_data(&[0x218A_681B, 0x0, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0x1),
@@ -50,7 +50,7 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            NoteOffBorrowed::<Ump>::from_data(&[0x218A_681B, 0x0, 0x0, 0x0])
+            NoteOffBorrowedPrivate::<Ump>::from_data(&[0x218A_681B, 0x0, 0x0, 0x0])
                 .unwrap()
                 .channel(),
             u4::new(0xA),
@@ -60,7 +60,7 @@ mod tests {
     #[test]
     fn note() {
         assert_eq!(
-            NoteOffBorrowed::<Ump>::from_data(&[0x218A_681B, 0x0, 0x0, 0x0])
+            NoteOffBorrowedPrivate::<Ump>::from_data(&[0x218A_681B, 0x0, 0x0, 0x0])
                 .unwrap()
                 .note(),
             u7::new(0x68),
@@ -70,7 +70,7 @@ mod tests {
     #[test]
     fn velocity() {
         assert_eq!(
-            NoteOffBorrowed::<Ump>::from_data(&[0x218A_681B, 0x0, 0x0, 0x0])
+            NoteOffBorrowedPrivate::<Ump>::from_data(&[0x218A_681B, 0x0, 0x0, 0x0])
                 .unwrap()
                 .velocity(),
             u7::new(0x1B),
@@ -80,19 +80,19 @@ mod tests {
     #[test]
     fn builder_bytes() {
         assert_eq!(
-            NoteOffOwned::<Bytes>::builder()
+            NoteOffOwnedPrivate::<Bytes>::builder()
                 .channel(u4::new(0xA))
                 .note(u7::new(0x68))
                 .velocity(u7::new(0x1B))
                 .build(),
-            Ok(NoteOffOwned::<Bytes>(arr![0x8A, 0x68, 0x1B])),
+            Ok(NoteOffOwnedPrivate::<Bytes>(arr![0x8A, 0x68, 0x1B])),
         );
     }
 
     #[test]
     fn channel_bytes() {
         assert_eq!(
-            NoteOffBorrowed::<Bytes>::from_data(&[0x8A, 0x68, 0x1B])
+            NoteOffBorrowedPrivate::<Bytes>::from_data(&[0x8A, 0x68, 0x1B])
                 .unwrap()
                 .channel(),
             u4::new(0xA),
@@ -102,7 +102,7 @@ mod tests {
     #[test]
     fn note_bytes() {
         assert_eq!(
-            NoteOffBorrowed::<Bytes>::from_data(&[0x8A, 0x68, 0x1B])
+            NoteOffBorrowedPrivate::<Bytes>::from_data(&[0x8A, 0x68, 0x1B])
                 .unwrap()
                 .note(),
             u7::new(0x68),
@@ -112,7 +112,7 @@ mod tests {
     #[test]
     fn velocity_bytes() {
         assert_eq!(
-            NoteOffBorrowed::<Bytes>::from_data(&[0x8A, 0x68, 0x1B])
+            NoteOffBorrowedPrivate::<Bytes>::from_data(&[0x8A, 0x68, 0x1B])
                 .unwrap()
                 .velocity(),
             u7::new(0x1B),

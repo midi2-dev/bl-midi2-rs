@@ -24,13 +24,13 @@ mod tests {
     #[test]
     fn builder() {
         assert_eq!(
-            RegisteredPerNoteControllerOwned::builder()
+            RegisteredPerNoteControllerOwnedPrivate::builder()
                 .group(u4::new(0x4))
                 .channel(u4::new(0x5))
                 .note(u7::new(0x6C))
                 .controller(Controller::Volume(0xE1E35E92))
                 .build(),
-            Ok(RegisteredPerNoteControllerOwned(arr![
+            Ok(RegisteredPerNoteControllerOwnedPrivate(arr![
                 0x4405_6C07,
                 0xE1E35E92,
                 0x0,
@@ -42,7 +42,7 @@ mod tests {
     #[test]
     fn group() {
         assert_eq!(
-            RegisteredPerNoteControllerBorrowed::<Ump>::from_data(&[
+            RegisteredPerNoteControllerBorrowedPrivate::<Ump>::from_data(&[
                 0x4405_6C07,
                 0xE1E35E92,
                 0x0,
@@ -57,7 +57,7 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            RegisteredPerNoteControllerBorrowed::<Ump>::from_data(&[
+            RegisteredPerNoteControllerBorrowedPrivate::<Ump>::from_data(&[
                 0x4405_6C07,
                 0xE1E35E92,
                 0x0,
@@ -72,7 +72,7 @@ mod tests {
     #[test]
     fn note() {
         assert_eq!(
-            RegisteredPerNoteControllerBorrowed::<Ump>::from_data(&[
+            RegisteredPerNoteControllerBorrowedPrivate::<Ump>::from_data(&[
                 0x4405_6C07,
                 0xE1E35E92,
                 0x0,
@@ -87,7 +87,7 @@ mod tests {
     #[test]
     fn controller() {
         assert_eq!(
-            RegisteredPerNoteControllerBorrowed::<Ump>::from_data(&[
+            RegisteredPerNoteControllerBorrowedPrivate::<Ump>::from_data(&[
                 0x4405_6C07,
                 0xE1E35E92,
                 0x0,

@@ -23,21 +23,26 @@ mod tests {
     #[test]
     fn builder() {
         assert_eq!(
-            PerNoteManagementOwned::builder()
+            PerNoteManagementOwnedPrivate::builder()
                 .group(u4::new(0xB))
                 .channel(u4::new(0x9))
                 .note(u7::new(0x1C))
                 .detach(true)
                 .reset(true)
                 .build(),
-            Ok(PerNoteManagementOwned(arr![0x4BF9_1C03, 0x0, 0x0, 0x0])),
+            Ok(PerNoteManagementOwnedPrivate(arr![
+                0x4BF9_1C03,
+                0x0,
+                0x0,
+                0x0
+            ])),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            PerNoteManagementBorrowed::<Ump>::from_data(&[0x4BF9_1C03, 0x0, 0x0, 0x0])
+            PerNoteManagementBorrowedPrivate::<Ump>::from_data(&[0x4BF9_1C03, 0x0, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0xB),
@@ -47,7 +52,7 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            PerNoteManagementBorrowed::<Ump>::from_data(&[0x4BF9_1C03, 0x0, 0x0, 0x0])
+            PerNoteManagementBorrowedPrivate::<Ump>::from_data(&[0x4BF9_1C03, 0x0, 0x0, 0x0])
                 .unwrap()
                 .channel(),
             u4::new(0x9),
@@ -57,7 +62,7 @@ mod tests {
     #[test]
     fn note() {
         assert_eq!(
-            PerNoteManagementBorrowed::<Ump>::from_data(&[0x4BF9_1C03, 0x0, 0x0, 0x0])
+            PerNoteManagementBorrowedPrivate::<Ump>::from_data(&[0x4BF9_1C03, 0x0, 0x0, 0x0])
                 .unwrap()
                 .note(),
             u7::new(0x1C),
@@ -67,7 +72,7 @@ mod tests {
     #[test]
     fn detach() {
         assert!(
-            PerNoteManagementBorrowed::<Ump>::from_data(&[0x4BF9_1C03, 0x0, 0x0, 0x0])
+            PerNoteManagementBorrowedPrivate::<Ump>::from_data(&[0x4BF9_1C03, 0x0, 0x0, 0x0])
                 .unwrap()
                 .detach(),
         );
@@ -76,7 +81,7 @@ mod tests {
     #[test]
     fn reset() {
         assert!(
-            PerNoteManagementBorrowed::<Ump>::from_data(&[0x4BF9_1C03, 0x0, 0x0, 0x0])
+            PerNoteManagementBorrowedPrivate::<Ump>::from_data(&[0x4BF9_1C03, 0x0, 0x0, 0x0])
                 .unwrap()
                 .reset(),
         );

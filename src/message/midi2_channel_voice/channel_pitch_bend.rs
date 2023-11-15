@@ -21,12 +21,12 @@ mod tests {
     #[test]
     fn builder() {
         assert_eq!(
-            ChannelPitchBendOwned::builder()
+            ChannelPitchBendOwnedPrivate::builder()
                 .group(u4::new(0xB))
                 .channel(u4::new(0x9))
                 .pitch_bend_data(0x08306AF8)
                 .build(),
-            Ok(ChannelPitchBendOwned(arr![
+            Ok(ChannelPitchBendOwnedPrivate(arr![
                 0x4BE9_0000,
                 0x0830_6AF8,
                 0x0,
@@ -38,9 +38,14 @@ mod tests {
     #[test]
     fn group() {
         assert_eq!(
-            ChannelPitchBendBorrowed::<Ump>::from_data(&[0x4BE9_0000, 0x0830_6AF8, 0x0, 0x0])
-                .unwrap()
-                .group(),
+            ChannelPitchBendBorrowedPrivate::<Ump>::from_data(&[
+                0x4BE9_0000,
+                0x0830_6AF8,
+                0x0,
+                0x0
+            ])
+            .unwrap()
+            .group(),
             u4::new(0xB),
         );
     }
@@ -48,9 +53,14 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            ChannelPitchBendBorrowed::<Ump>::from_data(&[0x4BE9_0000, 0x0830_6AF8, 0x0, 0x0])
-                .unwrap()
-                .channel(),
+            ChannelPitchBendBorrowedPrivate::<Ump>::from_data(&[
+                0x4BE9_0000,
+                0x0830_6AF8,
+                0x0,
+                0x0
+            ])
+            .unwrap()
+            .channel(),
             u4::new(0x9),
         );
     }
@@ -58,9 +68,14 @@ mod tests {
     #[test]
     fn pitch_bend_data() {
         assert_eq!(
-            ChannelPitchBendBorrowed::<Ump>::from_data(&[0x4BE9_0000, 0x0830_6AF8, 0x0, 0x0])
-                .unwrap()
-                .pitch_bend_data(),
+            ChannelPitchBendBorrowedPrivate::<Ump>::from_data(&[
+                0x4BE9_0000,
+                0x0830_6AF8,
+                0x0,
+                0x0
+            ])
+            .unwrap()
+            .pitch_bend_data(),
             0x0830_6AF8,
         );
     }

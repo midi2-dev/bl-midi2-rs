@@ -26,19 +26,24 @@ mod tests {
     #[test]
     fn builder() {
         assert_eq!(
-            ProgramChangeOwned::<Ump>::builder()
+            ProgramChangeOwnedPrivate::<Ump>::builder()
                 .group(u4::new(0x4))
                 .channel(u4::new(0x7))
                 .program(u7::new(0x63))
                 .build(),
-            Ok(ProgramChangeOwned::<Ump>(arr![0x24C7_6300, 0x0, 0x0, 0x0])),
+            Ok(ProgramChangeOwnedPrivate::<Ump>(arr![
+                0x24C7_6300,
+                0x0,
+                0x0,
+                0x0
+            ])),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            ProgramChangeBorrowed::<Ump>::from_data(&[0x24C7_6300, 0x0, 0x0, 0x0])
+            ProgramChangeBorrowedPrivate::<Ump>::from_data(&[0x24C7_6300, 0x0, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0x4),
@@ -48,7 +53,7 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            ProgramChangeBorrowed::<Ump>::from_data(&[0x24C7_6300, 0x0, 0x0, 0x0])
+            ProgramChangeBorrowedPrivate::<Ump>::from_data(&[0x24C7_6300, 0x0, 0x0, 0x0])
                 .unwrap()
                 .channel(),
             u4::new(0x7),
@@ -58,7 +63,7 @@ mod tests {
     #[test]
     fn program() {
         assert_eq!(
-            ProgramChangeBorrowed::<Ump>::from_data(&[0x24C7_6300, 0x0, 0x0, 0x0])
+            ProgramChangeBorrowedPrivate::<Ump>::from_data(&[0x24C7_6300, 0x0, 0x0, 0x0])
                 .unwrap()
                 .program(),
             u7::new(0x63),
@@ -68,18 +73,18 @@ mod tests {
     #[test]
     fn builder_bytes() {
         assert_eq!(
-            ProgramChangeOwned::<Bytes>::builder()
+            ProgramChangeOwnedPrivate::<Bytes>::builder()
                 .channel(u4::new(0x7))
                 .program(u7::new(0x63))
                 .build(),
-            Ok(ProgramChangeOwned::<Bytes>(arr![0xC7, 0x63, 0x00])),
+            Ok(ProgramChangeOwnedPrivate::<Bytes>(arr![0xC7, 0x63, 0x00])),
         );
     }
 
     #[test]
     fn channel_bytes() {
         assert_eq!(
-            ProgramChangeBorrowed::<Bytes>::from_data(&[0xC7, 0x63, 0x00])
+            ProgramChangeBorrowedPrivate::<Bytes>::from_data(&[0xC7, 0x63, 0x00])
                 .unwrap()
                 .channel(),
             u4::new(0x7),
@@ -89,7 +94,7 @@ mod tests {
     #[test]
     fn program_bytes() {
         assert_eq!(
-            ProgramChangeBorrowed::<Bytes>::from_data(&[0xC7, 0x63, 0x00])
+            ProgramChangeBorrowedPrivate::<Bytes>::from_data(&[0xC7, 0x63, 0x00])
                 .unwrap()
                 .program(),
             u7::new(0x63),

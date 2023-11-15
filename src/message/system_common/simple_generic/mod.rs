@@ -133,15 +133,17 @@ mod tests {
     #[test]
     fn builder() {
         assert_eq!(
-            TestOwned::<Ump>::builder().group(u4::new(0x9)).build(),
-            Ok(TestOwned::<Ump>(arr![0x19FF_0000, 0x0, 0x0, 0x0])),
+            TestOwnedPrivate::<Ump>::builder()
+                .group(u4::new(0x9))
+                .build(),
+            Ok(TestOwnedPrivate::<Ump>(arr![0x19FF_0000, 0x0, 0x0, 0x0])),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            TestBorrowed::<Ump>::from_data(&[0x19FF_0000, 0x0, 0x0, 0x0])
+            TestBorrowedPrivate::<Ump>::from_data(&[0x19FF_0000, 0x0, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0x9),
@@ -151,16 +153,16 @@ mod tests {
     #[test]
     fn bytes_builder() {
         assert_eq!(
-            TestOwned::<Bytes>::builder().build(),
-            Ok(TestOwned::<Bytes>(arr![0xFF, 0x0, 0x0])),
+            TestOwnedPrivate::<Bytes>::builder().build(),
+            Ok(TestOwnedPrivate::<Bytes>(arr![0xFF, 0x0, 0x0])),
         );
     }
 
     #[test]
     fn bytes_from_data() {
         assert_eq!(
-            TestBorrowed::<Bytes>::from_data(&[0xFF, 0x0, 0x0]),
-            Ok(TestBorrowed::<Bytes>(&[0xFF, 0x0, 0x0])),
+            TestBorrowedPrivate::<Bytes>::from_data(&[0xFF, 0x0, 0x0]),
+            Ok(TestBorrowedPrivate::<Bytes>(&[0xFF, 0x0, 0x0])),
         )
     }
 }

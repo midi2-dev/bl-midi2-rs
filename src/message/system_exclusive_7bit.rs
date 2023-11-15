@@ -114,7 +114,7 @@ impl<'a> Message<'a, Bytes> for Sysex7Message<'a, Bytes> {
 }
 
 impl<'a> Buildable<'a, Bytes> for Sysex7Message<'a, Bytes> {
-    type Builder = Sysex7BuilderBytes<'a>;
+    type BuilderPrivate = Sysex7BuilderPrivateBytes<'a>;
 }
 
 impl<'a> SysexMessage<'a, Bytes> for Sysex7Message<'a, Bytes> {
@@ -155,7 +155,7 @@ impl<'a> Message<'a, Ump> for Sysex7Message<'a, Ump> {
 }
 
 impl<'a> Buildable<'a, Ump> for Sysex7Message<'a, Ump> {
-    type Builder = Sysex7BuilderUmp<'a>;
+    type BuilderPrivate = Sysex7BuilderPrivateUmp<'a>;
 }
 
 impl<'a> GroupedMessage<'a> for Sysex7Message<'a, Ump> {
@@ -164,11 +164,11 @@ impl<'a> GroupedMessage<'a> for Sysex7Message<'a, Ump> {
     }
 }
 
-pub struct Sysex7BuilderUmp<'a>(Result<&'a mut [u32]>);
+pub struct Sysex7BuilderPrivateUmp<'a>(Result<&'a mut [u32]>);
 
-pub struct Sysex7BuilderBytes<'a>(Result<&'a mut [u8]>, usize);
+pub struct Sysex7BuilderPrivateBytes<'a>(Result<&'a mut [u8]>, usize);
 
-impl<'a> Sysex7BuilderBytes<'a> {
+impl<'a> Sysex7BuilderPrivateBytes<'a> {
     fn grow(&mut self) {
         if let Ok(buffer) = &self.0 {
             if buffer.len() < self.1 + 1 {
@@ -180,7 +180,7 @@ impl<'a> Sysex7BuilderBytes<'a> {
     }
 }
 
-impl<'a> Builder<'a, Bytes> for Sysex7BuilderBytes<'a> {
+impl<'a> BuilderPrivate<'a, Bytes> for Sysex7BuilderPrivateBytes<'a> {
     type Message = Sysex7Message<'a, Bytes>;
     fn new(buffer: &'a mut <Bytes as Buffer>::Data) -> Self {
         if buffer.len() < 2 {
@@ -204,7 +204,7 @@ impl<'a> Builder<'a, Bytes> for Sysex7BuilderBytes<'a> {
     }
 }
 
-impl<'a> SysexBuilder<'a, Bytes> for Sysex7BuilderBytes<'a> {
+impl<'a> SysexBuilderPrivate<'a, Bytes> for Sysex7BuilderPrivateBytes<'a> {
     type Byte = u8;
     fn payload<I: core::iter::Iterator<Item = Self::Byte>>(mut self, data: I) -> Self {
         for d in data {
@@ -222,7 +222,7 @@ impl<'a> SysexBuilder<'a, Bytes> for Sysex7BuilderBytes<'a> {
     }
 }
 
-impl<'a> Sysex7BuilderUmp<'a> {
+impl<'a> Sysex7BuilderPrivateUmp<'a> {
     pub fn status(mut self, s: Status) -> Self {
         if let Ok(buffer) = &mut self.0 {
             buffer[0].set_nibble(
@@ -258,7 +258,7 @@ impl<'a> Sysex7BuilderUmp<'a> {
     }
 }
 
-impl<'a> Builder<'a, Ump> for Sysex7BuilderUmp<'a> {
+impl<'a> BuilderPrivate<'a, Ump> for Sysex7BuilderPrivateUmp<'a> {
     type Message = Sysex7Message<'a, Ump>;
     fn new(buffer: &'a mut [u32]) -> Self {
         if buffer.len() >= 2 {
@@ -277,7 +277,7 @@ impl<'a> Builder<'a, Ump> for Sysex7BuilderUmp<'a> {
     }
 }
 
-impl<'a> GroupedBuilder<'a> for Sysex7BuilderUmp<'a> {
+impl<'a> GroupedBuilderPrivate<'a> for Sysex7BuilderPrivateUmp<'a> {
     fn group(mut self, g: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             buffer[0].set_nibble(1, g);
@@ -371,7 +371,7 @@ impl<'a> Message<'a, Ump> for Sysex7MessageGroup<'a> {
 }
 
 impl<'a> Buildable<'a, Ump> for Sysex7MessageGroup<'a> {
-    type Builder = Sysex7MessageGroupBuilder<'a>;
+    type BuilderPrivate = Sysex7MessageGroupBuilderPrivate<'a>;
 }
 
 impl<'a> GroupedMessage<'a> for Sysex7MessageGroup<'a> {
@@ -400,14 +400,14 @@ impl<'a> core::iter::Iterator for Sysex7MessageGroupIterator<'a> {
     }
 }
 
-pub struct Sysex7MessageGroupBuilder<'a> {
+pub struct Sysex7MessageGroupBuilderPrivate<'a> {
     buffer: &'a mut [u32],
     size: usize,
     error: Option<Error>,
     group: u4,
 }
 
-impl<'a> Sysex7MessageGroupBuilder<'a> {
+impl<'a> Sysex7MessageGroupBuilderPrivate<'a> {
     // The point in the buffer where the last most message begins.
     fn message_index(&self) -> usize {
         2 * (self.size - 1)
@@ -455,7 +455,7 @@ impl<'a> Sysex7MessageGroupBuilder<'a> {
 
         if self.size != 0 {
             let mut prev_builder =
-                Sysex7BuilderUmp(Ok(&mut self.buffer[2 * (self.size - 1)..2 * self.size]));
+                Sysex7BuilderPrivateUmp(Ok(&mut self.buffer[2 * (self.size - 1)..2 * self.size]));
             match self.size {
                 1 => {
                     prev_builder = prev_builder.status(Status::Begin);
@@ -470,7 +470,7 @@ impl<'a> Sysex7MessageGroupBuilder<'a> {
     }
 }
 
-impl<'a> Builder<'a, Ump> for Sysex7MessageGroupBuilder<'a> {
+impl<'a> BuilderPrivate<'a, Ump> for Sysex7MessageGroupBuilderPrivate<'a> {
     type Message = Sysex7MessageGroup<'a>;
     fn build(mut self) -> Result<Sysex7MessageGroup<'a>> {
         if let Some(e) = &self.error {
@@ -498,7 +498,7 @@ impl<'a> Builder<'a, Ump> for Sysex7MessageGroupBuilder<'a> {
     }
 
     fn new(buffer: &'a mut [u32]) -> Self {
-        let mut ret = Sysex7MessageGroupBuilder {
+        let mut ret = Sysex7MessageGroupBuilderPrivate {
             buffer,
             size: 0,
             error: None,
@@ -514,7 +514,7 @@ impl<'a> Builder<'a, Ump> for Sysex7MessageGroupBuilder<'a> {
     }
 }
 
-impl<'a> GroupedBuilder<'a> for Sysex7MessageGroupBuilder<'a> {
+impl<'a> GroupedBuilderPrivate<'a> for Sysex7MessageGroupBuilderPrivate<'a> {
     fn group(mut self, g: u4) -> Self {
         if self.error.is_some() || self.group == g {
             return self;
@@ -527,7 +527,7 @@ impl<'a> GroupedBuilder<'a> for Sysex7MessageGroupBuilder<'a> {
     }
 }
 
-impl<'a> SysexBuilder<'a, Ump> for Sysex7MessageGroupBuilder<'a> {
+impl<'a> SysexBuilderPrivate<'a, Ump> for Sysex7MessageGroupBuilderPrivate<'a> {
     type Byte = u7;
     fn payload<I: core::iter::Iterator<Item = u7>>(mut self, mut iter: I) -> Self {
         if self.error.is_some() {

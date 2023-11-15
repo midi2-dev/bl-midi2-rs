@@ -23,14 +23,14 @@ mod tests {
     #[test]
     fn builder() {
         assert_eq!(
-            RelativeRegisteredControllerOwned::builder()
+            RelativeRegisteredControllerOwnedPrivate::builder()
                 .group(u4::new(0x1))
                 .channel(u4::new(0xE))
                 .bank(u7::new(0x45))
                 .index(u7::new(0x02))
                 .controller_data(0xAF525908)
                 .build(),
-            Ok(RelativeRegisteredControllerOwned(arr![
+            Ok(RelativeRegisteredControllerOwnedPrivate(arr![
                 0x414E_4502,
                 0xAF525908,
                 0x0,
@@ -42,7 +42,7 @@ mod tests {
     #[test]
     fn group() {
         assert_eq!(
-            RelativeRegisteredControllerBorrowed::<Ump>::from_data(&[
+            RelativeRegisteredControllerBorrowedPrivate::<Ump>::from_data(&[
                 0x414E_4502,
                 0xAF525908,
                 0x0,
@@ -57,7 +57,7 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            RelativeRegisteredControllerBorrowed::<Ump>::from_data(&[
+            RelativeRegisteredControllerBorrowedPrivate::<Ump>::from_data(&[
                 0x414E_4502,
                 0xAF525908,
                 0x0,
@@ -72,7 +72,7 @@ mod tests {
     #[test]
     pub fn bank() {
         assert_eq!(
-            RelativeRegisteredControllerBorrowed::<Ump>::from_data(&[
+            RelativeRegisteredControllerBorrowedPrivate::<Ump>::from_data(&[
                 0x414E_4502,
                 0xAF525908,
                 0x0,
@@ -87,7 +87,7 @@ mod tests {
     #[test]
     pub fn index() {
         assert_eq!(
-            RelativeRegisteredControllerBorrowed::<Ump>::from_data(&[
+            RelativeRegisteredControllerBorrowedPrivate::<Ump>::from_data(&[
                 0x414E_4502,
                 0xAF525908,
                 0x0,
@@ -102,7 +102,7 @@ mod tests {
     #[test]
     pub fn controller_data() {
         assert_eq!(
-            RelativeRegisteredControllerBorrowed::<Ump>::from_data(&[
+            RelativeRegisteredControllerBorrowedPrivate::<Ump>::from_data(&[
                 0x414E_4502,
                 0xAF525908,
                 0x0,

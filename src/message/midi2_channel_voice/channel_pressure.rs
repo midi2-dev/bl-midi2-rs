@@ -21,12 +21,12 @@ mod tests {
     #[test]
     fn builder() {
         assert_eq!(
-            ChannelPressureOwned::builder()
+            ChannelPressureOwnedPrivate::builder()
                 .group(u4::new(0xE))
                 .channel(u4::new(0xD))
                 .channel_pressure_data(0xDE0DE0F2)
                 .build(),
-            Ok(ChannelPressureOwned(arr![
+            Ok(ChannelPressureOwnedPrivate(arr![
                 0x4EDD_0000,
                 0xDE0D_E0F2,
                 0x0,
@@ -38,7 +38,7 @@ mod tests {
     #[test]
     fn group() {
         assert_eq!(
-            ChannelPressureBorrowed::<Ump>::from_data(&[0x4EDD_0000, 0xDE0D_E0F2, 0x0, 0x0])
+            ChannelPressureBorrowedPrivate::<Ump>::from_data(&[0x4EDD_0000, 0xDE0D_E0F2, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0xE),
@@ -48,7 +48,7 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            ChannelPressureBorrowed::<Ump>::from_data(&[0x4EDD_0000, 0xDE0D_E0F2, 0x0, 0x0])
+            ChannelPressureBorrowedPrivate::<Ump>::from_data(&[0x4EDD_0000, 0xDE0D_E0F2, 0x0, 0x0])
                 .unwrap()
                 .channel(),
             u4::new(0xD),
@@ -58,7 +58,7 @@ mod tests {
     #[test]
     fn channel_pressure_data() {
         assert_eq!(
-            ChannelPressureBorrowed::<Ump>::from_data(&[0x4EDD_0000, 0xDE0D_E0F2, 0x0, 0x0])
+            ChannelPressureBorrowedPrivate::<Ump>::from_data(&[0x4EDD_0000, 0xDE0D_E0F2, 0x0, 0x0])
                 .unwrap()
                 .channel_pressure_data(),
             0xDE0DE0F2,

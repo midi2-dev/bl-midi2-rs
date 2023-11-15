@@ -25,18 +25,23 @@ mod tests {
     #[test]
     fn builder() {
         assert_eq!(
-            TimeCodeOwned::<Ump>::builder()
+            TimeCodeOwnedPrivate::<Ump>::builder()
                 .group(u4::new(0x5))
                 .time_code(u7::new(0x5F))
                 .build(),
-            Ok(TimeCodeOwned::<Ump>(arr![0x15F1_5F00, 0x0, 0x0, 0x0])),
+            Ok(TimeCodeOwnedPrivate::<Ump>(arr![
+                0x15F1_5F00,
+                0x0,
+                0x0,
+                0x0
+            ])),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            TimeCodeBorrowed::<Ump>::from_data(&[0x15F1_5F00, 0x0, 0x0, 0x0])
+            TimeCodeBorrowedPrivate::<Ump>::from_data(&[0x15F1_5F00, 0x0, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0x5),
@@ -46,7 +51,7 @@ mod tests {
     #[test]
     fn time_code() {
         assert_eq!(
-            TimeCodeBorrowed::<Ump>::from_data(&[0x15F1_5F00, 0x0, 0x0, 0x0])
+            TimeCodeBorrowedPrivate::<Ump>::from_data(&[0x15F1_5F00, 0x0, 0x0, 0x0])
                 .unwrap()
                 .time_code(),
             u7::new(0x5F),
@@ -56,17 +61,17 @@ mod tests {
     #[test]
     fn bytes_builder() {
         assert_eq!(
-            TimeCodeOwned::<Bytes>::builder()
+            TimeCodeOwnedPrivate::<Bytes>::builder()
                 .time_code(u7::new(0x5F))
                 .build(),
-            Ok(TimeCodeOwned::<Bytes>(arr![0xF1, 0x5F, 0x00])),
+            Ok(TimeCodeOwnedPrivate::<Bytes>(arr![0xF1, 0x5F, 0x00])),
         );
     }
 
     #[test]
     fn bytes_time_code() {
         assert_eq!(
-            TimeCodeBorrowed::<Bytes>::from_data(&[0xF1, 0x5F, 0x00])
+            TimeCodeBorrowedPrivate::<Bytes>::from_data(&[0xF1, 0x5F, 0x00])
                 .unwrap()
                 .time_code(),
             u7::new(0x5F),

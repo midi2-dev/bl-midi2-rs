@@ -1,13 +1,28 @@
 use crate::*;
 
-pub trait Data<B: Buffer> {
+pub(crate) trait DataPrivate<B: Buffer> {
     fn data(&self) -> &[B::Data];
 }
 
-pub trait FromData<'a, B: Buffer>: Sized {
+pub trait Data {
+    fn data(&self) -> &[u32];
+}
+
+pub(crate) trait FromDataPrivate<'a, B: Buffer>: Sized {
     fn from_data_unchecked(buffer: &'a [B::Data]) -> Self;
     fn validate_data(buffer: &'a [B::Data]) -> Result<()>;
     fn from_data(buffer: &'a [B::Data]) -> Result<Self> {
+        match Self::validate_data(buffer) {
+            Ok(()) => Ok(Self::from_data_unchecked(buffer)),
+            Err(e) => Err(e),
+        }
+    }
+}
+
+pub trait FromData<'a>: Sized {
+    fn from_data_unchecked(buffer: &'a [u32]) -> Self;
+    fn validate_data(buffer: &'a [u32]) -> Result<()>;
+    fn from_data(buffer: &'a [u32]) -> Result<Self> {
         match Self::validate_data(buffer) {
             Ok(()) => Ok(Self::from_data_unchecked(buffer)),
             Err(e) => Err(e),
