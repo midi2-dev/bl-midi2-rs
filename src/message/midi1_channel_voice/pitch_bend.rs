@@ -21,24 +21,24 @@ struct PitchBend {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::RandomBuffer;
+    use generic_array::arr;
 
     #[test]
     fn builder() {
         assert_eq!(
-            PitchBendMessage::<Ump>::builder(&mut Ump::random_buffer::<4>())
+            PitchBendOwned::<Ump>::builder()
                 .group(u4::new(0x1))
                 .channel(u4::new(0xE))
                 .bend(u14::new(0x147))
                 .build(),
-            Ok(PitchBendMessage::<Ump>(&[0x21EE_4702, 0x0, 0x0, 0x0])),
+            Ok(PitchBendOwned::<Ump>(arr![0x21EE_4702, 0x0, 0x0, 0x0])),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            PitchBendMessage::<Ump>::from_data(&[0x21EE_4702, 0x0, 0x0, 0x0])
+            PitchBendBorrowed::<Ump>::from_data(&[0x21EE_4702, 0x0, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0x1),
@@ -48,7 +48,7 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            PitchBendMessage::<Ump>::from_data(&[0x21EE_4702, 0x0, 0x0, 0x0])
+            PitchBendBorrowed::<Ump>::from_data(&[0x21EE_4702, 0x0, 0x0, 0x0])
                 .unwrap()
                 .channel(),
             u4::new(0xE),
@@ -58,7 +58,7 @@ mod tests {
     #[test]
     fn bend() {
         assert_eq!(
-            PitchBendMessage::<Ump>::from_data(&[0x21EE_4702, 0x0, 0x0, 0x0])
+            PitchBendBorrowed::<Ump>::from_data(&[0x21EE_4702, 0x0, 0x0, 0x0])
                 .unwrap()
                 .bend(),
             u14::new(0x147)
@@ -68,18 +68,18 @@ mod tests {
     #[test]
     fn builder_bytes() {
         assert_eq!(
-            PitchBendMessage::<Bytes>::builder(&mut Bytes::random_buffer::<3>())
+            PitchBendOwned::<Bytes>::builder()
                 .channel(u4::new(0xE))
                 .bend(u14::new(0x147))
                 .build(),
-            Ok(PitchBendMessage::<Bytes>(&[0xEE, 0x47, 0x02])),
+            Ok(PitchBendOwned::<Bytes>(arr![0xEE, 0x47, 0x02])),
         );
     }
 
     #[test]
     fn channel_bytes() {
         assert_eq!(
-            PitchBendMessage::<Bytes>::from_data(&[0xEE, 0x47, 0x02])
+            PitchBendBorrowed::<Bytes>::from_data(&[0xEE, 0x47, 0x02])
                 .unwrap()
                 .channel(),
             u4::new(0xE),
@@ -89,7 +89,7 @@ mod tests {
     #[test]
     fn bend_bytes() {
         assert_eq!(
-            PitchBendMessage::<Bytes>::from_data(&[0xEE, 0x47, 0x02])
+            PitchBendBorrowed::<Bytes>::from_data(&[0xEE, 0x47, 0x02])
                 .unwrap()
                 .bend(),
             u14::new(0x147)

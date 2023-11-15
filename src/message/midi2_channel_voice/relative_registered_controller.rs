@@ -18,19 +18,19 @@ struct RelativeRegisteredController {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::RandomBuffer;
+    use generic_array::arr;
 
     #[test]
     fn builder() {
         assert_eq!(
-            RelativeRegisteredControllerMessage::builder(&mut Ump::random_buffer::<4>())
+            RelativeRegisteredControllerOwned::builder()
                 .group(u4::new(0x1))
                 .channel(u4::new(0xE))
                 .bank(u7::new(0x45))
                 .index(u7::new(0x02))
                 .controller_data(0xAF525908)
                 .build(),
-            Ok(RelativeRegisteredControllerMessage(&[
+            Ok(RelativeRegisteredControllerOwned(arr![
                 0x414E_4502,
                 0xAF525908,
                 0x0,
@@ -42,9 +42,14 @@ mod tests {
     #[test]
     fn group() {
         assert_eq!(
-            RelativeRegisteredControllerMessage::from_data(&[0x414E_4502, 0xAF525908, 0x0, 0x0])
-                .unwrap()
-                .group(),
+            RelativeRegisteredControllerBorrowed::<Ump>::from_data(&[
+                0x414E_4502,
+                0xAF525908,
+                0x0,
+                0x0
+            ])
+            .unwrap()
+            .group(),
             u4::new(0x1),
         );
     }
@@ -52,9 +57,14 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            RelativeRegisteredControllerMessage::from_data(&[0x414E_4502, 0xAF525908, 0x0, 0x0])
-                .unwrap()
-                .channel(),
+            RelativeRegisteredControllerBorrowed::<Ump>::from_data(&[
+                0x414E_4502,
+                0xAF525908,
+                0x0,
+                0x0
+            ])
+            .unwrap()
+            .channel(),
             u4::new(0xE),
         );
     }
@@ -62,9 +72,14 @@ mod tests {
     #[test]
     pub fn bank() {
         assert_eq!(
-            RelativeRegisteredControllerMessage::from_data(&[0x414E_4502, 0xAF525908, 0x0, 0x0])
-                .unwrap()
-                .bank(),
+            RelativeRegisteredControllerBorrowed::<Ump>::from_data(&[
+                0x414E_4502,
+                0xAF525908,
+                0x0,
+                0x0
+            ])
+            .unwrap()
+            .bank(),
             u7::new(0x45),
         );
     }
@@ -72,9 +87,14 @@ mod tests {
     #[test]
     pub fn index() {
         assert_eq!(
-            RelativeRegisteredControllerMessage::from_data(&[0x414E_4502, 0xAF525908, 0x0, 0x0])
-                .unwrap()
-                .index(),
+            RelativeRegisteredControllerBorrowed::<Ump>::from_data(&[
+                0x414E_4502,
+                0xAF525908,
+                0x0,
+                0x0
+            ])
+            .unwrap()
+            .index(),
             u7::new(0x02),
         );
     }
@@ -82,9 +102,14 @@ mod tests {
     #[test]
     pub fn controller_data() {
         assert_eq!(
-            RelativeRegisteredControllerMessage::from_data(&[0x414E_4502, 0xAF525908, 0x0, 0x0])
-                .unwrap()
-                .controller_data(),
+            RelativeRegisteredControllerBorrowed::<Ump>::from_data(&[
+                0x414E_4502,
+                0xAF525908,
+                0x0,
+                0x0
+            ])
+            .unwrap()
+            .controller_data(),
             0xAF525908,
         );
     }

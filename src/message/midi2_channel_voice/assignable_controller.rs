@@ -18,19 +18,19 @@ struct AssignableController {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::RandomBuffer;
+    use generic_array::arr;
 
     #[test]
     fn builder() {
         assert_eq!(
-            AssignableControllerMessage::builder(&mut Ump::random_buffer::<4>())
+            AssignableControllerOwned::builder()
                 .group(u4::new(0xC))
                 .channel(u4::new(0x8))
                 .bank(u7::new(0x51))
                 .index(u7::new(0x38))
                 .controller_data(0x3F3ADD42)
                 .build(),
-            Ok(AssignableControllerMessage(&[
+            Ok(AssignableControllerOwned(arr![
                 0x4C38_5138,
                 0x3F3ADD42,
                 0x0,
@@ -42,7 +42,7 @@ mod tests {
     #[test]
     fn group() {
         assert_eq!(
-            AssignableControllerMessage::from_data(&[0x4C38_5138, 0x3F3ADD42, 0x0, 0x0])
+            AssignableControllerBorrowed::<Ump>::from_data(&[0x4C38_5138, 0x3F3ADD42, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0xC),
@@ -52,7 +52,7 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            AssignableControllerMessage::from_data(&[0x4C38_5138, 0x3F3ADD42, 0x0, 0x0])
+            AssignableControllerBorrowed::<Ump>::from_data(&[0x4C38_5138, 0x3F3ADD42, 0x0, 0x0])
                 .unwrap()
                 .channel(),
             u4::new(0x8),
@@ -62,7 +62,7 @@ mod tests {
     #[test]
     pub fn bank() {
         assert_eq!(
-            AssignableControllerMessage::from_data(&[0x4C38_5138, 0x3F3ADD42, 0x0, 0x0])
+            AssignableControllerBorrowed::<Ump>::from_data(&[0x4C38_5138, 0x3F3ADD42, 0x0, 0x0])
                 .unwrap()
                 .bank(),
             u7::new(0x51),
@@ -72,7 +72,7 @@ mod tests {
     #[test]
     pub fn index() {
         assert_eq!(
-            AssignableControllerMessage::from_data(&[0x4C38_5138, 0x3F3ADD42, 0x0, 0x0])
+            AssignableControllerBorrowed::<Ump>::from_data(&[0x4C38_5138, 0x3F3ADD42, 0x0, 0x0])
                 .unwrap()
                 .index(),
             u7::new(0x38),
@@ -82,7 +82,7 @@ mod tests {
     #[test]
     pub fn controller_data() {
         assert_eq!(
-            AssignableControllerMessage::from_data(&[0x4C38_5138, 0x3F3ADD42, 0x0, 0x0])
+            AssignableControllerBorrowed::<Ump>::from_data(&[0x4C38_5138, 0x3F3ADD42, 0x0, 0x0])
                 .unwrap()
                 .controller_data(),
             0x3F3ADD42,

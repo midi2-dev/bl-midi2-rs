@@ -18,19 +18,19 @@ struct AssignablePerNoteController {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::RandomBuffer;
+    use generic_array::arr;
 
     #[test]
     fn builder() {
         assert_eq!(
-            AssignablePerNoteControllerMessage::builder(&mut Ump::random_buffer::<4>())
+            AssignablePerNoteControllerOwned::builder()
                 .group(u4::new(0x2))
                 .channel(u4::new(0x4))
                 .note(u7::new(0x6F))
                 .index(0xB1)
                 .controller_data(0x46105EE5)
                 .build(),
-            Ok(AssignablePerNoteControllerMessage(&[
+            Ok(AssignablePerNoteControllerOwned(arr![
                 0x4214_6FB1,
                 0x46105EE5,
                 0x0,
@@ -42,9 +42,14 @@ mod tests {
     #[test]
     fn group() {
         assert_eq!(
-            AssignablePerNoteControllerMessage::from_data(&[0x4214_6FB1, 0x46105EE5, 0x0, 0x0])
-                .unwrap()
-                .group(),
+            AssignablePerNoteControllerBorrowed::<Ump>::from_data(&[
+                0x4214_6FB1,
+                0x46105EE5,
+                0x0,
+                0x0
+            ])
+            .unwrap()
+            .group(),
             u4::new(0x2),
         );
     }
@@ -52,9 +57,14 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            AssignablePerNoteControllerMessage::from_data(&[0x4214_6FB1, 0x46105EE5, 0x0, 0x0])
-                .unwrap()
-                .channel(),
+            AssignablePerNoteControllerBorrowed::<Ump>::from_data(&[
+                0x4214_6FB1,
+                0x46105EE5,
+                0x0,
+                0x0
+            ])
+            .unwrap()
+            .channel(),
             u4::new(0x4),
         );
     }
@@ -62,9 +72,14 @@ mod tests {
     #[test]
     fn note() {
         assert_eq!(
-            AssignablePerNoteControllerMessage::from_data(&[0x4214_6FB1, 0x46105EE5, 0x0, 0x0])
-                .unwrap()
-                .note(),
+            AssignablePerNoteControllerBorrowed::<Ump>::from_data(&[
+                0x4214_6FB1,
+                0x46105EE5,
+                0x0,
+                0x0
+            ])
+            .unwrap()
+            .note(),
             u7::new(0x6F),
         );
     }
@@ -72,9 +87,14 @@ mod tests {
     #[test]
     fn index() {
         assert_eq!(
-            AssignablePerNoteControllerMessage::from_data(&[0x4214_6FB1, 0x46105EE5, 0x0, 0x0])
-                .unwrap()
-                .index(),
+            AssignablePerNoteControllerBorrowed::<Ump>::from_data(&[
+                0x4214_6FB1,
+                0x46105EE5,
+                0x0,
+                0x0
+            ])
+            .unwrap()
+            .index(),
             0xB1,
         );
     }
@@ -82,9 +102,14 @@ mod tests {
     #[test]
     fn controller_data() {
         assert_eq!(
-            AssignablePerNoteControllerMessage::from_data(&[0x4214_6FB1, 0x46105EE5, 0x0, 0x0])
-                .unwrap()
-                .controller_data(),
+            AssignablePerNoteControllerBorrowed::<Ump>::from_data(&[
+                0x4214_6FB1,
+                0x46105EE5,
+                0x0,
+                0x0
+            ])
+            .unwrap()
+            .controller_data(),
             0x46105EE5,
         );
     }

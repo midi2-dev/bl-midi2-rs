@@ -16,17 +16,17 @@ struct ChannelPitchBend {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::RandomBuffer;
+    use generic_array::arr;
 
     #[test]
     fn builder() {
         assert_eq!(
-            ChannelPitchBendMessage::builder(&mut Ump::random_buffer::<4>())
+            ChannelPitchBendOwned::builder()
                 .group(u4::new(0xB))
                 .channel(u4::new(0x9))
                 .pitch_bend_data(0x08306AF8)
                 .build(),
-            Ok(ChannelPitchBendMessage(&[
+            Ok(ChannelPitchBendOwned(arr![
                 0x4BE9_0000,
                 0x0830_6AF8,
                 0x0,
@@ -38,7 +38,7 @@ mod tests {
     #[test]
     fn group() {
         assert_eq!(
-            ChannelPitchBendMessage::from_data(&[0x4BE9_0000, 0x0830_6AF8, 0x0, 0x0])
+            ChannelPitchBendBorrowed::<Ump>::from_data(&[0x4BE9_0000, 0x0830_6AF8, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0xB),
@@ -48,7 +48,7 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            ChannelPitchBendMessage::from_data(&[0x4BE9_0000, 0x0830_6AF8, 0x0, 0x0])
+            ChannelPitchBendBorrowed::<Ump>::from_data(&[0x4BE9_0000, 0x0830_6AF8, 0x0, 0x0])
                 .unwrap()
                 .channel(),
             u4::new(0x9),
@@ -58,7 +58,7 @@ mod tests {
     #[test]
     fn pitch_bend_data() {
         assert_eq!(
-            ChannelPitchBendMessage::from_data(&[0x4BE9_0000, 0x0830_6AF8, 0x0, 0x0])
+            ChannelPitchBendBorrowed::<Ump>::from_data(&[0x4BE9_0000, 0x0830_6AF8, 0x0, 0x0])
                 .unwrap()
                 .pitch_bend_data(),
             0x0830_6AF8,

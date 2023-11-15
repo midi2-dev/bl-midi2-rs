@@ -20,16 +20,16 @@ struct SongPositionPointer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::RandomBuffer;
+    use generic_array::arr;
 
     #[test]
     fn builder() {
         assert_eq!(
-            SongPositionPointerMessage::<Ump>::builder(&mut Ump::random_buffer::<4>())
+            SongPositionPointerOwned::<Ump>::builder()
                 .group(u4::new(0xA))
                 .position(u14::new(0x367D))
                 .build(),
-            Ok(SongPositionPointerMessage::<Ump>(&[
+            Ok(SongPositionPointerOwned::<Ump>(arr![
                 0x1AF2_7D6C,
                 0x0,
                 0x0,
@@ -41,7 +41,7 @@ mod tests {
     #[test]
     fn group() {
         assert_eq!(
-            SongPositionPointerMessage::<Ump>::from_data(&[0x1AF2_7D6C, 0x0, 0x0, 0x0])
+            SongPositionPointerBorrowed::<Ump>::from_data(&[0x1AF2_7D6C, 0x0, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0xA),
@@ -51,7 +51,7 @@ mod tests {
     #[test]
     fn position() {
         assert_eq!(
-            SongPositionPointerMessage::<Ump>::from_data(&[0x1AF2_7D6C, 0x0, 0x0, 0x0])
+            SongPositionPointerBorrowed::<Ump>::from_data(&[0x1AF2_7D6C, 0x0, 0x0, 0x0])
                 .unwrap()
                 .position(),
             u14::new(0x367D),
@@ -61,17 +61,17 @@ mod tests {
     #[test]
     fn bytes_builder() {
         assert_eq!(
-            SongPositionPointerMessage::<Bytes>::builder(&mut Bytes::random_buffer::<3>())
+            SongPositionPointerOwned::<Bytes>::builder()
                 .position(u14::new(0x367D))
                 .build(),
-            Ok(SongPositionPointerMessage::<Bytes>(&[0xF2, 0x7D, 0x6C])),
+            Ok(SongPositionPointerOwned::<Bytes>(arr![0xF2, 0x7D, 0x6C])),
         );
     }
 
     #[test]
     fn bytes_position() {
         assert_eq!(
-            SongPositionPointerMessage::<Bytes>::from_data(&[0xF2, 0x7D, 0x6C])
+            SongPositionPointerBorrowed::<Bytes>::from_data(&[0xF2, 0x7D, 0x6C])
                 .unwrap()
                 .position(),
             u14::new(0x367D),

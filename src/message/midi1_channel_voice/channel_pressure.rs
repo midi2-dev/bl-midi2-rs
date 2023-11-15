@@ -21,24 +21,29 @@ struct ChannelPressure {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::RandomBuffer;
+    use generic_array::arr;
 
     #[test]
     fn builder() {
         assert_eq!(
-            ChannelPressureMessage::<Ump>::builder(&mut Ump::random_buffer::<4>())
+            ChannelPressureOwned::<Ump>::builder()
                 .group(u4::new(0xF))
                 .channel(u4::new(0x6))
                 .pressure(u7::new(0x09))
                 .build(),
-            Ok(ChannelPressureMessage::<Ump>(&[0x2FD6_0900, 0x0, 0x0, 0x0])),
+            Ok(ChannelPressureOwned::<Ump>(arr![
+                0x2FD6_0900,
+                0x0,
+                0x0,
+                0x0
+            ])),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            ChannelPressureMessage::<Ump>::from_data(&[0x2FD6_0900, 0x0, 0x0, 0x0])
+            ChannelPressureBorrowed::<Ump>::from_data(&[0x2FD6_0900, 0x0, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0xF),
@@ -48,7 +53,7 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            ChannelPressureMessage::<Ump>::from_data(&[0x2FD6_0900, 0x0, 0x0, 0x0])
+            ChannelPressureBorrowed::<Ump>::from_data(&[0x2FD6_0900, 0x0, 0x0, 0x0])
                 .unwrap()
                 .channel(),
             u4::new(0x6),
@@ -58,7 +63,7 @@ mod tests {
     #[test]
     fn pressure() {
         assert_eq!(
-            ChannelPressureMessage::<Ump>::from_data(&[0x2FD6_0900, 0x0, 0x0, 0x0])
+            ChannelPressureBorrowed::<Ump>::from_data(&[0x2FD6_0900, 0x0, 0x0, 0x0])
                 .unwrap()
                 .pressure(),
             u7::new(0x09),
@@ -68,11 +73,11 @@ mod tests {
     #[test]
     fn bytes_builder() {
         assert_eq!(
-            ChannelPressureMessage::<Bytes>::builder(&mut Bytes::random_buffer::<3>())
+            ChannelPressureOwned::<Bytes>::builder()
                 .channel(u4::new(0x6))
                 .pressure(u7::new(0x09))
                 .build(),
-            Ok(ChannelPressureMessage::<Bytes>(&[0xD6, 0x09, 0x0])),
+            Ok(ChannelPressureOwned::<Bytes>(arr![0xD6, 0x09, 0x0])),
         );
     }
 }

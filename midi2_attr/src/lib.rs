@@ -7,7 +7,7 @@ use syn::{
     token::{Colon, Comma, Gt, Lt, PathSep, Plus},
     AngleBracketedGenericArguments, Field, Fields, GenericArgument, Ident, ItemStruct, Path,
     PathArguments, PathSegment, TraitBound, TraitBoundModifier, Type, TypeParam, TypeParamBound,
-    TypePath, TypeTuple,
+    TypePath,
 };
 
 struct Property {
@@ -16,33 +16,6 @@ struct Property {
     ty: Type,
     ump_representation: Type,
     bytes_representation: Type,
-}
-
-#[derive(Clone, Copy)]
-enum MessageRepresentation {
-    Ump,
-    UmpAndBytes,
-}
-
-fn deduce_message_representation(properties: &Vec<Property>) -> MessageRepresentation {
-    let is_non_unit_type = |ty: &Type| -> bool {
-        if let Type::Tuple(TypeTuple { elems, .. }) = ty {
-            if elems.is_empty() {
-                return false;
-            }
-        }
-        true
-    };
-    use MessageRepresentation::*;
-    if properties
-        .iter()
-        .map(|property| &property.bytes_representation)
-        .any(is_non_unit_type)
-    {
-        UmpAndBytes
-    } else {
-        Ump
-    }
 }
 
 fn buffer_representation_type(generic_arg: &GenericArgument) -> Type {
@@ -93,42 +66,12 @@ fn is_constant_property(ty: &Type) -> bool {
     ident == "NumericalConstant"
 }
 
-fn message_ident(root_ident: &Ident) -> Ident {
-    Ident::new(&format!("{}Message", root_ident), Span::call_site())
+fn message_owned_ident(root_ident: &Ident) -> Ident {
+    Ident::new(&format!("{}Owned", root_ident), Span::call_site())
 }
 
-#[derive(Clone, Copy)]
-enum StructType {
-    Message,
-    Builder,
-}
-
-fn generate_type(
-    root_ident: &Ident,
-    representation: MessageRepresentation,
-    repr: Repr,
-    struct_type: StructType,
-) -> TokenStream {
-    let ident = match struct_type {
-        StructType::Message => message_ident(root_ident),
-        StructType::Builder => builder_ident(root_ident),
-    };
-    use MessageRepresentation::*;
-    match representation {
-        Ump => quote! {
-            #ident<'a>
-        },
-        UmpAndBytes => {
-            let buffer_type: TokenStream = match repr {
-                Repr::Ump => parse_str("Ump").unwrap(),
-                Repr::Bytes => parse_str("Bytes").unwrap(),
-                Repr::Generic => parse_str("B").unwrap(),
-            };
-            quote! {
-                #ident<'a, #buffer_type>
-            }
-        }
-    }
+fn message_borrowed_ident(root_ident: &Ident) -> Ident {
+    Ident::new(&format!("{}Borrowed", root_ident), Span::call_site())
 }
 
 fn builder_ident(root_ident: &Ident) -> Ident {
@@ -138,12 +81,12 @@ fn builder_ident(root_ident: &Ident) -> Ident {
 fn imports() -> TokenStream {
     quote! {
         use crate::{
-            message::helpers as message_helpers,
-            traits::*,
             buffer::*,
+            traits::*,
             util::{schema::*, BitOps},
             *,
         };
+        use generic_array::typenum::Unsigned;
     }
 }
 
@@ -197,99 +140,111 @@ fn buffer_generic_with_constraints(properties: &Vec<Property>) -> TypeParam {
     }
 }
 
-fn message(
-    root_ident: &Ident,
-    representation: MessageRepresentation,
-    properties: &Vec<Property>,
-) -> TokenStream {
-    let ident = message_ident(root_ident);
-    use MessageRepresentation::*;
-    match representation {
-        Ump => quote! {
-            #[derive(Clone, PartialEq, Eq)]
-            pub struct #ident <'a>(&'a [u32]);
-        },
-        UmpAndBytes => {
-            let buffer_type = buffer_generic_with_constraints(properties);
-            quote! {
-                #[derive(Clone, PartialEq, Eq)]
-                pub struct #ident<'a, #buffer_type>(&'a B::Data);
+fn message_owned(root_ident: &Ident, properties: &Vec<Property>) -> TokenStream {
+    let ident = message_owned_ident(root_ident);
+    let buffer_type = buffer_generic_with_constraints(properties);
+    quote! {
+        #[derive(Clone, PartialEq, Eq)]
+        pub struct #ident<#buffer_type>(generic_array::GenericArray<B::Data, B::Size>);
+    }
+}
+
+fn message_owned_impl(root_ident: &Ident, properties: &Vec<Property>) -> TokenStream {
+    let ident = message_owned_ident(root_ident);
+    let builder_ident = builder_ident(root_ident);
+    let buffer_type = buffer_generic_with_constraints(properties);
+    quote! {
+        impl<#buffer_type> #ident<B> {
+             pub fn builder() -> #builder_ident<B> {
+                #builder_ident::new()
             }
         }
     }
 }
 
-fn builder(
-    root_ident: &Ident,
-    representation: MessageRepresentation,
-    properties: &Vec<Property>,
-) -> TokenStream {
+fn message_borrowed(root_ident: &Ident, properties: &Vec<Property>) -> TokenStream {
+    let ident = message_borrowed_ident(root_ident);
+    let buffer_type = buffer_generic_with_constraints(properties);
+    quote! {
+        #[derive(Clone, PartialEq, Eq)]
+        pub struct #ident<'a, #buffer_type>(&'a [B::Data]);
+    }
+}
+
+fn builder(root_ident: &Ident, properties: &Vec<Property>) -> TokenStream {
     let ident = builder_ident(root_ident);
-    use MessageRepresentation::*;
-    match representation {
-        Ump => quote! {
-            pub struct #ident<'a>(Option<&'a mut [u32]>);
-        },
-        UmpAndBytes => {
-            let buffer_type = buffer_generic_with_constraints(properties);
-            quote! {
-                pub struct #ident<'a, #buffer_type>(Option<&'a mut B::Data>);
-            }
+    let buffer_type = buffer_generic_with_constraints(properties);
+    quote! {
+        pub struct #ident<#buffer_type>(Option<generic_array::GenericArray<B::Data, B::Size>>);
+    }
+}
+
+fn specialised_message_trait_ident(root_ident: &Ident) -> TokenStream {
+    quote! {#root_ident}
+}
+
+fn specialized_message_trait(root_ident: &Ident, properties: &Vec<Property>) -> TokenStream {
+    let ident = specialised_message_trait_ident(root_ident);
+    let mut methods = TokenStream::new();
+    for property in properties.iter().filter(|p| !p.constant) {
+        methods.extend(specialised_message_trait_declare_method(property));
+    }
+    quote! {
+        pub trait #ident {
+            #methods
         }
     }
 }
 
-fn message_impl(
+fn specialized_message_trait_impl_owned(
     root_ident: &Ident,
-    representation: MessageRepresentation,
     properties: &Vec<Property>,
 ) -> TokenStream {
-    let ident = message_ident(root_ident);
-    use MessageRepresentation::*;
-    match representation {
-        Ump => {
-            let mut methods = TokenStream::new();
-            for property in properties.iter().filter(|p| !p.constant) {
-                methods.extend(message_impl_method(property, Repr::Ump, true));
-            }
-            quote! {
-                impl<'a> #ident<'a> {
-                    #methods
-                }
-            }
-        }
-        UmpAndBytes => {
-            let mut methods = TokenStream::new();
-            for property in properties.iter().filter(|p| !p.constant) {
-                methods.extend(message_impl_method(property, Repr::Generic, true));
-            }
-            let buffer_type = buffer_generic_with_constraints(properties);
-            quote! {
-                impl<'a, #buffer_type> #ident<'a, B> {
-                    #methods
-                }
-            }
+    let mut methods = TokenStream::new();
+    for property in properties.iter().filter(|p| !p.constant) {
+        methods.extend(message_impl_method(property, false));
+    }
+    let message_ident = message_owned_ident(root_ident);
+    let buffer_type = buffer_generic_with_constraints(properties);
+    let trait_ident = specialised_message_trait_ident(root_ident);
+    quote! {
+        impl<#buffer_type> #trait_ident for #message_ident<B> {
+            #methods
         }
     }
 }
 
-#[derive(Clone, Copy)]
-enum Repr {
-    Ump,
-    Bytes,
-    Generic,
+fn specialized_message_trait_impl_borrowed(
+    root_ident: &Ident,
+    properties: &Vec<Property>,
+) -> TokenStream {
+    let mut methods = TokenStream::new();
+    for property in properties.iter().filter(|p| !p.constant) {
+        methods.extend(message_impl_method(property, false));
+    }
+    let message_ident = message_borrowed_ident(root_ident);
+    let buffer_type = buffer_generic_with_constraints(properties);
+    let trait_ident = specialised_message_trait_ident(root_ident);
+    quote! {
+        impl<'a, #buffer_type> #trait_ident for #message_ident<'a, B> {
+            #methods
+        }
+    }
 }
 
-fn message_impl_method(property: &Property, repr: Repr, public: bool) -> TokenStream {
+fn specialised_message_trait_declare_method(property: &Property) -> TokenStream {
+    let name = &property.name;
+    let ty = &property.ty;
+    quote! {
+        fn #name(&self) -> #ty;
+    }
+}
+
+fn message_impl_method(property: &Property, public: bool) -> TokenStream {
     let name = &property.name;
     let ty = &property.ty;
     let ump_schema = &property.ump_representation;
     let bytes_schema = &property.bytes_representation;
-    let buffer_type: Type = match repr {
-        Repr::Ump => parse_str("Ump").unwrap(),
-        Repr::Bytes => parse_str("Bytes").unwrap(),
-        Repr::Generic => parse_str("B").unwrap(),
-    };
     let visibility = {
         let mut ret = TokenStream::new();
         if public {
@@ -299,181 +254,29 @@ fn message_impl_method(property: &Property, repr: Repr, public: bool) -> TokenSt
     };
     quote! {
         #visibility fn #name(&self) -> #ty {
-            <#buffer_type as Property<#ty, #ump_schema, #bytes_schema>>::get(self.0)
+            <B as Property<#ty, #ump_schema, #bytes_schema>>::get(self.data())
         }
     }
 }
 
-fn builder_impl(
-    root_ident: &Ident,
-    representation: MessageRepresentation,
-    properties: &Vec<Property>,
-) -> TokenStream {
+fn builder_impl(root_ident: &Ident, properties: &Vec<Property>) -> TokenStream {
     let ident = builder_ident(root_ident);
-    use MessageRepresentation::*;
-    match representation {
-        Ump => {
-            let mut methods = TokenStream::new();
-            for property in properties.iter().filter(|p| !p.constant) {
-                methods.extend(builder_impl_method(property, Repr::Ump, true));
-            }
-            quote! {
-                impl<'a> #ident<'a> {
-                    #methods
-                }
-            }
-        }
-        UmpAndBytes => {
-            let mut methods = TokenStream::new();
-            for property in properties.iter().filter(|p| !p.constant) {
-                methods.extend(builder_impl_method(property, Repr::Generic, true));
-            }
-            let buffer_type = buffer_generic_with_constraints(properties);
-            quote! {
-                impl<'a, #buffer_type> #ident<'a, B> {
-                    #methods
-                }
-            }
-        }
+    let mut methods = TokenStream::new();
+    for property in properties.iter().filter(|p| !p.constant) {
+        methods.extend(builder_impl_method(property, true));
     }
-}
-
-fn builder_impl_method(property: &Property, repr: Repr, public: bool) -> TokenStream {
-    let name = &property.name;
-    let ty = &property.ty;
-    let ump_schema = &property.ump_representation;
-    let bytes_schema = &property.bytes_representation;
-    let buffer_type: Type = match repr {
-        Repr::Ump => parse_str("Ump").unwrap(),
-        Repr::Bytes => parse_str("Bytes").unwrap(),
-        Repr::Generic => parse_str("B").unwrap(),
-    };
-    let visibility = {
-        let mut ret = TokenStream::new();
-        if public {
-            ret.extend(parse_str::<TokenStream>("pub").unwrap());
-        }
-        ret
-    };
+    let buffer_type = buffer_generic_with_constraints(properties);
+    let message_ident = message_owned_ident(root_ident);
+    let write_const_data = builder_new_write_const_data(properties);
     quote! {
-        #visibility fn #name(mut self, v: #ty) -> Self {
-            if let Some(buffer) = &mut self.0 {
-                <#buffer_type as Property<#ty, #ump_schema, #bytes_schema>>::write(buffer, v);
+        impl<#buffer_type> #ident<B> {
+            #methods
+            pub fn new() -> Self {
+                let mut buffer: generic_array::GenericArray<B::Data, B::Size> = Default::default();
+                #write_const_data
+                Self(Some(buffer))
             }
-            self
-        }
-    }
-}
-
-fn message_trait_impl(
-    root_ident: &Ident,
-    representation: MessageRepresentation,
-    properties: &Vec<Property>,
-) -> TokenStream {
-    let message_ident = message_ident(root_ident);
-    use MessageRepresentation::*;
-    match representation {
-        Ump => {
-            let validation_steps = validation_steps(properties, Repr::Ump);
-            quote! {
-                impl<'a> Message<'a, Ump> for #message_ident<'a> {
-                    fn from_data_unchecked(data: &'a [u32]) -> Self {
-                        #message_ident(data)
-                    }
-                    fn data(&self) -> &'a [u32] {
-                        self.0
-                    }
-                    fn validate_data(buffer: &'a [u32]) -> Result<()> {
-                        #validation_steps
-                        if buffer.len() != <Ump as Buffer>::SIZE {
-                            return Err(Error::InvalidData);
-                        }
-                        Ok(())
-                    }
-                }
-            }
-        }
-        UmpAndBytes => {
-            let validation_steps = validation_steps(properties, Repr::Generic);
-            let buffer_type = buffer_generic_with_constraints(properties);
-            quote! {
-                impl<'a, #buffer_type> Message<'a, B> for #message_ident<'a, B> {
-                    fn from_data_unchecked(data: &'a <B as Buffer>::Data) -> Self {
-                        #message_ident(data)
-                    }
-                    fn data(&self) -> &'a <B as Buffer>::Data {
-                        self.0
-                    }
-                    fn validate_data(buffer: &'a <B as Buffer>::Data) -> Result<()> {
-                        #validation_steps
-                        if <B as Buffer>::len(buffer) != <B as Buffer>::SIZE {
-                            return Err(Error::InvalidData);
-                        }
-                        Ok(())
-                    }
-                }
-            }
-        }
-    }
-}
-
-fn validation_steps(properties: &Vec<Property>, repr: Repr) -> TokenStream {
-    let mut ret = TokenStream::new();
-    for property in properties {
-        let ty = &property.ty;
-        let ump_schema = &property.ump_representation;
-        let bytes_schema = &property.bytes_representation;
-        let buffer_type: Type = match repr {
-            Repr::Ump => parse_str("Ump").unwrap(),
-            Repr::Bytes => parse_str("Bytes").unwrap(),
-            Repr::Generic => parse_str("B").unwrap(),
-        };
-        ret.extend(quote! {
-            <#buffer_type as Property<#ty, #ump_schema, #bytes_schema>>::validate(buffer)?;
-        })
-    }
-    ret
-}
-
-fn builder_trait_impl(
-    root_ident: &Ident,
-    representation: MessageRepresentation,
-    properties: &Vec<Property>,
-) -> TokenStream {
-    let repr = match representation {
-        MessageRepresentation::Ump => Repr::Ump,
-        MessageRepresentation::UmpAndBytes => Repr::Generic,
-    };
-    let repr_type: Type = match representation {
-        MessageRepresentation::Ump => parse_str("Ump").unwrap(),
-        MessageRepresentation::UmpAndBytes => parse_str("B").unwrap(),
-    };
-    let impl_declaration: TokenStream = match representation {
-        MessageRepresentation::Ump => parse_str("impl<'a>").unwrap(),
-        MessageRepresentation::UmpAndBytes => {
-            let buffer_type = buffer_generic_with_constraints(properties);
-            quote! {
-                impl<'a, #buffer_type>
-            }
-        }
-    };
-    let builder_type = generate_type(root_ident, representation, repr, StructType::Builder);
-    let message_type = generate_type(root_ident, representation, repr, StructType::Message);
-    let message_ident = message_ident(root_ident);
-    let write_const_data = builder_new_write_const_data(properties, repr);
-    quote! {
-        #impl_declaration Builder<'a, #repr_type> for #builder_type {
-            type Message = #message_type;
-            fn new(buffer: &'a mut <#repr_type as Buffer>::Data) -> Self {
-                if <#repr_type as Buffer>::len(buffer) >= <#repr_type as Buffer>::SIZE {
-                    <#repr_type as Buffer>::clear(buffer);
-                    #write_const_data
-                    Self(Some(<#repr_type as Buffer>::crop(buffer)))
-                } else {
-                    Self(None)
-                }
-            }
-            fn build(self) -> Result<#message_type> {
+            pub fn build(self) -> Result<#message_ident<B>> {
                 if let Some(buffer) = self.0 {
                     Ok(#message_ident(buffer))
                 } else {
@@ -484,56 +287,116 @@ fn builder_trait_impl(
     }
 }
 
-fn builder_new_write_const_data(properties: &Vec<Property>, repr: Repr) -> TokenStream {
-    let mut ret = TokenStream::new();
-    let repr_type: Type = match repr {
-        Repr::Ump => parse_str("Ump").unwrap(),
-        Repr::Bytes => parse_str("Bytes").unwrap(),
-        Repr::Generic => parse_str("B").unwrap(),
-    };
-    for property in properties.iter().filter(|property| property.constant) {
-        let ump_schema = &property.ump_representation;
-        let bytes_schema = &property.bytes_representation;
-        let ty = &property.ty;
-        ret.extend(quote! {
-            <#repr_type as Property::<#ty, #ump_schema, #bytes_schema>>::write(buffer, Default::default());
-        })
-    }
-    ret
-}
-
-fn buildable_trait_impl(
-    root_ident: &Ident,
-    representation: MessageRepresentation,
-    properties: &Vec<Property>,
-) -> TokenStream {
-    let builder_ident = builder_ident(root_ident);
-    let message_ident = message_ident(root_ident);
-    use MessageRepresentation::*;
-    match representation {
-        Ump => quote! {
-            impl<'a> Buildable<'a, Ump> for #message_ident<'a> {
-                type Builder = #builder_ident<'a>;
-            }
-        },
-        UmpAndBytes => {
-            let buffer_type = buffer_generic_with_constraints(properties);
-            quote! {
-                impl<'a, #buffer_type> Buildable<'a, B> for #message_ident<'a, B> {
-                    type Builder = #builder_ident<'a, B>;
+fn grouped_builder_impl(root_ident: &Ident) -> TokenStream {
+    let ident = builder_ident(root_ident);
+    quote! {
+        impl GroupedBuilder for #ident<Ump> {
+            fn group(mut self, v: u4) -> Self {
+                if let Some(buffer) = &mut self.0 {
+                    <Ump as Property<u4, UmpSchema<0x0F00_0000, 0x0, 0x0, 0x0>, ()>>::write(buffer, v);
                 }
+                self
             }
         }
     }
 }
 
-fn grouped_message_trait_impl(
-    root_ident: &Ident,
-    representation: MessageRepresentation,
-) -> TokenStream {
-    let message_type = generate_type(root_ident, representation, Repr::Ump, StructType::Message);
+fn builder_impl_method(property: &Property, public: bool) -> TokenStream {
+    let name = &property.name;
+    let ty = &property.ty;
+    let ump_schema = &property.ump_representation;
+    let bytes_schema = &property.bytes_representation;
+    let visibility = {
+        let mut ret = TokenStream::new();
+        if public {
+            ret.extend(parse_str::<TokenStream>("pub").unwrap());
+        }
+        ret
+    };
     quote! {
-        impl<'a> GroupedMessage<'a> for #message_type {
+        #visibility fn #name(mut self, v: #ty) -> Self {
+            if let Some(buffer) = &mut self.0 {
+                <B as Property<#ty, #ump_schema, #bytes_schema>>::write(buffer, v);
+            }
+            self
+        }
+    }
+}
+
+fn data_trait_impl_owned(root_ident: &Ident, properties: &Vec<Property>) -> TokenStream {
+    let message_ident = message_owned_ident(root_ident);
+    let buffer_type = buffer_generic_with_constraints(properties);
+    quote! {
+        impl<#buffer_type> Data<B> for #message_ident<B> {
+            fn data(&self) -> &[B::Data] {
+                &self.0[..]
+            }
+        }
+    }
+}
+
+fn data_trait_impl_borrowed(root_ident: &Ident, properties: &Vec<Property>) -> TokenStream {
+    let message_ident = message_borrowed_ident(root_ident);
+    let buffer_type = buffer_generic_with_constraints(properties);
+    quote! {
+        impl<'a, #buffer_type> Data<B> for #message_ident<'a, B> {
+            fn data(&self) -> &[B::Data] {
+                self.0
+            }
+        }
+    }
+}
+
+fn from_data_trait_impl(root_ident: &Ident, properties: &Vec<Property>) -> TokenStream {
+    let message_ident = message_borrowed_ident(root_ident);
+    let validation_steps = validation_steps(properties);
+    let buffer_type = buffer_generic_with_constraints(properties);
+    quote! {
+        impl<'a, #buffer_type> FromData<'a, B> for #message_ident<'a, B> {
+            fn from_data_unchecked(data: &'a [<B as Buffer>::Data]) -> Self {
+                #message_ident(data)
+            }
+            fn validate_data(buffer: &'a [<B as Buffer>::Data]) -> Result<()> {
+                #validation_steps
+                if buffer.len() != <B as Buffer>::Size::to_usize() {
+                    return Err(Error::InvalidData);
+                }
+                Ok(())
+            }
+        }
+    }
+}
+
+fn validation_steps(properties: &Vec<Property>) -> TokenStream {
+    let mut ret = TokenStream::new();
+    for property in properties {
+        let ty = &property.ty;
+        let ump_schema = &property.ump_representation;
+        let bytes_schema = &property.bytes_representation;
+        ret.extend(quote! {
+            <B as Property<#ty, #ump_schema, #bytes_schema>>::validate(buffer)?;
+        })
+    }
+    ret
+}
+
+fn builder_new_write_const_data(properties: &Vec<Property>) -> TokenStream {
+    let mut ret = TokenStream::new();
+    for property in properties.iter().filter(|property| property.constant) {
+        let ump_schema = &property.ump_representation;
+        let bytes_schema = &property.bytes_representation;
+        let ty = &property.ty;
+        ret.extend(quote! {
+            <B as Property::<#ty, #ump_schema, #bytes_schema>>::write(&mut buffer, Default::default());
+        })
+    }
+    ret
+}
+
+fn grouped_message_trait_impl_owned(root_ident: &Ident) -> TokenStream {
+    let message_ident = message_owned_ident(root_ident);
+    quote! {
+        impl Grouped for #message_ident<Ump> {
             fn group(&self) -> u4 {
                 self.0[0].nibble(1)
             }
@@ -541,36 +404,21 @@ fn grouped_message_trait_impl(
     }
 }
 
-fn grouped_builder_trait_impl(
-    root_ident: &Ident,
-    representation: MessageRepresentation,
-) -> TokenStream {
-    let builder_type = generate_type(root_ident, representation, Repr::Ump, StructType::Builder);
-    let ty: Type = parse_str("u4").unwrap();
-    let function = builder_impl_method(
-        &Property {
-            name: Ident::new("group", Span::call_site()),
-            constant: false,
-            ty,
-            ump_representation: parse_str("UmpSchema<0x0F00_0000, 0x0, 0x0, 0x0>").unwrap(),
-            bytes_representation: parse_str("()").unwrap(),
-        },
-        Repr::Ump,
-        false,
-    );
+fn grouped_message_trait_impl_borrowed(root_ident: &Ident) -> TokenStream {
+    let message_ident = message_borrowed_ident(root_ident);
     quote! {
-        impl<'a> GroupedBuilder<'a> for #builder_type {
-            #function
+        impl<'a> Grouped for #message_ident<'a, Ump> {
+            fn group(&self) -> u4 {
+                self.0[0].nibble(1)
+            }
         }
     }
 }
 
-fn debug_impl(root_ident: &Ident, representation: MessageRepresentation) -> TokenStream {
-    let ump_message_type =
-        generate_type(root_ident, representation, Repr::Ump, StructType::Message);
-    let message_ident = message_ident(root_ident);
-    let mut ret = quote! {
-        impl<'a> core::fmt::Debug for #ump_message_type {
+fn debug_impl_owned(root_ident: &Ident) -> TokenStream {
+    let message_ident = message_owned_ident(root_ident);
+    quote! {
+        impl core::fmt::Debug for #message_ident<Ump> {
             fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
                 fmt.write_fmt(format_args!("{}(", stringify!(#message_ident)))?;
                 let mut iter = self.0.iter().peekable();
@@ -583,27 +431,52 @@ fn debug_impl(root_ident: &Ident, representation: MessageRepresentation) -> Toke
                 fmt.write_str(")")
             }
         }
-    };
-    if let MessageRepresentation::UmpAndBytes = representation {
-        let bytes_message_type =
-            generate_type(root_ident, representation, Repr::Bytes, StructType::Message);
-        ret.extend(quote! {
-            impl<'a> core::fmt::Debug for #bytes_message_type {
-                fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
-                    fmt.write_fmt(format_args!("{}(", stringify!(#message_ident)))?;
-                    let mut iter = self.0.iter().peekable();
-                    while let Some(v) = iter.next() {
-                        fmt.write_fmt(format_args!("{v:#04X}"))?;
-                        if iter.peek().is_some() {
-                            fmt.write_str(",")?;
-                        }
+        impl core::fmt::Debug for #message_ident<Bytes> {
+            fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
+                fmt.write_fmt(format_args!("{}(", stringify!(#message_ident)))?;
+                let mut iter = self.0.iter().peekable();
+                while let Some(v) = iter.next() {
+                    fmt.write_fmt(format_args!("{v:#010X}"))?;
+                    if iter.peek().is_some() {
+                        fmt.write_str(",")?;
                     }
-                    fmt.write_str(")")
                 }
+                fmt.write_str(")")
             }
-        })
+        }
     }
-    ret
+}
+
+fn debug_impl_borrowed(root_ident: &Ident) -> TokenStream {
+    let message_ident = message_borrowed_ident(root_ident);
+    quote! {
+        impl<'a> core::fmt::Debug for #message_ident<'a, Ump> {
+            fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
+                fmt.write_fmt(format_args!("{}(", stringify!(#message_ident)))?;
+                let mut iter = self.0.iter().peekable();
+                while let Some(v) = iter.next() {
+                    fmt.write_fmt(format_args!("{v:#010X}"))?;
+                    if iter.peek().is_some() {
+                        fmt.write_str(",")?;
+                    }
+                }
+                fmt.write_str(")")
+            }
+        }
+        impl<'a> core::fmt::Debug for #message_ident<'a, Bytes> {
+            fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
+                fmt.write_fmt(format_args!("{}(", stringify!(#message_ident)))?;
+                let mut iter = self.0.iter().peekable();
+                while let Some(v) = iter.next() {
+                    fmt.write_fmt(format_args!("{v:#010X}"))?;
+                    if iter.peek().is_some() {
+                        fmt.write_str(",")?;
+                    }
+                }
+                fmt.write_str(")")
+            }
+        }
+    }
 }
 
 #[proc_macro_attribute]
@@ -622,32 +495,45 @@ pub fn generate_message(_attrs: TokenStream1, item: TokenStream1) -> TokenStream
         }
         ret
     };
-    let representation = deduce_message_representation(&properties);
 
     let imports = imports();
-    let message = message(&root_ident, representation, &properties);
-    let message_impl = message_impl(&root_ident, representation, &properties);
-    let message_trait_impl = message_trait_impl(&root_ident, representation, &properties);
-    let builder = builder(&root_ident, representation, &properties);
-    let builder_impl = builder_impl(&root_ident, representation, &properties);
-    let buildable_trait_impl = buildable_trait_impl(&root_ident, representation, &properties);
-    let builder_trait_impl = builder_trait_impl(&root_ident, representation, &properties);
-    let grouped_message_impl = grouped_message_trait_impl(&root_ident, representation);
-    let grouped_builder_impl = grouped_builder_trait_impl(&root_ident, representation);
-    let debug_impl = debug_impl(&root_ident, representation);
+    let message_owned = message_owned(&root_ident, &properties);
+    let message_owned_impl = message_owned_impl(&root_ident, &properties);
+    let message_borrowed = message_borrowed(&root_ident, &properties);
+    let specialized_message = specialized_message_trait(&root_ident, &properties);
+    let specialized_message_trait_impl_owned =
+        specialized_message_trait_impl_owned(&root_ident, &properties);
+    let specialized_message_trait_impl_borrowed =
+        specialized_message_trait_impl_borrowed(&root_ident, &properties);
+    let builder = builder(&root_ident, &properties);
+    let builder_impl = builder_impl(&root_ident, &properties);
+    let grouped_builder_impl = grouped_builder_impl(&root_ident);
+    let data_trait_impl_owned = data_trait_impl_owned(&root_ident, &properties);
+    let data_trait_impl_borrowed = data_trait_impl_borrowed(&root_ident, &properties);
+    let from_data_trait_impl = from_data_trait_impl(&root_ident, &properties);
+    let grouped_message_trait_impl_owned = grouped_message_trait_impl_owned(&root_ident);
+    let grouped_message_trait_impl_borrowed = grouped_message_trait_impl_borrowed(&root_ident);
+    let debug_impl_owned = debug_impl_owned(&root_ident);
+    let debug_impl_borrowed = debug_impl_borrowed(&root_ident);
 
     quote! {
         #imports
-        #message
-        #message_impl
-        #message_trait_impl
+        #message_owned
+        #message_owned_impl
+        #message_borrowed
+        #specialized_message
+        #specialized_message_trait_impl_owned
+        #specialized_message_trait_impl_borrowed
         #builder
         #builder_impl
-        #buildable_trait_impl
-        #builder_trait_impl
-        #grouped_message_impl
         #grouped_builder_impl
-        #debug_impl
+        #data_trait_impl_owned
+        #data_trait_impl_borrowed
+        #from_data_trait_impl
+        #grouped_message_trait_impl_owned
+        #grouped_message_trait_impl_borrowed
+        #debug_impl_owned
+        #debug_impl_borrowed
     }
     .into()
 }

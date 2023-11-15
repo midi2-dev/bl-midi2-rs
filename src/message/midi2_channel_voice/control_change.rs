@@ -17,25 +17,25 @@ struct ControlChange {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::RandomBuffer;
+    use generic_array::arr;
 
     #[test]
     fn builder() {
         assert_eq!(
-            ControlChangeMessage::builder(&mut Ump::random_buffer::<4>())
+            ControlChangeOwned::builder()
                 .group(u4::new(0x3))
                 .channel(u4::new(0x9))
                 .index(u7::new(0x30))
                 .control_change_data(0x2468_1012)
                 .build(),
-            Ok(ControlChangeMessage(&[0x43B9_3000, 0x2468_1012, 0x0, 0x0]))
+            Ok(ControlChangeOwned(arr![0x43B9_3000, 0x2468_1012, 0x0, 0x0]))
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            ControlChangeMessage::from_data(&[0x43B9_3000, 0x2468_1012, 0x0, 0x0])
+            ControlChangeBorrowed::<Ump>::from_data(&[0x43B9_3000, 0x2468_1012, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0x3),
@@ -45,7 +45,7 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            ControlChangeMessage::from_data(&[0x43B9_3000, 0x2468_1012, 0x0, 0x0])
+            ControlChangeBorrowed::<Ump>::from_data(&[0x43B9_3000, 0x2468_1012, 0x0, 0x0])
                 .unwrap()
                 .channel(),
             u4::new(0x9),
@@ -55,7 +55,7 @@ mod tests {
     #[test]
     fn index() {
         assert_eq!(
-            ControlChangeMessage::from_data(&[0x43B9_3000, 0x2468_1012, 0x0, 0x0])
+            ControlChangeBorrowed::<Ump>::from_data(&[0x43B9_3000, 0x2468_1012, 0x0, 0x0])
                 .unwrap()
                 .index(),
             u7::new(0x30),
@@ -65,7 +65,7 @@ mod tests {
     #[test]
     fn control_change_data() {
         assert_eq!(
-            ControlChangeMessage::from_data(&[0x43B9_3000, 0x2468_1012, 0x0, 0x0])
+            ControlChangeBorrowed::<Ump>::from_data(&[0x43B9_3000, 0x2468_1012, 0x0, 0x0])
                 .unwrap()
                 .control_change_data(),
             0x2468_1012,

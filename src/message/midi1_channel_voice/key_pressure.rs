@@ -22,25 +22,25 @@ struct KeyPressure {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::RandomBuffer;
+    use generic_array::arr;
 
     #[test]
     fn builder() {
         assert_eq!(
-            KeyPressureMessage::<Ump>::builder(&mut Ump::random_buffer::<4>())
+            KeyPressureOwned::<Ump>::builder()
                 .group(u4::new(0xA))
                 .channel(u4::new(0x3))
                 .note(u7::new(0x7F))
                 .pressure(u7::new(0x5C))
                 .build(),
-            Ok(KeyPressureMessage::<Ump>(&[0x2AA3_7F5C, 0x0, 0x0, 0x0])),
+            Ok(KeyPressureOwned::<Ump>(arr![0x2AA3_7F5C, 0x0, 0x0, 0x0])),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            KeyPressureMessage::<Ump>::from_data(&[0x2AA3_7F5C, 0x0, 0x0, 0x0])
+            KeyPressureBorrowed::<Ump>::from_data(&[0x2AA3_7F5C, 0x0, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0xA),
@@ -50,7 +50,7 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            KeyPressureMessage::<Ump>::from_data(&[0x2AA3_7F5C, 0x0, 0x0, 0x0])
+            KeyPressureBorrowed::<Ump>::from_data(&[0x2AA3_7F5C, 0x0, 0x0, 0x0])
                 .unwrap()
                 .channel(),
             u4::new(0x3),
@@ -60,7 +60,7 @@ mod tests {
     #[test]
     fn note() {
         assert_eq!(
-            KeyPressureMessage::<Ump>::from_data(&[0x2AA3_7F5C, 0x0, 0x0, 0x0])
+            KeyPressureBorrowed::<Ump>::from_data(&[0x2AA3_7F5C, 0x0, 0x0, 0x0])
                 .unwrap()
                 .note(),
             u7::new(0x7F),
@@ -70,7 +70,7 @@ mod tests {
     #[test]
     fn pressure() {
         assert_eq!(
-            KeyPressureMessage::<Ump>::from_data(&[0x2AA3_7F5C, 0x0, 0x0, 0x0])
+            KeyPressureBorrowed::<Ump>::from_data(&[0x2AA3_7F5C, 0x0, 0x0, 0x0])
                 .unwrap()
                 .pressure(),
             u7::new(0x5C),
@@ -80,19 +80,19 @@ mod tests {
     #[test]
     fn builder_bytes() {
         assert_eq!(
-            KeyPressureMessage::<Bytes>::builder(&mut Bytes::random_buffer::<3>())
+            KeyPressureOwned::<Bytes>::builder()
                 .channel(u4::new(0x3))
                 .note(u7::new(0x7F))
                 .pressure(u7::new(0x5C))
                 .build(),
-            Ok(KeyPressureMessage::<Bytes>(&[0xA3, 0x7F, 0x5C])),
+            Ok(KeyPressureOwned::<Bytes>(arr![0xA3, 0x7F, 0x5C])),
         );
     }
 
     #[test]
     fn channel_bytes() {
         assert_eq!(
-            KeyPressureMessage::<Bytes>::from_data(&[0xA3, 0x7F, 0x5C])
+            KeyPressureBorrowed::<Bytes>::from_data(&[0xA3, 0x7F, 0x5C])
                 .unwrap()
                 .channel(),
             u4::new(0x3),
@@ -102,7 +102,7 @@ mod tests {
     #[test]
     fn note_bytes() {
         assert_eq!(
-            KeyPressureMessage::<Bytes>::from_data(&[0xA3, 0x7F, 0x5C])
+            KeyPressureBorrowed::<Bytes>::from_data(&[0xA3, 0x7F, 0x5C])
                 .unwrap()
                 .note(),
             u7::new(0x7F),
@@ -112,7 +112,7 @@ mod tests {
     #[test]
     fn pressure_bytes() {
         assert_eq!(
-            KeyPressureMessage::<Bytes>::from_data(&[0xA3, 0x7F, 0x5C])
+            KeyPressureBorrowed::<Bytes>::from_data(&[0xA3, 0x7F, 0x5C])
                 .unwrap()
                 .pressure(),
             u7::new(0x5C),

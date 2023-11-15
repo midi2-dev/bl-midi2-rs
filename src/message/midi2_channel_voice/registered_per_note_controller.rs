@@ -19,18 +19,18 @@ struct RegisteredPerNoteController {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::RandomBuffer;
+    use generic_array::arr;
 
     #[test]
     fn builder() {
         assert_eq!(
-            RegisteredPerNoteControllerMessage::builder(&mut Ump::random_buffer::<4>())
+            RegisteredPerNoteControllerOwned::builder()
                 .group(u4::new(0x4))
                 .channel(u4::new(0x5))
                 .note(u7::new(0x6C))
                 .controller(Controller::Volume(0xE1E35E92))
                 .build(),
-            Ok(RegisteredPerNoteControllerMessage(&[
+            Ok(RegisteredPerNoteControllerOwned(arr![
                 0x4405_6C07,
                 0xE1E35E92,
                 0x0,
@@ -42,9 +42,14 @@ mod tests {
     #[test]
     fn group() {
         assert_eq!(
-            RegisteredPerNoteControllerMessage::from_data(&[0x4405_6C07, 0xE1E35E92, 0x0, 0x0])
-                .unwrap()
-                .group(),
+            RegisteredPerNoteControllerBorrowed::<Ump>::from_data(&[
+                0x4405_6C07,
+                0xE1E35E92,
+                0x0,
+                0x0
+            ])
+            .unwrap()
+            .group(),
             u4::new(0x4),
         );
     }
@@ -52,9 +57,14 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            RegisteredPerNoteControllerMessage::from_data(&[0x4405_6C07, 0xE1E35E92, 0x0, 0x0])
-                .unwrap()
-                .channel(),
+            RegisteredPerNoteControllerBorrowed::<Ump>::from_data(&[
+                0x4405_6C07,
+                0xE1E35E92,
+                0x0,
+                0x0
+            ])
+            .unwrap()
+            .channel(),
             u4::new(0x5),
         );
     }
@@ -62,9 +72,14 @@ mod tests {
     #[test]
     fn note() {
         assert_eq!(
-            RegisteredPerNoteControllerMessage::from_data(&[0x4405_6C07, 0xE1E35E92, 0x0, 0x0])
-                .unwrap()
-                .note(),
+            RegisteredPerNoteControllerBorrowed::<Ump>::from_data(&[
+                0x4405_6C07,
+                0xE1E35E92,
+                0x0,
+                0x0
+            ])
+            .unwrap()
+            .note(),
             u7::new(0x6C),
         );
     }
@@ -72,9 +87,14 @@ mod tests {
     #[test]
     fn controller() {
         assert_eq!(
-            RegisteredPerNoteControllerMessage::from_data(&[0x4405_6C07, 0xE1E35E92, 0x0, 0x0])
-                .unwrap()
-                .controller(),
+            RegisteredPerNoteControllerBorrowed::<Ump>::from_data(&[
+                0x4405_6C07,
+                0xE1E35E92,
+                0x0,
+                0x0
+            ])
+            .unwrap()
+            .controller(),
             Controller::Volume(0xE1E35E92),
         );
     }

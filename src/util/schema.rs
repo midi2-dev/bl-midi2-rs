@@ -16,18 +16,18 @@ impl<const D1: u32, const D2: u32, const D3: u32, const D4: u32> Schema
 impl Schema for () {}
 
 pub trait Property<T, UmpSchema: Schema, BytesSchema: Schema>: Buffer {
-    fn get(data: &<Self as Buffer>::Data) -> T;
-    fn write(data: &mut <Self as Buffer>::Data, v: T);
-    fn validate(_data: &<Self as Buffer>::Data) -> Result<()> {
+    fn get(data: &[<Self as Buffer>::Data]) -> T;
+    fn write(data: &mut [<Self as Buffer>::Data], v: T);
+    fn validate(_data: &[<Self as Buffer>::Data]) -> Result<()> {
         Ok(())
     }
 }
 
 impl Property<u20, UmpSchema<0x000F_FFFF, 0x0, 0x0, 0x0>, ()> for Ump {
-    fn get(data: &<Ump as Buffer>::Data) -> u20 {
+    fn get(data: &[<Ump as Buffer>::Data]) -> u20 {
         data[0].truncate()
     }
-    fn write(data: &mut <Ump as Buffer>::Data, v: u20) {
+    fn write(data: &mut [<Ump as Buffer>::Data], v: u20) {
         data[0] |= u32::from(v);
     }
 }
@@ -38,13 +38,13 @@ macro_rules! u4_ump_numerical_constants_property_imp {
             Property<NumericalConstant<T>, UmpSchema<$ump1, $ump2, $ump3, $ump4>, BytesSchema>
             for Ump
         {
-            fn get(_data: &<Ump as Buffer>::Data) -> NumericalConstant<T> {
+            fn get(_data: &[<Ump as Buffer>::Data]) -> NumericalConstant<T> {
                 NumericalConstant()
             }
-            fn write(data: &mut <Ump as Buffer>::Data, _: NumericalConstant<T>) {
+            fn write(data: &mut [<Ump as Buffer>::Data], _: NumericalConstant<T>) {
                 data[$buffer_index].set_nibble($nibble_index, T.truncate());
             }
-            fn validate(data: &<Ump as Buffer>::Data) -> Result<()> {
+            fn validate(data: &[<Ump as Buffer>::Data]) -> Result<()> {
                 if u32::from(data[$buffer_index].nibble($nibble_index)) == T {
                     Ok(())
                 } else {
@@ -70,13 +70,13 @@ macro_rules! u4_bytes_numerical_constants_property_impl {
             Property<NumericalConstant<T>, UmpSchema, BytesSchema<$bytes1, $bytes2, $bytes3>>
             for Bytes
         {
-            fn get(_data: &<Bytes as Buffer>::Data) -> NumericalConstant<T> {
+            fn get(_data: &[<Bytes as Buffer>::Data]) -> NumericalConstant<T> {
                 NumericalConstant()
             }
-            fn write(data: &mut <Bytes as Buffer>::Data, _: NumericalConstant<T>) {
+            fn write(data: &mut [<Bytes as Buffer>::Data], _: NumericalConstant<T>) {
                 data[$buffer_index].set_nibble($nibble_index, T.truncate());
             }
-            fn validate(data: &<Bytes as Buffer>::Data) -> Result<()> {
+            fn validate(data: &[<Bytes as Buffer>::Data]) -> Result<()> {
                 if u32::from(data[$buffer_index].nibble($nibble_index)) == T {
                     Ok(())
                 } else {
@@ -100,13 +100,13 @@ macro_rules! u8_ump_numerical_constants_property_impl {
             Property<NumericalConstant<T>, UmpSchema<$ump1, $ump2, $ump3, $ump4>, BytesSchema>
             for Ump
         {
-            fn get(_data: &<Ump as Buffer>::Data) -> NumericalConstant<T> {
+            fn get(_data: &[<Ump as Buffer>::Data]) -> NumericalConstant<T> {
                 NumericalConstant()
             }
-            fn write(data: &mut <Ump as Buffer>::Data, _: NumericalConstant<T>) {
+            fn write(data: &mut [<Ump as Buffer>::Data], _: NumericalConstant<T>) {
                 data[$buffer_index].set_octet($octet_index, T.truncate());
             }
-            fn validate(data: &<Ump as Buffer>::Data) -> Result<()> {
+            fn validate(data: &[<Ump as Buffer>::Data]) -> Result<()> {
                 if u32::from(data[$buffer_index].octet($octet_index)) == T {
                     Ok(())
                 } else {
@@ -128,13 +128,13 @@ macro_rules! u8_bytes_numerical_constants_property_impl {
             Property<NumericalConstant<T>, UmpSchema, BytesSchema<$bytes1, $bytes2, $bytes3>>
             for Bytes
         {
-            fn get(_data: &<Bytes as Buffer>::Data) -> NumericalConstant<T> {
+            fn get(_data: &[<Bytes as Buffer>::Data]) -> NumericalConstant<T> {
                 NumericalConstant()
             }
-            fn write(data: &mut <Bytes as Buffer>::Data, _: NumericalConstant<T>) {
+            fn write(data: &mut [<Bytes as Buffer>::Data], _: NumericalConstant<T>) {
                 data[$buffer_index] = T.truncate();
             }
-            fn validate(data: &<Bytes as Buffer>::Data) -> Result<()> {
+            fn validate(data: &[<Bytes as Buffer>::Data]) -> Result<()> {
                 if u32::from(data[$buffer_index]) == T {
                     Ok(())
                 } else {
@@ -154,10 +154,10 @@ macro_rules! bool_ump_property_impl {
         impl<BytesSchema: Schema> Property<bool, UmpSchema<$ump1, $ump2, $ump3, $ump4>, BytesSchema>
             for Ump
         {
-            fn get(data: &<Ump as Buffer>::Data) -> bool {
+            fn get(data: &[<Ump as Buffer>::Data]) -> bool {
                 data[$buffer_index].bit($bit_index)
             }
-            fn write(data: &mut <Ump as Buffer>::Data, v: bool) {
+            fn write(data: &mut [<Ump as Buffer>::Data], v: bool) {
                 data[$buffer_index].set_bit($bit_index, v);
             }
         }
@@ -172,10 +172,10 @@ macro_rules! u4_ump_property_impl {
         impl<BytesSchema: Schema> Property<u4, UmpSchema<$ump1, $ump2, $ump3, $ump4>, BytesSchema>
             for Ump
         {
-            fn get(data: &<Ump as Buffer>::Data) -> u4 {
+            fn get(data: &[<Ump as Buffer>::Data]) -> u4 {
                 data[$buffer_index].nibble($nibble_index)
             }
-            fn write(data: &mut <Ump as Buffer>::Data, v: u4) {
+            fn write(data: &mut [<Ump as Buffer>::Data], v: u4) {
                 data[$buffer_index].set_nibble($nibble_index, v);
             }
         }
@@ -196,10 +196,10 @@ macro_rules! u4_bytes_property_impl {
         impl<UmpSchema: Schema> Property<u4, UmpSchema, BytesSchema<$bytes1, $bytes2, $bytes3>>
             for Bytes
         {
-            fn get(data: &<Bytes as Buffer>::Data) -> u4 {
+            fn get(data: &[<Bytes as Buffer>::Data]) -> u4 {
                 data[$buffer_index].nibble($nibble_index)
             }
-            fn write(data: &mut <Bytes as Buffer>::Data, v: u4) {
+            fn write(data: &mut [<Bytes as Buffer>::Data], v: u4) {
                 data[$buffer_index].set_nibble($nibble_index, v);
             }
         }
@@ -218,10 +218,10 @@ macro_rules! u7_ump_property_impl {
         impl<BytesSchema: Schema> Property<u7, UmpSchema<$ump1, $ump2, $ump3, $ump4>, BytesSchema>
             for Ump
         {
-            fn get(data: &<Ump as Buffer>::Data) -> u7 {
+            fn get(data: &[<Ump as Buffer>::Data]) -> u7 {
                 data[$buffer_index].octet($octet_index).truncate()
             }
-            fn write(data: &mut <Ump as Buffer>::Data, v: u7) {
+            fn write(data: &mut [<Ump as Buffer>::Data], v: u7) {
                 data[$buffer_index].set_octet($octet_index, (v).into());
             }
         }
@@ -242,10 +242,10 @@ macro_rules! u7_bytes_property_impl {
         impl<UmpSchema: Schema> Property<u7, UmpSchema, BytesSchema<$bytes1, $bytes2, $bytes3>>
             for Bytes
         {
-            fn get(data: &<Bytes as Buffer>::Data) -> u7 {
+            fn get(data: &[<Bytes as Buffer>::Data]) -> u7 {
                 data[$buffer_index].truncate()
             }
-            fn write(data: &mut <Bytes as Buffer>::Data, v: u7) {
+            fn write(data: &mut [<Bytes as Buffer>::Data], v: u7) {
                 data[$buffer_index] = (v).into();
             }
         }
@@ -261,10 +261,10 @@ macro_rules! u8_bytes_property_impl {
         impl<UmpSchema: Schema> Property<u8, UmpSchema, BytesSchema<$bytes1, $bytes2, $bytes3>>
             for Bytes
         {
-            fn get(data: &<Bytes as Buffer>::Data) -> u8 {
+            fn get(data: &[<Bytes as Buffer>::Data]) -> u8 {
                 data[$buffer_index]
             }
-            fn write(data: &mut <Bytes as Buffer>::Data, v: u8) {
+            fn write(data: &mut [<Bytes as Buffer>::Data], v: u8) {
                 data[$buffer_index] = v;
             }
         }
@@ -280,10 +280,10 @@ macro_rules! u8_ump_property_impl {
         impl<BytesSchema: Schema> Property<u8, UmpSchema<$ump1, $ump2, $ump3, $ump4>, BytesSchema>
             for Ump
         {
-            fn get(data: &<Ump as Buffer>::Data) -> u8 {
+            fn get(data: &[<Ump as Buffer>::Data]) -> u8 {
                 data[$buffer_index].octet($octet_index)
             }
-            fn write(data: &mut <Ump as Buffer>::Data, v: u8) {
+            fn write(data: &mut [<Ump as Buffer>::Data], v: u8) {
                 data[$buffer_index].set_octet($octet_index, v);
             }
         }
@@ -304,10 +304,10 @@ macro_rules! u16_ump_property_impl {
         impl<BytesSchema: Schema> Property<u16, UmpSchema<$ump1, $ump2, $ump3, $ump4>, BytesSchema>
             for Ump
         {
-            fn get(data: &<Ump as Buffer>::Data) -> u16 {
+            fn get(data: &[<Ump as Buffer>::Data]) -> u16 {
                 data[$buffer_index].word($word_index)
             }
-            fn write(data: &mut <Ump as Buffer>::Data, v: u16) {
+            fn write(data: &mut [<Ump as Buffer>::Data], v: u16) {
                 data[$buffer_index].set_word($word_index, v);
             }
         }
@@ -328,10 +328,10 @@ macro_rules! u32_ump_property_impl {
         impl<BytesSchema: Schema> Property<u32, UmpSchema<$ump1, $ump2, $ump3, $ump4>, BytesSchema>
             for Ump
         {
-            fn get(data: &<Ump as Buffer>::Data) -> u32 {
+            fn get(data: &[<Ump as Buffer>::Data]) -> u32 {
                 data[$buffer_index]
             }
-            fn write(data: &mut <Ump as Buffer>::Data, v: u32) {
+            fn write(data: &mut [<Ump as Buffer>::Data], v: u32) {
                 data[$buffer_index] = v;
             }
         }
@@ -344,10 +344,10 @@ u32_ump_property_impl!(0x0, 0x0, 0xFFFF_FFFF, 0x0, 2);
 u32_ump_property_impl!(0x0, 0x0, 0x0, 0xFFFF_FFFF, 3);
 
 impl<UmpSchema: Schema> Property<u14, UmpSchema, BytesSchema<0x0, 0x7F, 0x7F>> for Bytes {
-    fn get(data: &<Bytes as Buffer>::Data) -> u14 {
+    fn get(data: &[<Bytes as Buffer>::Data]) -> u14 {
         u14::from_u7s(&[data[1].truncate(), data[2].truncate()])
     }
-    fn write(data: &mut <Bytes as Buffer>::Data, v: u14) {
+    fn write(data: &mut [<Bytes as Buffer>::Data], v: u14) {
         let u7s = v.to_u7s();
         data[1] = u7s[0].into();
         data[2] = u7s[1].into();
@@ -357,10 +357,10 @@ impl<UmpSchema: Schema> Property<u14, UmpSchema, BytesSchema<0x0, 0x7F, 0x7F>> f
 impl<BytesSchema: Schema> Property<u14, UmpSchema<0x0000_7F7F, 0x0, 0x0, 0x0>, BytesSchema>
     for Ump
 {
-    fn get(data: &<Ump as Buffer>::Data) -> u14 {
+    fn get(data: &[<Ump as Buffer>::Data]) -> u14 {
         u14::from_u7s(&[data[0].octet(2).truncate(), data[0].octet(3).truncate()])
     }
-    fn write(data: &mut <Ump as Buffer>::Data, v: u14) {
+    fn write(data: &mut [<Ump as Buffer>::Data], v: u14) {
         let u7s = v.to_u7s();
         data[0].set_octet(2, u7s[0].into());
         data[0].set_octet(3, u7s[1].into());
@@ -370,7 +370,7 @@ impl<BytesSchema: Schema> Property<u14, UmpSchema<0x0000_7F7F, 0x0, 0x0, 0x0>, B
 impl<BytesSchema: Schema>
     Property<Option<u14>, UmpSchema<0x0000_0001, 0x0000_7F7F, 0x0, 0x0>, BytesSchema> for Ump
 {
-    fn get(data: &<Ump as Buffer>::Data) -> Option<u14> {
+    fn get(data: &[<Ump as Buffer>::Data]) -> Option<u14> {
         if data[0].bit(31) {
             Some(u14::from_u7s(&[
                 data[1].octet(2).truncate(),
@@ -380,7 +380,7 @@ impl<BytesSchema: Schema>
             None
         }
     }
-    fn write(data: &mut <Ump as Buffer>::Data, v: Option<u14>) {
+    fn write(data: &mut [<Ump as Buffer>::Data], v: Option<u14>) {
         match v {
             Some(v) => {
                 let u7s = v.to_u7s();
@@ -397,17 +397,17 @@ impl<BytesSchema: Schema>
 }
 
 impl<T, UmpSchema: Schema> Property<T, UmpSchema, ()> for Bytes {
-    fn get(_: &<Self as Buffer>::Data) -> T {
+    fn get(_: &[<Self as Buffer>::Data]) -> T {
         unreachable!()
     }
-    fn write(_: &mut <Self as Buffer>::Data, _: T) {}
+    fn write(_: &mut [<Self as Buffer>::Data], _: T) {}
 }
 
 impl<T, BytesSchema: Schema> Property<T, (), BytesSchema> for Ump {
-    fn get(_: &<Self as Buffer>::Data) -> T {
+    fn get(_: &[<Self as Buffer>::Data]) -> T {
         unreachable!()
     }
-    fn write(_: &mut <Self as Buffer>::Data, _: T) {}
+    fn write(_: &mut [<Self as Buffer>::Data], _: T) {}
 }
 
 #[derive(Default)]

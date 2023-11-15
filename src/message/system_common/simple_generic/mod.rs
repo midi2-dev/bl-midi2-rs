@@ -114,7 +114,7 @@ pub mod reset {
 #[cfg(test)]
 mod tests {
     use crate::message::system_common::TYPE_CODE as SYSTEM_COMMON_TYPE_CODE;
-    use crate::util::RandomBuffer;
+    use generic_array::arr;
 
     #[midi2_attr::generate_message]
     struct Test {
@@ -133,17 +133,15 @@ mod tests {
     #[test]
     fn builder() {
         assert_eq!(
-            TestMessage::<Ump>::builder(&mut Ump::random_buffer::<4>())
-                .group(u4::new(0x9))
-                .build(),
-            Ok(TestMessage::<Ump>(&[0x19FF_0000, 0x0, 0x0, 0x0])),
+            TestOwned::<Ump>::builder().group(u4::new(0x9)).build(),
+            Ok(TestOwned::<Ump>(arr![0x19FF_0000, 0x0, 0x0, 0x0])),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            TestMessage::<Ump>::from_data(&[0x19FF_0000, 0x0, 0x0, 0x0])
+            TestBorrowed::<Ump>::from_data(&[0x19FF_0000, 0x0, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0x9),
@@ -153,16 +151,16 @@ mod tests {
     #[test]
     fn bytes_builder() {
         assert_eq!(
-            TestMessage::<Bytes>::builder(&mut Bytes::random_buffer::<3>()).build(),
-            Ok(TestMessage::<Bytes>(&[0xFF, 0x0, 0x0])),
+            TestOwned::<Bytes>::builder().build(),
+            Ok(TestOwned::<Bytes>(arr![0xFF, 0x0, 0x0])),
         );
     }
 
     #[test]
     fn bytes_from_data() {
         assert_eq!(
-            TestMessage::<Bytes>::from_data(&[0xFF, 0x0, 0x0]),
-            Ok(TestMessage::<Bytes>(&[0xFF, 0x0, 0x0])),
+            TestBorrowed::<Bytes>::from_data(&[0xFF, 0x0, 0x0]),
+            Ok(TestBorrowed::<Bytes>(&[0xFF, 0x0, 0x0])),
         )
     }
 }

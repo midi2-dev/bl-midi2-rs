@@ -63,13 +63,13 @@ pub fn write_attribute(bytes: &mut [u32], attr: Option<Attribute>) -> &mut [u32]
 }
 
 impl Property<Option<Attribute>, UmpSchema<0x0000_00FF, 0x0000_FFFF, 0x0, 0x0>, ()> for Ump {
-    fn get(data: &<Ump as Buffer>::Data) -> Option<Attribute> {
+    fn get(data: &[<Ump as Buffer>::Data]) -> Option<Attribute> {
         from_ump(data)
     }
-    fn write(data: &mut <Ump as Buffer>::Data, v: Option<Attribute>) {
+    fn write(data: &mut [<Ump as Buffer>::Data], v: Option<Attribute>) {
         write_attribute(data, v);
     }
-    fn validate(data: &<Ump as Buffer>::Data) -> Result<()> {
+    fn validate(data: &[<Ump as Buffer>::Data]) -> Result<()> {
         validate_ump(data)
     }
 }

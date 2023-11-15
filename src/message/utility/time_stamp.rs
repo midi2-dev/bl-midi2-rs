@@ -8,47 +8,31 @@ struct TimeStamp {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::RandomBuffer;
+    use generic_array::arr;
 
     #[test]
     fn builder() {
         assert_eq!(
-            TimeStampMessage::builder(&mut Ump::random_buffer::<4>())
+            TimeStampOwned::builder()
                 .group(u4::new(0x4))
                 .time_stamp(u20::new(0xE_69AE))
                 .build(),
-            Ok(TimeStampMessage(&[0x042E_69AE, 0x0, 0x0, 0x0])),
+            Ok(TimeStampOwned(arr![0x042E_69AE, 0x0, 0x0, 0x0])),
         );
     }
 
     #[test]
     fn builder_default() {
         assert_eq!(
-            TimeStampMessage::builder(&mut Ump::random_buffer::<4>()).build(),
-            Ok(TimeStampMessage(&[0x0020_0000, 0x0, 0x0, 0x0])),
-        );
-    }
-
-    #[test]
-    fn builder_oversized_buffer() {
-        assert_eq!(
-            TimeStampMessage::builder(&mut Ump::random_buffer::<6>()).build(),
-            Ok(TimeStampMessage(&[0x0020_0000, 0x0, 0x0, 0x0])),
-        );
-    }
-
-    #[test]
-    fn builder_overflow() {
-        assert_eq!(
-            TimeStampMessage::builder(&mut []).build(),
-            Err(Error::BufferOverflow),
+            TimeStampOwned::<Ump>::builder().build(),
+            Ok(TimeStampOwned(arr![0x0020_0000, 0x0, 0x0, 0x0])),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            TimeStampMessage::from_data(&[0x0F20_0000, 0x0, 0x0, 0x0])
+            TimeStampBorrowed::from_data(&[0x0F20_0000, 0x0, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0xF),
@@ -58,7 +42,7 @@ mod tests {
     #[test]
     fn time_stamp() {
         assert_eq!(
-            TimeStampMessage::from_data(&[0x0021_2345, 0x0, 0x0, 0x0])
+            TimeStampBorrowed::<Ump>::from_data(&[0x0021_2345, 0x0, 0x0, 0x0])
                 .unwrap()
                 .time_stamp(),
             u20::new(0x12345),

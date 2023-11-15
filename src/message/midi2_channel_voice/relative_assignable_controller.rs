@@ -18,19 +18,19 @@ struct RelativeAssignableController {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::RandomBuffer;
+    use generic_array::arr;
 
     #[test]
     fn builder() {
         assert_eq!(
-            RelativeAssignableControllerMessage::builder(&mut Ump::random_buffer::<4>())
+            RelativeAssignableControllerOwned::builder()
                 .group(u4::new(0x3))
                 .channel(u4::new(0x1))
                 .bank(u7::new(0x24))
                 .index(u7::new(0x52))
                 .controller_data(0x898874E4)
                 .build(),
-            Ok(RelativeAssignableControllerMessage(&[
+            Ok(RelativeAssignableControllerOwned(arr![
                 0x4351_2452,
                 0x898874E4,
                 0x0,
@@ -42,9 +42,14 @@ mod tests {
     #[test]
     fn group() {
         assert_eq!(
-            RelativeAssignableControllerMessage::from_data(&[0x4351_2452, 0x898874E4, 0x0, 0x0])
-                .unwrap()
-                .group(),
+            RelativeAssignableControllerBorrowed::<Ump>::from_data(&[
+                0x4351_2452,
+                0x898874E4,
+                0x0,
+                0x0
+            ])
+            .unwrap()
+            .group(),
             u4::new(0x3),
         );
     }
@@ -52,9 +57,14 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            RelativeAssignableControllerMessage::from_data(&[0x4351_2452, 0x898874E4, 0x0, 0x0])
-                .unwrap()
-                .channel(),
+            RelativeAssignableControllerBorrowed::<Ump>::from_data(&[
+                0x4351_2452,
+                0x898874E4,
+                0x0,
+                0x0
+            ])
+            .unwrap()
+            .channel(),
             u4::new(0x1),
         );
     }
@@ -62,9 +72,14 @@ mod tests {
     #[test]
     pub fn bank() {
         assert_eq!(
-            RelativeAssignableControllerMessage::from_data(&[0x4351_2452, 0x898874E4, 0x0, 0x0])
-                .unwrap()
-                .bank(),
+            RelativeAssignableControllerBorrowed::<Ump>::from_data(&[
+                0x4351_2452,
+                0x898874E4,
+                0x0,
+                0x0
+            ])
+            .unwrap()
+            .bank(),
             u7::new(0x24),
         );
     }
@@ -72,9 +87,14 @@ mod tests {
     #[test]
     pub fn index() {
         assert_eq!(
-            RelativeAssignableControllerMessage::from_data(&[0x4351_2452, 0x898874E4, 0x0, 0x0])
-                .unwrap()
-                .index(),
+            RelativeAssignableControllerBorrowed::<Ump>::from_data(&[
+                0x4351_2452,
+                0x898874E4,
+                0x0,
+                0x0
+            ])
+            .unwrap()
+            .index(),
             u7::new(0x52),
         );
     }
@@ -82,9 +102,14 @@ mod tests {
     #[test]
     pub fn controller_data() {
         assert_eq!(
-            RelativeAssignableControllerMessage::from_data(&[0x4351_2452, 0x898874E4, 0x0, 0x0])
-                .unwrap()
-                .controller_data(),
+            RelativeAssignableControllerBorrowed::<Ump>::from_data(&[
+                0x4351_2452,
+                0x898874E4,
+                0x0,
+                0x0
+            ])
+            .unwrap()
+            .controller_data(),
             0x898874E4,
         );
     }

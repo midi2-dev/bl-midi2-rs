@@ -22,25 +22,25 @@ struct ControlChange {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::RandomBuffer;
+    use generic_array::arr;
 
     #[test]
     fn builder() {
         assert_eq!(
-            ControlChangeMessage::<Ump>::builder(&mut Ump::random_buffer::<4>())
+            ControlChangeOwned::<Ump>::builder()
                 .group(u4::new(0xA))
                 .channel(u4::new(0x7))
                 .control(u7::new(0x36))
                 .control_data(u7::new(0x37))
                 .build(),
-            Ok(ControlChangeMessage::<Ump>(&[0x2AB7_3637, 0x0, 0x0, 0x0])),
+            Ok(ControlChangeOwned::<Ump>(arr![0x2AB7_3637, 0x0, 0x0, 0x0])),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            ControlChangeMessage::<Ump>::from_data(&[0x2AB7_3637, 0x0, 0x0, 0x0])
+            ControlChangeBorrowed::<Ump>::from_data(&[0x2AB7_3637, 0x0, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0xA),
@@ -50,7 +50,7 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            ControlChangeMessage::<Ump>::from_data(&[0x2AB7_3637, 0x0, 0x0, 0x0])
+            ControlChangeBorrowed::<Ump>::from_data(&[0x2AB7_3637, 0x0, 0x0, 0x0])
                 .unwrap()
                 .channel(),
             u4::new(0x7),
@@ -60,7 +60,7 @@ mod tests {
     #[test]
     fn control() {
         assert_eq!(
-            ControlChangeMessage::<Ump>::from_data(&[0x2AB7_3637, 0x0, 0x0, 0x0])
+            ControlChangeBorrowed::<Ump>::from_data(&[0x2AB7_3637, 0x0, 0x0, 0x0])
                 .unwrap()
                 .control(),
             u7::new(0x36),
@@ -70,7 +70,7 @@ mod tests {
     #[test]
     fn control_data() {
         assert_eq!(
-            ControlChangeMessage::<Ump>::from_data(&[0x2AB7_3637, 0x0, 0x0, 0x0])
+            ControlChangeBorrowed::<Ump>::from_data(&[0x2AB7_3637, 0x0, 0x0, 0x0])
                 .unwrap()
                 .control_data(),
             u7::new(0x37),
@@ -80,19 +80,19 @@ mod tests {
     #[test]
     fn builder_bytes() {
         assert_eq!(
-            ControlChangeMessage::<Bytes>::builder(&mut Bytes::random_buffer::<3>())
+            ControlChangeOwned::<Bytes>::builder()
                 .channel(u4::new(0x7))
                 .control(u7::new(0x36))
                 .control_data(u7::new(0x37))
                 .build(),
-            Ok(ControlChangeMessage::<Bytes>(&[0xB7, 0x36, 0x37])),
+            Ok(ControlChangeOwned::<Bytes>(arr![0xB7, 0x36, 0x37])),
         );
     }
 
     #[test]
     fn channel_bytes() {
         assert_eq!(
-            ControlChangeMessage::<Bytes>::from_data(&[0xB7, 0x36, 0x37])
+            ControlChangeBorrowed::<Bytes>::from_data(&[0xB7, 0x36, 0x37])
                 .unwrap()
                 .channel(),
             u4::new(0x7),
@@ -102,7 +102,7 @@ mod tests {
     #[test]
     fn control_bytes() {
         assert_eq!(
-            ControlChangeMessage::<Bytes>::from_data(&[0xB7, 0x36, 0x37])
+            ControlChangeBorrowed::<Bytes>::from_data(&[0xB7, 0x36, 0x37])
                 .unwrap()
                 .control(),
             u7::new(0x36),
@@ -112,7 +112,7 @@ mod tests {
     #[test]
     fn control_data_bytes() {
         assert_eq!(
-            ControlChangeMessage::<Bytes>::from_data(&[0xB7, 0x36, 0x37])
+            ControlChangeBorrowed::<Bytes>::from_data(&[0xB7, 0x36, 0x37])
                 .unwrap()
                 .control_data(),
             u7::new(0x37),

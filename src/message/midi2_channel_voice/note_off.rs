@@ -20,39 +20,39 @@ struct NoteOff {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::RandomBuffer;
+    use generic_array::arr;
 
     #[test]
     fn builder() {
         assert_eq!(
-            NoteOffMessage::builder(&mut Ump::random_buffer::<4>())
+            NoteOffOwned::builder()
                 .group(u4::new(0x2))
                 .channel(u4::new(0x4))
                 .note(u7::new(0x4E))
                 .velocity(0x9DE6)
                 .attribute(Some(Attribute::ManufacturerSpecific(0xCC6E)))
                 .build(),
-            Ok(NoteOffMessage(&[0x4284_4E01, 0x9DE6_CC6E, 0x0, 0x0]))
+            Ok(NoteOffOwned(arr![0x4284_4E01, 0x9DE6_CC6E, 0x0, 0x0]))
         );
     }
 
     #[test]
     fn builder_no_attribute() {
         assert_eq!(
-            NoteOffMessage::builder(&mut Ump::random_buffer::<4>())
+            NoteOffOwned::builder()
                 .group(u4::new(0x2))
                 .channel(u4::new(0x4))
                 .note(u7::new(0x4E))
                 .velocity(0x9DE6)
                 .build(),
-            Ok(NoteOffMessage(&[0x4284_4E00, 0x9DE6_0000, 0x0, 0x0]))
+            Ok(NoteOffOwned(arr![0x4284_4E00, 0x9DE6_0000, 0x0, 0x0]))
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            NoteOffMessage::from_data(&[0x4284_4E01, 0x9DE6_CC6E, 0x0, 0x0])
+            NoteOffBorrowed::<Ump>::from_data(&[0x4284_4E01, 0x9DE6_CC6E, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0x2),
@@ -62,7 +62,7 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            NoteOffMessage::from_data(&[0x4284_4E01, 0x9DE6_CC6E, 0x0, 0x0])
+            NoteOffBorrowed::<Ump>::from_data(&[0x4284_4E01, 0x9DE6_CC6E, 0x0, 0x0])
                 .unwrap()
                 .channel(),
             u4::new(0x4),
@@ -72,7 +72,7 @@ mod tests {
     #[test]
     fn note() {
         assert_eq!(
-            NoteOffMessage::from_data(&[0x4284_4E01, 0x9DE6_CC6E, 0x0, 0x0])
+            NoteOffBorrowed::<Ump>::from_data(&[0x4284_4E01, 0x9DE6_CC6E, 0x0, 0x0])
                 .unwrap()
                 .note(),
             u7::new(0x4E),
@@ -82,7 +82,7 @@ mod tests {
     #[test]
     fn volocity() {
         assert_eq!(
-            NoteOffMessage::from_data(&[0x4284_4E01, 0x9DE6_CC6E, 0x0, 0x0])
+            NoteOffBorrowed::<Ump>::from_data(&[0x4284_4E01, 0x9DE6_CC6E, 0x0, 0x0])
                 .unwrap()
                 .velocity(),
             0x9DE6,
@@ -92,7 +92,7 @@ mod tests {
     #[test]
     fn attribute() {
         assert_eq!(
-            NoteOffMessage::from_data(&[0x4284_4E01, 0x9DE6_CC6E, 0x0, 0x0])
+            NoteOffBorrowed::<Ump>::from_data(&[0x4284_4E01, 0x9DE6_CC6E, 0x0, 0x0])
                 .unwrap()
                 .attribute(),
             Some(Attribute::ManufacturerSpecific(0xCC6E)),

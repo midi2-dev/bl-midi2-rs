@@ -7,22 +7,20 @@ struct NoOp {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::RandomBuffer;
+    use generic_array::arr;
 
     #[test]
     fn builder() {
         assert_eq!(
-            NoOpMessage::builder(&mut Ump::random_buffer::<4>())
-                .group(u4::new(0xB))
-                .build(),
-            Ok(NoOpMessage(&[0x0B00_0000, 0x0, 0x0, 0x0])),
+            NoOpOwned::builder().group(u4::new(0xB)).build(),
+            Ok(NoOpOwned(arr![0x0B00_0000, 0x0, 0x0, 0x0])),
         )
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            NoOpMessage::from_data(&[0x0900_0000, 0x0, 0x0, 0x0])
+            NoOpBorrowed::from_data(&[0x0900_0000, 0x0, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0x9),

@@ -22,25 +22,25 @@ struct NoteOff {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::RandomBuffer;
+    use generic_array::arr;
 
     #[test]
     fn builder() {
         assert_eq!(
-            NoteOffMessage::<Ump>::builder(&mut Ump::random_buffer::<4>())
+            NoteOffOwned::<Ump>::builder()
                 .group(u4::new(0x1))
                 .channel(u4::new(0xA))
                 .note(u7::new(0x68))
                 .velocity(u7::new(0x1B))
                 .build(),
-            Ok(NoteOffMessage::<Ump>(&[0x218A_681B, 0x0, 0x0, 0x0])),
+            Ok(NoteOffOwned::<Ump>(arr![0x218A_681B, 0x0, 0x0, 0x0])),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            NoteOffMessage::<Ump>::from_data(&[0x218A_681B, 0x0, 0x0, 0x0])
+            NoteOffBorrowed::<Ump>::from_data(&[0x218A_681B, 0x0, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0x1),
@@ -50,7 +50,7 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            NoteOffMessage::<Ump>::from_data(&[0x218A_681B, 0x0, 0x0, 0x0])
+            NoteOffBorrowed::<Ump>::from_data(&[0x218A_681B, 0x0, 0x0, 0x0])
                 .unwrap()
                 .channel(),
             u4::new(0xA),
@@ -60,7 +60,7 @@ mod tests {
     #[test]
     fn note() {
         assert_eq!(
-            NoteOffMessage::<Ump>::from_data(&[0x218A_681B, 0x0, 0x0, 0x0])
+            NoteOffBorrowed::<Ump>::from_data(&[0x218A_681B, 0x0, 0x0, 0x0])
                 .unwrap()
                 .note(),
             u7::new(0x68),
@@ -70,7 +70,7 @@ mod tests {
     #[test]
     fn velocity() {
         assert_eq!(
-            NoteOffMessage::<Ump>::from_data(&[0x218A_681B, 0x0, 0x0, 0x0])
+            NoteOffBorrowed::<Ump>::from_data(&[0x218A_681B, 0x0, 0x0, 0x0])
                 .unwrap()
                 .velocity(),
             u7::new(0x1B),
@@ -80,19 +80,19 @@ mod tests {
     #[test]
     fn builder_bytes() {
         assert_eq!(
-            NoteOffMessage::<Bytes>::builder(&mut Bytes::random_buffer::<3>())
+            NoteOffOwned::<Bytes>::builder()
                 .channel(u4::new(0xA))
                 .note(u7::new(0x68))
                 .velocity(u7::new(0x1B))
                 .build(),
-            Ok(NoteOffMessage::<Bytes>(&[0x8A, 0x68, 0x1B])),
+            Ok(NoteOffOwned::<Bytes>(arr![0x8A, 0x68, 0x1B])),
         );
     }
 
     #[test]
     fn channel_bytes() {
         assert_eq!(
-            NoteOffMessage::<Bytes>::from_data(&[0x8A, 0x68, 0x1B])
+            NoteOffBorrowed::<Bytes>::from_data(&[0x8A, 0x68, 0x1B])
                 .unwrap()
                 .channel(),
             u4::new(0xA),
@@ -102,7 +102,7 @@ mod tests {
     #[test]
     fn note_bytes() {
         assert_eq!(
-            NoteOffMessage::<Bytes>::from_data(&[0x8A, 0x68, 0x1B])
+            NoteOffBorrowed::<Bytes>::from_data(&[0x8A, 0x68, 0x1B])
                 .unwrap()
                 .note(),
             u7::new(0x68),
@@ -112,7 +112,7 @@ mod tests {
     #[test]
     fn velocity_bytes() {
         assert_eq!(
-            NoteOffMessage::<Bytes>::from_data(&[0x8A, 0x68, 0x1B])
+            NoteOffBorrowed::<Bytes>::from_data(&[0x8A, 0x68, 0x1B])
                 .unwrap()
                 .velocity(),
             u7::new(0x1B),

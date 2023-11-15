@@ -134,15 +134,15 @@ pub fn to_index_and_data(c: Controller) -> (u8, u32) {
 }
 
 impl Property<Controller, UmpSchema<0x0000_00FF, 0xFFFF_FFFF, 0x0, 0x0>, ()> for Ump {
-    fn get(data: &<Ump as Buffer>::Data) -> Controller {
+    fn get(data: &[<Ump as Buffer>::Data]) -> Controller {
         from_index_and_data(data[0].octet(3), data[1])
     }
-    fn write(data: &mut <Ump as Buffer>::Data, v: Controller) {
+    fn write(data: &mut [<Ump as Buffer>::Data], v: Controller) {
         let (index, controller_data) = to_index_and_data(v);
         data[0].set_octet(3, index);
         data[1] = controller_data;
     }
-    fn validate(data: &<Ump as Buffer>::Data) -> Result<()> {
+    fn validate(data: &[<Ump as Buffer>::Data]) -> Result<()> {
         validate_index(data[0].octet(3))
     }
 }

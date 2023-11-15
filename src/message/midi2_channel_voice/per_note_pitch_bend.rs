@@ -17,18 +17,18 @@ struct PerNotePitchBend {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::RandomBuffer;
+    use generic_array::arr;
 
     #[test]
     fn builder() {
         assert_eq!(
-            PerNotePitchBendMessage::builder(&mut Ump::random_buffer::<4>())
+            PerNotePitchBendOwned::builder()
                 .group(u4::new(0x9))
                 .channel(u4::new(0x2))
                 .note(u7::new(0x76))
                 .pitch_bend_data(0x2AD74672)
                 .build(),
-            Ok(PerNotePitchBendMessage(&[
+            Ok(PerNotePitchBendOwned(arr![
                 0x4962_7600,
                 0x2AD74672,
                 0x0,
@@ -40,7 +40,7 @@ mod tests {
     #[test]
     fn group() {
         assert_eq!(
-            PerNotePitchBendMessage::from_data(&[0x4962_7600, 0x2AD74672, 0x0, 0x0])
+            PerNotePitchBendBorrowed::<Ump>::from_data(&[0x4962_7600, 0x2AD74672, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0x9),
@@ -50,7 +50,7 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            PerNotePitchBendMessage::from_data(&[0x4962_7600, 0x2AD74672, 0x0, 0x0])
+            PerNotePitchBendBorrowed::<Ump>::from_data(&[0x4962_7600, 0x2AD74672, 0x0, 0x0])
                 .unwrap()
                 .channel(),
             u4::new(0x2),
@@ -60,7 +60,7 @@ mod tests {
     #[test]
     fn note() {
         assert_eq!(
-            PerNotePitchBendMessage::from_data(&[0x4962_7600, 0x2AD74672, 0x0, 0x0])
+            PerNotePitchBendBorrowed::<Ump>::from_data(&[0x4962_7600, 0x2AD74672, 0x0, 0x0])
                 .unwrap()
                 .note(),
             u7::new(0x76),
@@ -70,7 +70,7 @@ mod tests {
     #[test]
     fn pitch_bend_data() {
         assert_eq!(
-            PerNotePitchBendMessage::from_data(&[0x4962_7600, 0x2AD74672, 0x0, 0x0])
+            PerNotePitchBendBorrowed::<Ump>::from_data(&[0x4962_7600, 0x2AD74672, 0x0, 0x0])
                 .unwrap()
                 .pitch_bend_data(),
             0x2AD74672,

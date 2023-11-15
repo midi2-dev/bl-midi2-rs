@@ -18,26 +18,26 @@ struct PerNoteManagement {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::RandomBuffer;
+    use generic_array::arr;
 
     #[test]
     fn builder() {
         assert_eq!(
-            PerNoteManagementMessage::builder(&mut Ump::random_buffer::<4>())
+            PerNoteManagementOwned::builder()
                 .group(u4::new(0xB))
                 .channel(u4::new(0x9))
                 .note(u7::new(0x1C))
                 .detach(true)
                 .reset(true)
                 .build(),
-            Ok(PerNoteManagementMessage(&[0x4BF9_1C03, 0x0, 0x0, 0x0])),
+            Ok(PerNoteManagementOwned(arr![0x4BF9_1C03, 0x0, 0x0, 0x0])),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            PerNoteManagementMessage::from_data(&[0x4BF9_1C03, 0x0, 0x0, 0x0])
+            PerNoteManagementBorrowed::<Ump>::from_data(&[0x4BF9_1C03, 0x0, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0xB),
@@ -47,7 +47,7 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            PerNoteManagementMessage::from_data(&[0x4BF9_1C03, 0x0, 0x0, 0x0])
+            PerNoteManagementBorrowed::<Ump>::from_data(&[0x4BF9_1C03, 0x0, 0x0, 0x0])
                 .unwrap()
                 .channel(),
             u4::new(0x9),
@@ -57,7 +57,7 @@ mod tests {
     #[test]
     fn note() {
         assert_eq!(
-            PerNoteManagementMessage::from_data(&[0x4BF9_1C03, 0x0, 0x0, 0x0])
+            PerNoteManagementBorrowed::<Ump>::from_data(&[0x4BF9_1C03, 0x0, 0x0, 0x0])
                 .unwrap()
                 .note(),
             u7::new(0x1C),
@@ -67,7 +67,7 @@ mod tests {
     #[test]
     fn detach() {
         assert!(
-            PerNoteManagementMessage::from_data(&[0x4BF9_1C03, 0x0, 0x0, 0x0])
+            PerNoteManagementBorrowed::<Ump>::from_data(&[0x4BF9_1C03, 0x0, 0x0, 0x0])
                 .unwrap()
                 .detach(),
         );
@@ -76,7 +76,7 @@ mod tests {
     #[test]
     fn reset() {
         assert!(
-            PerNoteManagementMessage::from_data(&[0x4BF9_1C03, 0x0, 0x0, 0x0])
+            PerNoteManagementBorrowed::<Ump>::from_data(&[0x4BF9_1C03, 0x0, 0x0, 0x0])
                 .unwrap()
                 .reset(),
         );

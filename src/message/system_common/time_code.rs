@@ -20,23 +20,23 @@ struct TimeCode {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::RandomBuffer;
+    use generic_array::arr;
 
     #[test]
     fn builder() {
         assert_eq!(
-            TimeCodeMessage::<Ump>::builder(&mut Ump::random_buffer::<4>())
+            TimeCodeOwned::<Ump>::builder()
                 .group(u4::new(0x5))
                 .time_code(u7::new(0x5F))
                 .build(),
-            Ok(TimeCodeMessage::<Ump>(&[0x15F1_5F00, 0x0, 0x0, 0x0])),
+            Ok(TimeCodeOwned::<Ump>(arr![0x15F1_5F00, 0x0, 0x0, 0x0])),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            TimeCodeMessage::<Ump>::from_data(&[0x15F1_5F00, 0x0, 0x0, 0x0])
+            TimeCodeBorrowed::<Ump>::from_data(&[0x15F1_5F00, 0x0, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0x5),
@@ -46,7 +46,7 @@ mod tests {
     #[test]
     fn time_code() {
         assert_eq!(
-            TimeCodeMessage::<Ump>::from_data(&[0x15F1_5F00, 0x0, 0x0, 0x0])
+            TimeCodeBorrowed::<Ump>::from_data(&[0x15F1_5F00, 0x0, 0x0, 0x0])
                 .unwrap()
                 .time_code(),
             u7::new(0x5F),
@@ -56,17 +56,17 @@ mod tests {
     #[test]
     fn bytes_builder() {
         assert_eq!(
-            TimeCodeMessage::<Bytes>::builder(&mut Bytes::random_buffer::<3>())
+            TimeCodeOwned::<Bytes>::builder()
                 .time_code(u7::new(0x5F))
                 .build(),
-            Ok(TimeCodeMessage::<Bytes>(&[0xF1, 0x5F, 0x00])),
+            Ok(TimeCodeOwned::<Bytes>(arr![0xF1, 0x5F, 0x00])),
         );
     }
 
     #[test]
     fn bytes_time_code() {
         assert_eq!(
-            TimeCodeMessage::<Bytes>::from_data(&[0xF1, 0x5F, 0x00])
+            TimeCodeBorrowed::<Bytes>::from_data(&[0xF1, 0x5F, 0x00])
                 .unwrap()
                 .time_code(),
             u7::new(0x5F),

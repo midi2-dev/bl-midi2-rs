@@ -22,25 +22,25 @@ struct NoteOn {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::RandomBuffer;
+    use generic_array::arr;
 
     #[test]
     fn builder() {
         assert_eq!(
-            NoteOnMessage::<Ump>::builder(&mut Ump::random_buffer::<4>())
+            NoteOnOwned::<Ump>::builder()
                 .group(u4::new(0xD))
                 .channel(u4::new(0xE))
                 .note(u7::new(0x75))
                 .velocity(u7::new(0x3D))
                 .build(),
-            Ok(NoteOnMessage::<Ump>(&[0x2D9E_753D, 0x0, 0x0, 0x0])),
+            Ok(NoteOnOwned::<Ump>(arr![0x2D9E_753D, 0x0, 0x0, 0x0])),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            NoteOnMessage::<Ump>::from_data(&[0x2D9E_753D, 0x0, 0x0, 0x0])
+            NoteOnBorrowed::<Ump>::from_data(&[0x2D9E_753D, 0x0, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0xD),
@@ -50,7 +50,7 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            NoteOnMessage::<Ump>::from_data(&[0x2D9E_753D, 0x0, 0x0, 0x0])
+            NoteOnBorrowed::<Ump>::from_data(&[0x2D9E_753D, 0x0, 0x0, 0x0])
                 .unwrap()
                 .channel(),
             u4::new(0xE),
@@ -60,7 +60,7 @@ mod tests {
     #[test]
     fn note() {
         assert_eq!(
-            NoteOnMessage::<Ump>::from_data(&[0x2D9E_753D, 0x0, 0x0, 0x0])
+            NoteOnBorrowed::<Ump>::from_data(&[0x2D9E_753D, 0x0, 0x0, 0x0])
                 .unwrap()
                 .note(),
             u7::new(0x75),
@@ -70,7 +70,7 @@ mod tests {
     #[test]
     fn velocity() {
         assert_eq!(
-            NoteOnMessage::<Ump>::from_data(&[0x2D9E_753D, 0x0, 0x0, 0x0])
+            NoteOnBorrowed::<Ump>::from_data(&[0x2D9E_753D, 0x0, 0x0, 0x0])
                 .unwrap()
                 .velocity(),
             u7::new(0x3D),
@@ -80,19 +80,19 @@ mod tests {
     #[test]
     fn builder_bytes() {
         assert_eq!(
-            NoteOnMessage::<Bytes>::builder(&mut Bytes::random_buffer::<3>())
+            NoteOnOwned::<Bytes>::builder()
                 .channel(u4::new(0xE))
                 .note(u7::new(0x75))
                 .velocity(u7::new(0x3D))
                 .build(),
-            Ok(NoteOnMessage::<Bytes>(&[0x9E, 0x75, 0x3D])),
+            Ok(NoteOnOwned::<Bytes>(arr![0x9E, 0x75, 0x3D])),
         );
     }
 
     #[test]
     fn channel_bytes() {
         assert_eq!(
-            NoteOnMessage::<Bytes>::from_data(&[0x9E, 0x75, 0x3D])
+            NoteOnBorrowed::<Bytes>::from_data(&[0x9E, 0x75, 0x3D])
                 .unwrap()
                 .channel(),
             u4::new(0xE),
@@ -102,7 +102,7 @@ mod tests {
     #[test]
     fn note_bytes() {
         assert_eq!(
-            NoteOnMessage::<Bytes>::from_data(&[0x9E, 0x75, 0x3D])
+            NoteOnBorrowed::<Bytes>::from_data(&[0x9E, 0x75, 0x3D])
                 .unwrap()
                 .note(),
             u7::new(0x75),
@@ -112,7 +112,7 @@ mod tests {
     #[test]
     fn velocity_bytes() {
         assert_eq!(
-            NoteOnMessage::<Bytes>::from_data(&[0x9E, 0x75, 0x3D])
+            NoteOnBorrowed::<Bytes>::from_data(&[0x9E, 0x75, 0x3D])
                 .unwrap()
                 .velocity(),
             u7::new(0x3D),
