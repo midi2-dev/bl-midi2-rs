@@ -217,6 +217,35 @@ fn message_borrowed_public(root_ident: &Ident) -> TokenStream {
     }
 }
 
+fn to_owned_impl(root_ident: &Ident, properties: &Vec<Property>) -> TokenStream {
+    let ident = message_borrowed_ident(root_ident);
+    let owned_ident = message_owned_ident(root_ident);
+    let buffer_type = buffer_generic_with_constraints(properties);
+    quote! {
+        impl<'a, #buffer_type> ToOwned for #ident<'a, B> {
+            type Owned = #owned_ident<B>;
+            fn to_owned(self) -> Self::Owned {
+                let mut data: generic_array::GenericArray<B::Data, B::Size> = Default::default();
+                data.copy_from_slice(self.0);
+                #owned_ident(data)
+            }
+        }
+    }
+}
+
+fn to_owned_impl_public(root_ident: &Ident) -> TokenStream {
+    let ident = message_borrowed_ident_public(root_ident);
+    let owned_ident = message_owned_ident_public(root_ident);
+    quote! {
+        impl<'a> ToOwned for #ident<'a> {
+            type Owned = #owned_ident;
+            fn to_owned(self) -> Self::Owned {
+                #owned_ident(self.0.to_owned())
+            }
+        }
+    }
+}
+
 fn builder(root_ident: &Ident, properties: &Vec<Property>) -> TokenStream {
     let ident = builder_ident(root_ident);
     let buffer_type = buffer_generic_with_constraints(properties);
@@ -744,6 +773,7 @@ pub fn generate_message(_attrs: TokenStream1, item: TokenStream1) -> TokenStream
     let message_owned = message_owned(&root_ident, &properties);
     let message_owned_impl = message_owned_impl(&root_ident, &properties);
     let message_borrowed = message_borrowed(&root_ident, &properties);
+    let to_owned_impl = to_owned_impl(&root_ident, &properties);
     let specialized_message_trait_impl_owned =
         specialized_message_trait_impl_owned(&root_ident, &properties);
     let specialized_message_trait_impl_borrowed =
@@ -762,6 +792,7 @@ pub fn generate_message(_attrs: TokenStream1, item: TokenStream1) -> TokenStream
     let message_owned_public = message_owned_public(&root_ident);
     let message_owned_impl_public = message_owned_impl_public(&root_ident);
     let message_borrowed_public = message_borrowed_public(&root_ident);
+    let to_owned_impl_public = to_owned_impl_public(&root_ident);
     let specialized_message_trait_impl_owned_public =
         specialized_message_trait_impl_owned_public(&root_ident, &properties);
     let specialized_message_trait_impl_borrowed_public =
@@ -786,6 +817,7 @@ pub fn generate_message(_attrs: TokenStream1, item: TokenStream1) -> TokenStream
         #message_owned
         #message_owned_impl
         #message_borrowed
+        #to_owned_impl
         #specialized_message_trait_impl_owned
         #specialized_message_trait_impl_borrowed
         #builder
@@ -802,6 +834,7 @@ pub fn generate_message(_attrs: TokenStream1, item: TokenStream1) -> TokenStream
         #message_owned_public
         #message_owned_impl_public
         #message_borrowed_public
+        #to_owned_impl_public
         #specialized_message_trait_impl_owned_public
         #specialized_message_trait_impl_borrowed_public
         #builder_public

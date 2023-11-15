@@ -37,7 +37,28 @@ let message = NoteOnOwned::builder()
 assert_eq!(message.unwrap().data(), &[0x4090_6001, 0x4B57_63FF, 0x0, 0x0]);
 ```
 
-### Use Borrowed or Owned messages to avoid needlessly copying data
+### Borrowed & Owned Messages
+
+#### Example
+
+```rust
+use midi2::{
+    prelude::*,
+    midi2_channel_voice::RegisteredPerNoteControllerBorrowed,
+    midi2_channel_voice::RegisteredPerNoteController,
+    midi2_channel_voice::Controller,
+};
+
+let owned = {
+    let buffer = [0x4405_6C07, 0xE1E35E92, 0x0, 0x0];
+    let borrowed = RegisteredPerNoteControllerBorrowed::from_data(&buffer).unwrap();
+
+    assert_eq!(borrowed.controller(), Controller::Volume(0xE1E35E92));
+
+    borrowed.to_owned()
+};
+```
+
 
 ### Midi2 Capability Inquiry message wrappers
 Wrappers around the special midi2 Capability Inquiry.
