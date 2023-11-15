@@ -1,2 +1,4 @@
 /target
 /Cargo.lock
+midi2_attr/target
+midi2_attr/Cargo.lock
