@@ -7,7 +7,7 @@ mod helpers;
 pub mod midi1_channel_voice;
 pub mod midi2_channel_voice;
 pub mod system_common;
-// pub mod system_exclusive_7bit;
+pub mod system_exclusive_7bit;
 pub mod system_exclusive_8bit;
 pub mod utility;
 

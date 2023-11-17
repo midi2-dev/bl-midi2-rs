@@ -2,7 +2,7 @@ use crate::{
     error::Error,
     message::helpers as message_helpers,
     result::Result,
-    util::{BitOps, Truncate},
+    util::{debug, BitOps, Truncate},
     *,
 };
 
@@ -94,37 +94,80 @@ impl<'a> core::iter::Iterator for PayloadIterator<'a> {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Sysex7Message<'a, B: Buffer>(&'a B::Data);
+#[derive(Clone, PartialEq, Eq)]
+pub struct Sysex7Borrowed<'a>(&'a [u32]);
 
-impl<'a> Message<'a, Bytes> for Sysex7Message<'a, Bytes> {
-    fn data(&self) -> &'a <Bytes as Buffer>::Data {
+#[derive(Clone, PartialEq, Eq)]
+pub struct Sysex7BytesBorrowed<'a>(&'a [u8]);
+
+debug::message_debug_impl!(Sysex7Borrowed);
+
+impl<'a> core::fmt::Debug for Sysex7BytesBorrowed<'a> {
+    fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
+        fmt.write_fmt(format_args!("Sysex7BytesBorrowed("))?;
+        let mut iter = self.0.iter().peekable();
+        while let Some(v) = iter.next() {
+            fmt.write_fmt(format_args!("{v:#010X}"))?;
+            if iter.peek().is_some() {
+                fmt.write_str(",")?;
+            }
+        }
+        fmt.write_str(")")
+    }
+}
+
+impl<'a> Data for Sysex7Borrowed<'a> {
+    fn data(&self) -> &[u32] {
         self.0
     }
-    fn validate_data(buffer: &'a <Bytes as Buffer>::Data) -> Result<()> {
+}
+
+impl<'a> Sysex7BytesBorrowed<'a> {
+    pub fn data(&self) -> &[u8] {
+        self.0
+    }
+    pub fn builder(buffer: &'a mut [u8]) -> Sysex7BytesBuilder<'a> {
+        Sysex7BytesBuilder::new(buffer)
+    }
+    pub fn validate_data(buffer: &'a [u8]) -> Result<()> {
         if buffer.len() < 2 || buffer[0] != 0xF0 || buffer[buffer.len() - 1] != 0xF7 {
             Err(Error::InvalidData)
         } else {
             Ok(())
         }
     }
-    fn from_data_unchecked(buffer: &'a <Bytes as Buffer>::Data) -> Self {
+    pub fn from_data_unchecked(buffer: &'a [u8]) -> Self {
         Self(buffer)
+    }
+    pub fn from_data(buffer: &'a [u8]) -> Result<Self> {
+        match Self::validate_data(buffer) {
+            Ok(()) => Ok(Self::from_data_unchecked(buffer)),
+            Err(e) => Err(e),
+        }
     }
 }
 
-impl<'a> Buildable<'a, Bytes> for Sysex7Message<'a, Bytes> {
-    type BuilderPrivate = Sysex7BuilderPrivateBytes<'a>;
+impl<'a> FromData<'a> for Sysex7Borrowed<'a> {
+    fn from_data_unchecked(data: &'a [u32]) -> Self {
+        Sysex7Borrowed(&data[..2])
+    }
+    fn validate_data(data: &[u32]) -> Result<()> {
+        validate_buffer(data)?;
+        validate_type(data)?;
+        status_from_packet(data)?;
+        validate_data(data)?;
+        Ok(())
+    }
 }
 
-impl<'a> SysexMessage<'a, Bytes> for Sysex7Message<'a, Bytes> {
+impl<'a, 'b: 'a> Sysex<'a, 'b> for Sysex7BytesBorrowed<'a> {
     type PayloadIterator = core::iter::Cloned<core::slice::Iter<'a, u8>>;
     fn payload(&self) -> Self::PayloadIterator {
         self.0[1..self.0.len() - 1].iter().cloned()
     }
 }
 
-impl<'a> Sysex7Message<'a, Ump> {
+impl<'a> Sysex7Borrowed<'a> {
     const OP_CODE: u4 = u4::new(0x3);
     pub fn status(&self) -> Status {
         status_from_packet(self.0).expect("valid status")
@@ -136,39 +179,22 @@ impl<'a> Sysex7Message<'a, Ump> {
             payload_index: 0,
         }
     }
-}
-
-impl<'a> Message<'a, Ump> for Sysex7Message<'a, Ump> {
-    fn data(&self) -> &'a [u32] {
-        self.0
-    }
-    fn from_data_unchecked(data: &'a [u32]) -> Self {
-        Sysex7Message(&data[..2])
-    }
-    fn validate_data(data: &[u32]) -> Result<()> {
-        validate_buffer(data)?;
-        validate_type(data)?;
-        status_from_packet(data)?;
-        validate_data(data)?;
-        Ok(())
+    pub fn builder(buffer: &'a mut [u32]) -> Sysex7UmpBuilder {
+        Sysex7UmpBuilder::new(buffer)
     }
 }
 
-impl<'a> Buildable<'a, Ump> for Sysex7Message<'a, Ump> {
-    type BuilderPrivate = Sysex7BuilderPrivateUmp<'a>;
-}
-
-impl<'a> GroupedMessage<'a> for Sysex7Message<'a, Ump> {
+impl<'a> Grouped for Sysex7Borrowed<'a> {
     fn group(&self) -> u4 {
         message_helpers::group_from_packet(self.0)
     }
 }
 
-pub struct Sysex7BuilderPrivateUmp<'a>(Result<&'a mut [u32]>);
+pub struct Sysex7UmpBuilder<'a>(Result<&'a mut [u32]>);
 
-pub struct Sysex7BuilderPrivateBytes<'a>(Result<&'a mut [u8]>, usize);
+pub struct Sysex7BytesBuilder<'a>(Result<&'a mut [u8]>, usize);
 
-impl<'a> Sysex7BuilderPrivateBytes<'a> {
+impl<'a> Sysex7BytesBuilder<'a> {
     fn grow(&mut self) {
         if let Ok(buffer) = &self.0 {
             if buffer.len() < self.1 + 1 {
@@ -178,11 +204,7 @@ impl<'a> Sysex7BuilderPrivateBytes<'a> {
             }
         }
     }
-}
-
-impl<'a> BuilderPrivate<'a, Bytes> for Sysex7BuilderPrivateBytes<'a> {
-    type Message = Sysex7Message<'a, Bytes>;
-    fn new(buffer: &'a mut <Bytes as Buffer>::Data) -> Self {
+    fn new(buffer: &'a mut [u8]) -> Self {
         if buffer.len() < 2 {
             Self(Err(Error::BufferOverflow), 0)
         } else {
@@ -190,28 +212,24 @@ impl<'a> BuilderPrivate<'a, Bytes> for Sysex7BuilderPrivateBytes<'a> {
             Self(Ok(buffer), 1)
         }
     }
-    fn build(mut self) -> Result<Self::Message> {
+    pub fn build(mut self) -> Result<Sysex7BytesBorrowed<'a>> {
         if self.0.is_ok() {
             self.grow();
         }
         match self.0 {
             Ok(buffer) => {
                 buffer[self.1 - 1] = 0xF7;
-                Ok(Sysex7Message::<Bytes>(&buffer[..self.1]))
+                Ok(Sysex7BytesBorrowed(&buffer[..self.1]))
             }
             Err(e) => Err(e.clone()),
         }
     }
-}
-
-impl<'a> SysexBuilderPrivate<'a, Bytes> for Sysex7BuilderPrivateBytes<'a> {
-    type Byte = u8;
-    fn payload<I: core::iter::Iterator<Item = Self::Byte>>(mut self, data: I) -> Self {
+    pub fn payload<I: core::iter::Iterator<Item = u7>>(mut self, data: I) -> Self {
         for d in data {
             self.grow();
             match &mut self.0 {
                 Ok(buffer) => {
-                    buffer[self.1 - 1] = d;
+                    buffer[self.1 - 1] = d.into();
                 }
                 Err(_) => {
                     break;
@@ -222,7 +240,7 @@ impl<'a> SysexBuilderPrivate<'a, Bytes> for Sysex7BuilderPrivateBytes<'a> {
     }
 }
 
-impl<'a> Sysex7BuilderPrivateUmp<'a> {
+impl<'a> Sysex7UmpBuilder<'a> {
     pub fn status(mut self, s: Status) -> Self {
         if let Ok(buffer) = &mut self.0 {
             buffer[0].set_nibble(
@@ -256,28 +274,26 @@ impl<'a> Sysex7BuilderPrivateUmp<'a> {
         }
         self
     }
-}
-
-impl<'a> BuilderPrivate<'a, Ump> for Sysex7BuilderPrivateUmp<'a> {
-    type Message = Sysex7Message<'a, Ump>;
-    fn new(buffer: &'a mut [u32]) -> Self {
+    pub fn new(buffer: &'a mut [u32]) -> Self {
         if buffer.len() >= 2 {
-            <Ump as Buffer>::clear(buffer);
-            message_helpers::write_type_to_packet(Sysex7Message::OP_CODE, buffer);
+            for b in buffer.iter_mut() {
+                *b = 0x0;
+            }
+            message_helpers::write_type_to_packet(Sysex7Borrowed::OP_CODE, buffer);
             Self(Ok(buffer))
         } else {
             Self(Err(Error::BufferOverflow))
         }
     }
-    fn build(self) -> Result<Sysex7Message<'a, Ump>> {
+    pub fn build(self) -> Result<Sysex7Borrowed<'a>> {
         match self.0 {
-            Ok(buffer) => Ok(Sysex7Message(buffer)),
+            Ok(buffer) => Ok(Sysex7Borrowed(buffer)),
             Err(e) => Err(e.clone()),
         }
     }
 }
 
-impl<'a> GroupedBuilderPrivate<'a> for Sysex7BuilderPrivateUmp<'a> {
+impl<'a> GroupedBuilder for Sysex7UmpBuilder<'a> {
     fn group(mut self, g: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             buffer[0].set_nibble(1, g);
@@ -296,7 +312,7 @@ pub enum Status {
 }
 
 fn validate_type(p: &[u32]) -> Result<()> {
-    if p[0].nibble(0) != Sysex7Message::OP_CODE {
+    if p[0].nibble(0) != Sysex7Borrowed::OP_CODE {
         Err(Error::InvalidData)
     } else {
         Ok(())
@@ -341,9 +357,18 @@ impl<'a> Sysex7MessageGroup<'a> {
     pub fn messages(&self) -> Sysex7MessageGroupIterator<'a> {
         Sysex7MessageGroupIterator(self.0.chunks_exact(2))
     }
+    pub fn builder(buffer: &'a mut [u32]) -> Sysex7MessageGroupBuilder<'a> {
+        Sysex7MessageGroupBuilder::new(buffer)
+    }
 }
 
-impl<'a> Message<'a, Ump> for Sysex7MessageGroup<'a> {
+impl<'a> Data for Sysex7MessageGroup<'a> {
+    fn data(&self) -> &[u32] {
+        self.0
+    }
+}
+
+impl<'a> FromData<'a> for Sysex7MessageGroup<'a> {
     fn from_data_unchecked(buffer: &'a [u32]) -> Self {
         Sysex7MessageGroup(buffer)
     }
@@ -352,7 +377,7 @@ impl<'a> Message<'a, Ump> for Sysex7MessageGroup<'a> {
             return Err(Error::InvalidData);
         }
         for chunk in buffer.chunks(2) {
-            Sysex7Message::<Ump>::validate_data(chunk)?;
+            Sysex7Borrowed::validate_data(chunk)?;
         }
         message_helpers::validate_sysex_group_statuses(
             buffer,
@@ -365,22 +390,15 @@ impl<'a> Message<'a, Ump> for Sysex7MessageGroup<'a> {
         message_helpers::sysex_group_consistent_groups(buffer, 2)?;
         Ok(())
     }
-    fn data(&self) -> &'a [u32] {
-        self.0
-    }
 }
 
-impl<'a> Buildable<'a, Ump> for Sysex7MessageGroup<'a> {
-    type BuilderPrivate = Sysex7MessageGroupBuilderPrivate<'a>;
-}
-
-impl<'a> GroupedMessage<'a> for Sysex7MessageGroup<'a> {
+impl<'a> Grouped for Sysex7MessageGroup<'a> {
     fn group(&self) -> u4 {
         message_helpers::group_from_packet(self.0)
     }
 }
 
-impl<'a> SysexMessage<'a, Ump> for Sysex7MessageGroup<'a> {
+impl<'a, 'b: 'a> Sysex<'a, 'b> for Sysex7MessageGroup<'a> {
     type PayloadIterator = PayloadIterator<'a>;
     fn payload(&self) -> Self::PayloadIterator {
         Self::PayloadIterator {
@@ -394,20 +412,20 @@ impl<'a> SysexMessage<'a, Ump> for Sysex7MessageGroup<'a> {
 pub struct Sysex7MessageGroupIterator<'a>(core::slice::ChunksExact<'a, u32>);
 
 impl<'a> core::iter::Iterator for Sysex7MessageGroupIterator<'a> {
-    type Item = Sysex7Message<'a, Ump>;
+    type Item = Sysex7Borrowed<'a>;
     fn next(&mut self) -> Option<Self::Item> {
-        self.0.next().map(Sysex7Message)
+        self.0.next().map(Sysex7Borrowed)
     }
 }
 
-pub struct Sysex7MessageGroupBuilderPrivate<'a> {
+pub struct Sysex7MessageGroupBuilder<'a> {
     buffer: &'a mut [u32],
     size: usize,
     error: Option<Error>,
     group: u4,
 }
 
-impl<'a> Sysex7MessageGroupBuilderPrivate<'a> {
+impl<'a> Sysex7MessageGroupBuilder<'a> {
     // The point in the buffer where the last most message begins.
     fn message_index(&self) -> usize {
         2 * (self.size - 1)
@@ -440,7 +458,7 @@ impl<'a> Sysex7MessageGroupBuilderPrivate<'a> {
 
         {
             let mut builder =
-                Sysex7Message::<Ump>::builder(&mut self.buffer[2 * self.size..2 * (self.size + 1)]);
+                Sysex7Borrowed::builder(&mut self.buffer[2 * self.size..2 * (self.size + 1)]);
             builder = builder.group(self.group);
             match self.size {
                 0 => {
@@ -455,7 +473,7 @@ impl<'a> Sysex7MessageGroupBuilderPrivate<'a> {
 
         if self.size != 0 {
             let mut prev_builder =
-                Sysex7BuilderPrivateUmp(Ok(&mut self.buffer[2 * (self.size - 1)..2 * self.size]));
+                Sysex7UmpBuilder(Ok(&mut self.buffer[2 * (self.size - 1)..2 * self.size]));
             match self.size {
                 1 => {
                     prev_builder = prev_builder.status(Status::Begin);
@@ -468,11 +486,7 @@ impl<'a> Sysex7MessageGroupBuilderPrivate<'a> {
         }
         self.size += 1;
     }
-}
-
-impl<'a> BuilderPrivate<'a, Ump> for Sysex7MessageGroupBuilderPrivate<'a> {
-    type Message = Sysex7MessageGroup<'a>;
-    fn build(mut self) -> Result<Sysex7MessageGroup<'a>> {
+    pub fn build(mut self) -> Result<Sysex7MessageGroup<'a>> {
         if let Some(e) = &self.error {
             return Err(e.clone());
         }
@@ -497,8 +511,8 @@ impl<'a> BuilderPrivate<'a, Ump> for Sysex7MessageGroupBuilderPrivate<'a> {
         Ok(Sysex7MessageGroup(&self.buffer[..2 * self.size]))
     }
 
-    fn new(buffer: &'a mut [u32]) -> Self {
-        let mut ret = Sysex7MessageGroupBuilderPrivate {
+    pub fn new(buffer: &'a mut [u32]) -> Self {
+        let mut ret = Sysex7MessageGroupBuilder {
             buffer,
             size: 0,
             error: None,
@@ -512,10 +526,7 @@ impl<'a> BuilderPrivate<'a, Ump> for Sysex7MessageGroupBuilderPrivate<'a> {
         }
         ret
     }
-}
-
-impl<'a> GroupedBuilderPrivate<'a> for Sysex7MessageGroupBuilderPrivate<'a> {
-    fn group(mut self, g: u4) -> Self {
+    pub fn group(mut self, g: u4) -> Self {
         if self.error.is_some() || self.group == g {
             return self;
         }
@@ -525,11 +536,7 @@ impl<'a> GroupedBuilderPrivate<'a> for Sysex7MessageGroupBuilderPrivate<'a> {
         }
         self
     }
-}
-
-impl<'a> SysexBuilderPrivate<'a, Ump> for Sysex7MessageGroupBuilderPrivate<'a> {
-    type Byte = u7;
-    fn payload<I: core::iter::Iterator<Item = u7>>(mut self, mut iter: I) -> Self {
+    pub fn payload<I: core::iter::Iterator<Item = u7>>(mut self, mut iter: I) -> Self {
         if self.error.is_some() {
             return self;
         }
@@ -586,7 +593,7 @@ mod tests {
     #[test]
     fn incorrect_message_type() {
         assert_eq!(
-            Sysex7Message::<Ump>::from_data(&[0x2000_0000, 0x0]),
+            Sysex7Borrowed::from_data(&[0x2000_0000, 0x0]),
             Err(Error::InvalidData),
         );
     }
@@ -594,7 +601,7 @@ mod tests {
     #[test]
     fn invalid_status_bit() {
         assert_eq!(
-            Sysex7Message::<Ump>::from_data(&[0x30A0_0000, 0x0]),
+            Sysex7Borrowed::from_data(&[0x30A0_0000, 0x0]),
             Err(Error::InvalidData),
         );
     }
@@ -602,7 +609,7 @@ mod tests {
     #[test]
     fn data_overflow() {
         assert_eq!(
-            Sysex7Message::<Ump>::from_data(&[0x3009_0000, 0x0]),
+            Sysex7Borrowed::from_data(&[0x3009_0000, 0x0]),
             Err(Error::InvalidData),
         );
     }
@@ -611,7 +618,7 @@ mod tests {
     fn builder() {
         let mut buffer = Ump::random_buffer::<2>();
         assert_eq!(
-            Sysex7Message::<Ump>::builder(&mut buffer)
+            Sysex7Borrowed::builder(&mut buffer)
                 .group(u4::new(0x1))
                 .status(Status::Begin)
                 .payload(
@@ -620,7 +627,7 @@ mod tests {
                         .copied()
                 )
                 .build(),
-            Ok(Sysex7Message::<Ump>(&[0x3113_1234, 0x5600_0000,])),
+            Ok(Sysex7Borrowed(&[0x3113_1234, 0x5600_0000,])),
         );
     }
 
@@ -628,7 +635,7 @@ mod tests {
     fn builder_invalid_payload() {
         let mut buffer = Ump::random_buffer::<2>();
         assert_eq!(
-            Sysex7Message::<Ump>::builder(&mut buffer)
+            Sysex7Borrowed::builder(&mut buffer)
                 .payload([u7::default(); 7].iter().copied())
                 .build(),
             Err(Error::InvalidData),
@@ -638,7 +645,7 @@ mod tests {
     #[test]
     fn group() {
         assert_eq!(
-            Sysex7Message::<Ump>::from_data(&[0x3C00_0000, 0x0,])
+            Sysex7Borrowed::from_data(&[0x3C00_0000, 0x0,])
                 .unwrap()
                 .group(),
             u4::new(0xC),
@@ -648,7 +655,7 @@ mod tests {
     #[test]
     fn status() {
         assert_eq!(
-            Sysex7Message::<Ump>::from_data(&[0x3020_0000, 0x0,])
+            Sysex7Borrowed::from_data(&[0x3020_0000, 0x0,])
                 .unwrap()
                 .status(),
             Status::Continue,
@@ -658,7 +665,7 @@ mod tests {
     #[test]
     fn data() {
         assert_eq!(
-            Sysex7Message::<Ump>::from_data(&[0x3004_1234, 0x5678_0000,])
+            Sysex7Borrowed::from_data(&[0x3004_1234, 0x5678_0000,])
                 .unwrap()
                 .data(),
             &[0x30041234, 0x5678_0000]
@@ -667,7 +674,7 @@ mod tests {
 
     #[test]
     fn payload() {
-        let message = Sysex7Message::<Ump>::from_data(&[0x3004_1234, 0x5678_0000]).unwrap();
+        let message = Sysex7Borrowed::from_data(&[0x3004_1234, 0x5678_0000]).unwrap();
         let mut buffer = [0x0; 4];
         for (i, v) in message.payload().enumerate() {
             buffer[i] = v;
@@ -870,10 +877,10 @@ mod tests {
     #[test]
     fn bytes_builder() {
         assert_eq!(
-            Sysex7Message::<Bytes>::builder(&mut Bytes::random_buffer::<22>())
+            Sysex7BytesBorrowed::builder(&mut Bytes::random_buffer::<22>())
                 .payload((0u8..20u8).map(|v| v.truncate()))
                 .build(),
-            Ok(Sysex7Message::<Bytes>(&[
+            Ok(Sysex7BytesBorrowed(&[
                 0xF0, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C,
                 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0xF7,
             ])),
@@ -883,7 +890,7 @@ mod tests {
     #[test]
     fn bytes_builder_buffer_overflow() {
         assert_eq!(
-            Sysex7Message::<Bytes>::builder(&mut Bytes::random_buffer::<21>())
+            Sysex7BytesBorrowed::builder(&mut Bytes::random_buffer::<21>())
                 .payload((0u8..20u8).map(|v| v.truncate()))
                 .build(),
             Err(Error::BufferOverflow),
@@ -893,7 +900,7 @@ mod tests {
     #[test]
     fn bytes_from_data_missing_start() {
         assert_eq!(
-            Sysex7Message::<Bytes>::from_data(&[
+            Sysex7BytesBorrowed::from_data(&[
                 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D,
                 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0xF7,
             ]),
@@ -904,7 +911,7 @@ mod tests {
     #[test]
     fn bytes_from_data_missing_end() {
         assert_eq!(
-            Sysex7Message::<Bytes>::from_data(&[
+            Sysex7BytesBorrowed::from_data(&[
                 0xF0, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C,
                 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13,
             ]),
@@ -915,12 +922,12 @@ mod tests {
     #[test]
     fn bytes_payload() {
         let actual: [u8; 20] = {
-            let payload = Sysex7Message::<Bytes>::from_data(&[
+            let data = [
                 0xF0, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C,
                 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0xF7,
-            ])
-            .unwrap()
-            .payload();
+            ];
+            let message = Sysex7BytesBorrowed::from_data(&data).unwrap();
+            let payload = message.payload();
             let mut buffer: [u8; 20] = Default::default();
             for (i, d) in payload.enumerate() {
                 buffer[i] = d;

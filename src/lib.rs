@@ -18,7 +18,7 @@ pub use traits::*;
 pub use message::midi1_channel_voice;
 pub use message::midi2_channel_voice;
 pub use message::system_common;
-// pub use message::system_exclusive_7bit;
+pub use message::system_exclusive_7bit;
 pub use message::system_exclusive_8bit;
 pub use message::utility;
 // pub use message::MidiMessage;
