@@ -106,6 +106,15 @@ pub struct Sysex8Borrowed<'a>(&'a [u32]);
 #[derive(Clone, PartialEq, Eq)]
 pub struct Sysex8Owned([u32; 4]);
 
+impl<'a> ToOwned for Sysex8Borrowed<'a> {
+    type Owned = Sysex8Owned;
+    fn to_owned(self) -> Self::Owned {
+        let mut buffer: [u32; 4] = Default::default();
+        buffer[..].copy_from_slice(self.0);
+        Sysex8Owned(buffer)
+    }
+}
+
 pub trait Sysex8 {
     fn status(&self) -> Status;
 }
