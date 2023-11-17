@@ -103,15 +103,16 @@ impl<'a> core::iter::Iterator for PayloadIterator<'a> {
 #[derive(Clone, PartialEq, Eq)]
 pub struct Sysex8Borrowed<'a>(&'a [u32]);
 
-impl<'a> Sysex8Borrowed<'a> {
-    const OP_CODE: u4 = u4::new(0x5);
-    pub fn builder(buffer: &'a mut [u32]) -> Sysex8BuilderBorrowed<'a> {
-        Sysex8BuilderBorrowed::new(buffer)
-    }
-    pub fn status(&self) -> Status {
-        try_status_from_packet(self.0).expect("Valid status")
-    }
-    pub fn payload(&self) -> PayloadIterator {
+#[derive(Clone, PartialEq, Eq)]
+pub struct Sysex8Owned([u32; 4]);
+
+pub trait Sysex8 {
+    fn status(&self) -> Status;
+}
+
+impl<'a, 'b: 'a> Sysex<'a, 'b> for Sysex8Borrowed<'a> {
+    type PayloadIterator = PayloadIterator<'a>;
+    fn payload(&self) -> Self::PayloadIterator {
         PayloadIterator {
             data: self.0,
             message_index: 0,
@@ -120,9 +121,48 @@ impl<'a> Sysex8Borrowed<'a> {
     }
 }
 
+impl<'a, 'b: 'a> Sysex<'a, 'b> for Sysex8Owned
+where
+    Self: 'b,
+{
+    type PayloadIterator = PayloadIterator<'a>;
+    fn payload(&'b self) -> Self::PayloadIterator {
+        PayloadIterator {
+            data: &self.0,
+            message_index: 0,
+            payload_index: 0,
+        }
+    }
+}
+
+impl<'a> Sysex8 for Sysex8Borrowed<'a> {
+    fn status(&self) -> Status {
+        try_status_from_packet(self.0).expect("Valid status")
+    }
+}
+
+impl Sysex8 for Sysex8Owned {
+    fn status(&self) -> Status {
+        try_status_from_packet(&self.0).expect("Valid status")
+    }
+}
+
+impl<'a> Sysex8Borrowed<'a> {
+    const OP_CODE: u4 = u4::new(0x5);
+    pub fn builder(buffer: &'a mut [u32]) -> Sysex8BuilderBorrowed<'a> {
+        Sysex8BuilderBorrowed::new(buffer)
+    }
+}
+
 impl<'a> Data for Sysex8Borrowed<'a> {
     fn data(&self) -> &[u32] {
         self.0
+    }
+}
+
+impl Data for Sysex8Owned {
+    fn data(&self) -> &[u32] {
+        &self.0
     }
 }
 
@@ -147,13 +187,26 @@ impl<'a> Grouped for Sysex8Borrowed<'a> {
     }
 }
 
+impl Grouped for Sysex8Owned {
+    fn group(&self) -> u4 {
+        message_helpers::group_from_packet(&self.0)
+    }
+}
+
 impl<'a> Streamed for Sysex8Borrowed<'a> {
     fn stream_id(&self) -> u8 {
         self.0[0].octet(2)
     }
 }
 
+impl Streamed for Sysex8Owned {
+    fn stream_id(&self) -> u8 {
+        self.0[0].octet(2)
+    }
+}
+
 debug::message_debug_impl!(Sysex8Borrowed);
+debug::message_debug_impl_owned!(Sysex8Owned);
 
 pub struct Sysex8BuilderBorrowed<'a>(Result<&'a mut [u32]>);
 
@@ -383,7 +436,7 @@ impl<'a> Streamed for Sysex8MessageGroup<'a> {
     }
 }
 
-impl<'a> Sysex for Sysex8MessageGroup<'a> {
+impl<'a, 'b: 'a> Sysex<'a, 'b> for Sysex8MessageGroup<'a> {
     type PayloadIterator = PayloadIterator<'a>;
     fn payload(&self) -> Self::PayloadIterator {
         PayloadIterator {

@@ -43,9 +43,9 @@ pub trait GroupedBuilder {
     fn group(self, v: u4) -> Self;
 }
 
-pub trait Sysex {
+pub trait Sysex<'a, 'b: 'a> {
     type PayloadIterator: core::iter::Iterator<Item = u8>;
-    fn payload(&self) -> Self::PayloadIterator;
+    fn payload(&'b self) -> Self::PayloadIterator;
 }
 
 pub trait Streamed {
