@@ -541,6 +541,13 @@ impl<'a> Sysex8MessageGroupBuilderBorrowed<'a> {
             return self;
         };
 
+        if self.size == 0 {
+            self.grow();
+            if self.error.is_some() {
+                return self;
+            }
+        }
+
         let data_start: usize = {
             let current_size = self.message_size(self.message_index());
             if current_size == u4::new(14) {
@@ -579,38 +586,19 @@ impl<'a> Sysex8MessageGroupBuilderBorrowed<'a> {
     }
 
     pub fn new(buffer: &'a mut [u32]) -> Self {
-        let mut ret = Sysex8MessageGroupBuilderBorrowed {
+        Sysex8MessageGroupBuilderBorrowed {
             buffer,
             size: 0,
             error: None,
             group: u4::new(0x0),
             stream_id: 0x0,
-        };
-        ret.grow();
-        if ret.error.is_none() {
-            // set the first byte to Sysex Begin
-            ret.set_datum(0, 0, 0xF0);
         }
-        ret
     }
 
-    pub fn build(mut self) -> Result<Sysex8MessageGroup<'a>> {
+    pub fn build(self) -> Result<Sysex8MessageGroup<'a>> {
         let None = &self.error else {
             return Err(Error::InvalidData);
         };
-
-        if self.message_size(self.message_index()) == u4::new(13) {
-            self.grow();
-            if self.error.is_some() {
-                return Err(Error::InvalidData);
-            }
-        }
-
-        {
-            let data_index = u8::from(self.message_size(self.message_index())) as usize;
-            self.set_datum(self.message_index(), data_index - 1, 0xF7);
-        }
-
         Ok(Sysex8MessageGroup(&self.buffer[..4 * self.size]))
     }
 }
@@ -760,12 +748,12 @@ mod tests {
                 .payload(0..15)
                 .build(),
             Ok(Sysex8MessageGroup(&[
-                0x541E_BBF0,
-                0x0001_0203,
-                0x0405_0607,
-                0x0809_0A0B,
-                0x5435_BB0C,
-                0x0D0E_F700,
+                0x541E_BB00,
+                0x0102_0304,
+                0x0506_0708,
+                0x090A_0B0C,
+                0x5433_BB0D,
+                0x0E00_0000,
                 0x0000_0000,
                 0x0000_0000,
             ])),
@@ -782,12 +770,12 @@ mod tests {
                 .stream_id(0xBB)
                 .build(),
             Ok(Sysex8MessageGroup(&[
-                0x541E_BBF0,
-                0x0001_0203,
-                0x0405_0607,
-                0x0809_0A0B,
-                0x5435_BB0C,
-                0x0D0E_F700,
+                0x541E_BB00,
+                0x0102_0304,
+                0x0506_0708,
+                0x090A_0B0C,
+                0x5433_BB0D,
+                0x0E00_0000,
                 0x0000_0000,
                 0x0000_0000,
             ])),
@@ -804,10 +792,10 @@ mod tests {
                 .stream_id(0xBB)
                 .build(),
             Ok(Sysex8MessageGroup(&[
-                0x540D_BBF0,
-                0x0001_0203,
-                0x0405_0607,
-                0x0809_F700,
+                0x540B_BB00,
+                0x0102_0304,
+                0x0506_0708,
+                0x0900_0000,
             ])),
         );
     }
@@ -823,12 +811,12 @@ mod tests {
                 .stream_id(0xBB)
                 .build(),
             Ok(Sysex8MessageGroup(&[
-                0x541E_BBF0,
-                0x0001_0203,
-                0x0405_0607,
-                0x0809_0001,
-                0x5435_BB02,
-                0x0304_F700,
+                0x541E_BB00,
+                0x0102_0304,
+                0x0506_0708,
+                0x0900_0102,
+                0x5433_BB03,
+                0x0400_0000,
                 0x0000_0000,
                 0x0000_0000,
             ])),

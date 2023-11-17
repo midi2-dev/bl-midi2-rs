@@ -100,6 +100,8 @@ pub struct Sysex7Borrowed<'a>(&'a [u32]);
 #[derive(Clone, PartialEq, Eq)]
 pub struct Sysex7BytesBorrowed<'a>(&'a [u8]);
 
+pub trait Sysex7 {}
+
 debug::message_debug_impl!(Sysex7Borrowed);
 
 impl<'a> core::fmt::Debug for Sysex7BytesBorrowed<'a> {
@@ -350,8 +352,10 @@ fn validate_data(p: &[u32]) -> Result<()> {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct Sysex7MessageGroup<'a>(&'a [u32]);
+
+debug::message_debug_impl!(Sysex7MessageGroup);
 
 impl<'a> Sysex7MessageGroup<'a> {
     pub fn messages(&self) -> Sysex7MessageGroupIterator<'a> {
@@ -486,45 +490,20 @@ impl<'a> Sysex7MessageGroupBuilder<'a> {
         }
         self.size += 1;
     }
-    pub fn build(mut self) -> Result<Sysex7MessageGroup<'a>> {
+    pub fn build(self) -> Result<Sysex7MessageGroup<'a>> {
         if let Some(e) = &self.error {
             return Err(e.clone());
         }
-
-        if self.message_size(self.message_index()) == u4::new(6) {
-            self.grow()
-        }
-
-        if let Some(e) = &self.error {
-            return Err(e.clone());
-        }
-
-        {
-            // set the last byte to Sysex End
-            let index = self.message_index();
-            let data_end = u8::from(self.message_size(index)) as usize;
-            self.buffer[self.message_index() + (data_end + 2) / 4]
-                .set_octet((2 + data_end) % 4, 0xF7);
-            self.increment_message_size(index);
-        }
-
         Ok(Sysex7MessageGroup(&self.buffer[..2 * self.size]))
     }
 
     pub fn new(buffer: &'a mut [u32]) -> Self {
-        let mut ret = Sysex7MessageGroupBuilder {
+        Sysex7MessageGroupBuilder {
             buffer,
             size: 0,
             error: None,
             group: u4::new(0x0),
-        };
-        ret.grow();
-        if ret.error.is_none() {
-            // set the first byte to Sysex Begin
-            ret.buffer[0].set_octet(2, 0xF0);
-            ret.increment_message_size(0);
         }
-        ret
     }
     pub fn group(mut self, g: u4) -> Self {
         if self.error.is_some() || self.group == g {
@@ -544,6 +523,13 @@ impl<'a> Sysex7MessageGroupBuilder<'a> {
         let Some(first) = iter.next() else {
             return self;
         };
+
+        if self.size == 0 {
+            self.grow();
+            if self.error.is_some() {
+                return self;
+            }
+        }
 
         let data_start: usize = {
             let current_size = self.message_size(self.message_index());
@@ -691,12 +677,12 @@ mod tests {
                 .payload((0..15).map(u7::new))
                 .build(),
             Ok(Sysex7MessageGroup(&[
-                0x3416_F000,
-                0x0102_0304,
-                0x3426_0506,
-                0x0708_090A,
-                0x3435_0B0C,
-                0x0D0E_F700,
+                0x3416_0001,
+                0x0203_0405,
+                0x3426_0607,
+                0x0809_0A0B,
+                0x3433_0C0D,
+                0x0E00_0000,
             ])),
         );
     }
@@ -709,12 +695,12 @@ mod tests {
                 .group(u4::new(0x4))
                 .build(),
             Ok(Sysex7MessageGroup(&[
-                0x3416_F000,
-                0x0102_0304,
-                0x3426_0506,
-                0x0708_090A,
-                0x3435_0B0C,
-                0x0D0E_F700,
+                0x3416_0001,
+                0x0203_0405,
+                0x3426_0607,
+                0x0809_0A0B,
+                0x3433_0C0D,
+                0x0E00_0000,
             ])),
         );
     }
@@ -726,7 +712,7 @@ mod tests {
                 .group(u4::new(0x4))
                 .payload((0..4).map(u7::new))
                 .build(),
-            Ok(Sysex7MessageGroup(&[0x3406_F000, 0x0102_03F7,])),
+            Ok(Sysex7MessageGroup(&[0x3404_0001, 0x0203_0000,])),
         );
     }
 
@@ -738,10 +724,10 @@ mod tests {
                 .payload((4..8).map(u7::new))
                 .build(),
             Ok(Sysex7MessageGroup(&[
-                0x3016_F000,
-                0x0102_0304,
-                0x3034_0506,
-                0x07F7_0000,
+                0x3016_0001,
+                0x0203_0405,
+                0x3032_0607,
+                0x0000_0000,
             ])),
         );
     }
