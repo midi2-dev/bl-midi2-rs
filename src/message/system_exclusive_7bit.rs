@@ -100,7 +100,9 @@ pub struct Sysex7Borrowed<'a>(&'a [u32]);
 #[derive(Clone, PartialEq, Eq)]
 pub struct Sysex7BytesBorrowed<'a>(&'a [u8]);
 
-pub trait Sysex7 {}
+pub trait Sysex7 {
+    fn status(&self) -> Status;
+}
 
 debug::message_debug_impl!(Sysex7Borrowed);
 
@@ -174,15 +176,19 @@ impl<'a> Sysex7Borrowed<'a> {
     pub fn status(&self) -> Status {
         status_from_packet(self.0).expect("valid status")
     }
-    pub fn payload(&self) -> PayloadIterator {
+    pub fn builder(buffer: &'a mut [u32]) -> Sysex7UmpBuilder {
+        Sysex7UmpBuilder::new(buffer)
+    }
+}
+
+impl<'a, 'b: 'a> Sysex<'a, 'b> for Sysex7Borrowed<'a> {
+    type PayloadIterator = PayloadIterator<'a>;
+    fn payload(&self) -> PayloadIterator {
         PayloadIterator {
             data: self.0,
             message_index: 0,
             payload_index: 0,
         }
-    }
-    pub fn builder(buffer: &'a mut [u32]) -> Sysex7UmpBuilder {
-        Sysex7UmpBuilder::new(buffer)
     }
 }
 
