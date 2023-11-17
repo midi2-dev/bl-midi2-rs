@@ -32,12 +32,17 @@ let message = NoteOnOwned::builder()
     .note(u7::new(0x60))
     .velocity(0x4B57)
     .attribute(Some(NoteAttribute::ManufacturerSpecific(0x63FF)))
-    .build();
+    .build()
+    .unwrap();
 
-assert_eq!(message.unwrap().data(), &[0x4090_6001, 0x4B57_63FF, 0x0, 0x0]);
+assert_eq!(message.data(), &[0x4090_6001, 0x4B57_63FF, 0x0, 0x0]);
 ```
 
 ### Borrowed & Owned Messages
+
+There are two types which can be used to represent each message from the midi2 standard.
+Use the `Borrowed` type to get a 'view' onto the underlying data,
+and use the `Owned` type to make a message with an independent lifetime.
 
 #### Example
 
@@ -53,10 +58,15 @@ let owned = {
     let buffer = [0x4405_6C07, 0xE1E35E92, 0x0, 0x0];
     let borrowed = RegisteredPerNoteControllerBorrowed::from_data(&buffer).unwrap();
 
+    // here we reference the original buffer
     assert_eq!(borrowed.controller(), Controller::Volume(0xE1E35E92));
 
     borrowed.to_owned()
+    // buffer is dropped here
 };
+
+// here we have an internal copy of the data
+assert_eq!(owned.controller(), Controller::Volume(0xE1E35E92));
 ```
 
 
