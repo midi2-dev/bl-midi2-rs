@@ -101,12 +101,12 @@ impl<'a> core::iter::Iterator for PayloadIterator<'a> {
 }
 
 #[derive(Clone, PartialEq, Eq)]
-pub struct Sysex8Message<'a>(&'a [u32]);
+pub struct Sysex8Borrowed<'a>(&'a [u32]);
 
-impl<'a> Sysex8Message<'a> {
+impl<'a> Sysex8Borrowed<'a> {
     const OP_CODE: u4 = u4::new(0x5);
-    pub fn builder(buffer: &'a mut [u32]) -> Sysex8BuilderPrivate<'a> {
-        Sysex8BuilderPrivate::new(buffer)
+    pub fn builder(buffer: &'a mut [u32]) -> Sysex8BuilderBorrowed<'a> {
+        Sysex8BuilderBorrowed::new(buffer)
     }
     pub fn status(&self) -> Status {
         try_status_from_packet(self.0).expect("Valid status")
@@ -120,12 +120,15 @@ impl<'a> Sysex8Message<'a> {
     }
 }
 
-impl<'a> Message<'a, Ump> for Sysex8Message<'a> {
-    fn data(&self) -> &'a [u32] {
+impl<'a> Data for Sysex8Borrowed<'a> {
+    fn data(&self) -> &[u32] {
         self.0
     }
+}
+
+impl<'a> FromData<'a> for Sysex8Borrowed<'a> {
     fn from_data_unchecked(data: &'a [u32]) -> Self {
-        Sysex8Message(&data[..4])
+        Sysex8Borrowed(&data[..4])
     }
     fn validate_data(buffer: &'a [u32]) -> Result<()> {
         validate_buffer(buffer)?;
@@ -138,27 +141,23 @@ impl<'a> Message<'a, Ump> for Sysex8Message<'a> {
     }
 }
 
-impl<'a> Buildable<'a, Ump> for Sysex8Message<'a> {
-    type BuilderPrivate = Sysex8BuilderPrivate<'a>;
-}
-
-impl<'a> GroupedMessage<'a> for Sysex8Message<'a> {
+impl<'a> Grouped for Sysex8Borrowed<'a> {
     fn group(&self) -> u4 {
         message_helpers::group_from_packet(self.0)
     }
 }
 
-impl<'a> StreamedMessage<'a> for Sysex8Message<'a> {
+impl<'a> Streamed for Sysex8Borrowed<'a> {
     fn stream_id(&self) -> u8 {
         self.0[0].octet(2)
     }
 }
 
-debug::message_debug_impl!(Sysex8Message);
+debug::message_debug_impl!(Sysex8Borrowed);
 
-pub struct Sysex8BuilderPrivate<'a>(Result<&'a mut [u32]>);
+pub struct Sysex8BuilderBorrowed<'a>(Result<&'a mut [u32]>);
 
-impl<'a> Sysex8BuilderPrivate<'a> {
+impl<'a> Sysex8BuilderBorrowed<'a> {
     /// When called with `Status::UnexpectedEnd(_)` the payload buffer
     /// will be filled with zeros accordingly.
     pub fn status(mut self, s: Status) -> Self {
@@ -209,29 +208,25 @@ impl<'a> Sysex8BuilderPrivate<'a> {
         }
         self
     }
-}
-
-impl<'a> BuilderPrivate<'a, Ump> for Sysex8BuilderPrivate<'a> {
-    type Message = Sysex8Message<'a>;
-    fn build(self) -> Result<Sysex8Message<'a>> {
+    fn build(self) -> Result<Sysex8Borrowed<'a>> {
         match self.0 {
-            Ok(buffer) => Ok(Sysex8Message(buffer)),
+            Ok(buffer) => Ok(Sysex8Borrowed(buffer)),
             Err(e) => Err(e.clone()),
         }
     }
     fn new(buffer: &'a mut [u32]) -> Self {
         if buffer.len() >= 4 {
-            <Ump as Buffer>::clear(buffer);
-            message_helpers::write_type_to_packet(Sysex8Message::OP_CODE, buffer);
+            buffer[..4].copy_from_slice(&[0x0; 4]);
+            message_helpers::write_type_to_packet(Sysex8Borrowed::OP_CODE, buffer);
             buffer[0].set_nibble(3, u4::new(0x1)); // stream id
-            Self(Ok(buffer))
+            Self(Ok(&mut buffer[..4]))
         } else {
             Self(Err(Error::BufferOverflow))
         }
     }
 }
 
-impl<'a> GroupedBuilderPrivate<'a> for Sysex8BuilderPrivate<'a> {
+impl<'a> GroupedBuilder for Sysex8BuilderBorrowed<'a> {
     fn group(mut self, g: u4) -> Self {
         if let Ok(buffer) = &mut self.0 {
             buffer[0].set_nibble(1, g);
@@ -240,7 +235,7 @@ impl<'a> GroupedBuilderPrivate<'a> for Sysex8BuilderPrivate<'a> {
     }
 }
 
-impl<'a> StreamedBuilderPrivate<'a> for Sysex8BuilderPrivate<'a> {
+impl<'a> StreamedBuilder for Sysex8BuilderBorrowed<'a> {
     fn stream_id(mut self, id: u8) -> Self {
         if let Ok(buffer) = &mut self.0 {
             buffer[0].set_octet(2, id);
@@ -266,7 +261,7 @@ pub enum Validity {
 }
 
 fn validate_packet(p: &[u32]) -> Result<()> {
-    if p[0].nibble(0) != Sysex8Message::OP_CODE {
+    if p[0].nibble(0) != Sysex8Borrowed::OP_CODE {
         Err(Error::InvalidData)
     } else {
         Ok(())
@@ -342,12 +337,17 @@ impl<'a> Sysex8MessageGroup<'a> {
     pub fn messages(&self) -> Sysex8MessageGroupIterator {
         Sysex8MessageGroupIterator(self.0.chunks_exact(4))
     }
+    pub fn builder(buffer: &'a mut [u32]) -> Sysex8MessageGroupBuilderBorrowed<'a> {
+        Sysex8MessageGroupBuilderBorrowed::new(buffer)
+    }
 }
-
-impl<'a> Message<'a, Ump> for Sysex8MessageGroup<'a> {
-    fn data(&self) -> &'a [u32] {
+impl<'a> Data for Sysex8MessageGroup<'a> {
+    fn data(&self) -> &[u32] {
         self.0
     }
+}
+
+impl<'a> FromData<'a> for Sysex8MessageGroup<'a> {
     fn from_data_unchecked(buffer: &'a [u32]) -> Self {
         Sysex8MessageGroup(buffer)
     }
@@ -356,7 +356,7 @@ impl<'a> Message<'a, Ump> for Sysex8MessageGroup<'a> {
             return Err(Error::InvalidData);
         }
         for chunk in buffer.chunks(4) {
-            Sysex8Message::validate_data(chunk)?;
+            Sysex8Borrowed::validate_data(chunk)?;
         }
         message_helpers::sysex_group_consistent_groups(buffer, 4)?;
         message_helpers::validate_sysex_group_statuses(
@@ -371,23 +371,19 @@ impl<'a> Message<'a, Ump> for Sysex8MessageGroup<'a> {
     }
 }
 
-impl<'a> Buildable<'a, Ump> for Sysex8MessageGroup<'a> {
-    type BuilderPrivate = Sysex8MessageGroupBuilderPrivate<'a>;
-}
-
-impl<'a> GroupedMessage<'a> for Sysex8MessageGroup<'a> {
+impl<'a> Grouped for Sysex8MessageGroup<'a> {
     fn group(&self) -> u4 {
         message_helpers::group_from_packet(self.0)
     }
 }
 
-impl<'a> StreamedMessage<'a> for Sysex8MessageGroup<'a> {
+impl<'a> Streamed for Sysex8MessageGroup<'a> {
     fn stream_id(&self) -> u8 {
         self.0[0].octet(2)
     }
 }
 
-impl<'a> SysexMessage<'a, Ump> for Sysex8MessageGroup<'a> {
+impl<'a> Sysex for Sysex8MessageGroup<'a> {
     type PayloadIterator = PayloadIterator<'a>;
     fn payload(&self) -> Self::PayloadIterator {
         PayloadIterator {
@@ -401,13 +397,13 @@ impl<'a> SysexMessage<'a, Ump> for Sysex8MessageGroup<'a> {
 pub struct Sysex8MessageGroupIterator<'a>(core::slice::ChunksExact<'a, u32>);
 
 impl<'a> core::iter::Iterator for Sysex8MessageGroupIterator<'a> {
-    type Item = Sysex8Message<'a>;
+    type Item = Sysex8Borrowed<'a>;
     fn next(&mut self) -> Option<Self::Item> {
-        self.0.next().map(Sysex8Message)
+        self.0.next().map(Sysex8Borrowed)
     }
 }
 
-pub struct Sysex8MessageGroupBuilderPrivate<'a> {
+pub struct Sysex8MessageGroupBuilderBorrowed<'a> {
     buffer: &'a mut [u32],
     size: usize,
     error: Option<Error>,
@@ -415,7 +411,7 @@ pub struct Sysex8MessageGroupBuilderPrivate<'a> {
     stream_id: u8,
 }
 
-impl<'a> Sysex8MessageGroupBuilderPrivate<'a> {
+impl<'a> Sysex8MessageGroupBuilderBorrowed<'a> {
     // set the ith datum value in the message at position m in the buffer
     fn set_datum(&mut self, message_index: usize, data_index: usize, v: u8) {
         self.buffer[message_index + (data_index + 3) / 4].set_octet((3 + data_index) % 4, v);
@@ -444,7 +440,7 @@ impl<'a> Sysex8MessageGroupBuilderPrivate<'a> {
 
         {
             let mut builder =
-                Sysex8Message::builder(&mut self.buffer[4 * self.size..4 * (self.size + 1)]);
+                Sysex8Borrowed::builder(&mut self.buffer[4 * self.size..4 * (self.size + 1)]);
             builder = builder.group(self.group);
             builder = builder.stream_id(self.stream_id);
             match self.size {
@@ -460,7 +456,7 @@ impl<'a> Sysex8MessageGroupBuilderPrivate<'a> {
 
         if self.size != 0 {
             let mut prev_builder =
-                Sysex8BuilderPrivate(Ok(&mut self.buffer[4 * (self.size - 1)..4 * self.size]));
+                Sysex8BuilderBorrowed(Ok(&mut self.buffer[4 * (self.size - 1)..4 * self.size]));
             match self.size {
                 1 => {
                     prev_builder = prev_builder.status(Status::Begin);
@@ -473,76 +469,8 @@ impl<'a> Sysex8MessageGroupBuilderPrivate<'a> {
         }
         self.size += 1;
     }
-}
 
-impl<'a> BuilderPrivate<'a, Ump> for Sysex8MessageGroupBuilderPrivate<'a> {
-    type Message = Sysex8MessageGroup<'a>;
-    fn new(buffer: &'a mut [u32]) -> Self {
-        let mut ret = Sysex8MessageGroupBuilderPrivate {
-            buffer,
-            size: 0,
-            error: None,
-            group: u4::new(0x0),
-            stream_id: 0x0,
-        };
-        ret.grow();
-        if ret.error.is_none() {
-            // set the first byte to Sysex Begin
-            ret.set_datum(0, 0, 0xF0);
-        }
-        ret
-    }
-
-    fn build(mut self) -> Result<Sysex8MessageGroup<'a>> {
-        let None = &self.error else {
-            return Err(Error::InvalidData);
-        };
-
-        if self.message_size(self.message_index()) == u4::new(13) {
-            self.grow();
-            if self.error.is_some() {
-                return Err(Error::InvalidData);
-            }
-        }
-
-        {
-            let data_index = u8::from(self.message_size(self.message_index())) as usize;
-            self.set_datum(self.message_index(), data_index - 1, 0xF7);
-        }
-
-        Ok(Sysex8MessageGroup(&self.buffer[..4 * self.size]))
-    }
-}
-
-impl<'a> GroupedBuilderPrivate<'a> for Sysex8MessageGroupBuilderPrivate<'a> {
-    fn group(mut self, g: u4) -> Self {
-        if self.error.is_some() || self.group == g {
-            return self;
-        }
-        self.group = g;
-        for chunk in self.buffer[..self.size * 4].chunks_exact_mut(4) {
-            chunk[0].set_nibble(1, g);
-        }
-        self
-    }
-}
-
-impl<'a> StreamedBuilderPrivate<'a> for Sysex8MessageGroupBuilderPrivate<'a> {
-    fn stream_id(mut self, id: u8) -> Self {
-        if self.error.is_some() || self.stream_id == id {
-            return self;
-        }
-        self.stream_id = id;
-        for chunk in self.buffer[..self.size * 4].chunks_exact_mut(4) {
-            chunk[0].set_octet(2, id);
-        }
-        self
-    }
-}
-
-impl<'a> SysexBuilderPrivate<'a, Ump> for Sysex8MessageGroupBuilderPrivate<'a> {
-    type Byte = u8;
-    fn payload<I: core::iter::Iterator<Item = u8>>(mut self, mut iter: I) -> Self {
+    pub fn payload<I: core::iter::Iterator<Item = u8>>(mut self, mut iter: I) -> Self {
         if self.error.is_some() {
             return self;
         }
@@ -587,6 +515,68 @@ impl<'a> SysexBuilderPrivate<'a, Ump> for Sysex8MessageGroupBuilderPrivate<'a> {
             self.payload(iter)
         }
     }
+
+    pub fn new(buffer: &'a mut [u32]) -> Self {
+        let mut ret = Sysex8MessageGroupBuilderBorrowed {
+            buffer,
+            size: 0,
+            error: None,
+            group: u4::new(0x0),
+            stream_id: 0x0,
+        };
+        ret.grow();
+        if ret.error.is_none() {
+            // set the first byte to Sysex Begin
+            ret.set_datum(0, 0, 0xF0);
+        }
+        ret
+    }
+
+    pub fn build(mut self) -> Result<Sysex8MessageGroup<'a>> {
+        let None = &self.error else {
+            return Err(Error::InvalidData);
+        };
+
+        if self.message_size(self.message_index()) == u4::new(13) {
+            self.grow();
+            if self.error.is_some() {
+                return Err(Error::InvalidData);
+            }
+        }
+
+        {
+            let data_index = u8::from(self.message_size(self.message_index())) as usize;
+            self.set_datum(self.message_index(), data_index - 1, 0xF7);
+        }
+
+        Ok(Sysex8MessageGroup(&self.buffer[..4 * self.size]))
+    }
+}
+
+impl<'a> GroupedBuilder for Sysex8MessageGroupBuilderBorrowed<'a> {
+    fn group(mut self, g: u4) -> Self {
+        if self.error.is_some() || self.group == g {
+            return self;
+        }
+        self.group = g;
+        for chunk in self.buffer[..self.size * 4].chunks_exact_mut(4) {
+            chunk[0].set_nibble(1, g);
+        }
+        self
+    }
+}
+
+impl<'a> StreamedBuilder for Sysex8MessageGroupBuilderBorrowed<'a> {
+    fn stream_id(mut self, id: u8) -> Self {
+        if self.error.is_some() || self.stream_id == id {
+            return self;
+        }
+        self.stream_id = id;
+        for chunk in self.buffer[..self.size * 4].chunks_exact_mut(4) {
+            chunk[0].set_octet(2, id);
+        }
+        self
+    }
 }
 
 #[cfg(test)]
@@ -598,13 +588,13 @@ mod tests {
     fn builder() {
         let mut buffer = Ump::random_buffer::<4>();
         assert_eq!(
-            Sysex8Message::builder(&mut buffer)
+            Sysex8Borrowed::builder(&mut buffer)
                 .group(u4::new(0xA))
                 .stream_id(0xC6)
                 .status(Status::Continue)
                 .payload([0x12, 0x34, 0x56, 0x78, 0x90].iter())
                 .build(),
-            Ok(Sysex8Message(&[0x5A26_C612, 0x3456_7890, 0x0, 0x0])),
+            Ok(Sysex8Borrowed(&[0x5A26_C612, 0x3456_7890, 0x0, 0x0])),
         )
     }
 
@@ -612,7 +602,7 @@ mod tests {
     fn builder_large_payload() {
         let mut buffer = Ump::random_buffer::<4>();
         assert_eq!(
-            Sysex8Message::builder(&mut buffer)
+            Sysex8Borrowed::builder(&mut buffer)
                 .payload([0x0; 14].iter())
                 .build(),
             Err(Error::InvalidData),
@@ -622,7 +612,7 @@ mod tests {
     #[test]
     fn must_have_stream_id() {
         assert_eq!(
-            Sysex8Message::from_data(&[0x5000_0000, 0x0, 0x0, 0x0]),
+            Sysex8Borrowed::from_data(&[0x5000_0000, 0x0, 0x0, 0x0]),
             Err(Error::InvalidData),
         );
     }
@@ -630,7 +620,7 @@ mod tests {
     #[test]
     fn group() {
         assert_eq!(
-            Sysex8Message::from_data(&[0x5C01_0000, 0x0, 0x0, 0x0])
+            Sysex8Borrowed::from_data(&[0x5C01_0000, 0x0, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0xC),
@@ -640,7 +630,7 @@ mod tests {
     #[test]
     fn stream_id() {
         assert_eq!(
-            Sysex8Message::from_data(&[0x5001_9900, 0x0, 0x0, 0x0])
+            Sysex8Borrowed::from_data(&[0x5001_9900, 0x0, 0x0, 0x0])
                 .unwrap()
                 .stream_id(),
             0x99,
@@ -650,7 +640,7 @@ mod tests {
     #[test]
     fn status() {
         assert_eq!(
-            Sysex8Message::from_data(&[0x5021_0000, 0x0, 0x0, 0x0])
+            Sysex8Borrowed::from_data(&[0x5021_0000, 0x0, 0x0, 0x0])
                 .unwrap()
                 .status(),
             Status::Continue,
@@ -660,7 +650,7 @@ mod tests {
     #[test]
     fn status_end() {
         assert_eq!(
-            Sysex8Message::from_data(&[0x5032_0000, 0x0, 0x0, 0x0])
+            Sysex8Borrowed::from_data(&[0x5032_0000, 0x0, 0x0, 0x0])
                 .unwrap()
                 .status(),
             Status::End,
@@ -670,7 +660,7 @@ mod tests {
     #[test]
     fn status_unexpected_end_valid() {
         assert_eq!(
-            Sysex8Message::from_data(&[0x5031_0000, 0x0, 0x0, 0x0])
+            Sysex8Borrowed::from_data(&[0x5031_0000, 0x0, 0x0, 0x0])
                 .unwrap()
                 .status(),
             Status::UnexpectedEnd(Validity::Valid),
@@ -680,7 +670,7 @@ mod tests {
     #[test]
     fn status_unexpected_end_invalid() {
         assert_eq!(
-            Sysex8Message::from_data(&[0x503F_0000, 0x0, 0x0, 0x0])
+            Sysex8Borrowed::from_data(&[0x503F_0000, 0x0, 0x0, 0x0])
                 .unwrap()
                 .status(),
             Status::UnexpectedEnd(Validity::Invalid),
@@ -690,7 +680,7 @@ mod tests {
     #[test]
     fn payload() {
         let message =
-            Sysex8Message::from_data(&[0x5009_FF00, 0x1122_3344, 0x5566_7700, 0x0]).unwrap();
+            Sysex8Borrowed::from_data(&[0x5009_FF00, 0x1122_3344, 0x5566_7700, 0x0]).unwrap();
         let mut buffer = [0u8; 8];
         for (i, v) in message.payload().enumerate() {
             buffer[i] = v;

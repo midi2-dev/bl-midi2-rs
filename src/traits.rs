@@ -43,11 +43,15 @@ pub trait GroupedBuilder {
     fn group(self, v: u4) -> Self;
 }
 
-pub trait Sysex<B: Buffer> {
+pub trait Sysex {
     type PayloadIterator: core::iter::Iterator<Item = u8>;
     fn payload(&self) -> Self::PayloadIterator;
 }
 
 pub trait Streamed {
     fn stream_id(&self) -> u8;
+}
+
+pub trait StreamedBuilder {
+    fn stream_id(self, v: u8) -> Self;
 }
