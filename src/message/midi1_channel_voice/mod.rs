@@ -1,7 +1,4 @@
-// use crate::{
-//     util::{schema::*, BitOps},
-//     *,
-// };
+use crate::{util::BitOps, *};
 
 mod channel_pressure;
 mod control_change;
@@ -42,98 +39,124 @@ pub use program_change::ProgramChangeBorrowed;
 pub use program_change::ProgramChangeBuilder;
 pub use program_change::ProgramChangeOwned;
 
-// pub enum Midi1ChannelVoiceMessage<'a, B>
-// where
-//     B: Buffer
-//         + Property<
-//             NumericalConstant<CHANNEL_PRESSURE_CODE>,
-//             UmpSchema<0x00F0_0000, 0x0, 0x0, 0x0>,
-//             BytesSchema<0xF0, 0x0, 0x0>,
-//         > + Property<
-//             NumericalConstant<CONTROL_CHANGE_CODE>,
-//             UmpSchema<0x00F0_0000, 0x0, 0x0, 0x0>,
-//             BytesSchema<0xF0, 0x0, 0x0>,
-//         > + Property<
-//             NumericalConstant<KEY_PRESSURE_CODE>,
-//             UmpSchema<0x00F0_0000, 0x0, 0x0, 0x0>,
-//             BytesSchema<0xF0, 0x0, 0x0>,
-//         > + Property<
-//             NumericalConstant<NOTE_OFF_CODE>,
-//             UmpSchema<0x00F0_0000, 0x0, 0x0, 0x0>,
-//             BytesSchema<0xF0, 0x0, 0x0>,
-//         > + Property<
-//             NumericalConstant<NOTE_ON_CODE>,
-//             UmpSchema<0x00F0_0000, 0x0, 0x0, 0x0>,
-//             BytesSchema<0xF0, 0x0, 0x0>,
-//         > + Property<
-//             NumericalConstant<PITCH_BEND_CODE>,
-//             UmpSchema<0x00F0_0000, 0x0, 0x0, 0x0>,
-//             BytesSchema<0xF0, 0x0, 0x0>,
-//         > + Property<
-//             NumericalConstant<PROGRAM_CHANGE_CODE>,
-//             UmpSchema<0x00F0_0000, 0x0, 0x0, 0x0>,
-//             BytesSchema<0xF0, 0x0, 0x0>,
-//         > + Property<NumericalConstant<TYPE_CODE>, UmpSchema<0xF000_0000, 0x0, 0x0, 0x0>, ()>
-//         + Property<u14, UmpSchema<0x0000_7F7F, 0x0, 0x0, 0x0>, BytesSchema<0x0, 0x7F, 0x7F>>
-//         + Property<u4, UmpSchema<0x000F_0000, 0x0, 0x0, 0x0>, BytesSchema<0x0F, 0x0, 0x0>>
-//         + Property<u7, UmpSchema<0x0000_007F, 0x0, 0x0, 0x0>, BytesSchema<0x0, 0x0, 0x7F>>
-//         + Property<u7, UmpSchema<0x0000_7F00, 0x0, 0x0, 0x0>, BytesSchema<0x0, 0x7F, 0x0>>,
-// {
-//     ChannelPressure(ChannelPressureMessage<'a, B>),
-//     ControlChange(ControlChangeMessage<'a, B>),
-//     KeyPressure(KeyPressureMessage<'a, B>),
-//     NoteOff(NoteOffMessage<'a, B>),
-//     NoteOn(NoteOnMessage<'a, B>),
-//     PitchBend(PitchBendMessage<'a, B>),
-//     ProgramChange(ProgramChangeMessage<'a, B>),
-// }
-//
-// pub const CHANNEL_PRESSURE_CODE: u32 = 0b1101;
-// pub const CONTROL_CHANGE_CODE: u32 = 0b1011;
-// pub const KEY_PRESSURE_CODE: u32 = 0b1010;
-// pub const NOTE_OFF_CODE: u32 = 0b1000;
-// pub const NOTE_ON_CODE: u32 = 0b1001;
-// pub const PITCH_BEND_CODE: u32 = 0b1110;
-// pub const PROGRAM_CHANGE_CODE: u32 = 0b1100;
-//
-// use Midi1ChannelVoiceMessage::*;
-//
-// impl<'a> Message<'a, Ump> for Midi1ChannelVoiceMessage<'a, Ump> {
-//     fn data(&self) -> &'a [u32] {
-//         match self {
-//             ChannelPressure(m) => m.data(),
-//             ControlChange(m) => m.data(),
-//             KeyPressure(m) => m.data(),
-//             NoteOff(m) => m.data(),
-//             NoteOn(m) => m.data(),
-//             PitchBend(m) => m.data(),
-//             ProgramChange(m) => m.data(),
-//         }
-//     }
-//     fn from_data_unchecked(buffer: &'a [u32]) -> Self {
-//         match u32::from(buffer[0].nibble(2)) {
-//             CHANNEL_PRESSURE_CODE => {
-//                 ChannelPressure(ChannelPressureMessage::from_data_unchecked(buffer))
-//             }
-//             CONTROL_CHANGE_CODE => ControlChange(ControlChangeMessage::from_data_unchecked(buffer)),
-//             KEY_PRESSURE_CODE => KeyPressure(KeyPressureMessage::from_data_unchecked(buffer)),
-//             NOTE_OFF_CODE => NoteOff(NoteOffMessage::from_data_unchecked(buffer)),
-//             NOTE_ON_CODE => NoteOn(NoteOnMessage::from_data_unchecked(buffer)),
-//             PITCH_BEND_CODE => PitchBend(PitchBendMessage::from_data_unchecked(buffer)),
-//             PROGRAM_CHANGE_CODE => ProgramChange(ProgramChangeMessage::from_data_unchecked(buffer)),
-//             _ => panic!(),
-//         }
-//     }
-//     fn validate_data(buffer: &'a [u32]) -> Result<()> {
-//         match u32::from(buffer[0].nibble(2)) {
-//             CHANNEL_PRESSURE_CODE => ChannelPressureMessage::<Ump>::validate_data(buffer),
-//             CONTROL_CHANGE_CODE => ControlChangeMessage::<Ump>::validate_data(buffer),
-//             KEY_PRESSURE_CODE => KeyPressureMessage::<Ump>::validate_data(buffer),
-//             NOTE_OFF_CODE => NoteOffMessage::<Ump>::validate_data(buffer),
-//             NOTE_ON_CODE => NoteOnMessage::<Ump>::validate_data(buffer),
-//             PITCH_BEND_CODE => PitchBendMessage::<Ump>::validate_data(buffer),
-//             PROGRAM_CHANGE_CODE => ProgramChangeMessage::<Ump>::validate_data(buffer),
-//             _ => Err(Error::InvalidData),
-//         }
-//     }
-// }
+pub enum Midi1ChannelVoiceBorrowed<'a> {
+    ChannelPressure(ChannelPressureBorrowed<'a>),
+    ControlChange(ControlChangeBorrowed<'a>),
+    KeyPressure(KeyPressureBorrowed<'a>),
+    NoteOff(NoteOffBorrowed<'a>),
+    NoteOn(NoteOnBorrowed<'a>),
+    PitchBend(PitchBendBorrowed<'a>),
+    ProgramChange(ProgramChangeBorrowed<'a>),
+}
+
+pub enum Midi1ChannelVoiceOwned {
+    ChannelPressure(ChannelPressureOwned),
+    ControlChange(ControlChangeOwned),
+    KeyPressure(KeyPressureOwned),
+    NoteOff(NoteOffOwned),
+    NoteOn(NoteOnOwned),
+    PitchBend(PitchBendOwned),
+    ProgramChange(ProgramChangeOwned),
+}
+
+pub const CHANNEL_PRESSURE_CODE: u32 = 0b1101;
+pub const CONTROL_CHANGE_CODE: u32 = 0b1011;
+pub const KEY_PRESSURE_CODE: u32 = 0b1010;
+pub const NOTE_OFF_CODE: u32 = 0b1000;
+pub const NOTE_ON_CODE: u32 = 0b1001;
+pub const PITCH_BEND_CODE: u32 = 0b1110;
+pub const PROGRAM_CHANGE_CODE: u32 = 0b1100;
+
+impl<'a> Data for Midi1ChannelVoiceBorrowed<'a> {
+    fn data(&self) -> &[u32] {
+        use Midi1ChannelVoiceBorrowed::*;
+        match self {
+            ChannelPressure(m) => m.data(),
+            ControlChange(m) => m.data(),
+            KeyPressure(m) => m.data(),
+            NoteOff(m) => m.data(),
+            NoteOn(m) => m.data(),
+            PitchBend(m) => m.data(),
+            ProgramChange(m) => m.data(),
+        }
+    }
+}
+
+impl Data for Midi1ChannelVoiceOwned {
+    fn data(&self) -> &[u32] {
+        use Midi1ChannelVoiceOwned::*;
+        match self {
+            ChannelPressure(m) => m.data(),
+            ControlChange(m) => m.data(),
+            KeyPressure(m) => m.data(),
+            NoteOff(m) => m.data(),
+            NoteOn(m) => m.data(),
+            PitchBend(m) => m.data(),
+            ProgramChange(m) => m.data(),
+        }
+    }
+}
+
+impl<'a> Grouped for Midi1ChannelVoiceBorrowed<'a> {
+    fn group(&self) -> u4 {
+        use Midi1ChannelVoiceBorrowed::*;
+        match self {
+            ChannelPressure(m) => m.group(),
+            ControlChange(m) => m.group(),
+            KeyPressure(m) => m.group(),
+            NoteOff(m) => m.group(),
+            NoteOn(m) => m.group(),
+            PitchBend(m) => m.group(),
+            ProgramChange(m) => m.group(),
+        }
+    }
+}
+
+impl Grouped for Midi1ChannelVoiceOwned {
+    fn group(&self) -> u4 {
+        use Midi1ChannelVoiceOwned::*;
+        match self {
+            ChannelPressure(m) => m.group(),
+            ControlChange(m) => m.group(),
+            KeyPressure(m) => m.group(),
+            NoteOff(m) => m.group(),
+            NoteOn(m) => m.group(),
+            PitchBend(m) => m.group(),
+            ProgramChange(m) => m.group(),
+        }
+    }
+}
+
+impl<'a> FromData<'a> for Midi1ChannelVoiceBorrowed<'a> {
+    fn from_data_unchecked(buffer: &'a [u32]) -> Self {
+        use Midi1ChannelVoiceBorrowed::*;
+        match u32::from(buffer[0].nibble(2)) {
+            CHANNEL_PRESSURE_CODE => {
+                ChannelPressure(ChannelPressureBorrowed::from_data_unchecked(buffer))
+            }
+            CONTROL_CHANGE_CODE => {
+                ControlChange(ControlChangeBorrowed::from_data_unchecked(buffer))
+            }
+            KEY_PRESSURE_CODE => KeyPressure(KeyPressureBorrowed::from_data_unchecked(buffer)),
+            NOTE_OFF_CODE => NoteOff(NoteOffBorrowed::from_data_unchecked(buffer)),
+            NOTE_ON_CODE => NoteOn(NoteOnBorrowed::from_data_unchecked(buffer)),
+            PITCH_BEND_CODE => PitchBend(PitchBendBorrowed::from_data_unchecked(buffer)),
+            PROGRAM_CHANGE_CODE => {
+                ProgramChange(ProgramChangeBorrowed::from_data_unchecked(buffer))
+            }
+            _ => panic!(),
+        }
+    }
+    fn validate_data(buffer: &'a [u32]) -> Result<()> {
+        match u32::from(buffer[0].nibble(2)) {
+            CHANNEL_PRESSURE_CODE => ChannelPressureBorrowed::validate_data(buffer),
+            CONTROL_CHANGE_CODE => ControlChangeBorrowed::validate_data(buffer),
+            KEY_PRESSURE_CODE => KeyPressureBorrowed::validate_data(buffer),
+            NOTE_OFF_CODE => NoteOffBorrowed::validate_data(buffer),
+            NOTE_ON_CODE => NoteOnBorrowed::validate_data(buffer),
+            PITCH_BEND_CODE => PitchBendBorrowed::validate_data(buffer),
+            PROGRAM_CHANGE_CODE => ProgramChangeBorrowed::validate_data(buffer),
+            _ => Err(Error::InvalidData),
+        }
+    }
+}
