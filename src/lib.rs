@@ -2,10 +2,10 @@
 #![doc = include_str!("../README.md")]
 
 // pub mod ci;
+pub mod message;
 
 mod buffer;
 mod error;
-mod message;
 mod result;
 mod traits;
 mod util;
@@ -15,13 +15,8 @@ pub use error::*;
 pub use result::*;
 pub use traits::*;
 
-pub use message::midi1_channel_voice;
-pub use message::midi2_channel_voice;
-pub use message::system_common;
-pub use message::system_exclusive_7bit;
-pub use message::system_exclusive_8bit;
-pub use message::utility;
-// pub use message::MidiMessage;
+pub use message::MessageBorrowed;
+pub use message::MessageOwned;
 
 // forward expose numeric types from the
 // 3rd party ux crate
@@ -39,7 +34,6 @@ macro_rules! forward_ux_types {
 forward_ux_types!();
 
 pub mod prelude {
-    pub use crate::buffer::*;
     pub use crate::traits::*;
     forward_ux_types!();
 }
