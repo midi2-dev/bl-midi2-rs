@@ -176,6 +176,7 @@ impl Data for Sysex8Owned {
 }
 
 impl<'a> FromData<'a> for Sysex8Borrowed<'a> {
+    type Target = Self;
     fn from_data_unchecked(data: &'a [u32]) -> Self {
         Sysex8Borrowed(&data[..4])
     }
@@ -410,6 +411,7 @@ impl<'a> Data for Sysex8MessageGroup<'a> {
 }
 
 impl<'a> FromData<'a> for Sysex8MessageGroup<'a> {
+    type Target = Self;
     fn from_data_unchecked(buffer: &'a [u32]) -> Self {
         Sysex8MessageGroup(buffer)
     }

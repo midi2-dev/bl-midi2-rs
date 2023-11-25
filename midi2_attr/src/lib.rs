@@ -565,6 +565,7 @@ fn from_data_trait_impl(root_ident: &Ident, properties: &Vec<Property>) -> Token
     let buffer_type = buffer_generic_with_constraints(properties);
     quote! {
         impl<'a, #buffer_type> FromDataPrivate<'a, B> for #message_ident<'a, B> {
+            type Target = Self;
             fn from_data_unchecked(data: &'a [<B as Buffer>::Data]) -> Self {
                 #message_ident(data)
             }
@@ -584,6 +585,7 @@ fn from_data_trait_impl_public(root_ident: &Ident) -> TokenStream {
     let private_message_ident = message_borrowed_ident(root_ident);
     quote! {
         impl<'a> FromData<'a> for #message_ident<'a> {
+            type Target = Self;
             fn from_data_unchecked(data: &'a [u32]) -> Self {
                 #message_ident(<#private_message_ident<Ump> as FromDataPrivate<Ump>>::from_data_unchecked(data))
             }

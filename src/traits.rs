@@ -9,9 +9,10 @@ pub trait Data {
 }
 
 pub(crate) trait FromDataPrivate<'a, B: Buffer>: Sized {
-    fn from_data_unchecked(buffer: &'a [B::Data]) -> Self;
+    type Target;
+    fn from_data_unchecked(buffer: &'a [B::Data]) -> Self::Target;
     fn validate_data(buffer: &'a [B::Data]) -> Result<()>;
-    fn from_data(buffer: &'a [B::Data]) -> Result<Self> {
+    fn from_data(buffer: &'a [B::Data]) -> Result<Self::Target> {
         match Self::validate_data(buffer) {
             Ok(()) => Ok(Self::from_data_unchecked(buffer)),
             Err(e) => Err(e),
@@ -20,9 +21,10 @@ pub(crate) trait FromDataPrivate<'a, B: Buffer>: Sized {
 }
 
 pub trait FromData<'a>: Sized {
-    fn from_data_unchecked(buffer: &'a [u32]) -> Self;
+    type Target;
+    fn from_data_unchecked(buffer: &'a [u32]) -> Self::Target;
     fn validate_data(buffer: &'a [u32]) -> Result<()>;
-    fn from_data(buffer: &'a [u32]) -> Result<Self> {
+    fn from_data(buffer: &'a [u32]) -> Result<Self::Target> {
         match Self::validate_data(buffer) {
             Ok(()) => Ok(Self::from_data_unchecked(buffer)),
             Err(e) => Err(e),

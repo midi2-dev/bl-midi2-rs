@@ -26,6 +26,24 @@ pub use utility::UtilityOwned;
 
 use self::utility::UtilityBuilder;
 
+pub struct Message;
+
+impl<'a> FromData<'a> for Message {
+    type Target = MessageBorrowed<'a>;
+    fn validate_data(buffer: &'a [u32]) -> Result<()> {
+        <MessageBorrowed as FromData<'a>>::validate_data(buffer)
+    }
+    fn from_data_unchecked(buffer: &'a [u32]) -> Self::Target {
+        <MessageBorrowed as FromData<'a>>::from_data_unchecked(buffer)
+    }
+}
+
+impl Message {
+    pub fn builder() -> MessageBuilder {
+        MessageBuilder::new()
+    }
+}
+
 #[derive(derive_more::From, Clone, Debug, PartialEq, Eq)]
 pub enum MessageBorrowed<'a> {
     Midi1ChannelVoice(Midi1ChannelVoiceBorrowed<'a>),
@@ -137,6 +155,7 @@ impl Grouped for MessageOwned {
 }
 
 impl<'a> FromData<'a> for MessageBorrowed<'a> {
+    type Target = Self;
     fn from_data_unchecked(buffer: &'a [u32]) -> Self {
         use MessageBorrowed::*;
         match u8::from(buffer[0].nibble(0)) {

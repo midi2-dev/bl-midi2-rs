@@ -322,6 +322,7 @@ impl Grouped for Midi2ChannelVoiceOwned {
 }
 
 impl<'a> FromData<'a> for Midi2ChannelVoiceBorrowed<'a> {
+    type Target = Self;
     fn validate_data(buffer: &'a [u32]) -> Result<()> {
         match u8::from(buffer[0].nibble(2)) {
             ASSIGNABLE_CONTROLLER_CODE => AssignableControllerBorrowed::validate_data(buffer),

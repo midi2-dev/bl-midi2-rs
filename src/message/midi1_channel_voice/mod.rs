@@ -183,6 +183,7 @@ impl Grouped for Midi1ChannelVoiceOwned {
 }
 
 impl<'a> FromData<'a> for Midi1ChannelVoiceBorrowed<'a> {
+    type Target = Self;
     fn from_data_unchecked(buffer: &'a [u32]) -> Self {
         use Midi1ChannelVoiceBorrowed::*;
         match u32::from(buffer[0].nibble(2)) {

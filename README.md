@@ -24,7 +24,7 @@ allowing for optimisation by avoiding copies.
 ```rust
 use midi2::prelude::*;
 
-let message = MessageOwned::builder()
+let message = Message::builder()
     .midi2_channel_voice()
     .note_on()
     .group(u4::new(0xD))
@@ -49,7 +49,7 @@ use midi2::prelude::*;
 
 let owned = {
     let buffer = [0x4405_6C07, 0xE1E3_5E92, 0x0, 0x0];
-    let borrowed = MessageBorrowed::from_data(&buffer).unwrap();
+    let borrowed = Message::from_data(&buffer).unwrap();
     borrowed.to_owned()
 };
 

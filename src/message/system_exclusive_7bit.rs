@@ -168,6 +168,7 @@ impl<'a> Sysex7BytesBorrowed<'a> {
 }
 
 impl<'a> FromData<'a> for Sysex7Borrowed<'a> {
+    type Target = Self;
     fn from_data_unchecked(data: &'a [u32]) -> Self {
         Sysex7Borrowed(&data[..2])
     }
@@ -418,6 +419,7 @@ impl<'a> Data for Sysex7MessageGroup<'a> {
 }
 
 impl<'a> FromData<'a> for Sysex7MessageGroup<'a> {
+    type Target = Self;
     fn from_data_unchecked(buffer: &'a [u32]) -> Self {
         Sysex7MessageGroup(buffer)
     }

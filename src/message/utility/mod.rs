@@ -94,6 +94,7 @@ impl Grouped for UtilityOwned {
 }
 
 impl<'a> FromData<'a> for UtilityBorrowed<'a> {
+    type Target = Self;
     fn validate_data(data: &[u32]) -> Result<()> {
         match u8::from(data[0].nibble(2)) {
             NO_OP_CODE => NoOpBorrowed::validate_data(data),

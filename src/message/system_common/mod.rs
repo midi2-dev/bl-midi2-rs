@@ -236,6 +236,7 @@ impl Grouped for SystemCommonOwned {
 }
 
 impl<'a> FromData<'a> for SystemCommonBorrowed<'a> {
+    type Target = Self;
     fn validate_data(data: &[u32]) -> Result<()> {
         match data[0].octet(1).into() {
             ACTIVE_SENSING => ActiveSensingBorrowed::validate_data(data),
