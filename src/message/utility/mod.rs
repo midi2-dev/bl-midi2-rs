@@ -12,14 +12,42 @@ pub use time_stamp::TimeStampBorrowed;
 pub use time_stamp::TimeStampBuilder;
 pub use time_stamp::TimeStampOwned;
 
+#[derive(derive_more::From, Clone, Debug, PartialEq, Eq)]
 pub enum UtilityBorrowed<'a> {
     NoOp(NoOpBorrowed<'a>),
     TimeStamp(TimeStampBorrowed<'a>),
 }
 
+#[derive(derive_more::From, Clone, Debug, PartialEq, Eq)]
 pub enum UtilityOwned {
     NoOp(NoOpOwned),
     TimeStamp(TimeStampOwned),
+}
+
+#[derive(Default)]
+pub struct UtilityBuilder<M>(core::marker::PhantomData<M>)
+where
+    M: core::convert::From<TimeStampOwned> + core::convert::From<NoOpOwned>;
+
+impl<M> UtilityBuilder<M>
+where
+    M: core::convert::From<TimeStampOwned> + core::convert::From<NoOpOwned>,
+{
+    pub fn new() -> Self {
+        Self(Default::default())
+    }
+    pub fn no_op(self) -> NoOpBuilder<M> {
+        NoOpBuilder::new()
+    }
+    pub fn time_stamp(self) -> TimeStampBuilder<M> {
+        TimeStampBuilder::new()
+    }
+}
+
+impl UtilityOwned {
+    pub fn builder() -> UtilityBuilder<UtilityOwned> {
+        UtilityBuilder::new()
+    }
 }
 
 const NO_OP_CODE: u8 = 0b0000;
@@ -90,5 +118,27 @@ pub fn validate_packet(p: &[u32], op_code: u4) -> Result<()> {
         Err(Error::InvalidData)
     } else {
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn builder() {
+        assert_eq!(
+            UtilityOwned::builder()
+                .time_stamp()
+                .time_stamp(u20::new(0x1))
+                .build(),
+            Ok(UtilityOwned::TimeStamp(
+                TimeStampOwned::builder()
+                    .time_stamp(u20::new(0x1))
+                    .build()
+                    .unwrap()
+            ))
+        )
     }
 }

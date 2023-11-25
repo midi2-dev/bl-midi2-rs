@@ -56,6 +56,7 @@ pub use tune_request::TuneRequestBorrowed;
 pub use tune_request::TuneRequestBuilder;
 pub use tune_request::TuneRequestOwned;
 
+#[derive(derive_more::From, Clone, Debug, PartialEq, Eq)]
 pub enum SystemCommonBorrowed<'a> {
     ActiveSensing(ActiveSensingBorrowed<'a>),
     Continue(ContinueBorrowed<'a>),
@@ -69,6 +70,7 @@ pub enum SystemCommonBorrowed<'a> {
     TuneRequest(TuneRequestBorrowed<'a>),
 }
 
+#[derive(derive_more::From, Clone, Debug, PartialEq, Eq)]
 pub enum SystemCommonOwned {
     ActiveSensing(ActiveSensingOwned),
     Continue(ContinueOwned),
@@ -80,6 +82,74 @@ pub enum SystemCommonOwned {
     TimeCode(TimeCodeOwned),
     TimingClock(TimingClockOwned),
     TuneRequest(TuneRequestOwned),
+}
+
+#[derive(Default)]
+pub struct SystemCommonBuilder<M>(core::marker::PhantomData<M>)
+where
+    M: core::convert::From<ActiveSensingOwned>
+        + core::convert::From<ContinueOwned>
+        + core::convert::From<ResetOwned>
+        + core::convert::From<SongPositionPointerOwned>
+        + core::convert::From<SongSelectOwned>
+        + core::convert::From<StartOwned>
+        + core::convert::From<StopOwned>
+        + core::convert::From<TimeCodeOwned>
+        + core::convert::From<TimingClockOwned>
+        + core::convert::From<TuneRequestOwned>;
+
+impl<M> SystemCommonBuilder<M>
+where
+    M: core::convert::From<ActiveSensingOwned>
+        + core::convert::From<ContinueOwned>
+        + core::convert::From<ResetOwned>
+        + core::convert::From<SongPositionPointerOwned>
+        + core::convert::From<SongSelectOwned>
+        + core::convert::From<StartOwned>
+        + core::convert::From<StopOwned>
+        + core::convert::From<TimeCodeOwned>
+        + core::convert::From<TimingClockOwned>
+        + core::convert::From<TuneRequestOwned>,
+{
+    pub fn new() -> Self {
+        Self(Default::default())
+    }
+    pub fn active_sensing(self) -> ActiveSensingBuilder<M> {
+        ActiveSensingBuilder::new()
+    }
+    pub fn cont(self) -> ContinueBuilder<M> {
+        ContinueBuilder::new()
+    }
+    pub fn reset(self) -> ResetBuilder<M> {
+        ResetBuilder::new()
+    }
+    pub fn song_position_pointer(self) -> SongPositionPointerBuilder<M> {
+        SongPositionPointerBuilder::new()
+    }
+    pub fn song_select(self) -> SongSelectBuilder<M> {
+        SongSelectBuilder::new()
+    }
+    pub fn start(self) -> StartBuilder<M> {
+        StartBuilder::new()
+    }
+    pub fn stop(self) -> StopBuilder<M> {
+        StopBuilder::new()
+    }
+    pub fn time_code(self) -> TimeCodeBuilder<M> {
+        TimeCodeBuilder::new()
+    }
+    pub fn timing_clock(self) -> TimingClockBuilder<M> {
+        TimingClockBuilder::new()
+    }
+    pub fn tune_request(self) -> TuneRequestBuilder<M> {
+        TuneRequestBuilder::new()
+    }
+}
+
+impl SystemCommonOwned {
+    pub fn builder() -> SystemCommonBuilder<SystemCommonOwned> {
+        SystemCommonBuilder::new()
+    }
 }
 
 pub const ACTIVE_SENSING: u32 = 0xFE;
@@ -198,5 +268,27 @@ impl<'a> FromData<'a> for SystemCommonBorrowed<'a> {
             TUNE_REQUEST => TuneRequest(TuneRequestBorrowed::from_data_unchecked(data)),
             _ => panic!(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn builder() {
+        assert_eq!(
+            SystemCommonOwned::builder()
+                .song_select()
+                .song(u7::new(0x1))
+                .build(),
+            Ok(SystemCommonOwned::SongSelect(
+                SongSelectOwned::builder()
+                    .song(u7::new(0x1))
+                    .build()
+                    .unwrap()
+            )),
+        );
     }
 }

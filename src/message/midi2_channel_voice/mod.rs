@@ -82,6 +82,7 @@ pub use relative_registered_controller::RelativeRegisteredControllerBorrowed;
 pub use relative_registered_controller::RelativeRegisteredControllerBuilder;
 pub use relative_registered_controller::RelativeRegisteredControllerOwned;
 
+#[derive(derive_more::From, Clone, Debug, PartialEq, Eq)]
 pub enum Midi2ChannelVoiceBorrowed<'a> {
     AssignableController(AssignableControllerBorrowed<'a>),
     AssignablePerNoteController(AssignablePerNoteControllerBorrowed<'a>),
@@ -100,6 +101,7 @@ pub enum Midi2ChannelVoiceBorrowed<'a> {
     RelativeRegisteredController(RelativeRegisteredControllerBorrowed<'a>),
 }
 
+#[derive(derive_more::From, Clone, Debug, PartialEq, Eq)]
 pub enum Midi2ChannelVoiceOwned {
     AssignableController(AssignableControllerOwned),
     AssignablePerNoteController(AssignablePerNoteControllerOwned),
@@ -116,6 +118,99 @@ pub enum Midi2ChannelVoiceOwned {
     RegisteredPerNoteController(RegisteredPerNoteControllerOwned),
     RelativeAssignableController(RelativeAssignableControllerOwned),
     RelativeRegisteredController(RelativeRegisteredControllerOwned),
+}
+
+#[derive(Default)]
+pub struct Midi2ChannelVoiceBuilder<M>(core::marker::PhantomData<M>)
+where
+    M: core::convert::From<AssignableControllerOwned>
+        + core::convert::From<AssignablePerNoteControllerOwned>
+        + core::convert::From<ChannelPitchBendOwned>
+        + core::convert::From<ChannelPressureOwned>
+        + core::convert::From<ControlChangeOwned>
+        + core::convert::From<KeyPressureOwned>
+        + core::convert::From<NoteOffOwned>
+        + core::convert::From<NoteOnOwned>
+        + core::convert::From<PerNoteManagementOwned>
+        + core::convert::From<PerNotePitchBendOwned>
+        + core::convert::From<ProgramChangeOwned>
+        + core::convert::From<RegisteredControllerOwned>
+        + core::convert::From<RegisteredPerNoteControllerOwned>
+        + core::convert::From<RelativeAssignableControllerOwned>
+        + core::convert::From<RelativeRegisteredControllerOwned>;
+
+impl<M> Midi2ChannelVoiceBuilder<M>
+where
+    M: core::convert::From<AssignableControllerOwned>
+        + core::convert::From<AssignablePerNoteControllerOwned>
+        + core::convert::From<ChannelPitchBendOwned>
+        + core::convert::From<ChannelPressureOwned>
+        + core::convert::From<ControlChangeOwned>
+        + core::convert::From<KeyPressureOwned>
+        + core::convert::From<NoteOffOwned>
+        + core::convert::From<NoteOnOwned>
+        + core::convert::From<PerNoteManagementOwned>
+        + core::convert::From<PerNotePitchBendOwned>
+        + core::convert::From<ProgramChangeOwned>
+        + core::convert::From<RegisteredControllerOwned>
+        + core::convert::From<RegisteredPerNoteControllerOwned>
+        + core::convert::From<RelativeAssignableControllerOwned>
+        + core::convert::From<RelativeRegisteredControllerOwned>,
+{
+    pub fn new() -> Self {
+        Self(Default::default())
+    }
+    pub fn assignable_controller(self) -> AssignableControllerBuilder<M> {
+        AssignableControllerBuilder::new()
+    }
+    pub fn assignable_per_note_controller(self) -> AssignablePerNoteControllerBuilder<M> {
+        AssignablePerNoteControllerBuilder::new()
+    }
+    pub fn channel_pitch_bend(self) -> ChannelPitchBendBuilder<M> {
+        ChannelPitchBendBuilder::new()
+    }
+    pub fn channel_pressure(self) -> ChannelPressureBuilder<M> {
+        ChannelPressureBuilder::new()
+    }
+    pub fn control_change(self) -> ControlChangeBuilder<M> {
+        ControlChangeBuilder::new()
+    }
+    pub fn key_pressure(self) -> KeyPressureBuilder<M> {
+        KeyPressureBuilder::new()
+    }
+    pub fn note_off(self) -> NoteOnBuilder<M> {
+        NoteOnBuilder::new()
+    }
+    pub fn note_on(self) -> NoteOnBuilder<M> {
+        NoteOnBuilder::new()
+    }
+    pub fn per_note_management(self) -> PerNoteManagementBuilder<M> {
+        PerNoteManagementBuilder::new()
+    }
+    pub fn per_note_pitch_bend(self) -> PerNotePitchBendBuilder<M> {
+        PerNotePitchBendBuilder::new()
+    }
+    pub fn program_change(self) -> ProgramChangeBuilder<M> {
+        ProgramChangeBuilder::new()
+    }
+    pub fn registered_controller(self) -> RegisteredControllerBuilder<M> {
+        RegisteredControllerBuilder::new()
+    }
+    pub fn registered_per_note_controller(self) -> RegisteredPerNoteControllerBuilder<M> {
+        RegisteredPerNoteControllerBuilder::new()
+    }
+    pub fn relative_assignable_controller(self) -> RelativeAssignableControllerBuilder<M> {
+        RelativeAssignableControllerBuilder::new()
+    }
+    pub fn relative_registered_controller(self) -> RelativeRegisteredControllerBuilder<M> {
+        RelativeRegisteredControllerBuilder::new()
+    }
+}
+
+impl Midi2ChannelVoiceOwned {
+    pub fn builder() -> Midi2ChannelVoiceBuilder<Self> {
+        Midi2ChannelVoiceBuilder::new()
+    }
 }
 
 const ASSIGNABLE_CONTROLLER_CODE: u8 = 0b0011;

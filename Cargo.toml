@@ -9,6 +9,7 @@ authors = [
 ]
 
 [dependencies]
+derive_more = { version = "0.99.17", features = ["from"], default-features = false }
 generic-array = "1.0.0"
 midi2_attr = { version = "0.1.0", path = "midi2_attr" }
 ux = "0.1.5"

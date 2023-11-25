@@ -192,7 +192,7 @@ fn message_owned_impl_public(root_ident: &Ident) -> TokenStream {
     let builder_ident = builder_ident_public(root_ident);
     quote! {
         impl #ident {
-             pub fn builder() -> #builder_ident {
+             pub fn builder() -> #builder_ident<#ident> {
                 #builder_ident::new()
             }
         }
@@ -256,9 +256,10 @@ fn builder(root_ident: &Ident, properties: &Vec<Property>) -> TokenStream {
 
 fn builder_public(root_ident: &Ident) -> TokenStream {
     let ident = builder_ident_public(root_ident);
+    let message_ident = message_owned_ident_public(root_ident);
     let private_ident = builder_ident(root_ident);
     quote! {
-        pub struct #ident(#private_ident<Ump>);
+        pub struct #ident<M: core::convert::From<#message_ident>>(#private_ident<Ump>, core::marker::PhantomData<M>);
     }
 }
 
@@ -430,14 +431,14 @@ fn builder_impl_public(root_ident: &Ident, properties: &Vec<Property>) -> TokenS
     }
     let message_ident = message_owned_ident_public(root_ident);
     quote! {
-        impl #ident {
+        impl<M: core::convert::From<#message_ident>> #ident<M> {
             #methods
             pub fn new() -> Self {
-                Self(#private_ident::<Ump>::new())
+                Self(#private_ident::<Ump>::new(), Default::default())
             }
-            pub fn build(self) -> Result<#message_ident> {
+            pub fn build(self) -> Result<M> {
                 match self.0.build() {
-                    Ok(message) => Ok(#message_ident(message)),
+                    Ok(message) => Ok(#message_ident(message).into()),
                     Err(e) => Err(e),
                 }
             }
@@ -461,8 +462,9 @@ fn grouped_builder_impl(root_ident: &Ident) -> TokenStream {
 
 fn grouped_builder_impl_public(root_ident: &Ident) -> TokenStream {
     let ident = builder_ident_public(root_ident);
+    let message_ident = message_owned_ident_public(root_ident);
     quote! {
-        impl GroupedBuilder for #ident {
+        impl<M: core::convert::From<#message_ident>> GroupedBuilder for #ident<M> {
             fn group(mut self, v: u4) -> Self {
                 self.0 = self.0.group(v);
                 self

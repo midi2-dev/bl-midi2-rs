@@ -22,20 +22,17 @@ allowing for optimisation by avoiding copies.
 #### Example
 
 ```rust
-use midi2::{
-    prelude::*,
-    midi2_channel_voice::NoteOnOwned,
-    midi2_channel_voice::NoteAttribute,
-};
+use midi2::prelude::*;
 
-let message = NoteOnOwned::builder()
+let message = MessageOwned::builder()
+    .midi2_channel_voice()
+    .note_on()
     .note(u7::new(0x60))
     .velocity(0x4B57)
-    .attribute(Some(NoteAttribute::ManufacturerSpecific(0x63FF)))
     .build()
     .unwrap();
 
-assert_eq!(message.data(), &[0x4090_6001, 0x4B57_63FF, 0x0, 0x0]);
+assert_eq!(message.data(), &[0x4090_6000, 0x4B57_0000, 0x0, 0x0]);
 ```
 
 ### Borrowed & Owned Messages
@@ -47,26 +44,15 @@ and use the `Owned` type to make a message with an independent lifetime.
 #### Example
 
 ```rust
-use midi2::{
-    prelude::*,
-    midi2_channel_voice::RegisteredPerNoteControllerBorrowed,
-    midi2_channel_voice::RegisteredPerNoteController,
-    midi2_channel_voice::Controller,
-};
+use midi2::prelude::*;
 
 let owned = {
-    let buffer = [0x4405_6C07, 0xE1E35E92, 0x0, 0x0];
-    let borrowed = RegisteredPerNoteControllerBorrowed::from_data(&buffer).unwrap();
-
-    // here we reference the original buffer
-    assert_eq!(borrowed.controller(), Controller::Volume(0xE1E35E92));
-
+    let buffer = [0x4405_6C07, 0xE1E3_5E92, 0x0, 0x0];
+    let borrowed = MessageBorrowed::from_data(&buffer).unwrap();
     borrowed.to_owned()
-    // buffer is dropped here
 };
 
-// here we have an internal copy of the data
-assert_eq!(owned.controller(), Controller::Volume(0xE1E35E92));
+assert_eq!(owned.data(), &[0x4405_6C07, 0xE1E3_5E92, 0x0, 0x0]);
 ```
 
 

@@ -34,6 +34,9 @@ macro_rules! forward_ux_types {
 forward_ux_types!();
 
 pub mod prelude {
-    pub use crate::traits::*;
+    pub use crate::{
+        message::{MessageBorrowed, MessageBuilder, MessageOwned},
+        traits::*,
+    };
     forward_ux_types!();
 }

@@ -39,6 +39,7 @@ pub use program_change::ProgramChangeBorrowed;
 pub use program_change::ProgramChangeBuilder;
 pub use program_change::ProgramChangeOwned;
 
+#[derive(derive_more::From, Clone, Debug, PartialEq, Eq)]
 pub enum Midi1ChannelVoiceBorrowed<'a> {
     ChannelPressure(ChannelPressureBorrowed<'a>),
     ControlChange(ControlChangeBorrowed<'a>),
@@ -49,6 +50,7 @@ pub enum Midi1ChannelVoiceBorrowed<'a> {
     ProgramChange(ProgramChangeBorrowed<'a>),
 }
 
+#[derive(derive_more::From, Clone, Debug, PartialEq, Eq)]
 pub enum Midi1ChannelVoiceOwned {
     ChannelPressure(ChannelPressureOwned),
     ControlChange(ControlChangeOwned),
@@ -57,6 +59,59 @@ pub enum Midi1ChannelVoiceOwned {
     NoteOn(NoteOnOwned),
     PitchBend(PitchBendOwned),
     ProgramChange(ProgramChangeOwned),
+}
+
+#[derive(Default)]
+pub struct Midi1ChannelVoiceBuilder<M>(core::marker::PhantomData<M>)
+where
+    M: core::convert::From<ChannelPressureOwned>
+        + core::convert::From<ControlChangeOwned>
+        + core::convert::From<KeyPressureOwned>
+        + core::convert::From<NoteOffOwned>
+        + core::convert::From<NoteOnOwned>
+        + core::convert::From<PitchBendOwned>
+        + core::convert::From<ProgramChangeOwned>;
+
+impl<M> Midi1ChannelVoiceBuilder<M>
+where
+    M: core::convert::From<ChannelPressureOwned>
+        + core::convert::From<ControlChangeOwned>
+        + core::convert::From<KeyPressureOwned>
+        + core::convert::From<NoteOffOwned>
+        + core::convert::From<NoteOnOwned>
+        + core::convert::From<PitchBendOwned>
+        + core::convert::From<ProgramChangeOwned>,
+{
+    pub fn new() -> Self {
+        Self(Default::default())
+    }
+    pub fn channel_pressure(self) -> ChannelPressureBuilder<M> {
+        ChannelPressureBuilder::new()
+    }
+    pub fn control_change(self) -> ControlChangeBuilder<M> {
+        ControlChangeBuilder::new()
+    }
+    pub fn key_pressure(self) -> KeyPressureBuilder<M> {
+        KeyPressureBuilder::new()
+    }
+    pub fn note_off(self) -> NoteOffBuilder<M> {
+        NoteOffBuilder::new()
+    }
+    pub fn note_on(self) -> NoteOnBuilder<M> {
+        NoteOnBuilder::new()
+    }
+    pub fn pitch_bend(self) -> PitchBendBuilder<M> {
+        PitchBendBuilder::new()
+    }
+    pub fn program_change(self) -> ProgramChangeBuilder<M> {
+        ProgramChangeBuilder::new()
+    }
+}
+
+impl Midi1ChannelVoiceOwned {
+    pub fn builder() -> Midi1ChannelVoiceBuilder<Self> {
+        Midi1ChannelVoiceBuilder::new()
+    }
 }
 
 pub const CHANNEL_PRESSURE_CODE: u32 = 0b1101;
