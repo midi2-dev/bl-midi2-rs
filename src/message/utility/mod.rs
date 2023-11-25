@@ -13,12 +13,14 @@ pub use time_stamp::TimeStampBuilder;
 pub use time_stamp::TimeStampOwned;
 
 #[derive(derive_more::From, Clone, Debug, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum UtilityBorrowed<'a> {
     NoOp(NoOpBorrowed<'a>),
     TimeStamp(TimeStampBorrowed<'a>),
 }
 
 #[derive(derive_more::From, Clone, Debug, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum UtilityOwned {
     NoOp(NoOpOwned),
     TimeStamp(TimeStampOwned),

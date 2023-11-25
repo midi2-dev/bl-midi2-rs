@@ -45,6 +45,7 @@ impl Message {
 }
 
 #[derive(derive_more::From, Clone, Debug, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum MessageBorrowed<'a> {
     Midi1ChannelVoice(Midi1ChannelVoiceBorrowed<'a>),
     Midi2ChannelVoice(Midi2ChannelVoiceBorrowed<'a>),
@@ -55,6 +56,7 @@ pub enum MessageBorrowed<'a> {
 }
 
 #[derive(derive_more::From, Clone, Debug, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum MessageOwned {
     Midi1ChannelVoice(Midi1ChannelVoiceOwned),
     Midi2ChannelVoice(Midi2ChannelVoiceOwned),

@@ -57,6 +57,7 @@ pub use tune_request::TuneRequestBuilder;
 pub use tune_request::TuneRequestOwned;
 
 #[derive(derive_more::From, Clone, Debug, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum SystemCommonBorrowed<'a> {
     ActiveSensing(ActiveSensingBorrowed<'a>),
     Continue(ContinueBorrowed<'a>),
@@ -71,6 +72,7 @@ pub enum SystemCommonBorrowed<'a> {
 }
 
 #[derive(derive_more::From, Clone, Debug, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum SystemCommonOwned {
     ActiveSensing(ActiveSensingOwned),
     Continue(ContinueOwned),
