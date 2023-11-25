@@ -27,12 +27,13 @@ use midi2::prelude::*;
 let message = MessageOwned::builder()
     .midi2_channel_voice()
     .note_on()
+    .group(u4::new(0xD))
     .note(u7::new(0x60))
     .velocity(0x4B57)
     .build()
     .unwrap();
 
-assert_eq!(message.data(), &[0x4090_6000, 0x4B57_0000, 0x0, 0x0]);
+assert_eq!(message.data(), &[0x4D90_6000, 0x4B57_0000, 0x0, 0x0]);
 ```
 
 ### Borrowed & Owned Messages
