@@ -110,6 +110,15 @@ pub trait Sysex7 {
 debug::message_debug_impl!(Sysex7Borrowed);
 debug::message_debug_impl_owned!(Sysex7Owned);
 
+impl<'a> ToOwned for Sysex7Borrowed<'a> {
+    type Owned = Sysex7Owned;
+    fn to_owned(self) -> Self::Owned {
+        let mut buffer: [u32; 4] = Default::default();
+        buffer[..].copy_from_slice(self.0);
+        Sysex7Owned(buffer)
+    }
+}
+
 impl<'a> core::fmt::Debug for Sysex7BytesBorrowed<'a> {
     fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
         fmt.write_fmt(format_args!("Sysex7BytesBorrowed("))?;

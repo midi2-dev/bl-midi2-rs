@@ -396,3 +396,28 @@ impl<'a> FromData<'a> for Midi2ChannelVoiceBorrowed<'a> {
         }
     }
 }
+
+impl<'a> ToOwned for Midi2ChannelVoiceBorrowed<'a> {
+    type Owned = Midi2ChannelVoiceOwned;
+    fn to_owned(self) -> Self::Owned {
+        use Midi2ChannelVoiceBorrowed as B;
+        use Midi2ChannelVoiceOwned as O;
+        match self {
+            B::AssignableController(m) => O::AssignableController(m.to_owned()),
+            B::AssignablePerNoteController(m) => O::AssignablePerNoteController(m.to_owned()),
+            B::ChannelPitchBend(m) => O::ChannelPitchBend(m.to_owned()),
+            B::ChannelPressure(m) => O::ChannelPressure(m.to_owned()),
+            B::ControlChange(m) => O::ControlChange(m.to_owned()),
+            B::KeyPressure(m) => O::KeyPressure(m.to_owned()),
+            B::NoteOff(m) => O::NoteOff(m.to_owned()),
+            B::NoteOn(m) => O::NoteOn(m.to_owned()),
+            B::PerNoteManagement(m) => O::PerNoteManagement(m.to_owned()),
+            B::PerNotePitchBend(m) => O::PerNotePitchBend(m.to_owned()),
+            B::ProgramChange(m) => O::ProgramChange(m.to_owned()),
+            B::RegisteredController(m) => O::RegisteredController(m.to_owned()),
+            B::RegisteredPerNoteController(m) => O::RegisteredPerNoteController(m.to_owned()),
+            B::RelativeAssignableController(m) => O::RelativeAssignableController(m.to_owned()),
+            B::RelativeRegisteredController(m) => O::RelativeRegisteredController(m.to_owned()),
+        }
+    }
+}

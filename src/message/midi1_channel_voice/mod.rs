@@ -215,3 +215,20 @@ impl<'a> FromData<'a> for Midi1ChannelVoiceBorrowed<'a> {
         }
     }
 }
+
+impl<'a> ToOwned for Midi1ChannelVoiceBorrowed<'a> {
+    type Owned = Midi1ChannelVoiceOwned;
+    fn to_owned(self) -> Self::Owned {
+        use Midi1ChannelVoiceBorrowed as B;
+        use Midi1ChannelVoiceOwned as O;
+        match self {
+            B::ChannelPressure(m) => O::ChannelPressure(m.to_owned()),
+            B::ControlChange(m) => O::ControlChange(m.to_owned()),
+            B::KeyPressure(m) => O::KeyPressure(m.to_owned()),
+            B::NoteOff(m) => O::NoteOff(m.to_owned()),
+            B::NoteOn(m) => O::NoteOn(m.to_owned()),
+            B::PitchBend(m) => O::PitchBend(m.to_owned()),
+            B::ProgramChange(m) => O::ProgramChange(m.to_owned()),
+        }
+    }
+}

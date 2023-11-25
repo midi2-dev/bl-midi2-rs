@@ -292,3 +292,23 @@ mod tests {
         );
     }
 }
+
+impl<'a> ToOwned for SystemCommonBorrowed<'a> {
+    type Owned = SystemCommonOwned;
+    fn to_owned(self) -> Self::Owned {
+        use SystemCommonBorrowed as B;
+        use SystemCommonOwned as O;
+        match self {
+            B::ActiveSensing(m) => O::ActiveSensing(m.to_owned()),
+            B::Continue(m) => O::Continue(m.to_owned()),
+            B::Reset(m) => O::Reset(m.to_owned()),
+            B::SongPositionPointer(m) => O::SongPositionPointer(m.to_owned()),
+            B::SongSelect(m) => O::SongSelect(m.to_owned()),
+            B::Start(m) => O::Start(m.to_owned()),
+            B::Stop(m) => O::Stop(m.to_owned()),
+            B::TimeCode(m) => O::TimeCode(m.to_owned()),
+            B::TimingClock(m) => O::TimingClock(m.to_owned()),
+            B::TuneRequest(m) => O::TuneRequest(m.to_owned()),
+        }
+    }
+}

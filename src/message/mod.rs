@@ -166,6 +166,22 @@ impl<'a> FromData<'a> for MessageBorrowed<'a> {
     }
 }
 
+impl<'a> ToOwned for MessageBorrowed<'a> {
+    type Owned = MessageOwned;
+    fn to_owned(self) -> Self::Owned {
+        use MessageBorrowed as B;
+        use MessageOwned as O;
+        match self {
+            B::Midi1ChannelVoice(m) => O::Midi1ChannelVoice(m.to_owned()),
+            B::Midi2ChannelVoice(m) => O::Midi2ChannelVoice(m.to_owned()),
+            B::Sysex7(m) => O::Sysex7(m.to_owned()),
+            B::Sysex8(m) => O::Sysex8(m.to_owned()),
+            B::Utility(m) => O::Utility(m.to_owned()),
+            B::SystemCommon(m) => O::SystemCommon(m.to_owned()),
+        }
+    }
+}
+
 macro_rules! from_message_impl {
     ($message: ty, $intermediate_message: ty) => {
         impl core::convert::From<$message> for MessageOwned {

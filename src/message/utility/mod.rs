@@ -142,3 +142,15 @@ mod tests {
         )
     }
 }
+
+impl<'a> ToOwned for UtilityBorrowed<'a> {
+    type Owned = UtilityOwned;
+    fn to_owned(self) -> Self::Owned {
+        use UtilityBorrowed as B;
+        use UtilityOwned as O;
+        match self {
+            B::NoOp(m) => O::NoOp(m.to_owned()),
+            B::TimeStamp(m) => O::TimeStamp(m.to_owned()),
+        }
+    }
+}
