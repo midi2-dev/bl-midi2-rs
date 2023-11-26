@@ -668,10 +668,11 @@ fn grouped_message_trait_impl_borrowed_public(root_ident: &Ident) -> TokenStream
 
 fn debug_impl_owned(root_ident: &Ident) -> TokenStream {
     let message_ident = message_owned_ident(root_ident);
+    let message_ident_public = message_owned_ident_public(root_ident);
     quote! {
         impl core::fmt::Debug for #message_ident<Ump> {
             fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
-                fmt.write_fmt(format_args!("{}(", stringify!(#message_ident)))?;
+                fmt.write_fmt(format_args!("{}(", stringify!(#message_ident_public)))?;
                 let mut iter = self.0.iter().peekable();
                 while let Some(v) = iter.next() {
                     fmt.write_fmt(format_args!("{v:#010X}"))?;
@@ -712,10 +713,11 @@ fn debug_impl_owned_public(root_ident: &Ident) -> TokenStream {
 
 fn debug_impl_borrowed(root_ident: &Ident) -> TokenStream {
     let message_ident = message_borrowed_ident(root_ident);
+    let message_ident_public = message_borrowed_ident_public(root_ident);
     quote! {
         impl<'a> core::fmt::Debug for #message_ident<'a, Ump> {
             fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
-                fmt.write_fmt(format_args!("{}(", stringify!(#message_ident)))?;
+                fmt.write_fmt(format_args!("{}(", stringify!(#message_ident_public)))?;
                 let mut iter = self.0.iter().peekable();
                 while let Some(v) = iter.next() {
                     fmt.write_fmt(format_args!("{v:#010X}"))?;

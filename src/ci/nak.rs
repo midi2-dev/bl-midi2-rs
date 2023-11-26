@@ -1,8 +1,6 @@
 use crate::{
     ci::{helpers as ci_helpers, DeviceId, SYSEX_END},
-    error::Error,
     message::system_exclusive_8bit as sysex8,
-    result::Result,
     *,
 };
 

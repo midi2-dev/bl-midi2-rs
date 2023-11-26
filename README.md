@@ -13,13 +13,11 @@ recommended for production.
 We would welcome contributions! 
 Please refer to the [CONTRIBUTOR.md](CONTRIBUTOR.md)
 
-## Features
-    
-### Ergonomic, semantic wrappers for midi2 message types.
-Wrappers are "views" onto the underlying data
-allowing for optimisation by avoiding copies.
+## Ergonomic, semantic wrappers for midi2 message types.
 
-#### Example
+Create immutable messages using the builder pattern, 
+which offer an intuitive and easy to use api over the
+underlying byte data.
 
 ```rust
 use midi2::prelude::*;
@@ -36,13 +34,11 @@ let message = Message::builder()
 assert_eq!(message.data(), &[0x4D90_6000, 0x4B57_0000, 0x0, 0x0]);
 ```
 
-### Borrowed & Owned Messages
+## Borrowed & Owned Messages
 
 There are two types which can be used to represent each message from the midi2 standard.
 Use the `Borrowed` type to get a 'view' onto the underlying data,
 and use the `Owned` type to make a message with an independent lifetime.
-
-#### Example
 
 ```rust
 use midi2::prelude::*;
@@ -56,14 +52,35 @@ let owned = {
 assert_eq!(owned.data(), &[0x4405_6C07, 0xE1E3_5E92, 0x0, 0x0]);
 ```
 
+## Pretty Printing
 
-### Midi2 Capability Inquiry message wrappers
+Each message implements debug formatting so that the underlying 
+data can be easily read in a hexidecimal format.
+
+```rust
+use midi2::prelude::*;
+
+let message = Message::builder()
+    .system_common()
+    .song_select()
+    .group(u4::new(0xA))
+    .song(u7::new(0x4F))
+    .build()
+    .unwrap();
+
+assert_eq!(
+    format!("{:?}", message),
+    "SystemCommon(SongSelect(SongSelectOwned(0x1AF34F00,0x00000000,0x00000000,0x00000000)))",
+);
+```
+
+## Midi2 Capability Inquiry message wrappers
 Wrappers around the special midi2 Capability Inquiry.
 These messages are represented by groups of either midi1 or midi2 
 system exclusive messages.
 
-### `#![no_std]`
-The library is entirely no_std, which guarantees that 
+## Allocation Free
+The library is entirely `no_std`, which guarantees that 
 it will never allocate memory under the hood.
 This makes it suitable for use on realtime audio threads
 or embedded environments.
