@@ -15,7 +15,8 @@ where
     u7: core::convert::TryFrom<Self>,
     <u7 as core::convert::TryFrom<Self>>::Error: core::fmt::Debug,
 {
-    fn from_u7s(u7s: &[u8; N]) -> Self {
+    fn from_u7s(u7s: &[u8]) -> Self {
+        assert_eq!(u7s.len(), N);
         let mut ret: Self = Default::default();
         for (i, v) in u7s.iter().enumerate() {
             ret |= (Self::from(*v) & Self::from(0b0111_1111_u8)) << (7_usize * i);
@@ -23,12 +24,11 @@ where
         ret
     }
 
-    fn to_u7s(&self) -> [u7; N] {
-        let mut ret = [u7::default(); N];
-        for (i, v) in ret.iter_mut().enumerate() {
+    fn to_u7s(&self, data: &mut [u7]) {
+        assert_eq!(data.len(), N);
+        for (i, v) in data.iter_mut().enumerate() {
             *v = (*self >> (i * 7_usize)).truncate()
         }
-        ret
     }
 }
 

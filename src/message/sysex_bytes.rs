@@ -3,7 +3,7 @@ use crate::*;
 #[derive(Clone, PartialEq, Eq)]
 pub struct Sysex7BytesBorrowed<'a>(&'a [u8]);
 
-pub struct Sysex7BytesBuilder<'a>(Result<&'a mut [u8]>, usize);
+pub struct Sysex7BytesBorrowedBuilder<'a>(Result<&'a mut [u8]>, usize);
 
 impl<'a> core::fmt::Debug for Sysex7BytesBorrowed<'a> {
     fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
@@ -27,8 +27,8 @@ impl<'a, 'b: 'a> Sysex<'a, 'b> for Sysex7BytesBorrowed<'a> {
 }
 
 impl<'a> Sysex7BytesBorrowed<'a> {
-    pub fn builder(buffer: &'a mut [u8]) -> Sysex7BytesBuilder<'a> {
-        Sysex7BytesBuilder::new(buffer)
+    pub fn builder(buffer: &'a mut [u8]) -> Sysex7BytesBorrowedBuilder<'a> {
+        Sysex7BytesBorrowedBuilder::new(buffer)
     }
     pub fn validate_data(buffer: &'a [u8]) -> Result<()> {
         if buffer.len() < 2 || buffer[0] != 0xF0 || buffer[buffer.len() - 1] != 0xF7 {
@@ -48,7 +48,7 @@ impl<'a> Sysex7BytesBorrowed<'a> {
     }
 }
 
-impl<'a> Sysex7BytesBuilder<'a> {
+impl<'a> Sysex7BytesBorrowedBuilder<'a> {
     fn grow(&mut self) {
         if let Ok(buffer) = &self.0 {
             if buffer.len() < self.1 + 1 {
@@ -58,7 +58,7 @@ impl<'a> Sysex7BytesBuilder<'a> {
             }
         }
     }
-    fn new(buffer: &'a mut [u8]) -> Self {
+    pub fn new(buffer: &'a mut [u8]) -> Self {
         if buffer.len() < 2 {
             Self(Err(Error::BufferOverflow), 0)
         } else {
@@ -91,6 +91,31 @@ impl<'a> Sysex7BytesBuilder<'a> {
             }
         }
         self
+    }
+}
+
+impl<'a> BytesData for Sysex7BytesBorrowed<'a> {
+    fn bytes_data(&self) -> &[u8] {
+        self.0
+    }
+}
+
+impl<'a> FromBytesData<'a> for Sysex7BytesBorrowed<'a> {
+    type Target = Self;
+    fn validate_bytes_data(buffer: &'a [u8]) -> Result<()> {
+        if buffer.len() < 2 {
+            return Err(Error::InvalidData);
+        }
+        if buffer[0] != 0xF0 {
+            return Err(Error::InvalidData);
+        }
+        if buffer[buffer.len() - 1] != 0xF7 {
+            return Err(Error::InvalidData);
+        }
+        Ok(())
+    }
+    fn from_bytes_data_unchecked(buffer: &'a [u8]) -> Self::Target {
+        Self(buffer)
     }
 }
 
