@@ -1,169 +1,90 @@
 use crate::{
-    ci::{helpers as ci_helpers, DeviceId},
-    error::Error,
-    message::system_exclusive_8bit as sysex8,
-    result::Result,
+    ci::{helpers, Ci, CiStandardData, DeviceId},
+    message::sysex_bytes::{Sysex7BytesBorrowed, Sysex7BytesBorrowedBuilder},
     util::Encode7Bit,
     *,
 };
 
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub struct InvalidateMuidMessage<'a, Repr>(Repr, core::marker::PhantomData<&'a u8>)
-where
-    Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>;
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct InvalidateMuidBorrowed<'a>(Sysex7BytesBorrowed<'a>);
 
-const STATUS: u8 = 0x7E;
+pub struct InvalidateMuidBorrowedBuilder<'a> {
+    sysex_builder: Sysex7BytesBorrowedBuilder<'a>,
+    target_muid: Option<u28>,
+    standard_data: CiStandardData,
+}
 
-impl<'a, Repr> InvalidateMuidMessage<'a, Repr>
-where
-    Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>,
-{
-    pub fn builder(buffer: &'a mut [u32]) -> InvalidateMuidBuilder<'a, Repr> {
-        InvalidateMuidBuilder::<'a, Repr>::new(buffer)
+pub trait InvalidateMuid: ByteData {
+    fn builder(buffer: &mut [u8]) -> InvalidateMuidBorrowedBuilder {
+        InvalidateMuidBorrowedBuilder::new(buffer)
     }
-    pub fn source(&self) -> u28 {
-        ci_helpers::source_from_payload(self.0.payload())
-    }
-    pub fn target_muid(&self) -> u28 {
-        let mut payload = self.0.payload();
-        payload.nth(13);
-        u28::from_u7s(&[
-            payload.next().unwrap(),
-            payload.next().unwrap(),
-            payload.next().unwrap(),
-            payload.next().unwrap(),
-        ])
+
+    fn target_muid(&self) -> u28 {
+        u28::from_u7s(&self.byte_data()[14..18])
     }
 }
 
-impl<'a, Repr> Message<'a> for InvalidateMuidMessage<'a, Repr>
-where
-    Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>,
-{
-    fn data(&self) -> &'a [u32] {
-        self.0.data()
+impl<'a> ByteData for InvalidateMuidBorrowed<'a> {
+    fn byte_data(&self) -> &[u8] {
+        self.0.byte_data()
     }
-    fn from_data_unchecked(data: &'a [u32]) -> Self {
-        InvalidateMuidMessage(
-            <Repr as Message>::from_data_unchecked(data),
-            Default::default(),
-        )
-    }
-    fn validate_data(buffer: &'a [u32]) -> Result<()> {
-        let messages = ci_helpers::validate_sysex::<Repr>(buffer, STATUS)?;
-        let mut payload = messages.payload();
-        let Some(_) = payload.nth(ci_helpers::STANDARD_DATA_SIZE + 3) else {
+}
+
+impl<'a> InvalidateMuid for InvalidateMuidBorrowed<'a> {}
+
+impl<'a> Ci for InvalidateMuidBorrowed<'a> {}
+
+impl<'a> FromByteData<'a> for InvalidateMuidBorrowed<'a> {
+    type Target = Self;
+    fn validate_byte_data(buffer: &'a [u8]) -> Result<()> {
+        Sysex7BytesBorrowed::validate_byte_data(buffer)?;
+        helpers::validate_ci_standard_bytes(buffer)?;
+        if buffer.len() < 19 {
             return Err(Error::InvalidData);
-        };
+        }
         Ok(())
     }
-}
-
-impl<'a, Repr> Buildable<'a> for InvalidateMuidMessage<'a, Repr>
-where
-    Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>,
-{
-    type Builder = InvalidateMuidBuilder<'a, Repr>;
-}
-
-impl<'a, Repr> GroupedMessage<'a> for InvalidateMuidMessage<'a, Repr>
-where
-    Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>,
-{
-    fn group(&self) -> u4 {
-        self.0.group()
+    fn from_byte_data_unchecked(buffer: &'a [u8]) -> Self::Target {
+        Self(Sysex7BytesBorrowed::from_byte_data_unchecked(buffer))
     }
 }
 
-impl<'a> StreamedMessage<'a> for InvalidateMuidMessage<'a, sysex8::Sysex8MessageGroup<'a>> {
-    fn stream_id(&self) -> u8 {
-        self.0.stream_id()
+impl<'a> InvalidateMuidBorrowedBuilder<'a> {
+    pub fn new(buffer: &'a mut [u8]) -> Self {
+        Self {
+            sysex_builder: Sysex7BytesBorrowedBuilder::new(buffer),
+            standard_data: CiStandardData {
+                sysex_sub_id2: Some(u7::new(0x7E)),
+                device_id: DeviceId::FunctionBlock,
+                destination: Some(u28::from_u7s(&[0x7F_u8; 4])),
+                ..Default::default()
+            },
+            target_muid: None,
+        }
     }
-}
 
-pub struct InvalidateMuidBuilder<'a, Repr>
-where
-    Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>,
-{
-    source: u28,
-    target_muid: u28,
-    builder: Repr::Builder,
-}
-
-impl<'a, Repr> InvalidateMuidBuilder<'a, Repr>
-where
-    Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>,
-{
-    pub fn source(mut self, source: u28) -> Self {
-        self.source = source;
-        self
-    }
     pub fn target_muid(mut self, muid: u28) -> Self {
-        self.target_muid = muid;
+        self.target_muid = Some(muid);
         self
     }
-}
 
-impl<'a, Repr> Builder<'a> for InvalidateMuidBuilder<'a, Repr>
-where
-    Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>,
-{
-    type Message = InvalidateMuidMessage<'a, Repr>;
-    fn new(buffer: &'a mut [u32]) -> Self {
-        InvalidateMuidBuilder {
-            builder: <Repr as Buildable<'a>>::Builder::new(buffer),
-            source: Default::default(),
-            target_muid: Default::default(),
-        }
-    }
-    fn build(self) -> Result<InvalidateMuidMessage<'a, Repr>> {
-        match self
-            .builder
-            .payload(
-                ci_helpers::StandardDataIterator::<'a, Repr>::new(
-                    DeviceId::MidiPort,
-                    STATUS,
-                    self.source,
-                    u28::new(0xFFFFFFF),
-                )
-                .chain(
-                    self.target_muid
-                        .to_u7s()
-                        .map(u8::from)
-                        .map(<<Repr as Buildable<'a>>::Builder as SysexBuilder<'a>>::Byte::from_u8),
-                ),
-            )
-            .build()
-        {
-            Ok(messages) => Ok(InvalidateMuidMessage(messages, Default::default())),
-            Err(e) => Err(e),
-        }
-    }
-}
-
-impl<'a, Repr> GroupedBuilder<'a> for InvalidateMuidBuilder<'a, Repr>
-where
-    Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>,
-{
-    fn group(mut self, g: u4) -> Self {
-        self.builder = self.builder.group(g);
+    pub fn source(mut self, v: u28) -> Self {
+        self.standard_data.source = Some(v);
         self
     }
-}
 
-impl<'a> StreamedBuilder<'a> for InvalidateMuidBuilder<'a, sysex8::Sysex8MessageGroup<'a>> {
-    fn stream_id(mut self, id: u8) -> Self {
-        self.builder = self.builder.stream_id(id);
-        self
+    pub fn build(mut self) -> Result<InvalidateMuidBorrowed<'a>> {
+        let Some(target) = self.target_muid else {
+            return Err(Error::InvalidData);
+        };
+
+        self.sysex_builder = self.sysex_builder.payload(self.standard_data.payload()?);
+
+        let mut target_muid_data = [u7::default(); 4];
+        target.to_u7s(&mut target_muid_data[..]);
+        self.sysex_builder = self.sysex_builder.payload(target_muid_data.iter().cloned());
+
+        Ok(InvalidateMuidBorrowed(self.sysex_builder.build()?))
     }
 }
 
@@ -171,102 +92,73 @@ impl<'a> StreamedBuilder<'a> for InvalidateMuidBuilder<'a, sysex8::Sysex8Message
 mod tests {
     use super::*;
     use crate::{
-        message::system_exclusive_7bit as sysex7,
-        message::system_exclusive_8bit as sysex8,
-        util::{debug, random_buffer},
+        ci::VERSION,
+        util::{debug, RandomBuffer},
     };
+    use pretty_assertions::assert_eq;
 
     #[test]
-    fn sysex8_builder() {
+    fn builder() {
         assert_eq!(
-            debug::Data(
-                InvalidateMuidMessage::<sysex8::Sysex8MessageGroup>::builder(
-                    &mut random_buffer::<8>()
-                )
-                .group(u4::new(0x7))
-                .stream_id(0x4A)
-                .source(u28::new(3767028))
-                .target_muid(u28::new(226028650))
-                .build()
-                .unwrap()
-                .data(),
+            debug::ByteData(
+                InvalidateMuidBorrowed::builder(&mut Bytes::random_buffer::<25>())
+                    .source(u28::new(0xDAA877))
+                    .target_muid(u28::new(0xABC4B9F))
+                    .build()
+                    .unwrap()
+                    .byte_data()
             ),
-            debug::Data(&[
-                0x571E_4AF0,
-                0x7E7F_0D7E,
-                0x0174_7565,
-                0x017F_7F7F,
-                0x5737_4A7F,
-                0x6A58_636B,
-                0xF700_0000,
-                0x0000_0000,
+            debug::ByteData(&[
+                0xF0,
+                0x7E,
+                0x7F,
+                0x0D,
+                0x7E,
+                VERSION.into(),
+                0x77,
+                0x50,
+                0x6A,
+                0x06,
+                0x7F,
+                0x7F,
+                0x7F,
+                0x7F,
+                0x1F,
+                0x17,
+                0x71,
+                0x55,
+                0xF7,
             ]),
         );
     }
 
     #[test]
-    fn sysex7_builder() {
+    fn target_muid() {
         assert_eq!(
-            debug::Data(
-                InvalidateMuidMessage::<sysex7::Sysex7MessageGroup>::builder(&mut random_buffer::<
-                    10,
-                >(
-                ))
-                .group(u4::new(0x7))
-                .source(u28::new(3767028))
-                .target_muid(u28::new(226028650))
-                .build()
-                .unwrap()
-                .data(),
-            ),
-            debug::Data(&[
-                0x3716_F07E,
-                0x7F0D_7E01,
-                0x3726_7475,
-                0x6501_7F7F,
-                0x3726_7F7F,
-                0x6A58_636B,
-                0x3731_F700,
-                0x0000_0000,
-            ]),
+            InvalidateMuidBorrowed::from_byte_data(&[
+                0xF0,
+                0x7E,
+                0x7F,
+                0x0D,
+                0x7E,
+                VERSION.into(),
+                0x77,
+                0x50,
+                0x6A,
+                0x06,
+                0x7F,
+                0x7F,
+                0x7F,
+                0x7F,
+                0x1F,
+                0x17,
+                0x71,
+                0x55,
+                0xF7,
+            ])
+            .unwrap()
+            .target_muid(),
+            u28::new(0xABC4B9F)
         );
-    }
-
-    #[test]
-    fn target_muid_sysex8() {
-        assert_eq!(
-            InvalidateMuidMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
-                0x571E_4AF0,
-                0x7E7F_0D7E,
-                0x0174_7565,
-                0x017F_7F7F,
-                0x5737_4A7F,
-                0x6A58_636B,
-                0xF700_0000,
-                0x0000_0000,
-            ])
-            .unwrap()
-            .target_muid(),
-            u28::new(226028650),
-        )
-    }
-
-    #[test]
-    fn target_muid_sysex7() {
-        assert_eq!(
-            InvalidateMuidMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
-                0x3716_F07E,
-                0x7F0D_7E01,
-                0x3726_7475,
-                0x6501_7F7F,
-                0x3726_7F7F,
-                0x6A58_636B,
-                0x3731_F700,
-                0x0000_0000,
-            ])
-            .unwrap()
-            .target_muid(),
-            u28::new(226028650),
-        )
     }
 }

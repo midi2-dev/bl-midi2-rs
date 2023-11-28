@@ -10,9 +10,10 @@ pub struct NakBorrowed<'a>(Sysex7BytesBorrowed<'a>);
 
 pub struct NakBorrowedBuilder<'a> {
     sysex_builder: Sysex7BytesBorrowedBuilder<'a>,
-    status: Status,
-    original_transaction: Option<OriginalTransaction>,
     standard_data: CiStandardData,
+    nak_data: [u7; 10],
+    original_transaction_set: bool,
+    status_set: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -135,13 +136,13 @@ impl OriginalTransaction {
     }
 }
 
-pub trait Nak: BytesData {
+pub trait Nak: ByteData {
     fn original_transaction(&self) -> OriginalTransaction {
-        let data = self.bytes_data();
+        let data = self.byte_data();
         OriginalTransaction::from_sub_id_and_data(data[14].truncate(), &data[17..22]).unwrap()
     }
     fn status(&self) -> Status {
-        let data = self.bytes_data();
+        let data = self.byte_data();
         Status::from_code_and_data(data[15].truncate(), data[16].truncate()).unwrap()
     }
     fn builder(buffer: &mut [u8]) -> NakBorrowedBuilder {
@@ -151,9 +152,9 @@ pub trait Nak: BytesData {
     // may require the alloc feature
 }
 
-impl<'a> BytesData for NakBorrowed<'a> {
-    fn bytes_data(&self) -> &[u8] {
-        self.0.bytes_data()
+impl<'a> ByteData for NakBorrowed<'a> {
+    fn byte_data(&self) -> &[u8] {
+        self.0.byte_data()
     }
 }
 
@@ -161,10 +162,10 @@ impl<'a> Nak for NakBorrowed<'a> {}
 
 impl<'a> Ci for NakBorrowed<'a> {}
 
-impl<'a> FromBytesData<'a> for NakBorrowed<'a> {
+impl<'a> FromByteData<'a> for NakBorrowed<'a> {
     type Target = Self;
-    fn validate_bytes_data(buffer: &'a [u8]) -> Result<()> {
-        Sysex7BytesBorrowed::validate_bytes_data(buffer)?;
+    fn validate_byte_data(buffer: &'a [u8]) -> Result<()> {
+        Sysex7BytesBorrowed::validate_byte_data(buffer)?;
         helpers::validate_ci_standard_bytes(buffer)?;
         if buffer.len() < 25 {
             return Err(Error::InvalidData);
@@ -172,8 +173,8 @@ impl<'a> FromBytesData<'a> for NakBorrowed<'a> {
         Status::from_code_and_data(buffer[15].truncate(), buffer[16].truncate())?;
         Ok(())
     }
-    fn from_bytes_data_unchecked(buffer: &'a [u8]) -> Self::Target {
-        Self(Sysex7BytesBorrowed::from_bytes_data_unchecked(buffer))
+    fn from_byte_data_unchecked(buffer: &'a [u8]) -> Self::Target {
+        Self(Sysex7BytesBorrowed::from_byte_data_unchecked(buffer))
     }
 }
 
@@ -181,19 +182,50 @@ impl<'a> NakBorrowedBuilder<'a> {
     pub fn new(buffer: &'a mut [u8]) -> Self {
         Self {
             sysex_builder: Sysex7BytesBorrowedBuilder::new(buffer),
-            status: Status::Nak,
-            original_transaction: None,
-            standard_data: Default::default(),
+            standard_data: CiStandardData {
+                sysex_sub_id2: Some(u7::new(0x7F)),
+                ..Default::default()
+            },
+            original_transaction_set: false,
+            status_set: false,
+            nak_data: Default::default(),
         }
     }
 
     pub fn status(mut self, status: Status) -> Self {
-        self.status = status;
+        self.nak_data[1] = status.code();
+        self.nak_data[2] = status.data();
+        self.status_set = true;
         self
     }
 
     pub fn original_transaction(mut self, original_transaction: OriginalTransaction) -> Self {
-        self.original_transaction = Some(original_transaction);
+        use OriginalTransaction::*;
+        match original_transaction {
+            ProfileConfiguration { id, profile_id } => {
+                self.nak_data[0] = id;
+                self.nak_data[3..8].copy_from_slice(&profile_id);
+            }
+            PropertyExchange {
+                id,
+                stream_id,
+                chunk_number,
+            } => {
+                self.nak_data[0] = id;
+                self.nak_data[3] = stream_id;
+                chunk_number.to_u7s(&mut self.nak_data[4..6]);
+            }
+            ProcessInquiry { id } => {
+                self.nak_data[0] = id;
+            }
+            Management { id } => {
+                self.nak_data[0] = id;
+            }
+            ProtocolNegotiation { id } => {
+                self.nak_data[0] = id;
+            }
+        };
+        self.original_transaction_set = true;
         self
     }
 
@@ -213,46 +245,11 @@ impl<'a> NakBorrowedBuilder<'a> {
     }
 
     pub fn build(mut self) -> Result<NakBorrowed<'a>> {
-        let Some(original_transaction) = self.original_transaction else {
+        if !self.original_transaction_set || !self.status_set {
             return Err(Error::InvalidData);
-        };
-        self.standard_data.sysex_sub_id2 = Some(u7::new(0x7F));
+        }
         self.sysex_builder = self.sysex_builder.payload(self.standard_data.payload()?);
-        let mut nak_data = [u7::default(); 10];
-        // original transaction data
-        {
-            use OriginalTransaction::*;
-            match original_transaction {
-                ProfileConfiguration { id, profile_id } => {
-                    nak_data[0] = id;
-                    nak_data[3..8].copy_from_slice(&profile_id);
-                }
-                PropertyExchange {
-                    id,
-                    stream_id,
-                    chunk_number,
-                } => {
-                    nak_data[0] = id;
-                    nak_data[3] = stream_id;
-                    chunk_number.to_u7s(&mut nak_data[4..6]);
-                }
-                ProcessInquiry { id } => {
-                    nak_data[0] = id;
-                }
-                Management { id } => {
-                    nak_data[0] = id;
-                }
-                ProtocolNegotiation { id } => {
-                    nak_data[0] = id;
-                }
-            };
-        }
-        // status data
-        {
-            nak_data[1] = self.status.code();
-            nak_data[2] = self.status.data();
-        }
-        self.sysex_builder = self.sysex_builder.payload(nak_data.iter().cloned());
+        self.sysex_builder = self.sysex_builder.payload(self.nak_data.iter().cloned());
         Ok(NakBorrowed(self.sysex_builder.build()?))
     }
 }
@@ -287,7 +284,7 @@ mod tests {
                     })
                     .build()
                     .unwrap()
-                    .bytes_data()
+                    .byte_data()
             ),
             debug::ByteData(&[
                 0xF0,
@@ -322,7 +319,7 @@ mod tests {
     #[test]
     fn source() {
         assert_eq!(
-            NakBorrowed::from_bytes_data(&[
+            NakBorrowed::from_byte_data(&[
                 0xF0,
                 0x7E,
                 0x7E,
@@ -358,7 +355,7 @@ mod tests {
     #[test]
     fn destination() {
         assert_eq!(
-            NakBorrowed::from_bytes_data(&[
+            NakBorrowed::from_byte_data(&[
                 0xF0,
                 0x7E,
                 0x7E,
@@ -394,7 +391,7 @@ mod tests {
     #[test]
     fn device_id() {
         assert_eq!(
-            NakBorrowed::from_bytes_data(&[
+            NakBorrowed::from_byte_data(&[
                 0xF0,
                 0x7E,
                 0x7E,
@@ -430,7 +427,7 @@ mod tests {
     #[test]
     fn status() {
         assert_eq!(
-            NakBorrowed::from_bytes_data(&[
+            NakBorrowed::from_byte_data(&[
                 0xF0,
                 0x7E,
                 0x7E,
@@ -466,7 +463,7 @@ mod tests {
     #[test]
     fn original_transaction() {
         assert_eq!(
-            NakBorrowed::from_bytes_data(&[
+            NakBorrowed::from_byte_data(&[
                 0xF0,
                 0x7E,
                 0x7E,

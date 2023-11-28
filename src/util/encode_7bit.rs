@@ -15,7 +15,11 @@ where
     u7: core::convert::TryFrom<Self>,
     <u7 as core::convert::TryFrom<Self>>::Error: core::fmt::Debug,
 {
-    fn from_u7s(u7s: &[u8]) -> Self {
+    fn from_u7s<T>(u7s: &[T]) -> Self
+    where
+        Self: core::convert::From<T>,
+        T: Copy,
+    {
         assert_eq!(u7s.len(), N);
         let mut ret: Self = Default::default();
         for (i, v) in u7s.iter().enumerate() {

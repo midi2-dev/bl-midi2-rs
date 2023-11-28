@@ -3,19 +3,22 @@ use crate::{
     *,
 };
 
-// pub use discovery::query::DiscoveryQueryBuilder;
-// pub use discovery::query::DiscoveryQueryMessage;
-// pub use discovery::reply::DiscoveryReplyBuilder;
-// pub use discovery::reply::DiscoveryReplyMessage;
-// pub use invalidate_muid::InvalidateMuidBuilder;
-// pub use invalidate_muid::InvalidateMuidMessage;
+pub use discovery::query::DiscoveryQuery;
+pub use discovery::query::DiscoveryQueryBorrowed;
+pub use discovery::query::DiscoveryQueryBorrowedBuilder;
+pub use discovery::reply::DiscoveryReply;
+pub use discovery::reply::DiscoveryReplyBorrowed;
+pub use discovery::reply::DiscoveryReplyBorrowedBuilder;
+pub use invalidate_muid::InvalidateMuid;
+pub use invalidate_muid::InvalidateMuidBorrowed;
+pub use invalidate_muid::InvalidateMuidBorrowedBuilder;
 pub use nak::Nak;
 pub use nak::NakBorrowed;
 pub use nak::NakBorrowedBuilder;
 
-// mod discovery;
+mod discovery;
 mod helpers;
-// mod invalidate_muid;
+mod invalidate_muid;
 mod nak;
 
 // todo: bump
@@ -55,18 +58,18 @@ impl DeviceId {
     }
 }
 
-pub trait Ci: BytesData {
+pub trait Ci: ByteData {
     fn device_id(&self) -> DeviceId {
-        DeviceId::from_u8(self.bytes_data()[2]).unwrap()
+        DeviceId::from_u8(self.byte_data()[2]).unwrap()
     }
     fn version(&self) -> u7 {
-        self.bytes_data()[5].truncate()
+        self.byte_data()[5].truncate()
     }
     fn source(&self) -> u28 {
-        u28::from_u7s(&self.bytes_data()[6..10])
+        u28::from_u7s(&self.byte_data()[6..10])
     }
     fn destination(&self) -> u28 {
-        u28::from_u7s(&self.bytes_data()[10..14])
+        u28::from_u7s(&self.byte_data()[10..14])
     }
 }
 

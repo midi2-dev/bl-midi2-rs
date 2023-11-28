@@ -8,8 +8,8 @@ pub trait Data {
     fn data(&self) -> &[u32];
 }
 
-pub trait BytesData {
-    fn bytes_data(&self) -> &[u8];
+pub trait ByteData {
+    fn byte_data(&self) -> &[u8];
 }
 
 pub(crate) trait FromDataPrivate<'a, B: Buffer>: Sized {
@@ -36,13 +36,13 @@ pub trait FromData<'a>: Sized {
     }
 }
 
-pub trait FromBytesData<'a>: Sized {
+pub trait FromByteData<'a>: Sized {
     type Target;
-    fn from_bytes_data_unchecked(buffer: &'a [u8]) -> Self::Target;
-    fn validate_bytes_data(buffer: &'a [u8]) -> Result<()>;
-    fn from_bytes_data(buffer: &'a [u8]) -> Result<Self::Target> {
-        match Self::validate_bytes_data(buffer) {
-            Ok(()) => Ok(Self::from_bytes_data_unchecked(buffer)),
+    fn from_byte_data_unchecked(buffer: &'a [u8]) -> Self::Target;
+    fn validate_byte_data(buffer: &'a [u8]) -> Result<()>;
+    fn from_byte_data(buffer: &'a [u8]) -> Result<Self::Target> {
+        match Self::validate_byte_data(buffer) {
+            Ok(()) => Ok(Self::from_byte_data_unchecked(buffer)),
             Err(e) => Err(e),
         }
     }

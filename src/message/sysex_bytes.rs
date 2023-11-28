@@ -94,15 +94,15 @@ impl<'a> Sysex7BytesBorrowedBuilder<'a> {
     }
 }
 
-impl<'a> BytesData for Sysex7BytesBorrowed<'a> {
-    fn bytes_data(&self) -> &[u8] {
+impl<'a> ByteData for Sysex7BytesBorrowed<'a> {
+    fn byte_data(&self) -> &[u8] {
         self.0
     }
 }
 
-impl<'a> FromBytesData<'a> for Sysex7BytesBorrowed<'a> {
+impl<'a> FromByteData<'a> for Sysex7BytesBorrowed<'a> {
     type Target = Self;
-    fn validate_bytes_data(buffer: &'a [u8]) -> Result<()> {
+    fn validate_byte_data(buffer: &'a [u8]) -> Result<()> {
         if buffer.len() < 2 {
             return Err(Error::InvalidData);
         }
@@ -114,7 +114,7 @@ impl<'a> FromBytesData<'a> for Sysex7BytesBorrowed<'a> {
         }
         Ok(())
     }
-    fn from_bytes_data_unchecked(buffer: &'a [u8]) -> Self::Target {
+    fn from_byte_data_unchecked(buffer: &'a [u8]) -> Self::Target {
         Self(buffer)
     }
 }

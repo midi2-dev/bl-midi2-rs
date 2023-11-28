@@ -345,7 +345,7 @@ u32_ump_property_impl!(0x0, 0x0, 0x0, 0xFFFF_FFFF, 3);
 
 impl<UmpSchema: Schema> Property<u14, UmpSchema, BytesSchema<0x0, 0x7F, 0x7F>> for Bytes {
     fn get(data: &[<Bytes as Buffer>::Data]) -> u14 {
-        u14::from_u7s(&[data[1].truncate(), data[2].truncate()])
+        u14::from_u7s(&[data[1], data[2]])
     }
     fn write(data: &mut [<Bytes as Buffer>::Data], v: u14) {
         let mut u7s = [u7::default(); 2];
@@ -359,7 +359,7 @@ impl<BytesSchema: Schema> Property<u14, UmpSchema<0x0000_7F7F, 0x0, 0x0, 0x0>, B
     for Ump
 {
     fn get(data: &[<Ump as Buffer>::Data]) -> u14 {
-        u14::from_u7s(&[data[0].octet(2).truncate(), data[0].octet(3).truncate()])
+        u14::from_u7s(&[data[0].octet(2), data[0].octet(3)])
     }
     fn write(data: &mut [<Ump as Buffer>::Data], v: u14) {
         let mut u7s = [u7::default(); 2];
@@ -374,10 +374,7 @@ impl<BytesSchema: Schema>
 {
     fn get(data: &[<Ump as Buffer>::Data]) -> Option<u14> {
         if data[0].bit(31) {
-            Some(u14::from_u7s(&[
-                data[1].octet(2).truncate(),
-                data[1].octet(3).truncate(),
-            ]))
+            Some(u14::from_u7s(&[data[1].octet(2), data[1].octet(3)]))
         } else {
             None
         }

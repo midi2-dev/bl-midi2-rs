@@ -66,6 +66,39 @@ impl BitOps for u32 {
     }
 }
 
+impl BitOps for u7 {
+    fn bit(&self, index: usize) -> bool {
+        assert!(index < 7);
+        *self >> (6 - index) & u7::new(0b1) != u7::new(0)
+    }
+    fn set_bit(&mut self, index: usize, v: bool) -> &mut Self {
+        assert!(index < 7);
+        let v = if v { u7::new(1) } else { u7::new(0) };
+        let shift = 6 - index;
+        *self &= !(u7::new(1) << shift);
+        *self |= v << shift;
+        self
+    }
+    fn nibble(&self, _index: usize) -> u4 {
+        todo!()
+    }
+    fn set_nibble(&mut self, _index: usize, _v: u4) -> &mut Self {
+        todo!()
+    }
+    fn octet(&self, _index: usize) -> u8 {
+        panic!()
+    }
+    fn set_octet(&mut self, _index: usize, _v: u8) -> &mut Self {
+        panic!()
+    }
+    fn word(&self, _index: usize) -> u16 {
+        panic!()
+    }
+    fn set_word(&mut self, _index: usize, _v: u16) -> &mut Self {
+        panic!()
+    }
+}
+
 impl BitOps for u8 {
     fn bit(&self, index: usize) -> bool {
         assert!(index < 8);
@@ -124,6 +157,25 @@ mod tests_u8 {
         assert_eq!(0b1000_0000_u8.set_bit(0, false), &0x0,);
         assert_eq!(0x0_u8.set_bit(0, true), &0b1000_0000,);
         assert_eq!(0x0_u8.set_bit(4, true), &0b0000_1000,);
+    }
+
+    #[test]
+    fn bit_u7() {
+        let p = u7::new(0b1000010);
+        assert!(p.bit(0));
+        assert!(!p.bit(1));
+        assert!(!p.bit(2));
+        assert!(!p.bit(3));
+        assert!(!p.bit(4));
+        assert!(p.bit(5));
+        assert!(!p.bit(6));
+    }
+
+    #[test]
+    fn set_bit_u7() {
+        assert_eq!(u7::new(0b1000000).set_bit(0, false), &u7::new(0x0));
+        assert_eq!(u7::new(0x0).set_bit(0, true), &u7::new(0b1000000));
+        assert_eq!(u7::new(0x0).set_bit(4, true), &u7::new(0b0000100));
     }
 
     #[test]

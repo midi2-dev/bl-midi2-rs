@@ -1,181 +1,142 @@
 use super::*;
 
-const STATUS: u8 = 0x70;
+const STATUS: u7 = u7::new(0x70);
 
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub struct DiscoveryQueryMessage<'a, Repr>(DiscoveryMessage<'a, Repr, STATUS>)
-where
-    Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>;
+pub struct DiscoveryQueryBorrowed<'a>(DiscoveryBorrowed<'a>);
+pub struct DiscoveryQueryBorrowedBuilder<'a>(DiscoveryBorrowedBuilder<'a>);
+pub trait DiscoveryQuery: ByteData {
+    fn target_muid(&self) -> u28;
+    fn device_manufacturer(&self) -> [u7; 3];
+    fn device_family(&self) -> u14;
+    fn device_family_model_number(&self) -> u14;
+    fn software_version(&self) -> [u7; 4];
+    fn profile_configuration_supported(&self) -> bool;
+    fn property_exchange_supported(&self) -> bool;
+    fn process_inquiry_supported(&self) -> bool;
+    fn max_sysex_size(&self) -> u28;
+    fn initiator_output_path_id(&self) -> u7;
+}
 
-impl<'a, Repr> DiscoveryQueryMessage<'a, Repr>
-where
-    Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>,
-{
-    pub fn source(&self) -> u28 {
-        self.0.source()
+impl<'a> ByteData for DiscoveryQueryBorrowed<'a> {
+    fn byte_data(&self) -> &[u8] {
+        self.0.byte_data()
     }
-    // todo: array of 3 u7s
-    pub fn device_manufacturer(&self) -> u21 {
+}
+
+impl<'a> DiscoveryQueryBorrowed<'a> {
+    pub fn builder(buffer: &mut [u8]) -> DiscoveryQueryBorrowedBuilder {
+        DiscoveryQueryBorrowedBuilder::new(buffer)
+    }
+}
+
+impl<'a> DiscoveryQuery for DiscoveryQueryBorrowed<'a> {
+    fn target_muid(&self) -> u28 {
+        self.0.target_muid()
+    }
+    fn device_manufacturer(&self) -> [u7; 3] {
         self.0.device_manufacturer()
     }
-    pub fn device_family(&self) -> u14 {
+    fn device_family(&self) -> u14 {
         self.0.device_family()
     }
-    pub fn device_model_number(&self) -> u14 {
-        self.0.device_model_number()
+    fn device_family_model_number(&self) -> u14 {
+        self.0.device_family_model_number()
     }
-    pub fn software_version(&self) -> [u7; 4] {
+    fn software_version(&self) -> [u7; 4] {
         self.0.software_version()
     }
-    pub fn protocol_negotiation_supported(&self) -> bool {
-        self.0.protocol_negotiation_supported()
-    }
-    pub fn profile_configuration_supported(&self) -> bool {
+    fn profile_configuration_supported(&self) -> bool {
         self.0.profile_configuration_supported()
     }
-    pub fn property_exchange_supported(&self) -> bool {
+    fn property_exchange_supported(&self) -> bool {
         self.0.property_exchange_supported()
     }
-    pub fn max_sysex_message_size(&self) -> u28 {
-        self.0.max_sysex_message_size()
+    fn process_inquiry_supported(&self) -> bool {
+        self.0.process_inquiry_supported()
+    }
+    fn max_sysex_size(&self) -> u28 {
+        self.0.max_sysex_size()
+    }
+    fn initiator_output_path_id(&self) -> u7 {
+        self.0.initiator_output_path_id()
     }
 }
 
-impl<'a, Repr> Message<'a> for DiscoveryQueryMessage<'a, Repr>
-where
-    Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>,
-{
-    fn data(&self) -> &'a [u32] {
-        self.0.data()
-    }
-    fn from_data_unchecked(data: &'a [u32]) -> Self {
-        Self(DiscoveryMessage::<'a, Repr, STATUS>::from_data_unchecked(
-            data,
-        ))
-    }
-    fn validate_data(buffer: &'a [u32]) -> Result<()> {
-        DiscoveryMessage::<'a, Repr, STATUS>::validate_data(buffer)
-    }
-}
+impl<'a> Ci for DiscoveryQueryBorrowed<'a> {}
 
-impl<'a, Repr> Buildable<'a> for DiscoveryQueryMessage<'a, Repr>
-where
-    Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>,
-{
-    type Builder = DiscoveryQueryBuilder<'a, Repr>;
-}
+impl<'a> DiscoveryQueryBorrowedBuilder<'a> {
+    pub fn new(buffer: &'a mut [u8]) -> Self {
+        Self(DiscoveryBorrowedBuilder::new(buffer))
+    }
 
-impl<'a, Repr> GroupedMessage<'a> for DiscoveryQueryMessage<'a, Repr>
-where
-    Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>,
-{
-    fn group(&self) -> u4 {
-        self.0.group()
+    pub fn source(mut self, v: u28) -> Self {
+        self.0 = self.0.source(v);
+        self
     }
-}
 
-impl<'a> StreamedMessage<'a> for DiscoveryQueryMessage<'a, sysex8::Sysex8MessageGroup<'a>> {
-    fn stream_id(&self) -> u8 {
-        self.0.stream_id()
+    pub fn device_manufacturer(mut self, v: [u7; 3]) -> Self {
+        self.0 = self.0.device_manufacturer(v);
+        self
     }
-}
 
-pub struct DiscoveryQueryBuilder<'a, Repr>(DiscoveryBuilder<'a, Repr, STATUS>)
-where
-    Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>;
+    pub fn device_family(mut self, v: u14) -> Self {
+        self.0 = self.0.device_family(v);
+        self
+    }
 
-impl<'a, Repr> DiscoveryQueryBuilder<'a, Repr>
-where
-    Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>,
-{
-    pub fn source(mut self, source: u28) -> Self {
-        self.0 = self.0.source(source);
+    pub fn device_family_model_number(mut self, v: u14) -> Self {
+        self.0 = self.0.device_family_model_number(v);
         self
     }
-    pub fn device_manufacturer(mut self, device_manufacturer: u21) -> Self {
-        self.0 = self.0.device_manufacturer(device_manufacturer);
-        self
-    }
-    pub fn device_family(mut self, device_family: u14) -> Self {
-        self.0 = self.0.device_family(device_family);
-        self
-    }
-    pub fn device_model_number(mut self, device_model_number: u14) -> Self {
-        self.0 = self.0.device_model_number(device_model_number);
-        self
-    }
-    pub fn software_version(mut self, software_version: [u7; 4]) -> Self {
-        self.0 = self.0.software_version(software_version);
-        self
-    }
-    pub fn protocol_negotiation_supported(mut self, protocol_negotiation_supported: bool) -> Self {
-        self.0 = self
-            .0
-            .protocol_negotiation_supported(protocol_negotiation_supported);
-        self
-    }
-    pub fn profile_configuration_supported(
-        mut self,
-        profile_configuration_supported: bool,
-    ) -> Self {
-        self.0 = self
-            .0
-            .profile_configuration_supported(profile_configuration_supported);
-        self
-    }
-    pub fn property_exchange_supported(mut self, property_exchange_supported: bool) -> Self {
-        self.0 = self
-            .0
-            .property_exchange_supported(property_exchange_supported);
-        self
-    }
-    pub fn max_sysex_message_size(mut self, max_sysex_message_size: u28) -> Self {
-        self.0 = self.0.max_sysex_message_size(max_sysex_message_size);
-        self
-    }
-}
 
-impl<'a, Repr> Builder<'a> for DiscoveryQueryBuilder<'a, Repr>
-where
-    Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>,
-{
-    type Message = DiscoveryQueryMessage<'a, Repr>;
-    fn build(self) -> Result<DiscoveryQueryMessage<'a, Repr>> {
+    pub fn software_version(mut self, v: [u7; 4]) -> Self {
+        self.0 = self.0.software_version(v);
+        self
+    }
+
+    pub fn profile_configuration_supported(mut self, v: bool) -> Self {
+        self.0 = self.0.profile_configuration_supported(v);
+        self
+    }
+
+    pub fn property_exchange_supported(mut self, v: bool) -> Self {
+        self.0 = self.0.property_exchange_supported(v);
+        self
+    }
+
+    pub fn process_inquiry_supported(mut self, v: bool) -> Self {
+        self.0 = self.0.process_inquiry_supported(v);
+        self
+    }
+
+    pub fn max_sysex_size(mut self, v: u28) -> Self {
+        self.0 = self.0.max_sysex_size(v);
+        self
+    }
+
+    pub fn initiator_output_path_id(mut self, v: u7) -> Self {
+        self.0 = self.0.initiator_output_path_id(v);
+        self
+    }
+
+    pub fn build(mut self) -> Result<DiscoveryQueryBorrowed<'a>> {
+        self.0 = self.0.destination(u28::max_value());
+        self.0.standard_data.sysex_sub_id2 = Some(STATUS);
         match self.0.build() {
-            Ok(message) => Ok(DiscoveryQueryMessage(message)),
+            Ok(m) => Ok(DiscoveryQueryBorrowed(m)),
             Err(e) => Err(e),
         }
     }
-    fn new(buffer: &'a mut [u32]) -> Self {
-        let mut builder = DiscoveryBuilder::<'a, Repr, STATUS>::new(buffer);
-        builder = builder.destination(u28::max_value());
-        Self(builder)
-    }
 }
 
-impl<'a, Repr> GroupedBuilder<'a> for DiscoveryQueryBuilder<'a, Repr>
-where
-    Repr: 'a + SysexMessage<'a> + GroupedMessage<'a> + Buildable<'a>,
-    <Repr as Buildable<'a>>::Builder: GroupedBuilder<'a> + SysexBuilder<'a>,
-{
-    fn group(mut self, group: u4) -> Self {
-        self.0 = self.0.group(group);
-        self
+impl<'a> FromByteData<'a> for DiscoveryQueryBorrowed<'a> {
+    type Target = Self;
+    fn validate_byte_data(buffer: &'a [u8]) -> Result<()> {
+        DiscoveryBorrowed::validate_byte_data(buffer)?;
+        Ok(())
     }
-}
-
-impl<'a> StreamedBuilder<'a> for DiscoveryQueryBuilder<'a, sysex8::Sysex8MessageGroup<'a>> {
-    fn stream_id(mut self, id: u8) -> Self {
-        self.0 = self.0.stream_id(id);
-        self
+    fn from_byte_data_unchecked(buffer: &'a [u8]) -> Self::Target {
+        Self(DiscoveryBorrowed::from_byte_data_unchecked(buffer))
     }
 }
 
@@ -183,540 +144,494 @@ impl<'a> StreamedBuilder<'a> for DiscoveryQueryBuilder<'a, sysex8::Sysex8Message
 mod tests {
     use super::*;
     use crate::{
-        message::{system_exclusive_7bit as sysex7, system_exclusive_8bit as sysex8},
-        util::{debug, random_buffer},
+        ci::VERSION,
+        util::{debug, RandomBuffer},
     };
+    use pretty_assertions::assert_eq;
 
     #[test]
-    fn sysex8_builder() {
+    fn builder() {
         assert_eq!(
-            debug::Data(
-                DiscoveryQueryMessage::<sysex8::Sysex8MessageGroup>::builder(&mut random_buffer::<
-                    12,
-                >(
-                ))
-                .group(u4::new(0x8))
-                .stream_id(0x31)
-                .source(u28::new(196099328))
-                .device_manufacturer(u21::new(2054957))
-                .device_family(u14::new(508))
-                .device_model_number(u14::new(7156))
-                .software_version([u7::new(0x01), u7::new(0x06), u7::new(0x05), u7::new(0x31),])
-                .protocol_negotiation_supported(true)
-                .profile_configuration_supported(true)
-                .property_exchange_supported(true)
-                .max_sysex_message_size(u28::new(176315622))
-                .build()
-                .unwrap()
-                .data(),
+            debug::ByteData(
+                DiscoveryQueryBorrowed::builder(&mut Bytes::random_buffer::<32>())
+                    .source(u28::new(0xA87A1F2))
+                    .device_manufacturer([u7::new(0x6D), u7::new(0x18), u7::new(0x6)])
+                    .device_family(u14::new(0x337C))
+                    .device_family_model_number(u14::new(0x1AC5))
+                    .software_version([u7::new(0x24), u7::new(0x46), u7::new(0x05), u7::new(0x55)])
+                    .process_inquiry_supported(true)
+                    .property_exchange_supported(true)
+                    .profile_configuration_supported(true)
+                    .max_sysex_size(u28::new(0xB187797))
+                    .initiator_output_path_id(u7::new(0x1A))
+                    .build()
+                    .unwrap()
+                    .byte_data()
             ),
-            debug::Data(&[
-                0x581E_31F0,
-                0x7E7F_0D70,
-                0x0100_7A40,
-                0x5D7F_7F7F,
-                0x582E_317F,
-                0x2D36_7D7C,
-                0x0374_3701,
-                0x0605_310E,
-                0x5836_3166,
-                0x3909_54F7,
-                0x0000_0000,
-                0x0000_0000,
+            debug::ByteData(&[
+                0xF0,
+                0x7E,
+                0x7F,
+                0x0D,
+                0x70,
+                VERSION.into(),
+                0x72,
+                0x43,
+                0x1E,
+                0x54,
+                0x7F,
+                0x7F,
+                0x7F,
+                0x7F,
+                0x6D,
+                0x18,
+                0x06,
+                0x7C,
+                0x66,
+                0x45,
+                0x35,
+                0x24,
+                0x46,
+                0x05,
+                0x55,
+                0b0001_1100,
+                0x17,
+                0x6F,
+                0x61,
+                0x58,
+                0x1A,
+                0xF7,
             ]),
         );
     }
 
     #[test]
-    fn sysex8_group() {
+    fn source() {
         assert_eq!(
-            DiscoveryQueryMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
-                0x581E_31F0,
-                0x7E7F_0D70,
-                0x0100_7A40,
-                0x5D7F_7F7F,
-                0x582E_317F,
-                0x2D36_7D7C,
-                0x0374_3701,
-                0x0605_310E,
-                0x5836_3166,
-                0x3909_54F7,
-                0x0000_0000,
-                0x0000_0000,
-            ])
-            .unwrap()
-            .group(),
-            u4::new(0x8)
-        );
-    }
-
-    #[test]
-    fn sysex8_source() {
-        assert_eq!(
-            DiscoveryQueryMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
-                0x581E_31F0,
-                0x7E7F_0D70,
-                0x0100_7A40,
-                0x5D7F_7F7F,
-                0x582E_317F,
-                0x2D36_7D7C,
-                0x0374_3701,
-                0x0605_310E,
-                0x5836_3166,
-                0x3909_54F7,
-                0x0000_0000,
-                0x0000_0000,
+            DiscoveryQueryBorrowed::from_byte_data(&[
+                0xF0,
+                0x7E,
+                0x7F,
+                0x0D,
+                0x70,
+                VERSION.into(),
+                0x72,
+                0x43,
+                0x1E,
+                0x54,
+                0x7F,
+                0x7F,
+                0x7F,
+                0x7F,
+                0x6D,
+                0x18,
+                0x06,
+                0x7C,
+                0x66,
+                0x45,
+                0x35,
+                0x24,
+                0x46,
+                0x05,
+                0x55,
+                0b0001_1100,
+                0x17,
+                0x6F,
+                0x61,
+                0x58,
+                0x1A,
+                0xF7,
             ])
             .unwrap()
             .source(),
-            u28::new(196099328)
+            u28::new(0xA87A1F2),
         );
     }
 
     #[test]
-    fn sysex8_device_manufacturer() {
+    fn device_manufacturer() {
         assert_eq!(
-            DiscoveryQueryMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
-                0x581E_31F0,
-                0x7E7F_0D70,
-                0x0100_7A40,
-                0x5D7F_7F7F,
-                0x582E_317F,
-                0x2D36_7D7C,
-                0x0374_3701,
-                0x0605_310E,
-                0x5836_3166,
-                0x3909_54F7,
-                0x0000_0000,
-                0x0000_0000,
+            DiscoveryQueryBorrowed::from_byte_data(&[
+                0xF0,
+                0x7E,
+                0x7F,
+                0x0D,
+                0x70,
+                VERSION.into(),
+                0x72,
+                0x43,
+                0x1E,
+                0x54,
+                0x7F,
+                0x7F,
+                0x7F,
+                0x7F,
+                0x6D,
+                0x18,
+                0x06,
+                0x7C,
+                0x66,
+                0x45,
+                0x35,
+                0x24,
+                0x46,
+                0x05,
+                0x55,
+                0b0001_1100,
+                0x17,
+                0x6F,
+                0x61,
+                0x58,
+                0x1A,
+                0xF7,
             ])
             .unwrap()
             .device_manufacturer(),
-            u21::new(2054957)
+            [u7::new(0x6D), u7::new(0x18), u7::new(0x6)],
         );
     }
 
     #[test]
-    fn sysex8_device_family() {
+    fn device_family() {
         assert_eq!(
-            DiscoveryQueryMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
-                0x581E_31F0,
-                0x7E7F_0D70,
-                0x0100_7A40,
-                0x5D7F_7F7F,
-                0x582E_317F,
-                0x2D36_7D7C,
-                0x0374_3701,
-                0x0605_310E,
-                0x5836_3166,
-                0x3909_54F7,
-                0x0000_0000,
-                0x0000_0000,
+            DiscoveryQueryBorrowed::from_byte_data(&[
+                0xF0,
+                0x7E,
+                0x7F,
+                0x0D,
+                0x70,
+                VERSION.into(),
+                0x72,
+                0x43,
+                0x1E,
+                0x54,
+                0x7F,
+                0x7F,
+                0x7F,
+                0x7F,
+                0x6D,
+                0x18,
+                0x06,
+                0x7C,
+                0x66,
+                0x45,
+                0x35,
+                0x24,
+                0x46,
+                0x05,
+                0x55,
+                0b0001_1100,
+                0x17,
+                0x6F,
+                0x61,
+                0x58,
+                0x1A,
+                0xF7,
             ])
             .unwrap()
             .device_family(),
-            u14::new(508)
+            u14::new(0x337C),
         );
     }
 
     #[test]
-    fn sysex8_device_model() {
+    fn device_family_model_number() {
         assert_eq!(
-            DiscoveryQueryMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
-                0x581E_31F0,
-                0x7E7F_0D70,
-                0x0100_7A40,
-                0x5D7F_7F7F,
-                0x582E_317F,
-                0x2D36_7D7C,
-                0x0374_3701,
-                0x0605_310E,
-                0x5836_3166,
-                0x3909_54F7,
-                0x0000_0000,
-                0x0000_0000,
+            DiscoveryQueryBorrowed::from_byte_data(&[
+                0xF0,
+                0x7E,
+                0x7F,
+                0x0D,
+                0x70,
+                VERSION.into(),
+                0x72,
+                0x43,
+                0x1E,
+                0x54,
+                0x7F,
+                0x7F,
+                0x7F,
+                0x7F,
+                0x6D,
+                0x18,
+                0x06,
+                0x7C,
+                0x66,
+                0x45,
+                0x35,
+                0x24,
+                0x46,
+                0x05,
+                0x55,
+                0b0001_1100,
+                0x17,
+                0x6F,
+                0x61,
+                0x58,
+                0x1A,
+                0xF7,
             ])
             .unwrap()
-            .device_model_number(),
-            u14::new(7156)
+            .device_family_model_number(),
+            u14::new(0x1AC5),
         );
     }
 
     #[test]
-    fn sysex8_software_version() {
+    fn software_version() {
         assert_eq!(
-            DiscoveryQueryMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
-                0x581E_31F0,
-                0x7E7F_0D70,
-                0x0100_7A40,
-                0x5D7F_7F7F,
-                0x582E_317F,
-                0x2D36_7D7C,
-                0x0374_3701,
-                0x0605_310E,
-                0x5836_3166,
-                0x3909_54F7,
-                0x0000_0000,
-                0x0000_0000,
+            DiscoveryQueryBorrowed::from_byte_data(&[
+                0xF0,
+                0x7E,
+                0x7F,
+                0x0D,
+                0x70,
+                VERSION.into(),
+                0x72,
+                0x43,
+                0x1E,
+                0x54,
+                0x7F,
+                0x7F,
+                0x7F,
+                0x7F,
+                0x6D,
+                0x18,
+                0x06,
+                0x7C,
+                0x66,
+                0x45,
+                0x35,
+                0x24,
+                0x46,
+                0x05,
+                0x55,
+                0b0001_1100,
+                0x17,
+                0x6F,
+                0x61,
+                0x58,
+                0x1A,
+                0xF7,
             ])
             .unwrap()
             .software_version(),
-            [u7::new(0x01), u7::new(0x06), u7::new(0x05), u7::new(0x31),]
+            [u7::new(0x24), u7::new(0x46), u7::new(0x05), u7::new(0x55)],
         );
     }
 
     #[test]
-    fn sysex8_protocol_negotiation_supported() {
-        assert!(
-            DiscoveryQueryMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
-                0x581E_31F0,
-                0x7E7F_0D70,
-                0x0100_7A40,
-                0x5D7F_7F7F,
-                0x582E_317F,
-                0x2D36_7D7C,
-                0x0374_3701,
-                0x0605_310E,
-                0x5836_3166,
-                0x3909_54F7,
-                0x0000_0000,
-                0x0000_0000,
-            ])
-            .unwrap()
-            .protocol_negotiation_supported()
-        );
-    }
-
-    #[test]
-    fn sysex8_property_exchange_supported() {
-        assert!(
-            DiscoveryQueryMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
-                0x581E_31F0,
-                0x7E7F_0D70,
-                0x0100_7A40,
-                0x5D7F_7F7F,
-                0x582E_317F,
-                0x2D36_7D7C,
-                0x0374_3701,
-                0x0605_310E,
-                0x5836_3166,
-                0x3909_54F7,
-                0x0000_0000,
-                0x0000_0000,
-            ])
-            .unwrap()
-            .property_exchange_supported()
-        );
-    }
-
-    #[test]
-    fn sysex8_profile_configuration_supported() {
-        assert!(
-            DiscoveryQueryMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
-                0x581E_31F0,
-                0x7E7F_0D70,
-                0x0100_7A40,
-                0x5D7F_7F7F,
-                0x582E_317F,
-                0x2D36_7D7C,
-                0x0374_3701,
-                0x0605_310E,
-                0x5836_3166,
-                0x3909_54F7,
-                0x0000_0000,
-                0x0000_0000,
-            ])
-            .unwrap()
-            .profile_configuration_supported()
-        );
-    }
-
-    #[test]
-    fn sysex8_max_sysex_size() {
+    fn process_inquiry_supported() {
         assert_eq!(
-            DiscoveryQueryMessage::<sysex8::Sysex8MessageGroup>::from_data(&[
-                0x581E_31F0,
-                0x7E7F_0D70,
-                0x0100_7A40,
-                0x5D7F_7F7F,
-                0x582E_317F,
-                0x2D36_7D7C,
-                0x0374_3701,
-                0x0605_310E,
-                0x5836_3166,
-                0x3909_54F7,
-                0x0000_0000,
-                0x0000_0000,
+            DiscoveryQueryBorrowed::from_byte_data(&[
+                0xF0,
+                0x7E,
+                0x7F,
+                0x0D,
+                0x70,
+                VERSION.into(),
+                0x72,
+                0x43,
+                0x1E,
+                0x54,
+                0x7F,
+                0x7F,
+                0x7F,
+                0x7F,
+                0x6D,
+                0x18,
+                0x06,
+                0x7C,
+                0x66,
+                0x45,
+                0x35,
+                0x24,
+                0x46,
+                0x05,
+                0x55,
+                0b0001_1100,
+                0x17,
+                0x6F,
+                0x61,
+                0x58,
+                0x1A,
+                0xF7,
             ])
             .unwrap()
-            .max_sysex_message_size(),
-            u28::new(176315622)
+            .process_inquiry_supported(),
+            true,
         );
     }
 
     #[test]
-    fn sysex7_builder() {
+    fn property_exchange_supported() {
         assert_eq!(
-            debug::Data(
-                DiscoveryQueryMessage::<sysex7::Sysex7MessageGroup>::builder(&mut random_buffer::<
-                    12,
-                >(
-                ))
-                .group(u4::new(0x8))
-                .source(u28::new(196099328))
-                .device_manufacturer(u21::new(2054957))
-                .device_family(u14::new(508))
-                .device_model_number(u14::new(7156))
-                .software_version([u7::new(0x01), u7::new(0x06), u7::new(0x05), u7::new(0x31),])
-                .protocol_negotiation_supported(true)
-                .profile_configuration_supported(true)
-                .property_exchange_supported(true)
-                .max_sysex_message_size(u28::new(176315622))
-                .build()
-                .unwrap()
-                .data(),
-            ),
-            debug::Data(&[
-                0x3816_F07E,
-                0x7F0D_7001,
-                0x3826_007A,
-                0x405D_7F7F,
-                0x3826_7F7F,
-                0x2D36_7D7C,
-                0x3826_0374,
-                0x3701_0605,
-                0x3826_310E,
-                0x6639_0954,
-                0x3831_F700,
-                0x0000_0000,
-            ]),
+            DiscoveryQueryBorrowed::from_byte_data(&[
+                0xF0,
+                0x7E,
+                0x7F,
+                0x0D,
+                0x70,
+                VERSION.into(),
+                0x72,
+                0x43,
+                0x1E,
+                0x54,
+                0x7F,
+                0x7F,
+                0x7F,
+                0x7F,
+                0x6D,
+                0x18,
+                0x06,
+                0x7C,
+                0x66,
+                0x45,
+                0x35,
+                0x24,
+                0x46,
+                0x05,
+                0x55,
+                0b0001_1100,
+                0x17,
+                0x6F,
+                0x61,
+                0x58,
+                0x1A,
+                0xF7,
+            ])
+            .unwrap()
+            .property_exchange_supported(),
+            true,
         );
     }
 
     #[test]
-    fn sysex7_group() {
+    fn profile_configuration_supported() {
         assert_eq!(
-            DiscoveryQueryMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
-                0x3816_F07E,
-                0x7F0D_7001,
-                0x3826_007A,
-                0x405D_7F7F,
-                0x3826_7F7F,
-                0x2D36_7D7C,
-                0x3826_0374,
-                0x3701_0605,
-                0x3836_310E,
-                0x6639_0954,
-                0x3831_F700,
-                0x0000_0000,
+            DiscoveryQueryBorrowed::from_byte_data(&[
+                0xF0,
+                0x7E,
+                0x7F,
+                0x0D,
+                0x70,
+                VERSION.into(),
+                0x72,
+                0x43,
+                0x1E,
+                0x54,
+                0x7F,
+                0x7F,
+                0x7F,
+                0x7F,
+                0x6D,
+                0x18,
+                0x06,
+                0x7C,
+                0x66,
+                0x45,
+                0x35,
+                0x24,
+                0x46,
+                0x05,
+                0x55,
+                0b0001_1100,
+                0x17,
+                0x6F,
+                0x61,
+                0x58,
+                0x1A,
+                0xF7,
             ])
             .unwrap()
-            .group(),
-            u4::new(0x8)
+            .profile_configuration_supported(),
+            true,
         );
     }
 
     #[test]
-    fn sysex7_source() {
+    fn max_sysex_size() {
         assert_eq!(
-            DiscoveryQueryMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
-                0x3816_F07E,
-                0x7F0D_7001,
-                0x3826_007A,
-                0x405D_7F7F,
-                0x3826_7F7F,
-                0x2D36_7D7C,
-                0x3826_0374,
-                0x3701_0605,
-                0x3836_310E,
-                0x6639_0954,
-                0x3831_F700,
-                0x0000_0000,
+            DiscoveryQueryBorrowed::from_byte_data(&[
+                0xF0,
+                0x7E,
+                0x7F,
+                0x0D,
+                0x70,
+                VERSION.into(),
+                0x72,
+                0x43,
+                0x1E,
+                0x54,
+                0x7F,
+                0x7F,
+                0x7F,
+                0x7F,
+                0x6D,
+                0x18,
+                0x06,
+                0x7C,
+                0x66,
+                0x45,
+                0x35,
+                0x24,
+                0x46,
+                0x05,
+                0x55,
+                0b0001_1100,
+                0x17,
+                0x6F,
+                0x61,
+                0x58,
+                0x1A,
+                0xF7,
             ])
             .unwrap()
-            .source(),
-            u28::new(196099328)
+            .max_sysex_size(),
+            u28::new(0xB187797),
         );
     }
 
     #[test]
-    fn sysex7_device_manufacturer() {
+    fn initiator_output_path_id() {
         assert_eq!(
-            DiscoveryQueryMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
-                0x3816_F07E,
-                0x7F0D_7001,
-                0x3826_007A,
-                0x405D_7F7F,
-                0x3826_7F7F,
-                0x2D36_7D7C,
-                0x3826_0374,
-                0x3701_0605,
-                0x3836_310E,
-                0x6639_0954,
-                0x3831_F700,
-                0x0000_0000,
+            DiscoveryQueryBorrowed::from_byte_data(&[
+                0xF0,
+                0x7E,
+                0x7F,
+                0x0D,
+                0x70,
+                VERSION.into(),
+                0x72,
+                0x43,
+                0x1E,
+                0x54,
+                0x7F,
+                0x7F,
+                0x7F,
+                0x7F,
+                0x6D,
+                0x18,
+                0x06,
+                0x7C,
+                0x66,
+                0x45,
+                0x35,
+                0x24,
+                0x46,
+                0x05,
+                0x55,
+                0b0001_1100,
+                0x17,
+                0x6F,
+                0x61,
+                0x58,
+                0x1A,
+                0xF7,
             ])
             .unwrap()
-            .device_manufacturer(),
-            u21::new(2054957)
-        );
-    }
-
-    #[test]
-    fn sysex7_device_family() {
-        assert_eq!(
-            DiscoveryQueryMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
-                0x3816_F07E,
-                0x7F0D_7001,
-                0x3826_007A,
-                0x405D_7F7F,
-                0x3826_7F7F,
-                0x2D36_7D7C,
-                0x3826_0374,
-                0x3701_0605,
-                0x3836_310E,
-                0x6639_0954,
-                0x3831_F700,
-                0x0000_0000,
-            ])
-            .unwrap()
-            .device_family(),
-            u14::new(508)
-        );
-    }
-
-    #[test]
-    fn sysex7_device_model() {
-        assert_eq!(
-            DiscoveryQueryMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
-                0x3816_F07E,
-                0x7F0D_7001,
-                0x3826_007A,
-                0x405D_7F7F,
-                0x3826_7F7F,
-                0x2D36_7D7C,
-                0x3826_0374,
-                0x3701_0605,
-                0x3836_310E,
-                0x6639_0954,
-                0x3831_F700,
-                0x0000_0000,
-            ])
-            .unwrap()
-            .device_model_number(),
-            u14::new(7156)
-        );
-    }
-
-    #[test]
-    fn sysex7_software_version() {
-        assert_eq!(
-            DiscoveryQueryMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
-                0x3816_F07E,
-                0x7F0D_7001,
-                0x3826_007A,
-                0x405D_7F7F,
-                0x3826_7F7F,
-                0x2D36_7D7C,
-                0x3826_0374,
-                0x3701_0605,
-                0x3836_310E,
-                0x6639_0954,
-                0x3831_F700,
-                0x0000_0000,
-            ])
-            .unwrap()
-            .software_version(),
-            [u7::new(0x01), u7::new(0x06), u7::new(0x05), u7::new(0x31),]
-        );
-    }
-
-    #[test]
-    fn sysex7_protocol_negotiation_supported() {
-        assert!(
-            DiscoveryQueryMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
-                0x3816_F07E,
-                0x7F0D_7001,
-                0x3826_007A,
-                0x405D_7F7F,
-                0x3826_7F7F,
-                0x2D36_7D7C,
-                0x3826_0374,
-                0x3701_0605,
-                0x3836_310E,
-                0x6639_0954,
-                0x3831_F700,
-                0x0000_0000,
-            ])
-            .unwrap()
-            .protocol_negotiation_supported()
-        );
-    }
-
-    #[test]
-    fn sysex7_property_exchange_supported() {
-        assert!(
-            DiscoveryQueryMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
-                0x3816_F07E,
-                0x7F0D_7001,
-                0x3826_007A,
-                0x405D_7F7F,
-                0x3826_7F7F,
-                0x2D36_7D7C,
-                0x3826_0374,
-                0x3701_0605,
-                0x3836_310E,
-                0x6639_0954,
-                0x3831_F700,
-                0x0000_0000,
-            ])
-            .unwrap()
-            .property_exchange_supported()
-        );
-    }
-
-    #[test]
-    fn sysex7_profile_configuration_supported() {
-        assert!(
-            DiscoveryQueryMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
-                0x3816_F07E,
-                0x7F0D_7001,
-                0x3826_007A,
-                0x405D_7F7F,
-                0x3826_7F7F,
-                0x2D36_7D7C,
-                0x3826_0374,
-                0x3701_0605,
-                0x3836_310E,
-                0x6639_0954,
-                0x3831_F700,
-                0x0000_0000,
-            ])
-            .unwrap()
-            .profile_configuration_supported()
-        );
-    }
-
-    #[test]
-    fn sysex7_max_sysex_size() {
-        assert_eq!(
-            DiscoveryQueryMessage::<sysex7::Sysex7MessageGroup>::from_data(&[
-                0x3816_F07E,
-                0x7F0D_7001,
-                0x3826_007A,
-                0x405D_7F7F,
-                0x3826_7F7F,
-                0x2D36_7D7C,
-                0x3826_0374,
-                0x3701_0605,
-                0x3836_310E,
-                0x6639_0954,
-                0x3831_F700,
-                0x0000_0000,
-            ])
-            .unwrap()
-            .max_sysex_message_size(),
-            u28::new(176315622)
+            .initiator_output_path_id(),
+            u7::new(0x1A),
         );
     }
 }
