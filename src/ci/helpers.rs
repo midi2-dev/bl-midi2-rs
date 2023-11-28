@@ -13,7 +13,7 @@ pub fn validate_ci_standard_bytes(buffer: &[u8]) -> Result<()> {
     DeviceId::from_u8(buffer[2])?;
 
     const MIDI_CI_SYSEX_ID: u8 = 0x0D;
-    if buffer[1] != MIDI_CI_SYSEX_ID {
+    if buffer[3] != MIDI_CI_SYSEX_ID {
         return Err(Error::InvalidData);
     };
 

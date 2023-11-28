@@ -42,3 +42,20 @@ pub(crate) use message_debug_impl_owned;
 #[derive(PartialEq, Eq)]
 pub struct Data<'a>(pub &'a [u32]);
 message_debug_impl!(Data);
+
+#[derive(PartialEq, Eq)]
+pub struct ByteData<'a>(pub &'a [u8]);
+
+impl<'a> core::fmt::Debug for ByteData<'a> {
+    fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
+        fmt.write_fmt(format_args!("ByteData("))?;
+        let mut iter = self.0.iter().peekable();
+        while let Some(v) = iter.next() {
+            fmt.write_fmt(format_args!("{v:#04X}"))?;
+            if iter.peek().is_some() {
+                fmt.write_str(",")?;
+            }
+        }
+        fmt.write_str(")")
+    }
+}

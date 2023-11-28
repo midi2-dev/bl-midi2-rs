@@ -81,7 +81,7 @@ pub struct CiStandardData {
 pub struct CiStandardDataIterator<'a>(&'a CiStandardData, [u7; 13], usize);
 
 const UNIVERSAL_SYSEX: u7 = u7::new(0x7E);
-const UNIVERSAL_SYSEX_SUB_ID_MIDI_CI: u7 = u7::new(0x7E);
+const UNIVERSAL_SYSEX_SUB_ID_MIDI_CI: u7 = u7::new(0x0D);
 
 impl CiStandardData {
     fn payload(&self) -> Result<CiStandardDataIterator> {

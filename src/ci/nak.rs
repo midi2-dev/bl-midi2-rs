@@ -260,31 +260,251 @@ impl<'a> NakBorrowedBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::RandomBuffer;
+    use crate::{
+        ci::VERSION,
+        util::{debug, RandomBuffer},
+    };
     use pretty_assertions::assert_eq;
 
     #[test]
     fn builder() {
         assert_eq!(
-            NakBorrowed::builder(&mut Bytes::random_buffer::<30>())
-                .source(u28::new(0x7E1311))
-                .destination(u28::new(0x398F97B))
-                .device_id(DeviceId::Group)
-                .status(Status::BusyTryAgain(u7::new(35)))
-                .original_transaction(OriginalTransaction::ProfileConfiguration {
-                    id: u7::new(0x1C),
-                    profile_id: [
-                        u7::new(0x5D),
-                        u7::new(0x75),
-                        u7::new(0x29),
-                        u7::new(0x6D),
-                        u7::new(0x3A),
-                    ],
-                })
-                .build()
-                .unwrap()
-                .bytes_data(),
-            &[],
+            debug::ByteData(
+                NakBorrowed::builder(&mut Bytes::random_buffer::<25>())
+                    .source(u28::new(0x7E1311))
+                    .destination(u28::new(0x398F97B))
+                    .device_id(DeviceId::Group)
+                    .status(Status::BusyTryAgain(u7::new(0x35)))
+                    .original_transaction(OriginalTransaction::ProfileConfiguration {
+                        id: u7::new(0x2C),
+                        profile_id: [
+                            u7::new(0x5D),
+                            u7::new(0x75),
+                            u7::new(0x29),
+                            u7::new(0x6D),
+                            u7::new(0x3A),
+                        ],
+                    })
+                    .build()
+                    .unwrap()
+                    .bytes_data()
+            ),
+            debug::ByteData(&[
+                0xF0,
+                0x7E,
+                0x7E,
+                0x0D,
+                0x7F,
+                VERSION.into(),
+                0x11,
+                0x26,
+                0x78,
+                0x03,
+                0x7B,
+                0x72,
+                0x63,
+                0x1C,
+                0x2C,
+                0x43,
+                0x35,
+                0x5D,
+                0x75,
+                0x29,
+                0x6D,
+                0x3A,
+                0x0,
+                0x0,
+                0xF7,
+            ]),
+        );
+    }
+
+    #[test]
+    fn source() {
+        assert_eq!(
+            NakBorrowed::from_bytes_data(&[
+                0xF0,
+                0x7E,
+                0x7E,
+                0x0D,
+                0x7F,
+                VERSION.into(),
+                0x11,
+                0x26,
+                0x78,
+                0x03,
+                0x7B,
+                0x72,
+                0x63,
+                0x1C,
+                0x2C,
+                0x43,
+                0x35,
+                0x5D,
+                0x75,
+                0x29,
+                0x6D,
+                0x3A,
+                0x0,
+                0x0,
+                0xF7,
+            ])
+            .unwrap()
+            .source(),
+            u28::new(0x7E1311),
+        );
+    }
+
+    #[test]
+    fn destination() {
+        assert_eq!(
+            NakBorrowed::from_bytes_data(&[
+                0xF0,
+                0x7E,
+                0x7E,
+                0x0D,
+                0x7F,
+                VERSION.into(),
+                0x11,
+                0x26,
+                0x78,
+                0x03,
+                0x7B,
+                0x72,
+                0x63,
+                0x1C,
+                0x2C,
+                0x43,
+                0x35,
+                0x5D,
+                0x75,
+                0x29,
+                0x6D,
+                0x3A,
+                0x0,
+                0x0,
+                0xF7,
+            ])
+            .unwrap()
+            .destination(),
+            u28::new(0x398F97B),
+        );
+    }
+
+    #[test]
+    fn device_id() {
+        assert_eq!(
+            NakBorrowed::from_bytes_data(&[
+                0xF0,
+                0x7E,
+                0x7E,
+                0x0D,
+                0x7F,
+                VERSION.into(),
+                0x11,
+                0x26,
+                0x78,
+                0x03,
+                0x7B,
+                0x72,
+                0x63,
+                0x1C,
+                0x2C,
+                0x43,
+                0x35,
+                0x5D,
+                0x75,
+                0x29,
+                0x6D,
+                0x3A,
+                0x0,
+                0x0,
+                0xF7,
+            ])
+            .unwrap()
+            .device_id(),
+            DeviceId::Group,
+        );
+    }
+
+    #[test]
+    fn status() {
+        assert_eq!(
+            NakBorrowed::from_bytes_data(&[
+                0xF0,
+                0x7E,
+                0x7E,
+                0x0D,
+                0x7F,
+                VERSION.into(),
+                0x11,
+                0x26,
+                0x78,
+                0x03,
+                0x7B,
+                0x72,
+                0x63,
+                0x1C,
+                0x2C,
+                0x43,
+                0x35,
+                0x5D,
+                0x75,
+                0x29,
+                0x6D,
+                0x3A,
+                0x0,
+                0x0,
+                0xF7,
+            ])
+            .unwrap()
+            .status(),
+            Status::BusyTryAgain(u7::new(0x35)),
+        );
+    }
+
+    #[test]
+    fn original_transaction() {
+        assert_eq!(
+            NakBorrowed::from_bytes_data(&[
+                0xF0,
+                0x7E,
+                0x7E,
+                0x0D,
+                0x7F,
+                VERSION.into(),
+                0x11,
+                0x26,
+                0x78,
+                0x03,
+                0x7B,
+                0x72,
+                0x63,
+                0x1C,
+                0x2C,
+                0x43,
+                0x35,
+                0x5D,
+                0x75,
+                0x29,
+                0x6D,
+                0x3A,
+                0x0,
+                0x0,
+                0xF7,
+            ])
+            .unwrap()
+            .original_transaction(),
+            OriginalTransaction::ProfileConfiguration {
+                id: u7::new(0x2C),
+                profile_id: [
+                    u7::new(0x5D),
+                    u7::new(0x75),
+                    u7::new(0x29),
+                    u7::new(0x6D),
+                    u7::new(0x3A),
+                ],
+            },
         );
     }
 }
