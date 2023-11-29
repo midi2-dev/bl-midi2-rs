@@ -19,21 +19,3 @@ pub fn validate_ci_standard_bytes(buffer: &[u8]) -> Result<()> {
 
     Ok(())
 }
-
-pub struct ProtocolDataIterator {
-    buffer: [u8; 8],
-    i: usize,
-}
-
-impl core::iter::Iterator for ProtocolDataIterator {
-    type Item = u8;
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.i == 5 {
-            None
-        } else {
-            let current = self.i;
-            self.i += 1;
-            Some(self.buffer[current])
-        }
-    }
-}
