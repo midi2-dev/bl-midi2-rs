@@ -9,6 +9,7 @@ struct TimeStamp {
 mod tests {
     use super::*;
     use generic_array::arr;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn builder() {
@@ -47,5 +48,27 @@ mod tests {
                 .time_stamp(),
             u20::new(0x12345),
         )
+    }
+
+    #[test]
+    fn message_builder() {
+        assert_eq!(
+            TimeStampMessage::builder()
+                .time_stamp(u20::new(0x87EAB))
+                .build(),
+            Ok(TimeStampMessage::Owned(TimeStampOwned(
+                TimeStampOwnedPrivate(arr![0x0028_7EAB, 0x0, 0x0, 0x0])
+            ))),
+        );
+    }
+
+    #[test]
+    fn message_time_stamp() {
+        assert_eq!(
+            TimeStampMessage::from_data(&[0x0028_7EAB, 0x0, 0x0, 0x0])
+                .unwrap()
+                .time_stamp(),
+            u20::new(0x87EAB),
+        );
     }
 }

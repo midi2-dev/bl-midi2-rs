@@ -6,11 +6,20 @@ pub mod time_stamp;
 pub use no_op::NoOp;
 pub use no_op::NoOpBorrowed;
 pub use no_op::NoOpBuilder;
+pub use no_op::NoOpMessage;
 pub use no_op::NoOpOwned;
 pub use time_stamp::TimeStamp;
 pub use time_stamp::TimeStampBorrowed;
 pub use time_stamp::TimeStampBuilder;
+pub use time_stamp::TimeStampMessage;
 pub use time_stamp::TimeStampOwned;
+
+#[derive(derive_more::From, Clone, Debug, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum UtilityMessage<'a> {
+    NoOp(NoOpMessage<'a>),
+    TimeStamp(TimeStampMessage<'a>),
+}
 
 #[derive(derive_more::From, Clone, Debug, PartialEq, Eq)]
 #[non_exhaustive]

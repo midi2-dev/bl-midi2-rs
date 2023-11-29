@@ -78,6 +78,10 @@ fn builder_ident_public(root_ident: &Ident) -> Ident {
     Ident::new(&format!("{}Builder", root_ident), Span::call_site())
 }
 
+fn aggregate_message_ident(root_ident: &Ident) -> Ident {
+    Ident::new(&format!("{}Message", root_ident), Span::call_site())
+}
+
 fn privatise(ident: &Ident) -> Ident {
     Ident::new(&format!("{}Private", ident), Span::call_site())
 }
@@ -199,6 +203,18 @@ fn message_owned_impl_public(root_ident: &Ident) -> TokenStream {
     }
 }
 
+fn impl_aggregate_message(root_ident: &Ident) -> TokenStream {
+    let ident = aggregate_message_ident(root_ident);
+    let builder_ident = builder_ident_public(root_ident);
+    quote! {
+        impl<'a> #ident<'a> {
+             pub fn builder() -> #builder_ident<#ident<'a>> {
+                #builder_ident::new()
+            }
+        }
+    }
+}
+
 fn message_borrowed(root_ident: &Ident, properties: &Vec<Property>) -> TokenStream {
     let ident = message_borrowed_ident(root_ident);
     let buffer_type = buffer_generic_with_constraints(properties);
@@ -214,6 +230,20 @@ fn message_borrowed_public(root_ident: &Ident) -> TokenStream {
     quote! {
         #[derive(Clone, PartialEq, Eq)]
         pub struct #ident<'a>(#private_ident<'a, Ump>);
+    }
+}
+
+fn aggregate_message(root_ident: &Ident) -> TokenStream {
+    let ident = aggregate_message_ident(root_ident);
+    let owned_ident = message_owned_ident_public(root_ident);
+    let borrowed_ident = message_borrowed_ident_public(root_ident);
+    quote! {
+        #[derive(derive_more::From, Clone, Debug, PartialEq, Eq)]
+        pub enum #ident<'a> {
+            Owned(#owned_ident),
+            Borrowed(#borrowed_ident<'a>),
+        }
+
     }
 }
 
@@ -241,6 +271,22 @@ fn to_owned_impl_public(root_ident: &Ident) -> TokenStream {
             type Owned = #owned_ident;
             fn to_owned(self) -> Self::Owned {
                 #owned_ident(self.0.to_owned())
+            }
+        }
+    }
+}
+
+fn to_owned_impl_aggregate(root_ident: &Ident) -> TokenStream {
+    let ident = aggregate_message_ident(root_ident);
+    let owned_ident = message_owned_ident_public(root_ident);
+    quote! {
+        impl<'a> ToOwned for #ident<'a> {
+            type Owned = #owned_ident;
+            fn to_owned(self) -> #owned_ident {
+                match self {
+                    Self::Owned(m) => m,
+                    Self::Borrowed(m) => m.to_owned(),
+                }
             }
         }
     }
@@ -315,6 +361,14 @@ fn specialized_message_trait_impl_owned_public(
     }
 }
 
+fn specialised_message_trait_declare_method(property: &Property) -> TokenStream {
+    let name = &property.name;
+    let ty = &property.ty;
+    quote! {
+        fn #name(&self) -> #ty;
+    }
+}
+
 fn specialized_message_trait_impl_borrowed(
     root_ident: &Ident,
     properties: &Vec<Property>,
@@ -350,11 +404,20 @@ fn specialized_message_trait_impl_borrowed_public(
     }
 }
 
-fn specialised_message_trait_declare_method(property: &Property) -> TokenStream {
-    let name = &property.name;
-    let ty = &property.ty;
+fn specialized_message_trait_impl_aggregate(
+    root_ident: &Ident,
+    properties: &Vec<Property>,
+) -> TokenStream {
+    let mut methods = TokenStream::new();
+    for property in properties.iter().filter(|p| !p.constant) {
+        methods.extend(aggregate_message_impl_method(property));
+    }
+    let message_ident = aggregate_message_ident(root_ident);
+    let trait_ident = specialised_message_trait_ident(root_ident);
     quote! {
-        fn #name(&self) -> #ty;
+        impl<'a> #trait_ident for #message_ident<'a> {
+            #methods
+        }
     }
 }
 
@@ -390,6 +453,19 @@ fn message_impl_method_public(property: &Property, public: bool) -> TokenStream 
     quote! {
         #visibility fn #name(&self) -> #ty {
             self.0.#name()
+        }
+    }
+}
+
+fn aggregate_message_impl_method(property: &Property) -> TokenStream {
+    let name = &property.name;
+    let ty = &property.ty;
+    quote! {
+        fn #name(&self) -> #ty {
+            match self {
+                Self::Owned(m) => m.#name(),
+                Self::Borrowed(m) => m.#name(),
+            }
         }
     }
 }
@@ -559,6 +635,20 @@ fn data_trait_impl_borrowed_public(root_ident: &Ident) -> TokenStream {
     }
 }
 
+fn data_trait_impl_aggregate(root_ident: &Ident) -> TokenStream {
+    let ident = aggregate_message_ident(root_ident);
+    quote! {
+        impl<'a> Data for #ident<'a> {
+            fn data(&self) -> &[u32] {
+                match self {
+                    Self::Owned(m) => m.data(),
+                    Self::Borrowed(m) => m.data(),
+                }
+            }
+        }
+    }
+}
+
 fn from_data_trait_impl(root_ident: &Ident, properties: &Vec<Property>) -> TokenStream {
     let message_ident = message_borrowed_ident(root_ident);
     let validation_steps = validation_steps(properties);
@@ -591,6 +681,22 @@ fn from_data_trait_impl_public(root_ident: &Ident) -> TokenStream {
             }
             fn validate_data(buffer: &'a [u32]) -> Result<()> {
                 <#private_message_ident<Ump> as FromDataPrivate<Ump>>::validate_data(buffer)
+            }
+        }
+    }
+}
+
+fn from_data_trait_impl_aggreagate(root_ident: &Ident) -> TokenStream {
+    let ident = aggregate_message_ident(root_ident);
+    let borrowed_ident = message_borrowed_ident_public(root_ident);
+    quote! {
+        impl<'a> FromData<'a> for #ident<'a> {
+            type Target = Self;
+            fn validate_data(buffer: &'a [u32]) -> Result<()> {
+                #borrowed_ident::validate_data(buffer)
+            }
+            fn from_data_unchecked(buffer: &'a [u32]) -> Self::Target {
+                Self::Borrowed(#borrowed_ident::from_data_unchecked(buffer))
             }
         }
     }
@@ -797,18 +903,25 @@ pub fn generate_message(_attrs: TokenStream1, item: TokenStream1) -> TokenStream
 
     let message_owned_public = message_owned_public(&root_ident);
     let message_owned_impl_public = message_owned_impl_public(&root_ident);
+    let impl_aggregate_message = impl_aggregate_message(&root_ident);
     let message_borrowed_public = message_borrowed_public(&root_ident);
+    let aggregate_message = aggregate_message(&root_ident);
     let to_owned_impl_public = to_owned_impl_public(&root_ident);
+    let to_owned_impl_aggregate = to_owned_impl_aggregate(&root_ident);
     let specialized_message_trait_impl_owned_public =
         specialized_message_trait_impl_owned_public(&root_ident, &properties);
     let specialized_message_trait_impl_borrowed_public =
         specialized_message_trait_impl_borrowed_public(&root_ident, &properties);
+    let specialized_message_trait_impl_aggregate =
+        specialized_message_trait_impl_aggregate(&root_ident, &properties);
     let builder_public = builder_public(&root_ident);
     let builder_impl_public = builder_impl_public(&root_ident, &properties);
     let grouped_builder_impl_public = grouped_builder_impl_public(&root_ident);
     let data_trait_impl_owned_public = data_trait_impl_owned_public(&root_ident);
     let data_trait_impl_borrowed_public = data_trait_impl_borrowed_public(&root_ident);
+    let data_trait_impl_aggregate = data_trait_impl_aggregate(&root_ident);
     let from_data_trait_impl_public = from_data_trait_impl_public(&root_ident);
+    let from_data_trait_impl_aggreagate = from_data_trait_impl_aggreagate(&root_ident);
     let grouped_message_trait_impl_owned_public =
         grouped_message_trait_impl_owned_public(&root_ident);
     let grouped_message_trait_impl_borrowed_public =
@@ -839,16 +952,22 @@ pub fn generate_message(_attrs: TokenStream1, item: TokenStream1) -> TokenStream
 
         #message_owned_public
         #message_owned_impl_public
+        #impl_aggregate_message
         #message_borrowed_public
+        #aggregate_message
         #to_owned_impl_public
+        #to_owned_impl_aggregate
         #specialized_message_trait_impl_owned_public
         #specialized_message_trait_impl_borrowed_public
+        #specialized_message_trait_impl_aggregate
         #builder_public
         #builder_impl_public
         #grouped_builder_impl_public
         #data_trait_impl_owned_public
         #data_trait_impl_borrowed_public
+        #data_trait_impl_aggregate
         #from_data_trait_impl_public
+        #from_data_trait_impl_aggreagate
         #grouped_message_trait_impl_owned_public
         #grouped_message_trait_impl_borrowed_public
         #debug_impl_owned_public
