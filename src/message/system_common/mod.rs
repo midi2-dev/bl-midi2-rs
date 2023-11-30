@@ -2,61 +2,76 @@ use crate::{util::BitOps, *};
 
 pub const TYPE_CODE: u32 = 0x1;
 
-mod simple_generic;
-mod song_position_pointer;
-mod song_select;
-mod time_code;
+pub mod simple_generic;
+pub mod song_position_pointer;
+pub mod song_select;
+pub mod time_code;
 
-use simple_generic::active_sensing;
-use simple_generic::cont;
-use simple_generic::reset;
-use simple_generic::start;
-use simple_generic::stop;
-use simple_generic::timing_clock;
-use simple_generic::tune_request;
+pub use simple_generic::active_sensing;
+pub use simple_generic::cont;
+pub use simple_generic::reset;
+pub use simple_generic::start;
+pub use simple_generic::stop;
+pub use simple_generic::timing_clock;
+pub use simple_generic::tune_request;
 
-pub use active_sensing::ActiveSensing;
-pub use active_sensing::ActiveSensingBorrowed;
-pub use active_sensing::ActiveSensingBuilder;
-pub use active_sensing::ActiveSensingOwned;
-pub use cont::Continue;
-pub use cont::ContinueBorrowed;
-pub use cont::ContinueBuilder;
-pub use cont::ContinueOwned;
-pub use reset::Reset;
-pub use reset::ResetBorrowed;
-pub use reset::ResetBuilder;
-pub use reset::ResetOwned;
-pub use song_position_pointer::SongPositionPointer;
-pub use song_position_pointer::SongPositionPointerBorrowed;
-pub use song_position_pointer::SongPositionPointerBuilder;
-pub use song_position_pointer::SongPositionPointerOwned;
-pub use song_select::SongSelect;
-pub use song_select::SongSelectBorrowed;
-pub use song_select::SongSelectBuilder;
-pub use song_select::SongSelectOwned;
-pub use start::Start;
-pub use start::StartBorrowed;
-pub use start::StartBuilder;
-pub use start::StartOwned;
-pub use stop::Stop;
-pub use stop::StopBorrowed;
-pub use stop::StopBuilder;
-pub use stop::StopOwned;
-pub use time_code::TimeCode;
-pub use time_code::TimeCodeBorrowed;
-pub use time_code::TimeCodeBuilder;
-pub use time_code::TimeCodeOwned;
-pub use timing_clock::TimingClock;
-pub use timing_clock::TimingClockBorrowed;
-pub use timing_clock::TimingClockBuilder;
-pub use timing_clock::TimingClockOwned;
-pub use tune_request::TuneRequest;
-pub use tune_request::TuneRequestBorrowed;
-pub use tune_request::TuneRequestBuilder;
-pub use tune_request::TuneRequestOwned;
+use active_sensing::ActiveSensingBorrowed;
+use active_sensing::ActiveSensingBuilder;
+use active_sensing::ActiveSensingMessage;
+use active_sensing::ActiveSensingOwned;
+use cont::ContinueBorrowed;
+use cont::ContinueBuilder;
+use cont::ContinueMessage;
+use cont::ContinueOwned;
+use reset::ResetBorrowed;
+use reset::ResetBuilder;
+use reset::ResetMessage;
+use reset::ResetOwned;
+use song_position_pointer::SongPositionPointerBorrowed;
+use song_position_pointer::SongPositionPointerBuilder;
+use song_position_pointer::SongPositionPointerMessage;
+use song_position_pointer::SongPositionPointerOwned;
+use song_select::SongSelectBorrowed;
+use song_select::SongSelectBuilder;
+use song_select::SongSelectMessage;
+use song_select::SongSelectOwned;
+use start::StartBorrowed;
+use start::StartBuilder;
+use start::StartMessage;
+use start::StartOwned;
+use stop::StopBorrowed;
+use stop::StopBuilder;
+use stop::StopMessage;
+use stop::StopOwned;
+use time_code::TimeCodeBorrowed;
+use time_code::TimeCodeBuilder;
+use time_code::TimeCodeMessage;
+use time_code::TimeCodeOwned;
+use timing_clock::TimingClockBorrowed;
+use timing_clock::TimingClockBuilder;
+use timing_clock::TimingClockMessage;
+use timing_clock::TimingClockOwned;
+use tune_request::TuneRequestBorrowed;
+use tune_request::TuneRequestBuilder;
+use tune_request::TuneRequestMessage;
+use tune_request::TuneRequestOwned;
 
-#[derive(derive_more::From, Clone, Debug, PartialEq, Eq)]
+#[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Clone, Debug, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum SystemCommonMessage<'a> {
+    ActiveSensing(ActiveSensingMessage<'a>),
+    Continue(ContinueMessage<'a>),
+    Reset(ResetMessage<'a>),
+    SongPositionPointer(SongPositionPointerMessage<'a>),
+    SongSelect(SongSelectMessage<'a>),
+    Start(StartMessage<'a>),
+    Stop(StopMessage<'a>),
+    TimeCode(TimeCodeMessage<'a>),
+    TimingClock(TimingClockMessage<'a>),
+    TuneRequest(TuneRequestMessage<'a>),
+}
+
+#[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Clone, Debug, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum SystemCommonBorrowed<'a> {
     ActiveSensing(ActiveSensingBorrowed<'a>),
@@ -71,7 +86,7 @@ pub enum SystemCommonBorrowed<'a> {
     TuneRequest(TuneRequestBorrowed<'a>),
 }
 
-#[derive(derive_more::From, Clone, Debug, PartialEq, Eq)]
+#[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Clone, Debug, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum SystemCommonOwned {
     ActiveSensing(ActiveSensingOwned),
@@ -149,8 +164,52 @@ where
 }
 
 impl SystemCommonOwned {
-    pub fn builder() -> SystemCommonBuilder<SystemCommonOwned> {
+    pub fn builder() -> SystemCommonBuilder<Self> {
         SystemCommonBuilder::new()
+    }
+}
+
+impl<'a> SystemCommonMessage<'a> {
+    pub fn builder() -> SystemCommonBuilder<Self> {
+        SystemCommonBuilder::new()
+    }
+}
+
+impl<'a> core::convert::From<SystemCommonBorrowed<'a>> for SystemCommonMessage<'a> {
+    fn from(value: SystemCommonBorrowed<'a>) -> Self {
+        use SystemCommonBorrowed as B;
+        use SystemCommonMessage as M;
+        match value {
+            B::ActiveSensing(m) => M::ActiveSensing(m.into()),
+            B::Continue(m) => M::Continue(m.into()),
+            B::Reset(m) => M::Reset(m.into()),
+            B::SongPositionPointer(m) => M::SongPositionPointer(m.into()),
+            B::SongSelect(m) => M::SongSelect(m.into()),
+            B::Start(m) => M::Start(m.into()),
+            B::Stop(m) => M::Stop(m.into()),
+            B::TimeCode(m) => M::TimeCode(m.into()),
+            B::TimingClock(m) => M::TimingClock(m.into()),
+            B::TuneRequest(m) => M::TuneRequest(m.into()),
+        }
+    }
+}
+
+impl<'a> core::convert::From<SystemCommonOwned> for SystemCommonMessage<'a> {
+    fn from(value: SystemCommonOwned) -> Self {
+        use SystemCommonMessage as M;
+        use SystemCommonOwned as O;
+        match value {
+            O::ActiveSensing(m) => M::ActiveSensing(m.into()),
+            O::Continue(m) => M::Continue(m.into()),
+            O::Reset(m) => M::Reset(m.into()),
+            O::SongPositionPointer(m) => M::SongPositionPointer(m.into()),
+            O::SongSelect(m) => M::SongSelect(m.into()),
+            O::Start(m) => M::Start(m.into()),
+            O::Stop(m) => M::Stop(m.into()),
+            O::TimeCode(m) => M::TimeCode(m.into()),
+            O::TimingClock(m) => M::TimingClock(m.into()),
+            O::TuneRequest(m) => M::TuneRequest(m.into()),
+        }
     }
 }
 
@@ -164,78 +223,6 @@ pub const STOP: u32 = 0xFC;
 pub const TIME_CODE: u32 = 0xF1;
 pub const TIMING_CLOCK: u32 = 0xF8;
 pub const TUNE_REQUEST: u32 = 0xF6;
-
-impl<'a> Data for SystemCommonBorrowed<'a> {
-    fn data(&self) -> &[u32] {
-        use SystemCommonBorrowed::*;
-        match self {
-            ActiveSensing(m) => m.data(),
-            Continue(m) => m.data(),
-            Reset(m) => m.data(),
-            SongPositionPointer(m) => m.data(),
-            SongSelect(m) => m.data(),
-            Start(m) => m.data(),
-            Stop(m) => m.data(),
-            TimeCode(m) => m.data(),
-            TimingClock(m) => m.data(),
-            TuneRequest(m) => m.data(),
-        }
-    }
-}
-
-impl Data for SystemCommonOwned {
-    fn data(&self) -> &[u32] {
-        use SystemCommonOwned::*;
-        match self {
-            ActiveSensing(m) => m.data(),
-            Continue(m) => m.data(),
-            Reset(m) => m.data(),
-            SongPositionPointer(m) => m.data(),
-            SongSelect(m) => m.data(),
-            Start(m) => m.data(),
-            Stop(m) => m.data(),
-            TimeCode(m) => m.data(),
-            TimingClock(m) => m.data(),
-            TuneRequest(m) => m.data(),
-        }
-    }
-}
-
-impl<'a> Grouped for SystemCommonBorrowed<'a> {
-    fn group(&self) -> u4 {
-        use SystemCommonBorrowed::*;
-        match self {
-            ActiveSensing(m) => m.group(),
-            Continue(m) => m.group(),
-            Reset(m) => m.group(),
-            SongPositionPointer(m) => m.group(),
-            SongSelect(m) => m.group(),
-            Start(m) => m.group(),
-            Stop(m) => m.group(),
-            TimeCode(m) => m.group(),
-            TimingClock(m) => m.group(),
-            TuneRequest(m) => m.group(),
-        }
-    }
-}
-
-impl Grouped for SystemCommonOwned {
-    fn group(&self) -> u4 {
-        use SystemCommonOwned::*;
-        match self {
-            ActiveSensing(m) => m.group(),
-            Continue(m) => m.group(),
-            Reset(m) => m.group(),
-            SongPositionPointer(m) => m.group(),
-            SongSelect(m) => m.group(),
-            Start(m) => m.group(),
-            Stop(m) => m.group(),
-            TimeCode(m) => m.group(),
-            TimingClock(m) => m.group(),
-            TuneRequest(m) => m.group(),
-        }
-    }
-}
 
 impl<'a> FromData<'a> for SystemCommonBorrowed<'a> {
     type Target = Self;
@@ -274,25 +261,13 @@ impl<'a> FromData<'a> for SystemCommonBorrowed<'a> {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use pretty_assertions::assert_eq;
-
-    #[test]
-    fn builder() {
-        assert_eq!(
-            SystemCommonOwned::builder()
-                .song_select()
-                .song(u7::new(0x1))
-                .build(),
-            Ok(SystemCommonOwned::SongSelect(
-                SongSelectOwned::builder()
-                    .song(u7::new(0x1))
-                    .build()
-                    .unwrap()
-            )),
-        );
+impl<'a> FromData<'a> for SystemCommonMessage<'a> {
+    type Target = Self;
+    fn validate_data(buffer: &'a [u32]) -> Result<()> {
+        SystemCommonBorrowed::validate_data(buffer)
+    }
+    fn from_data_unchecked(buffer: &'a [u32]) -> Self::Target {
+        SystemCommonBorrowed::from_data_unchecked(buffer).into()
     }
 }
 
@@ -313,5 +288,68 @@ impl<'a> ToOwned for SystemCommonBorrowed<'a> {
             B::TimingClock(m) => O::TimingClock(m.to_owned()),
             B::TuneRequest(m) => O::TuneRequest(m.to_owned()),
         }
+    }
+}
+
+impl<'a> ToOwned for SystemCommonMessage<'a> {
+    type Owned = SystemCommonOwned;
+    fn to_owned(self) -> Self::Owned {
+        use SystemCommonMessage as M;
+        use SystemCommonOwned as O;
+        match self {
+            M::ActiveSensing(m) => O::ActiveSensing(m.to_owned()),
+            M::Continue(m) => O::Continue(m.to_owned()),
+            M::Reset(m) => O::Reset(m.to_owned()),
+            M::SongPositionPointer(m) => O::SongPositionPointer(m.to_owned()),
+            M::SongSelect(m) => O::SongSelect(m.to_owned()),
+            M::Start(m) => O::Start(m.to_owned()),
+            M::Stop(m) => O::Stop(m.to_owned()),
+            M::TimeCode(m) => O::TimeCode(m.to_owned()),
+            M::TimingClock(m) => O::TimingClock(m.to_owned()),
+            M::TuneRequest(m) => O::TuneRequest(m.to_owned()),
+        }
+    }
+}
+
+macro_rules! from_message_impl {
+    ($message: ty) => {
+        impl<'a> core::convert::From<$message> for SystemCommonMessage<'a> {
+            fn from(value: $message) -> Self {
+                <SystemCommonOwned as core::convert::From<$message>>::from(value).into()
+            }
+        }
+    };
+}
+
+from_message_impl!(ActiveSensingOwned);
+from_message_impl!(ContinueOwned);
+from_message_impl!(ResetOwned);
+from_message_impl!(SongPositionPointerOwned);
+from_message_impl!(SongSelectOwned);
+from_message_impl!(StartOwned);
+from_message_impl!(StopOwned);
+from_message_impl!(TimeCodeOwned);
+from_message_impl!(TimingClockOwned);
+from_message_impl!(TuneRequestOwned);
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn builder() {
+        assert_eq!(
+            SystemCommonOwned::builder()
+                .song_select()
+                .song(u7::new(0x1))
+                .build(),
+            Ok(SystemCommonOwned::SongSelect(
+                SongSelectOwned::builder()
+                    .song(u7::new(0x1))
+                    .build()
+                    .unwrap()
+            )),
+        );
     }
 }

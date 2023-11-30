@@ -100,6 +100,12 @@ pub struct Sysex7Borrowed<'a>(&'a [u32]);
 #[derive(Clone, PartialEq, Eq)]
 pub struct Sysex7Owned([u32; 4]);
 
+#[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Clone, Debug, PartialEq, Eq)]
+pub enum Sysex7Message<'a> {
+    Owned(Sysex7Owned),
+    Borrowed(Sysex7Borrowed<'a>),
+}
+
 pub trait Sysex7 {
     fn status(&self) -> Status;
 }
@@ -112,6 +118,15 @@ impl<'a> ToOwned for Sysex7Borrowed<'a> {
     fn to_owned(self) -> Self::Owned {
         let mut buffer: [u32; 4] = Default::default();
         buffer[..].copy_from_slice(self.0);
+        Sysex7Owned(buffer)
+    }
+}
+
+impl<'a> ToOwned for Sysex7Message<'a> {
+    type Owned = Sysex7Owned;
+    fn to_owned(self) -> Sysex7Owned {
+        let mut buffer: [u32; 4] = Default::default();
+        buffer[..].copy_from_slice(self.data());
         Sysex7Owned(buffer)
     }
 }
@@ -139,6 +154,16 @@ impl<'a> FromData<'a> for Sysex7Borrowed<'a> {
         status_from_packet(data)?;
         validate_data(data)?;
         Ok(())
+    }
+}
+
+impl<'a> FromData<'a> for Sysex7Message<'a> {
+    type Target = Self;
+    fn validate_data(buffer: &'a [u32]) -> Result<()> {
+        Sysex7Borrowed::validate_data(buffer)
+    }
+    fn from_data_unchecked(buffer: &'a [u32]) -> Self::Target {
+        Sysex7Borrowed::from_data_unchecked(buffer).into()
     }
 }
 

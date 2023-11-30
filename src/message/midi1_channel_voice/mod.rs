@@ -1,45 +1,56 @@
 use crate::{util::BitOps, *};
 
-mod channel_pressure;
-mod control_change;
-mod key_pressure;
-mod note_off;
-mod note_on;
-mod pitch_bend;
-mod program_change;
+pub mod channel_pressure;
+pub mod control_change;
+pub mod key_pressure;
+pub mod note_off;
+pub mod note_on;
+pub mod pitch_bend;
+pub mod program_change;
 
 pub const TYPE_CODE: u32 = 0x2;
 
-pub use channel_pressure::ChannelPressure;
-pub use channel_pressure::ChannelPressureBorrowed;
-pub use channel_pressure::ChannelPressureBuilder;
-pub use channel_pressure::ChannelPressureOwned;
-pub use control_change::ControlChange;
-pub use control_change::ControlChangeBorrowed;
-pub use control_change::ControlChangeBuilder;
-pub use control_change::ControlChangeOwned;
-pub use key_pressure::KeyPressure;
-pub use key_pressure::KeyPressureBorrowed;
-pub use key_pressure::KeyPressureBuilder;
-pub use key_pressure::KeyPressureOwned;
-pub use note_off::NoteOff;
-pub use note_off::NoteOffBorrowed;
-pub use note_off::NoteOffBuilder;
-pub use note_off::NoteOffOwned;
-pub use note_on::NoteOn;
-pub use note_on::NoteOnBorrowed;
-pub use note_on::NoteOnBuilder;
-pub use note_on::NoteOnOwned;
-pub use pitch_bend::PitchBend;
-pub use pitch_bend::PitchBendBorrowed;
-pub use pitch_bend::PitchBendBuilder;
-pub use pitch_bend::PitchBendOwned;
-pub use program_change::ProgramChange;
-pub use program_change::ProgramChangeBorrowed;
-pub use program_change::ProgramChangeBuilder;
-pub use program_change::ProgramChangeOwned;
+use channel_pressure::ChannelPressureBorrowed;
+use channel_pressure::ChannelPressureBuilder;
+use channel_pressure::ChannelPressureMessage;
+use channel_pressure::ChannelPressureOwned;
+use control_change::ControlChangeBorrowed;
+use control_change::ControlChangeBuilder;
+use control_change::ControlChangeMessage;
+use control_change::ControlChangeOwned;
+use key_pressure::KeyPressureBorrowed;
+use key_pressure::KeyPressureBuilder;
+use key_pressure::KeyPressureMessage;
+use key_pressure::KeyPressureOwned;
+use note_off::NoteOffBorrowed;
+use note_off::NoteOffBuilder;
+use note_off::NoteOffMessage;
+use note_off::NoteOffOwned;
+use note_on::NoteOnBorrowed;
+use note_on::NoteOnBuilder;
+use note_on::NoteOnMessage;
+use note_on::NoteOnOwned;
+use pitch_bend::PitchBendBorrowed;
+use pitch_bend::PitchBendBuilder;
+use pitch_bend::PitchBendMessage;
+use pitch_bend::PitchBendOwned;
+use program_change::ProgramChangeBorrowed;
+use program_change::ProgramChangeBuilder;
+use program_change::ProgramChangeMessage;
+use program_change::ProgramChangeOwned;
 
-#[derive(derive_more::From, Clone, Debug, PartialEq, Eq)]
+#[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Clone, Debug, PartialEq, Eq)]
+pub enum Midi1ChannelVoiceMessage<'a> {
+    ChannelPressure(ChannelPressureMessage<'a>),
+    ControlChange(ControlChangeMessage<'a>),
+    KeyPressure(KeyPressureMessage<'a>),
+    NoteOff(NoteOffMessage<'a>),
+    NoteOn(NoteOnMessage<'a>),
+    PitchBend(PitchBendMessage<'a>),
+    ProgramChange(ProgramChangeMessage<'a>),
+}
+
+#[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Clone, Debug, PartialEq, Eq)]
 pub enum Midi1ChannelVoiceBorrowed<'a> {
     ChannelPressure(ChannelPressureBorrowed<'a>),
     ControlChange(ControlChangeBorrowed<'a>),
@@ -50,7 +61,7 @@ pub enum Midi1ChannelVoiceBorrowed<'a> {
     ProgramChange(ProgramChangeBorrowed<'a>),
 }
 
-#[derive(derive_more::From, Clone, Debug, PartialEq, Eq)]
+#[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Clone, Debug, PartialEq, Eq)]
 pub enum Midi1ChannelVoiceOwned {
     ChannelPressure(ChannelPressureOwned),
     ControlChange(ControlChangeOwned),
@@ -114,6 +125,12 @@ impl Midi1ChannelVoiceOwned {
     }
 }
 
+impl<'a> Midi1ChannelVoiceMessage<'a> {
+    pub fn builder() -> Midi1ChannelVoiceBuilder<Self> {
+        Midi1ChannelVoiceBuilder::new()
+    }
+}
+
 pub const CHANNEL_PRESSURE_CODE: u32 = 0b1101;
 pub const CONTROL_CHANGE_CODE: u32 = 0b1011;
 pub const KEY_PRESSURE_CODE: u32 = 0b1010;
@@ -121,66 +138,6 @@ pub const NOTE_OFF_CODE: u32 = 0b1000;
 pub const NOTE_ON_CODE: u32 = 0b1001;
 pub const PITCH_BEND_CODE: u32 = 0b1110;
 pub const PROGRAM_CHANGE_CODE: u32 = 0b1100;
-
-impl<'a> Data for Midi1ChannelVoiceBorrowed<'a> {
-    fn data(&self) -> &[u32] {
-        use Midi1ChannelVoiceBorrowed::*;
-        match self {
-            ChannelPressure(m) => m.data(),
-            ControlChange(m) => m.data(),
-            KeyPressure(m) => m.data(),
-            NoteOff(m) => m.data(),
-            NoteOn(m) => m.data(),
-            PitchBend(m) => m.data(),
-            ProgramChange(m) => m.data(),
-        }
-    }
-}
-
-impl Data for Midi1ChannelVoiceOwned {
-    fn data(&self) -> &[u32] {
-        use Midi1ChannelVoiceOwned::*;
-        match self {
-            ChannelPressure(m) => m.data(),
-            ControlChange(m) => m.data(),
-            KeyPressure(m) => m.data(),
-            NoteOff(m) => m.data(),
-            NoteOn(m) => m.data(),
-            PitchBend(m) => m.data(),
-            ProgramChange(m) => m.data(),
-        }
-    }
-}
-
-impl<'a> Grouped for Midi1ChannelVoiceBorrowed<'a> {
-    fn group(&self) -> u4 {
-        use Midi1ChannelVoiceBorrowed::*;
-        match self {
-            ChannelPressure(m) => m.group(),
-            ControlChange(m) => m.group(),
-            KeyPressure(m) => m.group(),
-            NoteOff(m) => m.group(),
-            NoteOn(m) => m.group(),
-            PitchBend(m) => m.group(),
-            ProgramChange(m) => m.group(),
-        }
-    }
-}
-
-impl Grouped for Midi1ChannelVoiceOwned {
-    fn group(&self) -> u4 {
-        use Midi1ChannelVoiceOwned::*;
-        match self {
-            ChannelPressure(m) => m.group(),
-            ControlChange(m) => m.group(),
-            KeyPressure(m) => m.group(),
-            NoteOff(m) => m.group(),
-            NoteOn(m) => m.group(),
-            PitchBend(m) => m.group(),
-            ProgramChange(m) => m.group(),
-        }
-    }
-}
 
 impl<'a> FromData<'a> for Midi1ChannelVoiceBorrowed<'a> {
     type Target = Self;
@@ -217,6 +174,48 @@ impl<'a> FromData<'a> for Midi1ChannelVoiceBorrowed<'a> {
     }
 }
 
+impl<'a> FromData<'a> for Midi1ChannelVoiceMessage<'a> {
+    type Target = Self;
+    fn validate_data(buffer: &'a [u32]) -> Result<()> {
+        Midi1ChannelVoiceBorrowed::validate_data(buffer)
+    }
+    fn from_data_unchecked(buffer: &'a [u32]) -> Self::Target {
+        Midi1ChannelVoiceBorrowed::from_data_unchecked(buffer).into()
+    }
+}
+
+impl<'a> core::convert::From<Midi1ChannelVoiceBorrowed<'a>> for Midi1ChannelVoiceMessage<'a> {
+    fn from(value: Midi1ChannelVoiceBorrowed<'a>) -> Self {
+        use Midi1ChannelVoiceBorrowed as B;
+        use Midi1ChannelVoiceMessage as M;
+        match value {
+            B::ChannelPressure(m) => M::ChannelPressure(m.into()),
+            B::ControlChange(m) => M::ControlChange(m.into()),
+            B::KeyPressure(m) => M::KeyPressure(m.into()),
+            B::NoteOff(m) => M::NoteOff(m.into()),
+            B::NoteOn(m) => M::NoteOn(m.into()),
+            B::PitchBend(m) => M::PitchBend(m.into()),
+            B::ProgramChange(m) => M::ProgramChange(m.into()),
+        }
+    }
+}
+
+impl<'a> core::convert::From<Midi1ChannelVoiceOwned> for Midi1ChannelVoiceMessage<'a> {
+    fn from(value: Midi1ChannelVoiceOwned) -> Self {
+        use Midi1ChannelVoiceMessage as M;
+        use Midi1ChannelVoiceOwned as O;
+        match value {
+            O::ChannelPressure(m) => M::ChannelPressure(m.into()),
+            O::ControlChange(m) => M::ControlChange(m.into()),
+            O::KeyPressure(m) => M::KeyPressure(m.into()),
+            O::NoteOff(m) => M::NoteOff(m.into()),
+            O::NoteOn(m) => M::NoteOn(m.into()),
+            O::PitchBend(m) => M::PitchBend(m.into()),
+            O::ProgramChange(m) => M::ProgramChange(m.into()),
+        }
+    }
+}
+
 impl<'a> ToOwned for Midi1ChannelVoiceBorrowed<'a> {
     type Owned = Midi1ChannelVoiceOwned;
     fn to_owned(self) -> Self::Owned {
@@ -233,3 +232,38 @@ impl<'a> ToOwned for Midi1ChannelVoiceBorrowed<'a> {
         }
     }
 }
+
+impl<'a> ToOwned for Midi1ChannelVoiceMessage<'a> {
+    type Owned = Midi1ChannelVoiceOwned;
+    fn to_owned(self) -> Self::Owned {
+        use Midi1ChannelVoiceMessage as M;
+        use Midi1ChannelVoiceOwned as O;
+        match self {
+            M::ChannelPressure(m) => O::ChannelPressure(m.to_owned()),
+            M::ControlChange(m) => O::ControlChange(m.to_owned()),
+            M::KeyPressure(m) => O::KeyPressure(m.to_owned()),
+            M::NoteOff(m) => O::NoteOff(m.to_owned()),
+            M::NoteOn(m) => O::NoteOn(m.to_owned()),
+            M::PitchBend(m) => O::PitchBend(m.to_owned()),
+            M::ProgramChange(m) => O::ProgramChange(m.to_owned()),
+        }
+    }
+}
+
+macro_rules! from_message_impl {
+    ($message: ty) => {
+        impl<'a> core::convert::From<$message> for Midi1ChannelVoiceMessage<'a> {
+            fn from(value: $message) -> Self {
+                <Midi1ChannelVoiceOwned as core::convert::From<$message>>::from(value).into()
+            }
+        }
+    };
+}
+
+from_message_impl!(ChannelPressureOwned);
+from_message_impl!(ControlChangeOwned);
+from_message_impl!(KeyPressureOwned);
+from_message_impl!(NoteOffOwned);
+from_message_impl!(NoteOnOwned);
+from_message_impl!(PitchBendOwned);
+from_message_impl!(ProgramChangeOwned);

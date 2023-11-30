@@ -106,11 +106,26 @@ pub struct Sysex8Borrowed<'a>(&'a [u32]);
 #[derive(Clone, PartialEq, Eq)]
 pub struct Sysex8Owned([u32; 4]);
 
+#[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Clone, Debug, PartialEq, Eq)]
+pub enum Sysex8Message<'a> {
+    Owned(Sysex8Owned),
+    Borrowed(Sysex8Borrowed<'a>),
+}
+
 impl<'a> ToOwned for Sysex8Borrowed<'a> {
     type Owned = Sysex8Owned;
     fn to_owned(self) -> Self::Owned {
         let mut buffer: [u32; 4] = Default::default();
         buffer[..].copy_from_slice(self.0);
+        Sysex8Owned(buffer)
+    }
+}
+
+impl<'a> ToOwned for Sysex8Message<'a> {
+    type Owned = Sysex8Owned;
+    fn to_owned(self) -> Sysex8Owned {
+        let mut buffer: [u32; 4] = Default::default();
+        buffer[..].copy_from_slice(self.data());
         Sysex8Owned(buffer)
     }
 }
@@ -188,6 +203,16 @@ impl<'a> FromData<'a> for Sysex8Borrowed<'a> {
         validate_data(buffer, status)?;
         validate_packet(buffer)?;
         Ok(())
+    }
+}
+
+impl<'a> FromData<'a> for Sysex8Message<'a> {
+    type Target = Self;
+    fn validate_data(buffer: &'a [u32]) -> Result<()> {
+        Sysex8Borrowed::validate_data(buffer)
+    }
+    fn from_data_unchecked(buffer: &'a [u32]) -> Self::Target {
+        Sysex8Borrowed::from_data_unchecked(buffer).into()
     }
 }
 

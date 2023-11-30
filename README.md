@@ -70,7 +70,7 @@ let message = Message::builder()
 
 assert_eq!(
     format!("{:?}", message),
-    "SystemCommon(SongSelect(SongSelectOwned(0x1AF34F00,0x00000000,0x00000000,0x00000000)))",
+    "SystemCommon(SongSelect(Owned(SongSelectOwned(0x1AF34F00,0x00000000,0x00000000,0x00000000))))",
 );
 ```
 

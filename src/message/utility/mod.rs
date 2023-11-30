@@ -3,14 +3,14 @@ use crate::{util::BitOps, *};
 pub mod no_op;
 pub mod time_stamp;
 
-pub use no_op::NoOpBorrowed;
-pub use no_op::NoOpBuilder;
-pub use no_op::NoOpMessage;
-pub use no_op::NoOpOwned;
-pub use time_stamp::TimeStampBorrowed;
-pub use time_stamp::TimeStampBuilder;
-pub use time_stamp::TimeStampMessage;
-pub use time_stamp::TimeStampOwned;
+use no_op::NoOpBorrowed;
+use no_op::NoOpBuilder;
+use no_op::NoOpMessage;
+use no_op::NoOpOwned;
+use time_stamp::TimeStampBorrowed;
+use time_stamp::TimeStampBuilder;
+use time_stamp::TimeStampMessage;
+use time_stamp::TimeStampOwned;
 
 #[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Clone, Debug, PartialEq, Eq)]
 #[non_exhaustive]
@@ -54,7 +54,13 @@ where
 }
 
 impl UtilityOwned {
-    pub fn builder() -> UtilityBuilder<UtilityOwned> {
+    pub fn builder() -> UtilityBuilder<Self> {
+        UtilityBuilder::new()
+    }
+}
+
+impl<'a> UtilityMessage<'a> {
+    pub fn builder() -> UtilityBuilder<Self> {
         UtilityBuilder::new()
     }
 }
@@ -81,6 +87,34 @@ impl<'a> FromData<'a> for UtilityBorrowed<'a> {
     }
 }
 
+impl<'a> FromData<'a> for UtilityMessage<'a> {
+    type Target = Self;
+    fn validate_data(buffer: &'a [u32]) -> Result<()> {
+        UtilityBorrowed::validate_data(buffer)
+    }
+    fn from_data_unchecked(buffer: &'a [u32]) -> Self::Target {
+        UtilityBorrowed::from_data_unchecked(buffer).into()
+    }
+}
+
+impl<'a> core::convert::From<UtilityBorrowed<'a>> for UtilityMessage<'a> {
+    fn from(value: UtilityBorrowed<'a>) -> Self {
+        match value {
+            UtilityBorrowed::NoOp(m) => UtilityMessage::NoOp(m.into()),
+            UtilityBorrowed::TimeStamp(m) => UtilityMessage::TimeStamp(m.into()),
+        }
+    }
+}
+
+impl<'a> core::convert::From<UtilityOwned> for UtilityMessage<'a> {
+    fn from(value: UtilityOwned) -> Self {
+        match value {
+            UtilityOwned::NoOp(m) => UtilityMessage::NoOp(m.into()),
+            UtilityOwned::TimeStamp(m) => UtilityMessage::TimeStamp(m.into()),
+        }
+    }
+}
+
 pub fn validate_packet(p: &[u32], op_code: u4) -> Result<()> {
     if p.is_empty() {
         Err(Error::BufferOverflow)
@@ -91,6 +125,19 @@ pub fn validate_packet(p: &[u32], op_code: u4) -> Result<()> {
     }
 }
 
+macro_rules! from_message_impl {
+    ($message: ty) => {
+        impl<'a> core::convert::From<$message> for UtilityMessage<'a> {
+            fn from(value: $message) -> Self {
+                <UtilityOwned as core::convert::From<$message>>::from(value).into()
+            }
+        }
+    };
+}
+
+from_message_impl!(NoOpOwned);
+from_message_impl!(TimeStampOwned);
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -99,12 +146,12 @@ mod tests {
     #[test]
     fn builder() {
         assert_eq!(
-            UtilityOwned::builder()
+            UtilityMessage::builder()
                 .time_stamp()
                 .time_stamp(u20::new(0x1))
                 .build(),
-            Ok(UtilityOwned::TimeStamp(
-                TimeStampOwned::builder()
+            Ok(UtilityMessage::TimeStamp(
+                TimeStampMessage::builder()
                     .time_stamp(u20::new(0x1))
                     .build()
                     .unwrap()
@@ -121,6 +168,18 @@ impl<'a> ToOwned for UtilityBorrowed<'a> {
         match self {
             B::NoOp(m) => O::NoOp(m.to_owned()),
             B::TimeStamp(m) => O::TimeStamp(m.to_owned()),
+        }
+    }
+}
+
+impl<'a> ToOwned for UtilityMessage<'a> {
+    type Owned = UtilityOwned;
+    fn to_owned(self) -> Self::Owned {
+        use UtilityMessage as M;
+        use UtilityOwned as O;
+        match self {
+            M::NoOp(m) => O::NoOp(m.to_owned()),
+            M::TimeStamp(m) => O::TimeStamp(m.to_owned()),
         }
     }
 }

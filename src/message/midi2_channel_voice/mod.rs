@@ -1,88 +1,107 @@
 use crate::{util::BitOps, *};
 
-mod assignable_controller;
-mod assignable_per_note_controller;
-mod attribute;
-mod channel_pitch_bend;
-mod channel_pressure;
-mod control_change;
-mod controller;
-mod key_pressure;
-mod note_off;
-mod note_on;
-mod per_note_management;
-mod per_note_pitch_bend;
-mod program_change;
-mod registered_controller;
-mod registered_per_note_controller;
-mod relative_assignable_controller;
-mod relative_registered_controller;
+pub mod assignable_controller;
+pub mod assignable_per_note_controller;
+pub mod attribute;
+pub mod channel_pitch_bend;
+pub mod channel_pressure;
+pub mod control_change;
+pub mod controller;
+pub mod key_pressure;
+pub mod note_off;
+pub mod note_on;
+pub mod per_note_management;
+pub mod per_note_pitch_bend;
+pub mod program_change;
+pub mod registered_controller;
+pub mod registered_per_note_controller;
+pub mod relative_assignable_controller;
+pub mod relative_registered_controller;
 
 pub use attribute::Attribute as NoteAttribute;
 pub use controller::Controller;
 
-pub use assignable_controller::AssignableController;
-pub use assignable_controller::AssignableControllerBorrowed;
-pub use assignable_controller::AssignableControllerBuilder;
-pub use assignable_controller::AssignableControllerOwned;
-pub use assignable_per_note_controller::AssignablePerNoteController;
-pub use assignable_per_note_controller::AssignablePerNoteControllerBorrowed;
-pub use assignable_per_note_controller::AssignablePerNoteControllerBuilder;
-pub use assignable_per_note_controller::AssignablePerNoteControllerOwned;
-pub use channel_pitch_bend::ChannelPitchBend;
-pub use channel_pitch_bend::ChannelPitchBendBorrowed;
-pub use channel_pitch_bend::ChannelPitchBendBuilder;
-pub use channel_pitch_bend::ChannelPitchBendOwned;
-pub use channel_pressure::ChannelPressure;
-pub use channel_pressure::ChannelPressureBorrowed;
-pub use channel_pressure::ChannelPressureBuilder;
-pub use channel_pressure::ChannelPressureOwned;
-pub use control_change::ControlChange;
-pub use control_change::ControlChangeBorrowed;
-pub use control_change::ControlChangeBuilder;
-pub use control_change::ControlChangeOwned;
-pub use key_pressure::KeyPressure;
-pub use key_pressure::KeyPressureBorrowed;
-pub use key_pressure::KeyPressureBuilder;
-pub use key_pressure::KeyPressureOwned;
-pub use note_off::NoteOff;
-pub use note_off::NoteOffBorrowed;
-pub use note_off::NoteOffBuilder;
-pub use note_off::NoteOffOwned;
-pub use note_on::NoteOn;
-pub use note_on::NoteOnBorrowed;
-pub use note_on::NoteOnBuilder;
-pub use note_on::NoteOnOwned;
-pub use per_note_management::PerNoteManagement;
-pub use per_note_management::PerNoteManagementBorrowed;
-pub use per_note_management::PerNoteManagementBuilder;
-pub use per_note_management::PerNoteManagementOwned;
-pub use per_note_pitch_bend::PerNotePitchBend;
-pub use per_note_pitch_bend::PerNotePitchBendBorrowed;
-pub use per_note_pitch_bend::PerNotePitchBendBuilder;
-pub use per_note_pitch_bend::PerNotePitchBendOwned;
-pub use program_change::ProgramChange;
-pub use program_change::ProgramChangeBorrowed;
-pub use program_change::ProgramChangeBuilder;
-pub use program_change::ProgramChangeOwned;
-pub use registered_controller::RegisteredController;
-pub use registered_controller::RegisteredControllerBorrowed;
-pub use registered_controller::RegisteredControllerBuilder;
-pub use registered_controller::RegisteredControllerOwned;
-pub use registered_per_note_controller::RegisteredPerNoteController;
-pub use registered_per_note_controller::RegisteredPerNoteControllerBorrowed;
-pub use registered_per_note_controller::RegisteredPerNoteControllerBuilder;
-pub use registered_per_note_controller::RegisteredPerNoteControllerOwned;
-pub use relative_assignable_controller::RelativeAssignableController;
-pub use relative_assignable_controller::RelativeAssignableControllerBorrowed;
-pub use relative_assignable_controller::RelativeAssignableControllerBuilder;
-pub use relative_assignable_controller::RelativeAssignableControllerOwned;
-pub use relative_registered_controller::RelativeRegisteredController;
-pub use relative_registered_controller::RelativeRegisteredControllerBorrowed;
-pub use relative_registered_controller::RelativeRegisteredControllerBuilder;
-pub use relative_registered_controller::RelativeRegisteredControllerOwned;
+use assignable_controller::AssignableControllerBorrowed;
+use assignable_controller::AssignableControllerBuilder;
+use assignable_controller::AssignableControllerMessage;
+use assignable_controller::AssignableControllerOwned;
+use assignable_per_note_controller::AssignablePerNoteControllerBorrowed;
+use assignable_per_note_controller::AssignablePerNoteControllerBuilder;
+use assignable_per_note_controller::AssignablePerNoteControllerMessage;
+use assignable_per_note_controller::AssignablePerNoteControllerOwned;
+use channel_pitch_bend::ChannelPitchBendBorrowed;
+use channel_pitch_bend::ChannelPitchBendBuilder;
+use channel_pitch_bend::ChannelPitchBendMessage;
+use channel_pitch_bend::ChannelPitchBendOwned;
+use channel_pressure::ChannelPressureBorrowed;
+use channel_pressure::ChannelPressureBuilder;
+use channel_pressure::ChannelPressureMessage;
+use channel_pressure::ChannelPressureOwned;
+use control_change::ControlChangeBorrowed;
+use control_change::ControlChangeBuilder;
+use control_change::ControlChangeMessage;
+use control_change::ControlChangeOwned;
+use key_pressure::KeyPressureBorrowed;
+use key_pressure::KeyPressureBuilder;
+use key_pressure::KeyPressureMessage;
+use key_pressure::KeyPressureOwned;
+use note_off::NoteOffBorrowed;
+use note_off::NoteOffBuilder;
+use note_off::NoteOffMessage;
+use note_off::NoteOffOwned;
+use note_on::NoteOnBorrowed;
+use note_on::NoteOnBuilder;
+use note_on::NoteOnMessage;
+use note_on::NoteOnOwned;
+use per_note_management::PerNoteManagementBorrowed;
+use per_note_management::PerNoteManagementBuilder;
+use per_note_management::PerNoteManagementMessage;
+use per_note_management::PerNoteManagementOwned;
+use per_note_pitch_bend::PerNotePitchBendBorrowed;
+use per_note_pitch_bend::PerNotePitchBendBuilder;
+use per_note_pitch_bend::PerNotePitchBendMessage;
+use per_note_pitch_bend::PerNotePitchBendOwned;
+use program_change::ProgramChangeBorrowed;
+use program_change::ProgramChangeBuilder;
+use program_change::ProgramChangeMessage;
+use program_change::ProgramChangeOwned;
+use registered_controller::RegisteredControllerBorrowed;
+use registered_controller::RegisteredControllerBuilder;
+use registered_controller::RegisteredControllerMessage;
+use registered_controller::RegisteredControllerOwned;
+use registered_per_note_controller::RegisteredPerNoteControllerBorrowed;
+use registered_per_note_controller::RegisteredPerNoteControllerBuilder;
+use registered_per_note_controller::RegisteredPerNoteControllerMessage;
+use registered_per_note_controller::RegisteredPerNoteControllerOwned;
+use relative_assignable_controller::RelativeAssignableControllerBorrowed;
+use relative_assignable_controller::RelativeAssignableControllerBuilder;
+use relative_assignable_controller::RelativeAssignableControllerMessage;
+use relative_assignable_controller::RelativeAssignableControllerOwned;
+use relative_registered_controller::RelativeRegisteredControllerBorrowed;
+use relative_registered_controller::RelativeRegisteredControllerBuilder;
+use relative_registered_controller::RelativeRegisteredControllerMessage;
+use relative_registered_controller::RelativeRegisteredControllerOwned;
 
-#[derive(derive_more::From, Clone, Debug, PartialEq, Eq)]
+#[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Clone, Debug, PartialEq, Eq)]
+pub enum Midi2ChannelVoiceMessage<'a> {
+    AssignableController(AssignableControllerMessage<'a>),
+    AssignablePerNoteController(AssignablePerNoteControllerMessage<'a>),
+    ChannelPitchBend(ChannelPitchBendMessage<'a>),
+    ChannelPressure(ChannelPressureMessage<'a>),
+    ControlChange(ControlChangeMessage<'a>),
+    KeyPressure(KeyPressureMessage<'a>),
+    NoteOff(NoteOffMessage<'a>),
+    NoteOn(NoteOnMessage<'a>),
+    PerNoteManagement(PerNoteManagementMessage<'a>),
+    PerNotePitchBend(PerNotePitchBendMessage<'a>),
+    ProgramChange(ProgramChangeMessage<'a>),
+    RegisteredController(RegisteredControllerMessage<'a>),
+    RegisteredPerNoteController(RegisteredPerNoteControllerMessage<'a>),
+    RelativeAssignableController(RelativeAssignableControllerMessage<'a>),
+    RelativeRegisteredController(RelativeRegisteredControllerMessage<'a>),
+}
+
+#[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Clone, Debug, PartialEq, Eq)]
 pub enum Midi2ChannelVoiceBorrowed<'a> {
     AssignableController(AssignableControllerBorrowed<'a>),
     AssignablePerNoteController(AssignablePerNoteControllerBorrowed<'a>),
@@ -101,7 +120,7 @@ pub enum Midi2ChannelVoiceBorrowed<'a> {
     RelativeRegisteredController(RelativeRegisteredControllerBorrowed<'a>),
 }
 
-#[derive(derive_more::From, Clone, Debug, PartialEq, Eq)]
+#[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Clone, Debug, PartialEq, Eq)]
 pub enum Midi2ChannelVoiceOwned {
     AssignableController(AssignableControllerOwned),
     AssignablePerNoteController(AssignablePerNoteControllerOwned),
@@ -178,8 +197,8 @@ where
     pub fn key_pressure(self) -> KeyPressureBuilder<M> {
         KeyPressureBuilder::new()
     }
-    pub fn note_off(self) -> NoteOnBuilder<M> {
-        NoteOnBuilder::new()
+    pub fn note_off(self) -> NoteOffBuilder<M> {
+        NoteOffBuilder::new()
     }
     pub fn note_on(self) -> NoteOnBuilder<M> {
         NoteOnBuilder::new()
@@ -213,6 +232,12 @@ impl Midi2ChannelVoiceOwned {
     }
 }
 
+impl<'a> Midi2ChannelVoiceMessage<'a> {
+    pub fn builder() -> Midi2ChannelVoiceBuilder<Self> {
+        Midi2ChannelVoiceBuilder::new()
+    }
+}
+
 const ASSIGNABLE_CONTROLLER_CODE: u8 = 0b0011;
 const ASSIGNABLE_PER_NOTE_CONTROLLER_CODE: u8 = 0b0001;
 const CHANNEL_PITCH_BEND_CODE: u8 = 0b1110;
@@ -228,98 +253,6 @@ const REGISTERED_CONTROLLER_CODE: u8 = 0b0010;
 const REGISTERED_PER_NOTE_CONTROLLER_CODE: u8 = 0b0000;
 const RELATIVE_ASSIGNABLE_CONTROLLER_CODE: u8 = 0b0101;
 const RELATIVE_REGISTERED_CONTROLLER_CODE: u8 = 0b0100;
-
-impl<'a> Data for Midi2ChannelVoiceBorrowed<'a> {
-    fn data(&self) -> &[u32] {
-        use Midi2ChannelVoiceBorrowed::*;
-        match self {
-            AssignableController(m) => m.data(),
-            AssignablePerNoteController(m) => m.data(),
-            ChannelPitchBend(m) => m.data(),
-            ChannelPressure(m) => m.data(),
-            ControlChange(m) => m.data(),
-            KeyPressure(m) => m.data(),
-            NoteOff(m) => m.data(),
-            NoteOn(m) => m.data(),
-            PerNoteManagement(m) => m.data(),
-            PerNotePitchBend(m) => m.data(),
-            ProgramChange(m) => m.data(),
-            RegisteredController(m) => m.data(),
-            RegisteredPerNoteController(m) => m.data(),
-            RelativeAssignableController(m) => m.data(),
-            RelativeRegisteredController(m) => m.data(),
-        }
-    }
-}
-
-impl Data for Midi2ChannelVoiceOwned {
-    fn data(&self) -> &[u32] {
-        use Midi2ChannelVoiceOwned::*;
-        match self {
-            AssignableController(m) => m.data(),
-            AssignablePerNoteController(m) => m.data(),
-            ChannelPitchBend(m) => m.data(),
-            ChannelPressure(m) => m.data(),
-            ControlChange(m) => m.data(),
-            KeyPressure(m) => m.data(),
-            NoteOff(m) => m.data(),
-            NoteOn(m) => m.data(),
-            PerNoteManagement(m) => m.data(),
-            PerNotePitchBend(m) => m.data(),
-            ProgramChange(m) => m.data(),
-            RegisteredController(m) => m.data(),
-            RegisteredPerNoteController(m) => m.data(),
-            RelativeAssignableController(m) => m.data(),
-            RelativeRegisteredController(m) => m.data(),
-        }
-    }
-}
-
-impl<'a> Grouped for Midi2ChannelVoiceBorrowed<'a> {
-    fn group(&self) -> u4 {
-        use Midi2ChannelVoiceBorrowed::*;
-        match self {
-            AssignableController(m) => m.group(),
-            AssignablePerNoteController(m) => m.group(),
-            ChannelPitchBend(m) => m.group(),
-            ChannelPressure(m) => m.group(),
-            ControlChange(m) => m.group(),
-            KeyPressure(m) => m.group(),
-            NoteOff(m) => m.group(),
-            NoteOn(m) => m.group(),
-            PerNoteManagement(m) => m.group(),
-            PerNotePitchBend(m) => m.group(),
-            ProgramChange(m) => m.group(),
-            RegisteredController(m) => m.group(),
-            RegisteredPerNoteController(m) => m.group(),
-            RelativeAssignableController(m) => m.group(),
-            RelativeRegisteredController(m) => m.group(),
-        }
-    }
-}
-
-impl Grouped for Midi2ChannelVoiceOwned {
-    fn group(&self) -> u4 {
-        use Midi2ChannelVoiceOwned::*;
-        match self {
-            AssignableController(m) => m.group(),
-            AssignablePerNoteController(m) => m.group(),
-            ChannelPitchBend(m) => m.group(),
-            ChannelPressure(m) => m.group(),
-            ControlChange(m) => m.group(),
-            KeyPressure(m) => m.group(),
-            NoteOff(m) => m.group(),
-            NoteOn(m) => m.group(),
-            PerNoteManagement(m) => m.group(),
-            PerNotePitchBend(m) => m.group(),
-            ProgramChange(m) => m.group(),
-            RegisteredController(m) => m.group(),
-            RegisteredPerNoteController(m) => m.group(),
-            RelativeAssignableController(m) => m.group(),
-            RelativeRegisteredController(m) => m.group(),
-        }
-    }
-}
 
 impl<'a> FromData<'a> for Midi2ChannelVoiceBorrowed<'a> {
     type Target = Self;
@@ -398,6 +331,16 @@ impl<'a> FromData<'a> for Midi2ChannelVoiceBorrowed<'a> {
     }
 }
 
+impl<'a> FromData<'a> for Midi2ChannelVoiceMessage<'a> {
+    type Target = Self;
+    fn validate_data(buffer: &'a [u32]) -> Result<()> {
+        Midi2ChannelVoiceBorrowed::validate_data(buffer)
+    }
+    fn from_data_unchecked(buffer: &'a [u32]) -> Self::Target {
+        Midi2ChannelVoiceBorrowed::from_data_unchecked(buffer).into()
+    }
+}
+
 impl<'a> ToOwned for Midi2ChannelVoiceBorrowed<'a> {
     type Owned = Midi2ChannelVoiceOwned;
     fn to_owned(self) -> Self::Owned {
@@ -422,3 +365,102 @@ impl<'a> ToOwned for Midi2ChannelVoiceBorrowed<'a> {
         }
     }
 }
+
+impl<'a> ToOwned for Midi2ChannelVoiceMessage<'a> {
+    type Owned = Midi2ChannelVoiceOwned;
+    fn to_owned(self) -> Self::Owned {
+        use Midi2ChannelVoiceMessage as M;
+        use Midi2ChannelVoiceOwned as O;
+        match self {
+            M::AssignableController(m) => O::AssignableController(m.to_owned()),
+            M::AssignablePerNoteController(m) => O::AssignablePerNoteController(m.to_owned()),
+            M::ChannelPitchBend(m) => O::ChannelPitchBend(m.to_owned()),
+            M::ChannelPressure(m) => O::ChannelPressure(m.to_owned()),
+            M::ControlChange(m) => O::ControlChange(m.to_owned()),
+            M::KeyPressure(m) => O::KeyPressure(m.to_owned()),
+            M::NoteOff(m) => O::NoteOff(m.to_owned()),
+            M::NoteOn(m) => O::NoteOn(m.to_owned()),
+            M::PerNoteManagement(m) => O::PerNoteManagement(m.to_owned()),
+            M::PerNotePitchBend(m) => O::PerNotePitchBend(m.to_owned()),
+            M::ProgramChange(m) => O::ProgramChange(m.to_owned()),
+            M::RegisteredController(m) => O::RegisteredController(m.to_owned()),
+            M::RegisteredPerNoteController(m) => O::RegisteredPerNoteController(m.to_owned()),
+            M::RelativeAssignableController(m) => O::RelativeAssignableController(m.to_owned()),
+            M::RelativeRegisteredController(m) => O::RelativeRegisteredController(m.to_owned()),
+        }
+    }
+}
+
+impl<'a> core::convert::From<Midi2ChannelVoiceBorrowed<'a>> for Midi2ChannelVoiceMessage<'a> {
+    fn from(value: Midi2ChannelVoiceBorrowed<'a>) -> Self {
+        use Midi2ChannelVoiceBorrowed as B;
+        use Midi2ChannelVoiceMessage as M;
+        match value {
+            B::AssignableController(m) => M::AssignableController(m.into()),
+            B::AssignablePerNoteController(m) => M::AssignablePerNoteController(m.into()),
+            B::ChannelPitchBend(m) => M::ChannelPitchBend(m.into()),
+            B::ChannelPressure(m) => M::ChannelPressure(m.into()),
+            B::ControlChange(m) => M::ControlChange(m.into()),
+            B::KeyPressure(m) => M::KeyPressure(m.into()),
+            B::NoteOff(m) => M::NoteOff(m.into()),
+            B::NoteOn(m) => M::NoteOn(m.into()),
+            B::PerNoteManagement(m) => M::PerNoteManagement(m.into()),
+            B::PerNotePitchBend(m) => M::PerNotePitchBend(m.into()),
+            B::ProgramChange(m) => M::ProgramChange(m.into()),
+            B::RegisteredController(m) => M::RegisteredController(m.into()),
+            B::RegisteredPerNoteController(m) => M::RegisteredPerNoteController(m.into()),
+            B::RelativeAssignableController(m) => M::RelativeAssignableController(m.into()),
+            B::RelativeRegisteredController(m) => M::RelativeRegisteredController(m.into()),
+        }
+    }
+}
+
+impl<'a> core::convert::From<Midi2ChannelVoiceOwned> for Midi2ChannelVoiceMessage<'a> {
+    fn from(value: Midi2ChannelVoiceOwned) -> Self {
+        use Midi2ChannelVoiceMessage as M;
+        use Midi2ChannelVoiceOwned as O;
+        match value {
+            O::AssignableController(m) => M::AssignableController(m.into()),
+            O::AssignablePerNoteController(m) => M::AssignablePerNoteController(m.into()),
+            O::ChannelPitchBend(m) => M::ChannelPitchBend(m.into()),
+            O::ChannelPressure(m) => M::ChannelPressure(m.into()),
+            O::ControlChange(m) => M::ControlChange(m.into()),
+            O::KeyPressure(m) => M::KeyPressure(m.into()),
+            O::NoteOff(m) => M::NoteOff(m.into()),
+            O::NoteOn(m) => M::NoteOn(m.into()),
+            O::PerNoteManagement(m) => M::PerNoteManagement(m.into()),
+            O::PerNotePitchBend(m) => M::PerNotePitchBend(m.into()),
+            O::ProgramChange(m) => M::ProgramChange(m.into()),
+            O::RegisteredController(m) => M::RegisteredController(m.into()),
+            O::RegisteredPerNoteController(m) => M::RegisteredPerNoteController(m.into()),
+            O::RelativeAssignableController(m) => M::RelativeAssignableController(m.into()),
+            O::RelativeRegisteredController(m) => M::RelativeRegisteredController(m.into()),
+        }
+    }
+}
+
+macro_rules! from_message_impl {
+    ($message: ty) => {
+        impl<'a> core::convert::From<$message> for Midi2ChannelVoiceMessage<'a> {
+            fn from(value: $message) -> Self {
+                <Midi2ChannelVoiceOwned as core::convert::From<$message>>::from(value).into()
+            }
+        }
+    };
+}
+
+from_message_impl!(AssignableControllerOwned);
+from_message_impl!(AssignablePerNoteControllerOwned);
+from_message_impl!(ChannelPitchBendOwned);
+from_message_impl!(ChannelPressureOwned);
+from_message_impl!(ControlChangeOwned);
+from_message_impl!(KeyPressureOwned);
+from_message_impl!(NoteOffOwned);
+from_message_impl!(NoteOnOwned);
+from_message_impl!(PerNoteManagementOwned);
+from_message_impl!(PerNotePitchBendOwned);
+from_message_impl!(ProgramChangeOwned);
+from_message_impl!(RegisteredControllerOwned);
+from_message_impl!(RegisteredPerNoteControllerOwned);
+from_message_impl!(RelativeAssignableControllerOwned);
+from_message_impl!(RelativeRegisteredControllerOwned);
