@@ -5,9 +5,9 @@ use syn::{
     parse_macro_input, parse_str,
     punctuated::Punctuated,
     token::{Colon, Comma, Gt, Lt, PathSep, Plus},
-    AngleBracketedGenericArguments, Field, Fields, GenericArgument, Ident, ItemStruct, Path,
-    PathArguments, PathSegment, TraitBound, TraitBoundModifier, Type, TypeParam, TypeParamBound,
-    TypePath,
+    AngleBracketedGenericArguments, Field, Fields, GenericArgument, Ident, ItemEnum, ItemStruct,
+    Path, PathArguments, PathSegment, TraitBound, TraitBoundModifier, Type, TypeParam,
+    TypeParamBound, TypePath,
 };
 
 struct Property {
@@ -972,6 +972,47 @@ pub fn generate_message(_attrs: TokenStream1, item: TokenStream1) -> TokenStream
         #grouped_message_trait_impl_borrowed_public
         #debug_impl_owned_public
         #debug_impl_borrowed_public
+    }
+    .into()
+}
+
+#[proc_macro_derive(Data)]
+pub fn derive_data(item: TokenStream1) -> TokenStream1 {
+    let input = parse_macro_input!(item as ItemEnum);
+    let ident = input.ident;
+    let mut match_arms = TokenStream::new();
+    for variant in input.variants {
+        let error = || panic!("Enum variants must each have one unamed field");
+        let syn::Fields::Unnamed(fields) = variant.fields else {
+            error()
+        };
+        let Some(field) = fields.unnamed.first() else {
+            error()
+        };
+        let _field_ty = &field.ty;
+        let variant_ident = &variant.ident;
+        match_arms.extend(quote! {
+            #variant_ident(m) => m.data(),
+        });
+    }
+    let lifetime_param = {
+        match input.generics.params.first() {
+            Some(syn::GenericParam::Lifetime(lifetime)) => {
+                quote! { #lifetime }
+            }
+            _ => TokenStream::new(),
+        }
+    };
+
+    quote! {
+        impl<#lifetime_param> Data for #ident<#lifetime_param> {
+            fn data(&self) -> &[u32] {
+                use #ident::*;
+                match self {
+                    #match_arms
+                }
+            }
+        }
     }
     .into()
 }

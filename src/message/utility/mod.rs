@@ -3,32 +3,30 @@ use crate::{util::BitOps, *};
 pub mod no_op;
 pub mod time_stamp;
 
-pub use no_op::NoOp;
 pub use no_op::NoOpBorrowed;
 pub use no_op::NoOpBuilder;
 pub use no_op::NoOpMessage;
 pub use no_op::NoOpOwned;
-pub use time_stamp::TimeStamp;
 pub use time_stamp::TimeStampBorrowed;
 pub use time_stamp::TimeStampBuilder;
 pub use time_stamp::TimeStampMessage;
 pub use time_stamp::TimeStampOwned;
 
-#[derive(derive_more::From, Clone, Debug, PartialEq, Eq)]
+#[derive(derive_more::From, midi2_attr::Data, Clone, Debug, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum UtilityMessage<'a> {
     NoOp(NoOpMessage<'a>),
     TimeStamp(TimeStampMessage<'a>),
 }
 
-#[derive(derive_more::From, Clone, Debug, PartialEq, Eq)]
+#[derive(derive_more::From, midi2_attr::Data, Clone, Debug, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum UtilityBorrowed<'a> {
     NoOp(NoOpBorrowed<'a>),
     TimeStamp(TimeStampBorrowed<'a>),
 }
 
-#[derive(derive_more::From, Clone, Debug, PartialEq, Eq)]
+#[derive(derive_more::From, midi2_attr::Data, Clone, Debug, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum UtilityOwned {
     NoOp(NoOpOwned),
@@ -63,26 +61,6 @@ impl UtilityOwned {
 
 const NO_OP_CODE: u8 = 0b0000;
 const TIME_STAMP_CODE: u8 = 0b0010;
-
-impl<'a> Data for UtilityBorrowed<'a> {
-    fn data(&self) -> &[u32] {
-        use UtilityBorrowed::*;
-        match self {
-            NoOp(m) => m.data(),
-            TimeStamp(m) => m.data(),
-        }
-    }
-}
-
-impl Data for UtilityOwned {
-    fn data(&self) -> &[u32] {
-        use UtilityOwned::*;
-        match self {
-            NoOp(m) => m.data(),
-            TimeStamp(m) => m.data(),
-        }
-    }
-}
 
 impl<'a> Grouped for UtilityBorrowed<'a> {
     fn group(&self) -> u4 {
