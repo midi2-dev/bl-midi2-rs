@@ -238,7 +238,7 @@ fn aggregate_message(root_ident: &Ident) -> TokenStream {
     let owned_ident = message_owned_ident_public(root_ident);
     let borrowed_ident = message_borrowed_ident_public(root_ident);
     quote! {
-        #[derive(derive_more::From, Clone, Debug, PartialEq, Eq)]
+        #[derive(derive_more::From, midi2_attr::Grouped, midi2_attr::Data, Clone, Debug, PartialEq, Eq)]
         pub enum #ident<'a> {
             Owned(#owned_ident),
             Borrowed(#borrowed_ident<'a>),
@@ -635,20 +635,6 @@ fn data_trait_impl_borrowed_public(root_ident: &Ident) -> TokenStream {
     }
 }
 
-fn data_trait_impl_aggregate(root_ident: &Ident) -> TokenStream {
-    let ident = aggregate_message_ident(root_ident);
-    quote! {
-        impl<'a> Data for #ident<'a> {
-            fn data(&self) -> &[u32] {
-                match self {
-                    Self::Owned(m) => m.data(),
-                    Self::Borrowed(m) => m.data(),
-                }
-            }
-        }
-    }
-}
-
 fn from_data_trait_impl(root_ident: &Ident, properties: &Vec<Property>) -> TokenStream {
     let message_ident = message_borrowed_ident(root_ident);
     let validation_steps = validation_steps(properties);
@@ -919,7 +905,6 @@ pub fn generate_message(_attrs: TokenStream1, item: TokenStream1) -> TokenStream
     let grouped_builder_impl_public = grouped_builder_impl_public(&root_ident);
     let data_trait_impl_owned_public = data_trait_impl_owned_public(&root_ident);
     let data_trait_impl_borrowed_public = data_trait_impl_borrowed_public(&root_ident);
-    let data_trait_impl_aggregate = data_trait_impl_aggregate(&root_ident);
     let from_data_trait_impl_public = from_data_trait_impl_public(&root_ident);
     let from_data_trait_impl_aggreagate = from_data_trait_impl_aggreagate(&root_ident);
     let grouped_message_trait_impl_owned_public =
@@ -965,7 +950,6 @@ pub fn generate_message(_attrs: TokenStream1, item: TokenStream1) -> TokenStream
         #grouped_builder_impl_public
         #data_trait_impl_owned_public
         #data_trait_impl_borrowed_public
-        #data_trait_impl_aggregate
         #from_data_trait_impl_public
         #from_data_trait_impl_aggreagate
         #grouped_message_trait_impl_owned_public
@@ -976,37 +960,66 @@ pub fn generate_message(_attrs: TokenStream1, item: TokenStream1) -> TokenStream
     .into()
 }
 
+fn _variant_type(variant: &syn::Variant) -> &Type {
+    let error = || panic!("Enum variants must each have one unamed field");
+    let syn::Fields::Unnamed(fields) = &variant.fields else {
+        error()
+    };
+    let Some(field) = fields.unnamed.first() else {
+        error()
+    };
+    &field.ty
+}
+
+fn enum_lifetime(item: &ItemEnum) -> TokenStream {
+    match item.generics.params.first() {
+        Some(syn::GenericParam::Lifetime(lifetime)) => {
+            quote! { #lifetime }
+        }
+        _ => TokenStream::new(),
+    }
+}
+
 #[proc_macro_derive(Data)]
 pub fn derive_data(item: TokenStream1) -> TokenStream1 {
     let input = parse_macro_input!(item as ItemEnum);
-    let ident = input.ident;
+    let ident = &input.ident;
     let mut match_arms = TokenStream::new();
-    for variant in input.variants {
-        let error = || panic!("Enum variants must each have one unamed field");
-        let syn::Fields::Unnamed(fields) = variant.fields else {
-            error()
-        };
-        let Some(field) = fields.unnamed.first() else {
-            error()
-        };
-        let _field_ty = &field.ty;
+    for variant in &input.variants {
         let variant_ident = &variant.ident;
         match_arms.extend(quote! {
             #variant_ident(m) => m.data(),
         });
     }
-    let lifetime_param = {
-        match input.generics.params.first() {
-            Some(syn::GenericParam::Lifetime(lifetime)) => {
-                quote! { #lifetime }
-            }
-            _ => TokenStream::new(),
-        }
-    };
-
+    let lifetime_param = enum_lifetime(&input);
     quote! {
         impl<#lifetime_param> Data for #ident<#lifetime_param> {
             fn data(&self) -> &[u32] {
+                use #ident::*;
+                match self {
+                    #match_arms
+                }
+            }
+        }
+    }
+    .into()
+}
+
+#[proc_macro_derive(Grouped)]
+pub fn derive_grouped(item: TokenStream1) -> TokenStream1 {
+    let input = parse_macro_input!(item as ItemEnum);
+    let ident = &input.ident;
+    let mut match_arms = TokenStream::new();
+    for variant in &input.variants {
+        let variant_ident = &variant.ident;
+        match_arms.extend(quote! {
+            #variant_ident(m) => m.group(),
+        });
+    }
+    let lifetime_param = enum_lifetime(&input);
+    quote! {
+        impl<#lifetime_param> Grouped for #ident<#lifetime_param> {
+            fn group(&self) -> u4 {
                 use #ident::*;
                 match self {
                     #match_arms

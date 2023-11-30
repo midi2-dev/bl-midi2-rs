@@ -12,21 +12,21 @@ pub use time_stamp::TimeStampBuilder;
 pub use time_stamp::TimeStampMessage;
 pub use time_stamp::TimeStampOwned;
 
-#[derive(derive_more::From, midi2_attr::Data, Clone, Debug, PartialEq, Eq)]
+#[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Clone, Debug, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum UtilityMessage<'a> {
     NoOp(NoOpMessage<'a>),
     TimeStamp(TimeStampMessage<'a>),
 }
 
-#[derive(derive_more::From, midi2_attr::Data, Clone, Debug, PartialEq, Eq)]
+#[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Clone, Debug, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum UtilityBorrowed<'a> {
     NoOp(NoOpBorrowed<'a>),
     TimeStamp(TimeStampBorrowed<'a>),
 }
 
-#[derive(derive_more::From, midi2_attr::Data, Clone, Debug, PartialEq, Eq)]
+#[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Clone, Debug, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum UtilityOwned {
     NoOp(NoOpOwned),
@@ -61,26 +61,6 @@ impl UtilityOwned {
 
 const NO_OP_CODE: u8 = 0b0000;
 const TIME_STAMP_CODE: u8 = 0b0010;
-
-impl<'a> Grouped for UtilityBorrowed<'a> {
-    fn group(&self) -> u4 {
-        use UtilityBorrowed::*;
-        match self {
-            NoOp(m) => m.group(),
-            TimeStamp(m) => m.group(),
-        }
-    }
-}
-
-impl Grouped for UtilityOwned {
-    fn group(&self) -> u4 {
-        use UtilityOwned::*;
-        match self {
-            NoOp(m) => m.group(),
-            TimeStamp(m) => m.group(),
-        }
-    }
-}
 
 impl<'a> FromData<'a> for UtilityBorrowed<'a> {
     type Target = Self;
