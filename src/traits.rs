@@ -8,8 +8,12 @@ pub trait ByteData {
     fn byte_data(&self) -> &[u8];
 }
 
-pub trait CopyByteData {
-    fn copy_byte_data<'a>(&self, buffer: &'a mut [u8]) -> &'a mut [u8];
+pub trait WriteByteData {
+    fn write_byte_data<'a>(&self, buffer: &'a mut [u8]) -> &'a mut [u8];
+}
+
+pub trait TryWriteByteData {
+    fn try_write_byte_data<'a>(&self, buffer: &'a mut [u8]) -> Result<&'a mut [u8]>;
 }
 
 pub trait FromData<'a>: Sized {

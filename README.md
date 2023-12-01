@@ -31,7 +31,7 @@ let message = Message::builder()
     .build()
     .unwrap();
 
-assert_eq!(message.data(), &[0x4D90_6000, 0x4B57_0000, 0x0, 0x0]);
+assert_eq!(message.data(), &[0x4D90_6000, 0x4B57_0000]);
 ```
 
 ## Borrowed & Owned Messages
@@ -44,12 +44,12 @@ and use the `Owned` type to make a message with an independent lifetime.
 use midi2::prelude::*;
 
 let owned = {
-    let buffer = [0x4405_6C07, 0xE1E3_5E92, 0x0, 0x0];
+    let buffer = [0x4405_6C07, 0xE1E3_5E92];
     let borrowed = Message::from_data(&buffer).unwrap();
     borrowed.into_owned()
 };
 
-assert_eq!(owned.data(), &[0x4405_6C07, 0xE1E3_5E92, 0x0, 0x0]);
+assert_eq!(owned.data(), &[0x4405_6C07, 0xE1E3_5E92]);
 ```
 
 ## Backwards Compatible
@@ -73,7 +73,21 @@ assert_eq!(
 );
 
 // data is converted to ump format
-assert_eq!(message.unwrap().data(), &[0x20AB_6033, 0x0, 0x0, 0x0]);
+assert_eq!(message.unwrap().data(), &[0x20AB_6033]);
+```
+
+Serialise ump messages back into Midi1 byte data.
+
+```rust
+use midi2::prelude::*;
+
+assert_eq!(
+    Message::from_data(&[0x20AB_6033])
+        .unwrap()
+        .try_write_byte_data(&mut [0x0; 3])
+        .unwrap(),
+    &[0xAB, 0x60, 0x33],
+);
 ```
 
 ## Pretty Printing
@@ -94,7 +108,7 @@ let message = Message::builder()
 
 assert_eq!(
     format!("{:?}", message),
-    "SystemCommon(SongSelect(Owned(SongSelectOwned(0x1AF34F00,0x00000000,0x00000000,0x00000000))))",
+    "SystemCommon(SongSelect(Owned(SongSelectOwned(0x1AF34F00))))",
 );
 ```
 

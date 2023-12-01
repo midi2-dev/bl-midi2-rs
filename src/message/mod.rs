@@ -261,6 +261,39 @@ impl<'a, 'b> FromByteData<'a> for Message<'b> {
     }
 }
 
+impl TryWriteByteData for MessageOwned {
+    fn try_write_byte_data<'a>(&self, buffer: &'a mut [u8]) -> Result<&'a mut [u8]> {
+        use MessageOwned::*;
+        match self {
+            Midi1ChannelVoice(m) => Ok(m.write_byte_data(buffer)),
+            SystemCommon(m) => Ok(m.write_byte_data(buffer)),
+            _ => Err(Error::InvalidData),
+        }
+    }
+}
+
+impl<'b> TryWriteByteData for MessageBorrowed<'b> {
+    fn try_write_byte_data<'a>(&self, buffer: &'a mut [u8]) -> Result<&'a mut [u8]> {
+        use MessageBorrowed::*;
+        match self {
+            Midi1ChannelVoice(m) => Ok(m.write_byte_data(buffer)),
+            SystemCommon(m) => Ok(m.write_byte_data(buffer)),
+            _ => Err(Error::InvalidData),
+        }
+    }
+}
+
+impl<'b> TryWriteByteData for Message<'b> {
+    fn try_write_byte_data<'a>(&self, buffer: &'a mut [u8]) -> Result<&'a mut [u8]> {
+        use Message::*;
+        match self {
+            Midi1ChannelVoice(m) => Ok(m.write_byte_data(buffer)),
+            SystemCommon(m) => Ok(m.write_byte_data(buffer)),
+            _ => Err(Error::InvalidData),
+        }
+    }
+}
+
 impl<'a> IntoOwned for MessageBorrowed<'a> {
     type Owned = MessageOwned;
     fn into_owned(self) -> Self::Owned {

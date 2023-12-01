@@ -39,7 +39,16 @@ use program_change::ProgramChangeBuilder;
 use program_change::ProgramChangeMessage;
 use program_change::ProgramChangeOwned;
 
-#[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Clone, Debug, PartialEq, Eq)]
+#[derive(
+    derive_more::From,
+    midi2_attr::Data,
+    midi2_attr::Grouped,
+    midi2_attr::WriteByteData,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
+)]
 pub enum Midi1ChannelVoiceMessage<'a> {
     ChannelPressure(ChannelPressureMessage<'a>),
     ControlChange(ControlChangeMessage<'a>),
@@ -50,7 +59,16 @@ pub enum Midi1ChannelVoiceMessage<'a> {
     ProgramChange(ProgramChangeMessage<'a>),
 }
 
-#[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Clone, Debug, PartialEq, Eq)]
+#[derive(
+    derive_more::From,
+    midi2_attr::Data,
+    midi2_attr::Grouped,
+    midi2_attr::WriteByteData,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
+)]
 pub enum Midi1ChannelVoiceBorrowed<'a> {
     ChannelPressure(ChannelPressureBorrowed<'a>),
     ControlChange(ControlChangeBorrowed<'a>),
@@ -61,7 +79,16 @@ pub enum Midi1ChannelVoiceBorrowed<'a> {
     ProgramChange(ProgramChangeBorrowed<'a>),
 }
 
-#[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Clone, Debug, PartialEq, Eq)]
+#[derive(
+    derive_more::From,
+    midi2_attr::Data,
+    midi2_attr::Grouped,
+    midi2_attr::WriteByteData,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
+)]
 pub enum Midi1ChannelVoiceOwned {
     ChannelPressure(ChannelPressureOwned),
     ControlChange(ControlChangeOwned),

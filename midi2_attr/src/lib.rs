@@ -93,6 +93,41 @@ fn aggregate_message_ident(root_ident: &Ident) -> Ident {
     Ident::new(&format!("{}Message", root_ident), Span::call_site())
 }
 
+fn is_not_zero_int_literal(arg: &GenericArgument) -> bool {
+    let GenericArgument::Const(syn::Expr::Lit(syn::ExprLit { lit, .. })) = arg else {
+        return false;
+    };
+    let syn::Lit::Int(int_lit) = lit else {
+        return false;
+    };
+    int_lit.base10_parse::<u32>().expect("valid int literal") != 0
+}
+
+fn deduce_message_size<Repr: Fn(&Property) -> &Type>(
+    properties: &Vec<Property>,
+    repr: Repr,
+) -> usize {
+    properties.iter().fold(0, |accum, prop| {
+        let Type::Path(TypePath { path, .. }) = repr(prop) else {
+            return accum;
+        };
+        let Some(PathSegment {
+            arguments: PathArguments::AngleBracketed(AngleBracketedGenericArguments { args, .. }),
+            ..
+        }) = path.segments.last()
+        else {
+            return accum;
+        };
+        let sz = args
+            .iter()
+            .rev()
+            .position(is_not_zero_int_literal)
+            .map(|v| 4 - v)
+            .unwrap_or(0);
+        core::cmp::max(accum, sz)
+    })
+}
+
 fn imports() -> TokenStream {
     quote! {
         use crate::{
@@ -158,7 +193,7 @@ fn aggregate_message(root_ident: &Ident) -> TokenStream {
     }
 }
 
-fn into_owned_impl_borrowed(root_ident: &Ident) -> TokenStream {
+fn into_owned_impl_borrowed(root_ident: &Ident, sz: usize) -> TokenStream {
     let ident = message_borrowed_ident(root_ident);
     let owned_ident = message_owned_ident(root_ident);
     quote! {
@@ -166,7 +201,7 @@ fn into_owned_impl_borrowed(root_ident: &Ident) -> TokenStream {
             type Owned = #owned_ident;
             fn into_owned(self) -> Self::Owned {
                 let mut data = [0x0_u32; 4];
-                data.copy_from_slice(self.0);
+                data[..#sz].copy_from_slice(self.0);
                 #owned_ident(data)
             }
         }
@@ -341,12 +376,12 @@ fn builder_impl_method(property: &Property, public: bool) -> TokenStream {
     }
 }
 
-fn data_trait_impl_owned(root_ident: &Ident) -> TokenStream {
+fn data_trait_impl_owned(root_ident: &Ident, sz: usize) -> TokenStream {
     let message_ident = message_owned_ident(root_ident);
     quote! {
         impl Data for #message_ident {
             fn data(&self) -> &[u32] {
-                &self.0[..]
+                &self.0[..#sz]
             }
         }
     }
@@ -363,18 +398,18 @@ fn data_trait_impl_borrowed(root_ident: &Ident) -> TokenStream {
     }
 }
 
-fn from_data_trait_impl(root_ident: &Ident, properties: &Vec<Property>) -> TokenStream {
+fn from_data_trait_impl(root_ident: &Ident, properties: &Vec<Property>, sz: usize) -> TokenStream {
     let message_ident = message_borrowed_ident(root_ident);
     let validation_steps = validation_steps(properties);
     quote! {
         impl<'a> FromData<'a> for #message_ident<'a> {
             type Target = Self;
             fn from_data_unchecked(data: &'a [u32]) -> Self {
-                #message_ident(data)
+                #message_ident(&data[..#sz])
             }
             fn validate_data(buffer: &'a [u32]) -> Result<()> {
                 #validation_steps
-                if buffer.len() != 4 {
+                if buffer.len() < #sz {
                     return Err(Error::InvalidData);
                 }
                 Ok(())
@@ -459,13 +494,13 @@ fn from_byte_data_impl_aggregate(root_ident: &Ident) -> TokenStream {
     }
 }
 
-fn copy_byte_data_impl(ident: &Ident, lifetime: bool, properties: &Vec<Property>) -> TokenStream {
+fn write_byte_data_impl(ident: &Ident, lifetime: bool, properties: &Vec<Property>) -> TokenStream {
     let mut write_const_data_steps = TokenStream::new();
     for prop in properties
         .iter()
         .filter(|p| p.constant && p.has_byte_scheme())
     {
-        write_const_data_steps.extend(copy_byte_data_write_const_data_step(prop));
+        write_const_data_steps.extend(write_byte_data_write_const_data_step(prop));
     }
 
     let mut convert_property_steps = TokenStream::new();
@@ -473,7 +508,7 @@ fn copy_byte_data_impl(ident: &Ident, lifetime: bool, properties: &Vec<Property>
         .iter()
         .filter(|p| p.has_ump_scheme() && p.has_byte_scheme())
     {
-        convert_property_steps.extend(copy_byte_data_convert_property_step(prop));
+        convert_property_steps.extend(write_byte_data_convert_property_step(prop));
     }
 
     let lifetime_generic = if lifetime {
@@ -483,8 +518,8 @@ fn copy_byte_data_impl(ident: &Ident, lifetime: bool, properties: &Vec<Property>
     };
 
     quote! {
-        impl<#lifetime_generic> CopyByteData for #ident<#lifetime_generic> {
-            fn copy_byte_data<'a>(&self, buffer: &'a mut [u8]) -> &'a mut [u8] {
+        impl<#lifetime_generic> WriteByteData for #ident<#lifetime_generic> {
+            fn write_byte_data<'a>(&self, buffer: &'a mut [u8]) -> &'a mut [u8] {
                 #write_const_data_steps
                 #convert_property_steps
                 buffer
@@ -502,7 +537,7 @@ fn from_byte_data_validation_step(prop: &Property) -> TokenStream {
     }
 }
 
-fn copy_byte_data_convert_property_step(prop: &Property) -> TokenStream {
+fn write_byte_data_convert_property_step(prop: &Property) -> TokenStream {
     let ty = &prop.ty;
     let ump_schema = &prop.ump_representation;
     let byte_schema = &prop.bytes_representation;
@@ -526,7 +561,7 @@ fn from_byte_data_convert_property_step(prop: &Property) -> TokenStream {
     }
 }
 
-fn copy_byte_data_write_const_data_step(prop: &Property) -> TokenStream {
+fn write_byte_data_write_const_data_step(prop: &Property) -> TokenStream {
     let ty = &prop.ty;
     let ump_schema = &prop.ump_representation;
     let byte_schema = &prop.bytes_representation;
@@ -592,13 +627,13 @@ fn grouped_message_trait_impl_borrowed(root_ident: &Ident) -> TokenStream {
     }
 }
 
-fn debug_impl_owned(root_ident: &Ident) -> TokenStream {
+fn debug_impl_owned(root_ident: &Ident, sz: usize) -> TokenStream {
     let message_ident = message_owned_ident(root_ident);
     quote! {
         impl core::fmt::Debug for #message_ident {
             fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
                 fmt.write_fmt(format_args!("{}(", stringify!(#message_ident)))?;
-                let mut iter = self.0.iter().peekable();
+                let mut iter = self.0[..#sz].iter().peekable();
                 while let Some(v) = iter.next() {
                     fmt.write_fmt(format_args!("{v:#010X}"))?;
                     if iter.peek().is_some() {
@@ -651,6 +686,9 @@ pub fn generate_message(_attrs: TokenStream1, item: TokenStream1) -> TokenStream
         ret
     };
 
+    let sz_ump = deduce_message_size(&properties, |p| &p.ump_representation);
+    // let sz_bytes = deduce_message_size(&properties, |p| &p.bytes_representation);
+
     let imports = imports();
     let specialised_message = specialised_message_trait(&root_ident, &properties);
 
@@ -663,16 +701,16 @@ pub fn generate_message(_attrs: TokenStream1, item: TokenStream1) -> TokenStream
     let builder = builder(&root_ident);
     let builder_impl = builder_impl(&root_ident, &properties);
     let grouped_builder_impl = grouped_builder_impl(&root_ident);
-    let data_trait_impl_owned = data_trait_impl_owned(&root_ident);
+    let data_trait_impl_owned = data_trait_impl_owned(&root_ident, sz_ump);
     let data_trait_impl_borrowed = data_trait_impl_borrowed(&root_ident);
-    let from_data_trait_impl = from_data_trait_impl(&root_ident, &properties);
+    let from_data_trait_impl = from_data_trait_impl(&root_ident, &properties, sz_ump);
     let grouped_message_trait_impl_owned = grouped_message_trait_impl_owned(&root_ident);
     let grouped_message_trait_impl_borrowed = grouped_message_trait_impl_borrowed(&root_ident);
-    let debug_impl_owned = debug_impl_owned(&root_ident);
+    let debug_impl_owned = debug_impl_owned(&root_ident, sz_ump);
     let debug_impl_borrowed = debug_impl_borrowed(&root_ident);
     let impl_aggregate_message = impl_aggregate_message(&root_ident);
     let aggregate_message = aggregate_message(&root_ident);
-    let into_owned_impl_borrowed = into_owned_impl_borrowed(&root_ident);
+    let into_owned_impl_borrowed = into_owned_impl_borrowed(&root_ident, sz_ump);
     let into_owned_impl_aggregate = into_owned_impl_aggregate(&root_ident);
     let specialised_message_trait_impl_aggregate =
         specialised_message_trait_impl_aggregate(&root_ident, &properties);
@@ -707,18 +745,18 @@ pub fn generate_message(_attrs: TokenStream1, item: TokenStream1) -> TokenStream
     if should_implement_from_byte_data(&properties) {
         let from_byte_data_impl_owned = from_byte_data_impl_owned(&root_ident, &properties);
         let from_byte_data_impl_aggregate = from_byte_data_impl_aggregate(&root_ident);
-        let copy_byte_data_borrowed =
-            copy_byte_data_impl(&message_borrowed_ident(&root_ident), true, &properties);
-        let copy_byte_data_owned =
-            copy_byte_data_impl(&message_owned_ident(&root_ident), false, &properties);
-        let copy_byte_data_aggregate =
-            copy_byte_data_impl(&aggregate_message_ident(&root_ident), true, &properties);
+        let write_byte_data_borrowed =
+            write_byte_data_impl(&message_borrowed_ident(&root_ident), true, &properties);
+        let write_byte_data_owned =
+            write_byte_data_impl(&message_owned_ident(&root_ident), false, &properties);
+        let write_byte_data_aggregate =
+            write_byte_data_impl(&aggregate_message_ident(&root_ident), true, &properties);
         ret.extend(quote! {
             #from_byte_data_impl_owned
             #from_byte_data_impl_aggregate
-            #copy_byte_data_borrowed
-            #copy_byte_data_owned
-            #copy_byte_data_aggregate
+            #write_byte_data_borrowed
+            #write_byte_data_owned
+            #write_byte_data_aggregate
         });
     }
 
@@ -774,6 +812,31 @@ pub fn derive_grouped(item: TokenStream1) -> TokenStream1 {
     quote! {
         impl<#lifetime_param> Grouped for #ident<#lifetime_param> {
             fn group(&self) -> u4 {
+                use #ident::*;
+                match self {
+                    #match_arms
+                }
+            }
+        }
+    }
+    .into()
+}
+
+#[proc_macro_derive(WriteByteData)]
+pub fn derive_write_byte_data(item: TokenStream1) -> TokenStream1 {
+    let input = parse_macro_input!(item as ItemEnum);
+    let ident = &input.ident;
+    let mut match_arms = TokenStream::new();
+    for variant in &input.variants {
+        let variant_ident = &variant.ident;
+        match_arms.extend(quote! {
+            #variant_ident(m) => m.write_byte_data(buffer),
+        });
+    }
+    let lifetime_param = enum_lifetime(&input);
+    quote! {
+        impl<#lifetime_param> WriteByteData for #ident<#lifetime_param> {
+            fn write_byte_data<'b>(&self, buffer: &'b mut [u8]) -> &'b mut [u8] {
                 use #ident::*;
                 match self {
                     #match_arms

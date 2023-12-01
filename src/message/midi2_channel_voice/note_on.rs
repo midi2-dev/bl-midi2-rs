@@ -114,6 +114,7 @@ mod tests {
             }),
         );
     }
+
     #[test]
     fn into_owned() {
         let _ = {

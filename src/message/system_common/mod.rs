@@ -160,7 +160,16 @@ use tune_request::TuneRequestBuilder;
 use tune_request::TuneRequestMessage;
 use tune_request::TuneRequestOwned;
 
-#[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Clone, Debug, PartialEq, Eq)]
+#[derive(
+    derive_more::From,
+    midi2_attr::Data,
+    midi2_attr::Grouped,
+    midi2_attr::WriteByteData,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
+)]
 #[non_exhaustive]
 pub enum SystemCommonMessage<'a> {
     ActiveSensing(ActiveSensingMessage<'a>),
@@ -175,7 +184,16 @@ pub enum SystemCommonMessage<'a> {
     TuneRequest(TuneRequestMessage<'a>),
 }
 
-#[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Clone, Debug, PartialEq, Eq)]
+#[derive(
+    derive_more::From,
+    midi2_attr::Data,
+    midi2_attr::Grouped,
+    midi2_attr::WriteByteData,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
+)]
 #[non_exhaustive]
 pub enum SystemCommonBorrowed<'a> {
     ActiveSensing(ActiveSensingBorrowed<'a>),
@@ -190,7 +208,16 @@ pub enum SystemCommonBorrowed<'a> {
     TuneRequest(TuneRequestBorrowed<'a>),
 }
 
-#[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Clone, Debug, PartialEq, Eq)]
+#[derive(
+    derive_more::From,
+    midi2_attr::Data,
+    midi2_attr::Grouped,
+    midi2_attr::WriteByteData,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
+)]
 #[non_exhaustive]
 pub enum SystemCommonOwned {
     ActiveSensing(ActiveSensingOwned),

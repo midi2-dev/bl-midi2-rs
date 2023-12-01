@@ -92,7 +92,7 @@ mod tests {
             RegisteredControllerMessage::from_data(&[0x4A2B_7D64, 0x46845E00, 0x0, 0x0])
                 .unwrap()
                 .data(),
-            &[0x4A2B_7D64, 0x46845E00, 0x0, 0x0],
+            &[0x4A2B_7D64, 0x46845E00],
         );
     }
 }
