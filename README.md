@@ -52,6 +52,30 @@ let owned = {
 assert_eq!(owned.data(), &[0x4405_6C07, 0xE1E3_5E92, 0x0, 0x0]);
 ```
 
+## Backwards Compatible
+
+Messages can be created from legacy Midi1 byte data.
+
+```rust
+use midi2::prelude::*;
+
+let message = Message::from_byte_data(&[0xAB, 0x60, 0x33]);
+
+assert_eq!(
+    message,
+    Message::builder()
+        .midi1_channel_voice()
+        .key_pressure()
+        .channel(u4::new(0xB))
+        .note(u7::new(0x60))
+        .pressure(u7::new(0x33))
+        .build(),
+);
+
+// data is converted to ump format
+assert_eq!(message.unwrap().data(), &[0x20AB_6033, 0x0, 0x0, 0x0]);
+```
+
 ## Pretty Printing
 
 Each message implements debug formatting so that the underlying 

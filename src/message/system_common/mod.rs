@@ -317,16 +317,27 @@ impl<'a> core::convert::From<SystemCommonOwned> for SystemCommonMessage<'a> {
     }
 }
 
-pub const ACTIVE_SENSING: u32 = 0xFE;
-pub const CONTINUE: u32 = 0xFB;
-pub const RESET: u32 = 0xFF;
-pub const SONG_POSITION_POINTER: u32 = 0xF2;
-pub const SONG_SELECT: u32 = 0xF3;
-pub const START: u32 = 0xFA;
-pub const STOP: u32 = 0xFC;
-pub const TIME_CODE: u32 = 0xF1;
-pub const TIMING_CLOCK: u32 = 0xF8;
-pub const TUNE_REQUEST: u32 = 0xF6;
+const ACTIVE_SENSING: u32 = 0xFE;
+const CONTINUE: u32 = 0xFB;
+const RESET: u32 = 0xFF;
+const SONG_POSITION_POINTER: u32 = 0xF2;
+const SONG_SELECT: u32 = 0xF3;
+const START: u32 = 0xFA;
+const STOP: u32 = 0xFC;
+const TIME_CODE: u32 = 0xF1;
+const TIMING_CLOCK: u32 = 0xF8;
+const TUNE_REQUEST: u32 = 0xF6;
+
+const ACTIVE_SENSING_U8: u8 = 0xFE;
+const CONTINUE_U8: u8 = 0xFB;
+const RESET_U8: u8 = 0xFF;
+const SONG_POSITION_POINTER_U8: u8 = 0xF2;
+const SONG_SELECT_U8: u8 = 0xF3;
+const START_U8: u8 = 0xFA;
+const STOP_U8: u8 = 0xFC;
+const TIME_CODE_U8: u8 = 0xF1;
+const TIMING_CLOCK_U8: u8 = 0xF8;
+const TUNE_REQUEST_U8: u8 = 0xF6;
 
 impl<'a> FromData<'a> for SystemCommonBorrowed<'a> {
     type Target = Self;
@@ -362,6 +373,58 @@ impl<'a> FromData<'a> for SystemCommonBorrowed<'a> {
             TUNE_REQUEST => TuneRequest(TuneRequestBorrowed::from_data_unchecked(data)),
             _ => panic!(),
         }
+    }
+}
+
+impl<'a> FromByteData<'a> for SystemCommonOwned {
+    type Target = Self;
+    fn from_byte_data_unchecked(buffer: &'a [u8]) -> Self::Target {
+        use SystemCommonOwned::*;
+        match buffer[0] {
+            ACTIVE_SENSING_U8 => {
+                ActiveSensing(ActiveSensingOwned::from_byte_data_unchecked(buffer))
+            }
+            CONTINUE_U8 => Continue(ContinueOwned::from_byte_data_unchecked(buffer)),
+            RESET_U8 => Reset(ResetOwned::from_byte_data_unchecked(buffer)),
+            SONG_POSITION_POINTER_U8 => {
+                SongPositionPointer(SongPositionPointerOwned::from_byte_data_unchecked(buffer))
+            }
+            SONG_SELECT_U8 => SongSelect(SongSelectOwned::from_byte_data_unchecked(buffer)),
+            START_U8 => Start(StartOwned::from_byte_data_unchecked(buffer)),
+            STOP_U8 => Stop(StopOwned::from_byte_data_unchecked(buffer)),
+            TIME_CODE_U8 => TimeCode(TimeCodeOwned::from_byte_data_unchecked(buffer)),
+            TIMING_CLOCK_U8 => TimingClock(TimingClockOwned::from_byte_data_unchecked(buffer)),
+            TUNE_REQUEST_U8 => TuneRequest(TuneRequestOwned::from_byte_data_unchecked(buffer)),
+            _ => panic!(),
+        }
+    }
+    fn validate_byte_data(buffer: &'a [u8]) -> Result<()> {
+        if buffer.len() < 3 {
+            return Err(Error::BufferOverflow);
+        }
+        match buffer[0] {
+            ACTIVE_SENSING_U8 => ActiveSensingOwned::validate_byte_data(buffer),
+            CONTINUE_U8 => ContinueOwned::validate_byte_data(buffer),
+            RESET_U8 => ResetOwned::validate_byte_data(buffer),
+            SONG_POSITION_POINTER_U8 => SongPositionPointerOwned::validate_byte_data(buffer),
+            SONG_SELECT_U8 => SongSelectOwned::validate_byte_data(buffer),
+            START_U8 => StartOwned::validate_byte_data(buffer),
+            STOP_U8 => StopOwned::validate_byte_data(buffer),
+            TIME_CODE_U8 => TimeCodeOwned::validate_byte_data(buffer),
+            TIMING_CLOCK_U8 => TimingClockOwned::validate_byte_data(buffer),
+            TUNE_REQUEST_U8 => TuneRequestOwned::validate_byte_data(buffer),
+            _ => Err(Error::InvalidData),
+        }
+    }
+}
+
+impl<'a, 'b> FromByteData<'a> for SystemCommonMessage<'b> {
+    type Target = Self;
+    fn validate_byte_data(buffer: &'a [u8]) -> Result<()> {
+        SystemCommonOwned::validate_byte_data(buffer)
+    }
+    fn from_byte_data_unchecked(buffer: &'a [u8]) -> Self::Target {
+        SystemCommonOwned::from_byte_data_unchecked(buffer).into()
     }
 }
 
@@ -454,6 +517,25 @@ mod tests {
                     .build()
                     .unwrap()
             )),
+        );
+    }
+
+    #[test]
+    fn from_byte_data() {
+        assert_eq!(
+            SystemCommonMessage::from_byte_data(&[0xF3, 0x4D, 0x0]),
+            SystemCommonMessage::builder()
+                .song_select()
+                .song(u7::new(0x4D))
+                .build(),
+        );
+    }
+
+    #[test]
+    fn from_byte_data_real_time() {
+        assert_eq!(
+            SystemCommonMessage::from_byte_data(&[0xFA, 0x0, 0x0]),
+            SystemCommonMessage::builder().start().build(),
         );
     }
 }

@@ -21,6 +21,13 @@ fn buffer_representation_type(generic_arg: &GenericArgument) -> Type {
     ty.clone()
 }
 
+fn is_unit_tuple(ty: &Type) -> bool {
+    match ty {
+        Type::Tuple(tup) => tup.elems.len() == 0,
+        _ => false,
+    }
+}
+
 impl Property {
     fn from_field(field: &Field) -> Option<Self> {
         let Some(name) = &field.ident else {
@@ -49,6 +56,14 @@ impl Property {
             ump_representation: buffer_representation_type(&args[1]),
             bytes_representation: buffer_representation_type(&args[2]),
         })
+    }
+
+    fn has_byte_scheme(&self) -> bool {
+        !is_unit_tuple(&self.bytes_representation)
+    }
+
+    fn has_ump_scheme(&self) -> bool {
+        !is_unit_tuple(&self.ump_representation)
     }
 }
 
@@ -384,6 +399,96 @@ fn from_data_trait_impl_aggreagate(root_ident: &Ident) -> TokenStream {
     }
 }
 
+fn from_byte_data_impl_owned(root_ident: &Ident, properties: &Vec<Property>) -> TokenStream {
+    let owned_ident = message_owned_ident(root_ident);
+
+    let mut validation_steps = TokenStream::new();
+    for prop in properties {
+        validation_steps.extend(from_byte_data_validation_step(prop));
+    }
+
+    let mut convert_property_steps = TokenStream::new();
+    for prop in properties
+        .iter()
+        .filter(|p| p.has_ump_scheme() && p.has_byte_scheme())
+    {
+        convert_property_steps.extend(from_byte_data_convert_property_step(prop));
+    }
+
+    let mut write_const_data_steps = TokenStream::new();
+    for prop in properties
+        .iter()
+        .filter(|p| p.constant && p.has_ump_scheme())
+    {
+        write_const_data_steps.extend(from_byte_data_write_const_data_step(prop));
+    }
+
+    quote! {
+        impl<'a> FromByteData<'a> for #owned_ident {
+            type Target = Self;
+            fn validate_byte_data(buffer: &'a [u8]) -> Result<()> {
+                if buffer.len() < 3 {
+                    return Err(Error::BufferOverflow);
+                }
+                #validation_steps
+                Ok(())
+            }
+            fn from_byte_data_unchecked(buffer: &'a [u8]) -> Self::Target {
+                let mut outbuffer = [0x0_u32; 4];
+                #write_const_data_steps
+                #convert_property_steps
+                Self(outbuffer)
+            }
+        }
+    }
+}
+
+fn from_byte_data_impl_aggregate(root_ident: &Ident) -> TokenStream {
+    let ident = aggregate_message_ident(root_ident);
+    let owned_ident = message_owned_ident(root_ident);
+    quote! {
+        impl<'a, 'b> FromByteData<'a> for #ident<'b> {
+            type Target = Self;
+            fn validate_byte_data(buffer: &'a [u8]) -> Result<()> {
+                #owned_ident::validate_byte_data(buffer)
+            }
+            fn from_byte_data_unchecked(buffer: &'a [u8]) -> Self::Target {
+                Self::Owned(#owned_ident::from_byte_data_unchecked(buffer))
+            }
+        }
+    }
+}
+
+fn from_byte_data_validation_step(prop: &Property) -> TokenStream {
+    let ty = &prop.ty;
+    let ump_schema = &prop.ump_representation;
+    let byte_schema = &prop.bytes_representation;
+    quote! {
+        <Bytes as Property<#ty, #ump_schema, #byte_schema>>::validate(buffer)?;
+    }
+}
+
+fn from_byte_data_convert_property_step(prop: &Property) -> TokenStream {
+    let ty = &prop.ty;
+    let ump_schema = &prop.ump_representation;
+    let byte_schema = &prop.bytes_representation;
+    quote! {
+        {
+            let v = <Bytes as Property<#ty, #ump_schema, #byte_schema>>::get(buffer);
+            <Ump as Property<#ty, #ump_schema, #byte_schema>>::write(&mut outbuffer, v);
+        }
+    }
+}
+
+fn from_byte_data_write_const_data_step(prop: &Property) -> TokenStream {
+    let ty = &prop.ty;
+    let ump_schema = &prop.ump_representation;
+    let byte_schema = &prop.bytes_representation;
+    quote! {
+        <Ump as Property<#ty, #ump_schema, #byte_schema>>::write(&mut outbuffer, Default::default());
+    }
+}
+
 fn validation_steps(properties: &Vec<Property>) -> TokenStream {
     let mut ret = TokenStream::new();
     for property in properties {
@@ -470,6 +575,10 @@ fn debug_impl_borrowed(root_ident: &Ident) -> TokenStream {
     }
 }
 
+fn should_implement_from_byte_data(properties: &Vec<Property>) -> bool {
+    properties.iter().any(|p| p.has_byte_scheme())
+}
+
 #[proc_macro_attribute]
 pub fn generate_message(_attrs: TokenStream1, item: TokenStream1) -> TokenStream1 {
     let input = parse_macro_input!(item as ItemStruct);
@@ -514,10 +623,9 @@ pub fn generate_message(_attrs: TokenStream1, item: TokenStream1) -> TokenStream
         specialised_message_trait_impl_aggregate(&root_ident, &properties);
     let from_data_trait_impl_aggreagate = from_data_trait_impl_aggreagate(&root_ident);
 
-    quote! {
+    let mut ret = quote! {
         #imports
         #specialised_message
-
         #message_owned
         #message_owned_impl
         #message_borrowed
@@ -539,8 +647,18 @@ pub fn generate_message(_attrs: TokenStream1, item: TokenStream1) -> TokenStream
         #into_owned_impl_borrowed
         #specialised_message_trait_impl_aggregate
         #from_data_trait_impl_aggreagate
+    };
+
+    if should_implement_from_byte_data(&properties) {
+        let from_byte_data_impl_owned = from_byte_data_impl_owned(&root_ident, &properties);
+        let from_byte_data_impl_aggregate = from_byte_data_impl_aggregate(&root_ident);
+        ret.extend(quote! {
+            #from_byte_data_impl_owned
+            #from_byte_data_impl_aggregate
+        });
     }
-    .into()
+
+    ret.into()
 }
 
 fn enum_lifetime(item: &ItemEnum) -> TokenStream {

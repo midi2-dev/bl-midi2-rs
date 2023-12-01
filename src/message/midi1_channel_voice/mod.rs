@@ -131,13 +131,21 @@ impl<'a> Midi1ChannelVoiceMessage<'a> {
     }
 }
 
-pub const CHANNEL_PRESSURE_CODE: u32 = 0b1101;
-pub const CONTROL_CHANGE_CODE: u32 = 0b1011;
-pub const KEY_PRESSURE_CODE: u32 = 0b1010;
-pub const NOTE_OFF_CODE: u32 = 0b1000;
-pub const NOTE_ON_CODE: u32 = 0b1001;
-pub const PITCH_BEND_CODE: u32 = 0b1110;
-pub const PROGRAM_CHANGE_CODE: u32 = 0b1100;
+const CHANNEL_PRESSURE_CODE: u32 = 0b1101;
+const CONTROL_CHANGE_CODE: u32 = 0b1011;
+const KEY_PRESSURE_CODE: u32 = 0b1010;
+const NOTE_OFF_CODE: u32 = 0b1000;
+const NOTE_ON_CODE: u32 = 0b1001;
+const PITCH_BEND_CODE: u32 = 0b1110;
+const PROGRAM_CHANGE_CODE: u32 = 0b1100;
+
+const CHANNEL_PRESSURE_CODE_U8: u8 = 0b1101;
+const CONTROL_CHANGE_CODE_U8: u8 = 0b1011;
+const KEY_PRESSURE_CODE_U8: u8 = 0b1010;
+const NOTE_OFF_CODE_U8: u8 = 0b1000;
+const NOTE_ON_CODE_U8: u8 = 0b1001;
+const PITCH_BEND_CODE_U8: u8 = 0b1110;
+const PROGRAM_CHANGE_CODE_U8: u8 = 0b1100;
 
 impl<'a> FromData<'a> for Midi1ChannelVoiceBorrowed<'a> {
     type Target = Self;
@@ -181,6 +189,54 @@ impl<'a> FromData<'a> for Midi1ChannelVoiceMessage<'a> {
     }
     fn from_data_unchecked(buffer: &'a [u32]) -> Self::Target {
         Midi1ChannelVoiceBorrowed::from_data_unchecked(buffer).into()
+    }
+}
+
+impl<'a> FromByteData<'a> for Midi1ChannelVoiceOwned {
+    type Target = Self;
+    fn from_byte_data_unchecked(buffer: &'a [u8]) -> Self::Target {
+        use Midi1ChannelVoiceOwned::*;
+        match u8::from(buffer[0].nibble(0)) {
+            CHANNEL_PRESSURE_CODE_U8 => {
+                ChannelPressure(ChannelPressureOwned::from_byte_data_unchecked(buffer))
+            }
+            CONTROL_CHANGE_CODE_U8 => {
+                ControlChange(ControlChangeOwned::from_byte_data_unchecked(buffer))
+            }
+            KEY_PRESSURE_CODE_U8 => KeyPressure(KeyPressureOwned::from_byte_data_unchecked(buffer)),
+            NOTE_OFF_CODE_U8 => NoteOff(NoteOffOwned::from_byte_data_unchecked(buffer)),
+            NOTE_ON_CODE_U8 => NoteOn(NoteOnOwned::from_byte_data_unchecked(buffer)),
+            PITCH_BEND_CODE_U8 => PitchBend(PitchBendOwned::from_byte_data_unchecked(buffer)),
+            PROGRAM_CHANGE_CODE_U8 => {
+                ProgramChange(ProgramChangeOwned::from_byte_data_unchecked(buffer))
+            }
+            _ => panic!(),
+        }
+    }
+    fn validate_byte_data(buffer: &'a [u8]) -> Result<()> {
+        if buffer.len() < 3 {
+            return Err(Error::BufferOverflow);
+        }
+        match u8::from(buffer[0].nibble(0)) {
+            CHANNEL_PRESSURE_CODE_U8 => ChannelPressureOwned::validate_byte_data(buffer),
+            CONTROL_CHANGE_CODE_U8 => ControlChangeOwned::validate_byte_data(buffer),
+            KEY_PRESSURE_CODE_U8 => KeyPressureOwned::validate_byte_data(buffer),
+            NOTE_OFF_CODE_U8 => NoteOffOwned::validate_byte_data(buffer),
+            NOTE_ON_CODE_U8 => NoteOnOwned::validate_byte_data(buffer),
+            PITCH_BEND_CODE_U8 => PitchBendOwned::validate_byte_data(buffer),
+            PROGRAM_CHANGE_CODE_U8 => ProgramChangeOwned::validate_byte_data(buffer),
+            _ => Err(Error::InvalidData),
+        }
+    }
+}
+
+impl<'a, 'b> FromByteData<'a> for Midi1ChannelVoiceMessage<'b> {
+    type Target = Self;
+    fn validate_byte_data(buffer: &'a [u8]) -> Result<()> {
+        Midi1ChannelVoiceOwned::validate_byte_data(buffer)
+    }
+    fn from_byte_data_unchecked(buffer: &'a [u8]) -> Self::Target {
+        Midi1ChannelVoiceOwned::from_byte_data_unchecked(buffer).into()
     }
 }
 

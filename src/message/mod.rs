@@ -226,6 +226,41 @@ impl<'a> FromData<'a> for Message<'a> {
     }
 }
 
+impl<'a> FromByteData<'a> for MessageOwned {
+    type Target = Self;
+    fn from_byte_data_unchecked(buffer: &'a [u8]) -> Self::Target {
+        use MessageOwned::*;
+        match buffer[0] {
+            0x80..=0xEF => {
+                Midi1ChannelVoice(Midi1ChannelVoiceOwned::from_byte_data_unchecked(buffer))
+            }
+            0xF1..=0xF6 => SystemCommon(SystemCommonOwned::from_byte_data_unchecked(buffer)),
+            0xF8..=0xFF => SystemCommon(SystemCommonOwned::from_byte_data_unchecked(buffer)),
+            0xF0 => todo!(), // sysex begin
+            0xF7 => todo!(), // sysex end
+            _ => panic!(),
+        }
+    }
+    fn validate_byte_data(buffer: &'a [u8]) -> Result<()> {
+        match buffer[0] {
+            0x80..=0xEF => Midi1ChannelVoiceOwned::validate_byte_data(buffer),
+            0xF1..=0xF6 => SystemCommonOwned::validate_byte_data(buffer),
+            0xF8..=0xFF => SystemCommonOwned::validate_byte_data(buffer),
+            _ => Err(Error::InvalidData),
+        }
+    }
+}
+
+impl<'a, 'b> FromByteData<'a> for Message<'b> {
+    type Target = Self;
+    fn from_byte_data_unchecked(buffer: &'a [u8]) -> Self::Target {
+        MessageOwned::from_byte_data_unchecked(buffer).into()
+    }
+    fn validate_byte_data(buffer: &'a [u8]) -> Result<()> {
+        MessageOwned::validate_byte_data(buffer)
+    }
+}
+
 impl<'a> IntoOwned for MessageBorrowed<'a> {
     type Owned = MessageOwned;
     fn into_owned(self) -> Self::Owned {
@@ -382,3 +417,22 @@ from_midi2_channel_voice_message_impl!(
 from_midi2_channel_voice_message_impl!(
     midi2_channel_voice::relative_registered_controller::RelativeRegisteredControllerOwned
 );
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn from_byte_data() {
+        assert_eq!(
+            Message::from_byte_data(&[0xAB, 0x60, 0x33]),
+            Message::builder()
+                .midi1_channel_voice()
+                .key_pressure()
+                .channel(u4::new(0xB))
+                .note(u7::new(0x60))
+                .pressure(u7::new(0x33))
+                .build(),
+        );
+    }
+}
