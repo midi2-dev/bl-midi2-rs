@@ -375,42 +375,42 @@ impl<'a> FromData<'a> for SystemCommonMessage<'a> {
     }
 }
 
-impl<'a> ToOwned for SystemCommonBorrowed<'a> {
+impl<'a> IntoOwned for SystemCommonBorrowed<'a> {
     type Owned = SystemCommonOwned;
-    fn to_owned(self) -> Self::Owned {
+    fn into_owned(self) -> Self::Owned {
         use SystemCommonBorrowed as B;
         use SystemCommonOwned as O;
         match self {
-            B::ActiveSensing(m) => O::ActiveSensing(m.to_owned()),
-            B::Continue(m) => O::Continue(m.to_owned()),
-            B::Reset(m) => O::Reset(m.to_owned()),
-            B::SongPositionPointer(m) => O::SongPositionPointer(m.to_owned()),
-            B::SongSelect(m) => O::SongSelect(m.to_owned()),
-            B::Start(m) => O::Start(m.to_owned()),
-            B::Stop(m) => O::Stop(m.to_owned()),
-            B::TimeCode(m) => O::TimeCode(m.to_owned()),
-            B::TimingClock(m) => O::TimingClock(m.to_owned()),
-            B::TuneRequest(m) => O::TuneRequest(m.to_owned()),
+            B::ActiveSensing(m) => O::ActiveSensing(m.into_owned()),
+            B::Continue(m) => O::Continue(m.into_owned()),
+            B::Reset(m) => O::Reset(m.into_owned()),
+            B::SongPositionPointer(m) => O::SongPositionPointer(m.into_owned()),
+            B::SongSelect(m) => O::SongSelect(m.into_owned()),
+            B::Start(m) => O::Start(m.into_owned()),
+            B::Stop(m) => O::Stop(m.into_owned()),
+            B::TimeCode(m) => O::TimeCode(m.into_owned()),
+            B::TimingClock(m) => O::TimingClock(m.into_owned()),
+            B::TuneRequest(m) => O::TuneRequest(m.into_owned()),
         }
     }
 }
 
-impl<'a> ToOwned for SystemCommonMessage<'a> {
+impl<'a> IntoOwned for SystemCommonMessage<'a> {
     type Owned = SystemCommonOwned;
-    fn to_owned(self) -> Self::Owned {
+    fn into_owned(self) -> Self::Owned {
         use SystemCommonMessage as M;
         use SystemCommonOwned as O;
         match self {
-            M::ActiveSensing(m) => O::ActiveSensing(m.to_owned()),
-            M::Continue(m) => O::Continue(m.to_owned()),
-            M::Reset(m) => O::Reset(m.to_owned()),
-            M::SongPositionPointer(m) => O::SongPositionPointer(m.to_owned()),
-            M::SongSelect(m) => O::SongSelect(m.to_owned()),
-            M::Start(m) => O::Start(m.to_owned()),
-            M::Stop(m) => O::Stop(m.to_owned()),
-            M::TimeCode(m) => O::TimeCode(m.to_owned()),
-            M::TimingClock(m) => O::TimingClock(m.to_owned()),
-            M::TuneRequest(m) => O::TuneRequest(m.to_owned()),
+            M::ActiveSensing(m) => O::ActiveSensing(m.into_owned()),
+            M::Continue(m) => O::Continue(m.into_owned()),
+            M::Reset(m) => O::Reset(m.into_owned()),
+            M::SongPositionPointer(m) => O::SongPositionPointer(m.into_owned()),
+            M::SongSelect(m) => O::SongSelect(m.into_owned()),
+            M::Start(m) => O::Start(m.into_owned()),
+            M::Stop(m) => O::Stop(m.into_owned()),
+            M::TimeCode(m) => O::TimeCode(m.into_owned()),
+            M::TimingClock(m) => O::TimingClock(m.into_owned()),
+            M::TuneRequest(m) => O::TuneRequest(m.into_owned()),
         }
     }
 }

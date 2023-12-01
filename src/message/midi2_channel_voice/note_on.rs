@@ -115,11 +115,11 @@ mod tests {
         );
     }
     #[test]
-    fn to_owned() {
+    fn into_owned() {
         let _ = {
             let buffer = [0x4898_5E03, 0x6A14_E98A, 0x0, 0x0];
             let borrowed = NoteOnMessage::from_data(&buffer).unwrap();
-            borrowed.to_owned();
+            borrowed.into_owned();
         };
     }
 }

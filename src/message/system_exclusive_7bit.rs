@@ -113,18 +113,18 @@ pub trait Sysex7 {
 debug::message_debug_impl!(Sysex7Borrowed);
 debug::message_debug_impl_owned!(Sysex7Owned);
 
-impl<'a> ToOwned for Sysex7Borrowed<'a> {
+impl<'a> IntoOwned for Sysex7Borrowed<'a> {
     type Owned = Sysex7Owned;
-    fn to_owned(self) -> Self::Owned {
+    fn into_owned(self) -> Self::Owned {
         let mut buffer: [u32; 4] = Default::default();
         buffer[..].copy_from_slice(self.0);
         Sysex7Owned(buffer)
     }
 }
 
-impl<'a> ToOwned for Sysex7Message<'a> {
+impl<'a> IntoOwned for Sysex7Message<'a> {
     type Owned = Sysex7Owned;
-    fn to_owned(self) -> Sysex7Owned {
+    fn into_owned(self) -> Sysex7Owned {
         let mut buffer: [u32; 4] = Default::default();
         buffer[..].copy_from_slice(self.data());
         Sysex7Owned(buffer)

@@ -32,9 +32,9 @@ pub trait FromByteData<'a>: Sized {
     }
 }
 
-pub trait ToOwned {
+pub trait IntoOwned {
     type Owned;
-    fn to_owned(self) -> Self::Owned;
+    fn into_owned(self) -> Self::Owned;
 }
 
 pub trait Grouped {

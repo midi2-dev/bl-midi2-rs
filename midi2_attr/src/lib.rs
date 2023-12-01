@@ -143,13 +143,13 @@ fn aggregate_message(root_ident: &Ident) -> TokenStream {
     }
 }
 
-fn to_owned_impl_borrowed(root_ident: &Ident) -> TokenStream {
+fn into_owned_impl_borrowed(root_ident: &Ident) -> TokenStream {
     let ident = message_borrowed_ident(root_ident);
     let owned_ident = message_owned_ident(root_ident);
     quote! {
-        impl<'a> ToOwned for #ident<'a> {
+        impl<'a> IntoOwned for #ident<'a> {
             type Owned = #owned_ident;
-            fn to_owned(self) -> Self::Owned {
+            fn into_owned(self) -> Self::Owned {
                 let mut data = [0x0_u32; 4];
                 data.copy_from_slice(self.0);
                 #owned_ident(data)
@@ -158,16 +158,16 @@ fn to_owned_impl_borrowed(root_ident: &Ident) -> TokenStream {
     }
 }
 
-fn to_owned_impl_aggregate(root_ident: &Ident) -> TokenStream {
+fn into_owned_impl_aggregate(root_ident: &Ident) -> TokenStream {
     let ident = aggregate_message_ident(root_ident);
     let owned_ident = message_owned_ident(root_ident);
     quote! {
-        impl<'a> ToOwned for #ident<'a> {
+        impl<'a> IntoOwned for #ident<'a> {
             type Owned = #owned_ident;
-            fn to_owned(self) -> #owned_ident {
+            fn into_owned(self) -> #owned_ident {
                 match self {
                     Self::Owned(m) => m,
-                    Self::Borrowed(m) => m.to_owned(),
+                    Self::Borrowed(m) => m.into_owned(),
                 }
             }
         }
@@ -508,8 +508,8 @@ pub fn generate_message(_attrs: TokenStream1, item: TokenStream1) -> TokenStream
     let debug_impl_borrowed = debug_impl_borrowed(&root_ident);
     let impl_aggregate_message = impl_aggregate_message(&root_ident);
     let aggregate_message = aggregate_message(&root_ident);
-    let to_owned_impl_borrowed = to_owned_impl_borrowed(&root_ident);
-    let to_owned_impl_aggregate = to_owned_impl_aggregate(&root_ident);
+    let into_owned_impl_borrowed = into_owned_impl_borrowed(&root_ident);
+    let into_owned_impl_aggregate = into_owned_impl_aggregate(&root_ident);
     let specialised_message_trait_impl_aggregate =
         specialised_message_trait_impl_aggregate(&root_ident, &properties);
     let from_data_trait_impl_aggreagate = from_data_trait_impl_aggreagate(&root_ident);
@@ -535,8 +535,8 @@ pub fn generate_message(_attrs: TokenStream1, item: TokenStream1) -> TokenStream
         #debug_impl_borrowed
         #impl_aggregate_message
         #aggregate_message
-        #to_owned_impl_aggregate
-        #to_owned_impl_borrowed
+        #into_owned_impl_aggregate
+        #into_owned_impl_borrowed
         #specialised_message_trait_impl_aggregate
         #from_data_trait_impl_aggreagate
     }

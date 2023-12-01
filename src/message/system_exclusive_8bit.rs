@@ -112,18 +112,18 @@ pub enum Sysex8Message<'a> {
     Borrowed(Sysex8Borrowed<'a>),
 }
 
-impl<'a> ToOwned for Sysex8Borrowed<'a> {
+impl<'a> IntoOwned for Sysex8Borrowed<'a> {
     type Owned = Sysex8Owned;
-    fn to_owned(self) -> Self::Owned {
+    fn into_owned(self) -> Self::Owned {
         let mut buffer: [u32; 4] = Default::default();
         buffer[..].copy_from_slice(self.0);
         Sysex8Owned(buffer)
     }
 }
 
-impl<'a> ToOwned for Sysex8Message<'a> {
+impl<'a> IntoOwned for Sysex8Message<'a> {
     type Owned = Sysex8Owned;
-    fn to_owned(self) -> Sysex8Owned {
+    fn into_owned(self) -> Sysex8Owned {
         let mut buffer: [u32; 4] = Default::default();
         buffer[..].copy_from_slice(self.data());
         Sysex8Owned(buffer)

@@ -160,26 +160,26 @@ mod tests {
     }
 }
 
-impl<'a> ToOwned for UtilityBorrowed<'a> {
+impl<'a> IntoOwned for UtilityBorrowed<'a> {
     type Owned = UtilityOwned;
-    fn to_owned(self) -> Self::Owned {
+    fn into_owned(self) -> Self::Owned {
         use UtilityBorrowed as B;
         use UtilityOwned as O;
         match self {
-            B::NoOp(m) => O::NoOp(m.to_owned()),
-            B::TimeStamp(m) => O::TimeStamp(m.to_owned()),
+            B::NoOp(m) => O::NoOp(m.into_owned()),
+            B::TimeStamp(m) => O::TimeStamp(m.into_owned()),
         }
     }
 }
 
-impl<'a> ToOwned for UtilityMessage<'a> {
+impl<'a> IntoOwned for UtilityMessage<'a> {
     type Owned = UtilityOwned;
-    fn to_owned(self) -> Self::Owned {
+    fn into_owned(self) -> Self::Owned {
         use UtilityMessage as M;
         use UtilityOwned as O;
         match self {
-            M::NoOp(m) => O::NoOp(m.to_owned()),
-            M::TimeStamp(m) => O::TimeStamp(m.to_owned()),
+            M::NoOp(m) => O::NoOp(m.into_owned()),
+            M::TimeStamp(m) => O::TimeStamp(m.into_owned()),
         }
     }
 }

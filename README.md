@@ -46,7 +46,7 @@ use midi2::prelude::*;
 let owned = {
     let buffer = [0x4405_6C07, 0xE1E3_5E92, 0x0, 0x0];
     let borrowed = Message::from_data(&buffer).unwrap();
-    borrowed.to_owned()
+    borrowed.into_owned()
 };
 
 assert_eq!(owned.data(), &[0x4405_6C07, 0xE1E3_5E92, 0x0, 0x0]);

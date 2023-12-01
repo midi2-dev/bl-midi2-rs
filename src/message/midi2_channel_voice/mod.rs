@@ -341,52 +341,52 @@ impl<'a> FromData<'a> for Midi2ChannelVoiceMessage<'a> {
     }
 }
 
-impl<'a> ToOwned for Midi2ChannelVoiceBorrowed<'a> {
+impl<'a> IntoOwned for Midi2ChannelVoiceBorrowed<'a> {
     type Owned = Midi2ChannelVoiceOwned;
-    fn to_owned(self) -> Self::Owned {
+    fn into_owned(self) -> Self::Owned {
         use Midi2ChannelVoiceBorrowed as B;
         use Midi2ChannelVoiceOwned as O;
         match self {
-            B::AssignableController(m) => O::AssignableController(m.to_owned()),
-            B::AssignablePerNoteController(m) => O::AssignablePerNoteController(m.to_owned()),
-            B::ChannelPitchBend(m) => O::ChannelPitchBend(m.to_owned()),
-            B::ChannelPressure(m) => O::ChannelPressure(m.to_owned()),
-            B::ControlChange(m) => O::ControlChange(m.to_owned()),
-            B::KeyPressure(m) => O::KeyPressure(m.to_owned()),
-            B::NoteOff(m) => O::NoteOff(m.to_owned()),
-            B::NoteOn(m) => O::NoteOn(m.to_owned()),
-            B::PerNoteManagement(m) => O::PerNoteManagement(m.to_owned()),
-            B::PerNotePitchBend(m) => O::PerNotePitchBend(m.to_owned()),
-            B::ProgramChange(m) => O::ProgramChange(m.to_owned()),
-            B::RegisteredController(m) => O::RegisteredController(m.to_owned()),
-            B::RegisteredPerNoteController(m) => O::RegisteredPerNoteController(m.to_owned()),
-            B::RelativeAssignableController(m) => O::RelativeAssignableController(m.to_owned()),
-            B::RelativeRegisteredController(m) => O::RelativeRegisteredController(m.to_owned()),
+            B::AssignableController(m) => O::AssignableController(m.into_owned()),
+            B::AssignablePerNoteController(m) => O::AssignablePerNoteController(m.into_owned()),
+            B::ChannelPitchBend(m) => O::ChannelPitchBend(m.into_owned()),
+            B::ChannelPressure(m) => O::ChannelPressure(m.into_owned()),
+            B::ControlChange(m) => O::ControlChange(m.into_owned()),
+            B::KeyPressure(m) => O::KeyPressure(m.into_owned()),
+            B::NoteOff(m) => O::NoteOff(m.into_owned()),
+            B::NoteOn(m) => O::NoteOn(m.into_owned()),
+            B::PerNoteManagement(m) => O::PerNoteManagement(m.into_owned()),
+            B::PerNotePitchBend(m) => O::PerNotePitchBend(m.into_owned()),
+            B::ProgramChange(m) => O::ProgramChange(m.into_owned()),
+            B::RegisteredController(m) => O::RegisteredController(m.into_owned()),
+            B::RegisteredPerNoteController(m) => O::RegisteredPerNoteController(m.into_owned()),
+            B::RelativeAssignableController(m) => O::RelativeAssignableController(m.into_owned()),
+            B::RelativeRegisteredController(m) => O::RelativeRegisteredController(m.into_owned()),
         }
     }
 }
 
-impl<'a> ToOwned for Midi2ChannelVoiceMessage<'a> {
+impl<'a> IntoOwned for Midi2ChannelVoiceMessage<'a> {
     type Owned = Midi2ChannelVoiceOwned;
-    fn to_owned(self) -> Self::Owned {
+    fn into_owned(self) -> Self::Owned {
         use Midi2ChannelVoiceMessage as M;
         use Midi2ChannelVoiceOwned as O;
         match self {
-            M::AssignableController(m) => O::AssignableController(m.to_owned()),
-            M::AssignablePerNoteController(m) => O::AssignablePerNoteController(m.to_owned()),
-            M::ChannelPitchBend(m) => O::ChannelPitchBend(m.to_owned()),
-            M::ChannelPressure(m) => O::ChannelPressure(m.to_owned()),
-            M::ControlChange(m) => O::ControlChange(m.to_owned()),
-            M::KeyPressure(m) => O::KeyPressure(m.to_owned()),
-            M::NoteOff(m) => O::NoteOff(m.to_owned()),
-            M::NoteOn(m) => O::NoteOn(m.to_owned()),
-            M::PerNoteManagement(m) => O::PerNoteManagement(m.to_owned()),
-            M::PerNotePitchBend(m) => O::PerNotePitchBend(m.to_owned()),
-            M::ProgramChange(m) => O::ProgramChange(m.to_owned()),
-            M::RegisteredController(m) => O::RegisteredController(m.to_owned()),
-            M::RegisteredPerNoteController(m) => O::RegisteredPerNoteController(m.to_owned()),
-            M::RelativeAssignableController(m) => O::RelativeAssignableController(m.to_owned()),
-            M::RelativeRegisteredController(m) => O::RelativeRegisteredController(m.to_owned()),
+            M::AssignableController(m) => O::AssignableController(m.into_owned()),
+            M::AssignablePerNoteController(m) => O::AssignablePerNoteController(m.into_owned()),
+            M::ChannelPitchBend(m) => O::ChannelPitchBend(m.into_owned()),
+            M::ChannelPressure(m) => O::ChannelPressure(m.into_owned()),
+            M::ControlChange(m) => O::ControlChange(m.into_owned()),
+            M::KeyPressure(m) => O::KeyPressure(m.into_owned()),
+            M::NoteOff(m) => O::NoteOff(m.into_owned()),
+            M::NoteOn(m) => O::NoteOn(m.into_owned()),
+            M::PerNoteManagement(m) => O::PerNoteManagement(m.into_owned()),
+            M::PerNotePitchBend(m) => O::PerNotePitchBend(m.into_owned()),
+            M::ProgramChange(m) => O::ProgramChange(m.into_owned()),
+            M::RegisteredController(m) => O::RegisteredController(m.into_owned()),
+            M::RegisteredPerNoteController(m) => O::RegisteredPerNoteController(m.into_owned()),
+            M::RelativeAssignableController(m) => O::RelativeAssignableController(m.into_owned()),
+            M::RelativeRegisteredController(m) => O::RelativeRegisteredController(m.into_owned()),
         }
     }
 }

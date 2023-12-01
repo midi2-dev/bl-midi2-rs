@@ -216,36 +216,36 @@ impl<'a> core::convert::From<Midi1ChannelVoiceOwned> for Midi1ChannelVoiceMessag
     }
 }
 
-impl<'a> ToOwned for Midi1ChannelVoiceBorrowed<'a> {
+impl<'a> IntoOwned for Midi1ChannelVoiceBorrowed<'a> {
     type Owned = Midi1ChannelVoiceOwned;
-    fn to_owned(self) -> Self::Owned {
+    fn into_owned(self) -> Self::Owned {
         use Midi1ChannelVoiceBorrowed as B;
         use Midi1ChannelVoiceOwned as O;
         match self {
-            B::ChannelPressure(m) => O::ChannelPressure(m.to_owned()),
-            B::ControlChange(m) => O::ControlChange(m.to_owned()),
-            B::KeyPressure(m) => O::KeyPressure(m.to_owned()),
-            B::NoteOff(m) => O::NoteOff(m.to_owned()),
-            B::NoteOn(m) => O::NoteOn(m.to_owned()),
-            B::PitchBend(m) => O::PitchBend(m.to_owned()),
-            B::ProgramChange(m) => O::ProgramChange(m.to_owned()),
+            B::ChannelPressure(m) => O::ChannelPressure(m.into_owned()),
+            B::ControlChange(m) => O::ControlChange(m.into_owned()),
+            B::KeyPressure(m) => O::KeyPressure(m.into_owned()),
+            B::NoteOff(m) => O::NoteOff(m.into_owned()),
+            B::NoteOn(m) => O::NoteOn(m.into_owned()),
+            B::PitchBend(m) => O::PitchBend(m.into_owned()),
+            B::ProgramChange(m) => O::ProgramChange(m.into_owned()),
         }
     }
 }
 
-impl<'a> ToOwned for Midi1ChannelVoiceMessage<'a> {
+impl<'a> IntoOwned for Midi1ChannelVoiceMessage<'a> {
     type Owned = Midi1ChannelVoiceOwned;
-    fn to_owned(self) -> Self::Owned {
+    fn into_owned(self) -> Self::Owned {
         use Midi1ChannelVoiceMessage as M;
         use Midi1ChannelVoiceOwned as O;
         match self {
-            M::ChannelPressure(m) => O::ChannelPressure(m.to_owned()),
-            M::ControlChange(m) => O::ControlChange(m.to_owned()),
-            M::KeyPressure(m) => O::KeyPressure(m.to_owned()),
-            M::NoteOff(m) => O::NoteOff(m.to_owned()),
-            M::NoteOn(m) => O::NoteOn(m.to_owned()),
-            M::PitchBend(m) => O::PitchBend(m.to_owned()),
-            M::ProgramChange(m) => O::ProgramChange(m.to_owned()),
+            M::ChannelPressure(m) => O::ChannelPressure(m.into_owned()),
+            M::ControlChange(m) => O::ControlChange(m.into_owned()),
+            M::KeyPressure(m) => O::KeyPressure(m.into_owned()),
+            M::NoteOff(m) => O::NoteOff(m.into_owned()),
+            M::NoteOn(m) => O::NoteOn(m.into_owned()),
+            M::PitchBend(m) => O::PitchBend(m.into_owned()),
+            M::ProgramChange(m) => O::ProgramChange(m.into_owned()),
         }
     }
 }

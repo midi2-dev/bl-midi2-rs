@@ -226,34 +226,34 @@ impl<'a> FromData<'a> for Message<'a> {
     }
 }
 
-impl<'a> ToOwned for MessageBorrowed<'a> {
+impl<'a> IntoOwned for MessageBorrowed<'a> {
     type Owned = MessageOwned;
-    fn to_owned(self) -> Self::Owned {
+    fn into_owned(self) -> Self::Owned {
         use MessageBorrowed as B;
         use MessageOwned as O;
         match self {
-            B::Midi1ChannelVoice(m) => O::Midi1ChannelVoice(m.to_owned()),
-            B::Midi2ChannelVoice(m) => O::Midi2ChannelVoice(m.to_owned()),
-            B::Sysex7(m) => O::Sysex7(m.to_owned()),
-            B::Sysex8(m) => O::Sysex8(m.to_owned()),
-            B::Utility(m) => O::Utility(m.to_owned()),
-            B::SystemCommon(m) => O::SystemCommon(m.to_owned()),
+            B::Midi1ChannelVoice(m) => O::Midi1ChannelVoice(m.into_owned()),
+            B::Midi2ChannelVoice(m) => O::Midi2ChannelVoice(m.into_owned()),
+            B::Sysex7(m) => O::Sysex7(m.into_owned()),
+            B::Sysex8(m) => O::Sysex8(m.into_owned()),
+            B::Utility(m) => O::Utility(m.into_owned()),
+            B::SystemCommon(m) => O::SystemCommon(m.into_owned()),
         }
     }
 }
 
-impl<'a> ToOwned for Message<'a> {
+impl<'a> IntoOwned for Message<'a> {
     type Owned = MessageOwned;
-    fn to_owned(self) -> Self::Owned {
+    fn into_owned(self) -> Self::Owned {
         use Message as M;
         use MessageOwned as O;
         match self {
-            M::Midi1ChannelVoice(m) => O::Midi1ChannelVoice(m.to_owned()),
-            M::Midi2ChannelVoice(m) => O::Midi2ChannelVoice(m.to_owned()),
-            M::Sysex7(m) => O::Sysex7(m.to_owned()),
-            M::Sysex8(m) => O::Sysex8(m.to_owned()),
-            M::Utility(m) => O::Utility(m.to_owned()),
-            M::SystemCommon(m) => O::SystemCommon(m.to_owned()),
+            M::Midi1ChannelVoice(m) => O::Midi1ChannelVoice(m.into_owned()),
+            M::Midi2ChannelVoice(m) => O::Midi2ChannelVoice(m.into_owned()),
+            M::Sysex7(m) => O::Sysex7(m.into_owned()),
+            M::Sysex8(m) => O::Sysex8(m.into_owned()),
+            M::Utility(m) => O::Utility(m.into_owned()),
+            M::SystemCommon(m) => O::SystemCommon(m.into_owned()),
         }
     }
 }
