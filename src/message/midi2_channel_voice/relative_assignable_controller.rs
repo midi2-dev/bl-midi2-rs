@@ -18,38 +18,30 @@ struct RelativeAssignableController {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use generic_array::arr;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn builder() {
         assert_eq!(
-            RelativeAssignableControllerOwnedPrivate::builder()
+            RelativeAssignableControllerMessage::builder()
                 .group(u4::new(0x3))
                 .channel(u4::new(0x1))
                 .bank(u7::new(0x24))
                 .index(u7::new(0x52))
                 .controller_data(0x898874E4)
                 .build(),
-            Ok(RelativeAssignableControllerOwnedPrivate(arr![
-                0x4351_2452,
-                0x898874E4,
-                0x0,
-                0x0,
-            ])),
+            Ok(RelativeAssignableControllerMessage::Owned(
+                RelativeAssignableControllerOwned([0x4351_2452, 0x898874E4, 0x0, 0x0,])
+            )),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            RelativeAssignableControllerBorrowedPrivate::<Ump>::from_data(&[
-                0x4351_2452,
-                0x898874E4,
-                0x0,
-                0x0
-            ])
-            .unwrap()
-            .group(),
+            RelativeAssignableControllerMessage::from_data(&[0x4351_2452, 0x898874E4, 0x0, 0x0])
+                .unwrap()
+                .group(),
             u4::new(0x3),
         );
     }
@@ -57,14 +49,9 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            RelativeAssignableControllerBorrowedPrivate::<Ump>::from_data(&[
-                0x4351_2452,
-                0x898874E4,
-                0x0,
-                0x0
-            ])
-            .unwrap()
-            .channel(),
+            RelativeAssignableControllerMessage::from_data(&[0x4351_2452, 0x898874E4, 0x0, 0x0])
+                .unwrap()
+                .channel(),
             u4::new(0x1),
         );
     }
@@ -72,14 +59,9 @@ mod tests {
     #[test]
     pub fn bank() {
         assert_eq!(
-            RelativeAssignableControllerBorrowedPrivate::<Ump>::from_data(&[
-                0x4351_2452,
-                0x898874E4,
-                0x0,
-                0x0
-            ])
-            .unwrap()
-            .bank(),
+            RelativeAssignableControllerMessage::from_data(&[0x4351_2452, 0x898874E4, 0x0, 0x0])
+                .unwrap()
+                .bank(),
             u7::new(0x24),
         );
     }
@@ -87,14 +69,9 @@ mod tests {
     #[test]
     pub fn index() {
         assert_eq!(
-            RelativeAssignableControllerBorrowedPrivate::<Ump>::from_data(&[
-                0x4351_2452,
-                0x898874E4,
-                0x0,
-                0x0
-            ])
-            .unwrap()
-            .index(),
+            RelativeAssignableControllerMessage::from_data(&[0x4351_2452, 0x898874E4, 0x0, 0x0])
+                .unwrap()
+                .index(),
             u7::new(0x52),
         );
     }
@@ -102,14 +79,9 @@ mod tests {
     #[test]
     pub fn controller_data() {
         assert_eq!(
-            RelativeAssignableControllerBorrowedPrivate::<Ump>::from_data(&[
-                0x4351_2452,
-                0x898874E4,
-                0x0,
-                0x0
-            ])
-            .unwrap()
-            .controller_data(),
+            RelativeAssignableControllerMessage::from_data(&[0x4351_2452, 0x898874E4, 0x0, 0x0])
+                .unwrap()
+                .controller_data(),
             0x898874E4,
         );
     }

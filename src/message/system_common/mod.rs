@@ -2,18 +2,122 @@ use crate::{util::BitOps, *};
 
 pub const TYPE_CODE: u32 = 0x1;
 
-pub mod simple_generic;
 pub mod song_position_pointer;
 pub mod song_select;
 pub mod time_code;
 
-pub use simple_generic::active_sensing;
-pub use simple_generic::cont;
-pub use simple_generic::reset;
-pub use simple_generic::start;
-pub use simple_generic::stop;
-pub use simple_generic::timing_clock;
-pub use simple_generic::tune_request;
+pub mod tune_request {
+    use crate::message::system_common::TYPE_CODE as SYSTEM_COMMON_TYPE_CODE;
+    #[midi2_attr::generate_message]
+    struct TuneRequest {
+        ump_type: Property<
+            NumericalConstant<SYSTEM_COMMON_TYPE_CODE>,
+            UmpSchema<0xF000_0000, 0x0, 0x0, 0x0>,
+            (),
+        >,
+        status: Property<
+            NumericalConstant<0xF6>,
+            UmpSchema<0x00FF_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xFF, 0x0, 0x0>,
+        >,
+    }
+}
+pub mod timing_clock {
+    use crate::message::system_common::TYPE_CODE as SYSTEM_COMMON_TYPE_CODE;
+    #[midi2_attr::generate_message]
+    struct TimingClock {
+        ump_type: Property<
+            NumericalConstant<SYSTEM_COMMON_TYPE_CODE>,
+            UmpSchema<0xF000_0000, 0x0, 0x0, 0x0>,
+            (),
+        >,
+        status: Property<
+            NumericalConstant<0xF8>,
+            UmpSchema<0x00FF_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xFF, 0x0, 0x0>,
+        >,
+    }
+}
+pub mod start {
+    use crate::message::system_common::TYPE_CODE as SYSTEM_COMMON_TYPE_CODE;
+    #[midi2_attr::generate_message]
+    struct Start {
+        ump_type: Property<
+            NumericalConstant<SYSTEM_COMMON_TYPE_CODE>,
+            UmpSchema<0xF000_0000, 0x0, 0x0, 0x0>,
+            (),
+        >,
+        status: Property<
+            NumericalConstant<0xFA>,
+            UmpSchema<0x00FF_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xFF, 0x0, 0x0>,
+        >,
+    }
+}
+pub mod cont {
+    use crate::message::system_common::TYPE_CODE as SYSTEM_COMMON_TYPE_CODE;
+    #[midi2_attr::generate_message]
+    struct Continue {
+        ump_type: Property<
+            NumericalConstant<SYSTEM_COMMON_TYPE_CODE>,
+            UmpSchema<0xF000_0000, 0x0, 0x0, 0x0>,
+            (),
+        >,
+        status: Property<
+            NumericalConstant<0xFB>,
+            UmpSchema<0x00FF_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xFF, 0x0, 0x0>,
+        >,
+    }
+}
+pub mod stop {
+    use crate::message::system_common::TYPE_CODE as SYSTEM_COMMON_TYPE_CODE;
+    #[midi2_attr::generate_message]
+    struct Stop {
+        ump_type: Property<
+            NumericalConstant<SYSTEM_COMMON_TYPE_CODE>,
+            UmpSchema<0xF000_0000, 0x0, 0x0, 0x0>,
+            (),
+        >,
+        status: Property<
+            NumericalConstant<0xFC>,
+            UmpSchema<0x00FF_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xFF, 0x0, 0x0>,
+        >,
+    }
+}
+pub mod active_sensing {
+    use crate::message::system_common::TYPE_CODE as SYSTEM_COMMON_TYPE_CODE;
+    #[midi2_attr::generate_message]
+    struct ActiveSensing {
+        ump_type: Property<
+            NumericalConstant<SYSTEM_COMMON_TYPE_CODE>,
+            UmpSchema<0xF000_0000, 0x0, 0x0, 0x0>,
+            (),
+        >,
+        status: Property<
+            NumericalConstant<0xFE>,
+            UmpSchema<0x00FF_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xFF, 0x0, 0x0>,
+        >,
+    }
+}
+pub mod reset {
+    use crate::message::system_common::TYPE_CODE as SYSTEM_COMMON_TYPE_CODE;
+    #[midi2_attr::generate_message]
+    struct Reset {
+        ump_type: Property<
+            NumericalConstant<SYSTEM_COMMON_TYPE_CODE>,
+            UmpSchema<0xF000_0000, 0x0, 0x0, 0x0>,
+            (),
+        >,
+        status: Property<
+            NumericalConstant<0xFF>,
+            UmpSchema<0x00FF_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xFF, 0x0, 0x0>,
+        >,
+    }
+}
 
 use active_sensing::ActiveSensingBorrowed;
 use active_sensing::ActiveSensingBuilder;
@@ -350,6 +454,44 @@ mod tests {
                     .build()
                     .unwrap()
             )),
+        );
+    }
+}
+
+#[cfg(test)]
+mod tests_simple_generic {
+    use crate::message::system_common::TYPE_CODE as SYSTEM_COMMON_TYPE_CODE;
+    use pretty_assertions::assert_eq;
+
+    #[midi2_attr::generate_message]
+    struct Test {
+        ump_type: Property<
+            NumericalConstant<SYSTEM_COMMON_TYPE_CODE>,
+            UmpSchema<0xF000_0000, 0x0, 0x0, 0x0>,
+            (),
+        >,
+        status: Property<
+            NumericalConstant<0xFF>,
+            UmpSchema<0x00FF_0000, 0x0, 0x0, 0x0>,
+            BytesSchema<0xFF, 0x0, 0x0>,
+        >,
+    }
+
+    #[test]
+    fn builder() {
+        assert_eq!(
+            TestMessage::builder().group(u4::new(0x9)).build(),
+            Ok(TestMessage::Owned(TestOwned([0x19FF_0000, 0x0, 0x0, 0x0]))),
+        );
+    }
+
+    #[test]
+    fn group() {
+        assert_eq!(
+            TestMessage::from_data(&[0x19FF_0000, 0x0, 0x0, 0x0])
+                .unwrap()
+                .group(),
+            u4::new(0x9),
         );
     }
 }

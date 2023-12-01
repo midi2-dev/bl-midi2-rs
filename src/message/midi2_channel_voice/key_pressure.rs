@@ -17,30 +17,30 @@ struct KeyPressure {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use generic_array::arr;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn builder() {
         assert_eq!(
-            KeyPressureOwnedPrivate::builder()
+            KeyPressureMessage::builder()
                 .group(u4::new(0xB))
                 .channel(u4::new(0xC))
                 .note(u7::new(0x59))
                 .key_pressure_data(0xC0B83064)
                 .build(),
-            Ok(KeyPressureOwnedPrivate(arr![
+            Ok(KeyPressureMessage::Owned(KeyPressureOwned([
                 0x4BAC_5900,
                 0xC0B83064,
                 0x0,
                 0x0
-            ])),
+            ]))),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            KeyPressureBorrowedPrivate::<Ump>::from_data(&[0x4BAC_5900, 0xC0B83064, 0x0, 0x0])
+            KeyPressureMessage::from_data(&[0x4BAC_5900, 0xC0B83064, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0xB),
@@ -50,7 +50,7 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            KeyPressureBorrowedPrivate::<Ump>::from_data(&[0x4BAC_5900, 0xC0B83064, 0x0, 0x0])
+            KeyPressureMessage::from_data(&[0x4BAC_5900, 0xC0B83064, 0x0, 0x0])
                 .unwrap()
                 .channel(),
             u4::new(0xC),
@@ -60,7 +60,7 @@ mod tests {
     #[test]
     fn note() {
         assert_eq!(
-            KeyPressureBorrowedPrivate::<Ump>::from_data(&[0x4BAC_5900, 0xC0B83064, 0x0, 0x0])
+            KeyPressureMessage::from_data(&[0x4BAC_5900, 0xC0B83064, 0x0, 0x0])
                 .unwrap()
                 .note(),
             u7::new(0x59),
@@ -70,7 +70,7 @@ mod tests {
     #[test]
     fn key_pressure_data() {
         assert_eq!(
-            KeyPressureBorrowedPrivate::<Ump>::from_data(&[0x4BAC_5900, 0xC0B83064, 0x0, 0x0])
+            KeyPressureMessage::from_data(&[0x4BAC_5900, 0xC0B83064, 0x0, 0x0])
                 .unwrap()
                 .key_pressure_data(),
             0xC0B83064,

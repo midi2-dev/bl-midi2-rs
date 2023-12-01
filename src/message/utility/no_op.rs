@@ -7,20 +7,19 @@ struct NoOp {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use generic_array::arr;
 
     #[test]
     fn builder() {
         assert_eq!(
-            NoOpOwnedPrivate::builder().group(u4::new(0xB)).build(),
-            Ok(NoOpOwnedPrivate(arr![0x0B00_0000, 0x0, 0x0, 0x0])),
+            NoOpMessage::builder().group(u4::new(0xB)).build(),
+            Ok(NoOpMessage::Owned(NoOpOwned([0x0B00_0000, 0x0, 0x0, 0x0]))),
         )
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            NoOpBorrowedPrivate::from_data(&[0x0900_0000, 0x0, 0x0, 0x0])
+            NoOpMessage::from_data(&[0x0900_0000, 0x0, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0x9),

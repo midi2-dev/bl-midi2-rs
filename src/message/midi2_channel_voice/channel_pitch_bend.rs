@@ -16,36 +16,31 @@ struct ChannelPitchBend {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use generic_array::arr;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn builder() {
         assert_eq!(
-            ChannelPitchBendOwnedPrivate::builder()
+            ChannelPitchBendMessage::builder()
                 .group(u4::new(0xB))
                 .channel(u4::new(0x9))
                 .pitch_bend_data(0x08306AF8)
                 .build(),
-            Ok(ChannelPitchBendOwnedPrivate(arr![
+            Ok(ChannelPitchBendMessage::Owned(ChannelPitchBendOwned([
                 0x4BE9_0000,
                 0x0830_6AF8,
                 0x0,
                 0x0
-            ])),
+            ]))),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            ChannelPitchBendBorrowedPrivate::<Ump>::from_data(&[
-                0x4BE9_0000,
-                0x0830_6AF8,
-                0x0,
-                0x0
-            ])
-            .unwrap()
-            .group(),
+            ChannelPitchBendMessage::from_data(&[0x4BE9_0000, 0x0830_6AF8, 0x0, 0x0])
+                .unwrap()
+                .group(),
             u4::new(0xB),
         );
     }
@@ -53,14 +48,9 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            ChannelPitchBendBorrowedPrivate::<Ump>::from_data(&[
-                0x4BE9_0000,
-                0x0830_6AF8,
-                0x0,
-                0x0
-            ])
-            .unwrap()
-            .channel(),
+            ChannelPitchBendMessage::from_data(&[0x4BE9_0000, 0x0830_6AF8, 0x0, 0x0])
+                .unwrap()
+                .channel(),
             u4::new(0x9),
         );
     }
@@ -68,14 +58,9 @@ mod tests {
     #[test]
     fn pitch_bend_data() {
         assert_eq!(
-            ChannelPitchBendBorrowedPrivate::<Ump>::from_data(&[
-                0x4BE9_0000,
-                0x0830_6AF8,
-                0x0,
-                0x0
-            ])
-            .unwrap()
-            .pitch_bend_data(),
+            ChannelPitchBendMessage::from_data(&[0x4BE9_0000, 0x0830_6AF8, 0x0, 0x0])
+                .unwrap()
+                .pitch_bend_data(),
             0x0830_6AF8,
         );
     }

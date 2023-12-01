@@ -21,29 +21,29 @@ struct ChannelPressure {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use generic_array::arr;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn builder() {
         assert_eq!(
-            ChannelPressureOwnedPrivate::<Ump>::builder()
+            ChannelPressureMessage::builder()
                 .group(u4::new(0xF))
                 .channel(u4::new(0x6))
                 .pressure(u7::new(0x09))
                 .build(),
-            Ok(ChannelPressureOwnedPrivate::<Ump>(arr![
+            Ok(ChannelPressureMessage::Owned(ChannelPressureOwned([
                 0x2FD6_0900,
                 0x0,
                 0x0,
                 0x0
-            ])),
+            ]))),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            ChannelPressureBorrowedPrivate::<Ump>::from_data(&[0x2FD6_0900, 0x0, 0x0, 0x0])
+            ChannelPressureMessage::from_data(&[0x2FD6_0900, 0x0, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0xF),
@@ -53,7 +53,7 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            ChannelPressureBorrowedPrivate::<Ump>::from_data(&[0x2FD6_0900, 0x0, 0x0, 0x0])
+            ChannelPressureMessage::from_data(&[0x2FD6_0900, 0x0, 0x0, 0x0])
                 .unwrap()
                 .channel(),
             u4::new(0x6),
@@ -63,21 +63,10 @@ mod tests {
     #[test]
     fn pressure() {
         assert_eq!(
-            ChannelPressureBorrowedPrivate::<Ump>::from_data(&[0x2FD6_0900, 0x0, 0x0, 0x0])
+            ChannelPressureMessage::from_data(&[0x2FD6_0900, 0x0, 0x0, 0x0])
                 .unwrap()
                 .pressure(),
             u7::new(0x09),
-        );
-    }
-
-    #[test]
-    fn bytes_builder() {
-        assert_eq!(
-            ChannelPressureOwnedPrivate::<Bytes>::builder()
-                .channel(u4::new(0x6))
-                .pressure(u7::new(0x09))
-                .build(),
-            Ok(ChannelPressureOwnedPrivate::<Bytes>(arr![0xD6, 0x09, 0x0])),
         );
     }
 }

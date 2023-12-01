@@ -20,28 +20,28 @@ struct TimeCode {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use generic_array::arr;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn builder() {
         assert_eq!(
-            TimeCodeOwnedPrivate::<Ump>::builder()
+            TimeCodeMessage::builder()
                 .group(u4::new(0x5))
                 .time_code(u7::new(0x5F))
                 .build(),
-            Ok(TimeCodeOwnedPrivate::<Ump>(arr![
+            Ok(TimeCodeMessage::Owned(TimeCodeOwned([
                 0x15F1_5F00,
                 0x0,
                 0x0,
                 0x0
-            ])),
+            ]))),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            TimeCodeBorrowedPrivate::<Ump>::from_data(&[0x15F1_5F00, 0x0, 0x0, 0x0])
+            TimeCodeMessage::from_data(&[0x15F1_5F00, 0x0, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0x5),
@@ -51,27 +51,7 @@ mod tests {
     #[test]
     fn time_code() {
         assert_eq!(
-            TimeCodeBorrowedPrivate::<Ump>::from_data(&[0x15F1_5F00, 0x0, 0x0, 0x0])
-                .unwrap()
-                .time_code(),
-            u7::new(0x5F),
-        );
-    }
-
-    #[test]
-    fn bytes_builder() {
-        assert_eq!(
-            TimeCodeOwnedPrivate::<Bytes>::builder()
-                .time_code(u7::new(0x5F))
-                .build(),
-            Ok(TimeCodeOwnedPrivate::<Bytes>(arr![0xF1, 0x5F, 0x00])),
-        );
-    }
-
-    #[test]
-    fn bytes_time_code() {
-        assert_eq!(
-            TimeCodeBorrowedPrivate::<Bytes>::from_data(&[0xF1, 0x5F, 0x00])
+            TimeCodeMessage::from_data(&[0x15F1_5F00, 0x0, 0x0, 0x0])
                 .unwrap()
                 .time_code(),
             u7::new(0x5F),

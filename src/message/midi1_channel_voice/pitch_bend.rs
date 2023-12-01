@@ -21,29 +21,29 @@ struct PitchBend {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use generic_array::arr;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn builder() {
         assert_eq!(
-            PitchBendOwnedPrivate::<Ump>::builder()
+            PitchBendMessage::builder()
                 .group(u4::new(0x1))
                 .channel(u4::new(0xE))
                 .bend(u14::new(0x147))
                 .build(),
-            Ok(PitchBendOwnedPrivate::<Ump>(arr![
+            Ok(PitchBendMessage::Owned(PitchBendOwned([
                 0x21EE_4702,
                 0x0,
                 0x0,
                 0x0
-            ])),
+            ]))),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            PitchBendBorrowedPrivate::<Ump>::from_data(&[0x21EE_4702, 0x0, 0x0, 0x0])
+            PitchBendMessage::from_data(&[0x21EE_4702, 0x0, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0x1),
@@ -53,7 +53,7 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            PitchBendBorrowedPrivate::<Ump>::from_data(&[0x21EE_4702, 0x0, 0x0, 0x0])
+            PitchBendMessage::from_data(&[0x21EE_4702, 0x0, 0x0, 0x0])
                 .unwrap()
                 .channel(),
             u4::new(0xE),
@@ -63,38 +63,7 @@ mod tests {
     #[test]
     fn bend() {
         assert_eq!(
-            PitchBendBorrowedPrivate::<Ump>::from_data(&[0x21EE_4702, 0x0, 0x0, 0x0])
-                .unwrap()
-                .bend(),
-            u14::new(0x147)
-        );
-    }
-
-    #[test]
-    fn builder_bytes() {
-        assert_eq!(
-            PitchBendOwnedPrivate::<Bytes>::builder()
-                .channel(u4::new(0xE))
-                .bend(u14::new(0x147))
-                .build(),
-            Ok(PitchBendOwnedPrivate::<Bytes>(arr![0xEE, 0x47, 0x02])),
-        );
-    }
-
-    #[test]
-    fn channel_bytes() {
-        assert_eq!(
-            PitchBendBorrowedPrivate::<Bytes>::from_data(&[0xEE, 0x47, 0x02])
-                .unwrap()
-                .channel(),
-            u4::new(0xE),
-        );
-    }
-
-    #[test]
-    fn bend_bytes() {
-        assert_eq!(
-            PitchBendBorrowedPrivate::<Bytes>::from_data(&[0xEE, 0x47, 0x02])
+            PitchBendMessage::from_data(&[0x21EE_4702, 0x0, 0x0, 0x0])
                 .unwrap()
                 .bend(),
             u14::new(0x147)

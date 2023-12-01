@@ -16,29 +16,29 @@ struct ChannelPressure {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use generic_array::arr;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn builder() {
         assert_eq!(
-            ChannelPressureOwnedPrivate::builder()
+            ChannelPressureMessage::builder()
                 .group(u4::new(0xE))
                 .channel(u4::new(0xD))
                 .channel_pressure_data(0xDE0DE0F2)
                 .build(),
-            Ok(ChannelPressureOwnedPrivate(arr![
+            Ok(ChannelPressureMessage::Owned(ChannelPressureOwned([
                 0x4EDD_0000,
                 0xDE0D_E0F2,
                 0x0,
                 0x0
-            ])),
+            ]))),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            ChannelPressureBorrowedPrivate::<Ump>::from_data(&[0x4EDD_0000, 0xDE0D_E0F2, 0x0, 0x0])
+            ChannelPressureMessage::from_data(&[0x4EDD_0000, 0xDE0D_E0F2, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0xE),
@@ -48,7 +48,7 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            ChannelPressureBorrowedPrivate::<Ump>::from_data(&[0x4EDD_0000, 0xDE0D_E0F2, 0x0, 0x0])
+            ChannelPressureMessage::from_data(&[0x4EDD_0000, 0xDE0D_E0F2, 0x0, 0x0])
                 .unwrap()
                 .channel(),
             u4::new(0xD),
@@ -58,7 +58,7 @@ mod tests {
     #[test]
     fn channel_pressure_data() {
         assert_eq!(
-            ChannelPressureBorrowedPrivate::<Ump>::from_data(&[0x4EDD_0000, 0xDE0D_E0F2, 0x0, 0x0])
+            ChannelPressureMessage::from_data(&[0x4EDD_0000, 0xDE0D_E0F2, 0x0, 0x0])
                 .unwrap()
                 .channel_pressure_data(),
             0xDE0DE0F2,

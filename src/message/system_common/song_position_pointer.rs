@@ -20,28 +20,25 @@ struct SongPositionPointer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use generic_array::arr;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn builder() {
         assert_eq!(
-            SongPositionPointerOwnedPrivate::<Ump>::builder()
+            SongPositionPointerMessage::builder()
                 .group(u4::new(0xA))
                 .position(u14::new(0x367D))
                 .build(),
-            Ok(SongPositionPointerOwnedPrivate::<Ump>(arr![
-                0x1AF2_7D6C,
-                0x0,
-                0x0,
-                0x0
-            ])),
+            Ok(SongPositionPointerMessage::Owned(SongPositionPointerOwned(
+                [0x1AF2_7D6C, 0x0, 0x0, 0x0]
+            ))),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            SongPositionPointerBorrowedPrivate::<Ump>::from_data(&[0x1AF2_7D6C, 0x0, 0x0, 0x0])
+            SongPositionPointerMessage::from_data(&[0x1AF2_7D6C, 0x0, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0xA),
@@ -51,29 +48,7 @@ mod tests {
     #[test]
     fn position() {
         assert_eq!(
-            SongPositionPointerBorrowedPrivate::<Ump>::from_data(&[0x1AF2_7D6C, 0x0, 0x0, 0x0])
-                .unwrap()
-                .position(),
-            u14::new(0x367D),
-        );
-    }
-
-    #[test]
-    fn bytes_builder() {
-        assert_eq!(
-            SongPositionPointerOwnedPrivate::<Bytes>::builder()
-                .position(u14::new(0x367D))
-                .build(),
-            Ok(SongPositionPointerOwnedPrivate::<Bytes>(arr![
-                0xF2, 0x7D, 0x6C
-            ])),
-        );
-    }
-
-    #[test]
-    fn bytes_position() {
-        assert_eq!(
-            SongPositionPointerBorrowedPrivate::<Bytes>::from_data(&[0xF2, 0x7D, 0x6C])
+            SongPositionPointerMessage::from_data(&[0x1AF2_7D6C, 0x0, 0x0, 0x0])
                 .unwrap()
                 .position(),
             u14::new(0x367D),

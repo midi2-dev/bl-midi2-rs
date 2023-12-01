@@ -18,38 +18,30 @@ struct AssignablePerNoteController {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use generic_array::arr;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn builder() {
         assert_eq!(
-            AssignablePerNoteControllerOwnedPrivate::builder()
+            AssignablePerNoteControllerMessage::builder()
                 .group(u4::new(0x2))
                 .channel(u4::new(0x4))
                 .note(u7::new(0x6F))
                 .index(0xB1)
                 .controller_data(0x46105EE5)
                 .build(),
-            Ok(AssignablePerNoteControllerOwnedPrivate(arr![
-                0x4214_6FB1,
-                0x46105EE5,
-                0x0,
-                0x0,
-            ])),
+            Ok(AssignablePerNoteControllerMessage::Owned(
+                AssignablePerNoteControllerOwned([0x4214_6FB1, 0x46105EE5, 0x0, 0x0,])
+            )),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            AssignablePerNoteControllerBorrowedPrivate::<Ump>::from_data(&[
-                0x4214_6FB1,
-                0x46105EE5,
-                0x0,
-                0x0
-            ])
-            .unwrap()
-            .group(),
+            AssignablePerNoteControllerMessage::from_data(&[0x4214_6FB1, 0x46105EE5, 0x0, 0x0])
+                .unwrap()
+                .group(),
             u4::new(0x2),
         );
     }
@@ -57,14 +49,9 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            AssignablePerNoteControllerBorrowedPrivate::<Ump>::from_data(&[
-                0x4214_6FB1,
-                0x46105EE5,
-                0x0,
-                0x0
-            ])
-            .unwrap()
-            .channel(),
+            AssignablePerNoteControllerMessage::from_data(&[0x4214_6FB1, 0x46105EE5, 0x0, 0x0])
+                .unwrap()
+                .channel(),
             u4::new(0x4),
         );
     }
@@ -72,14 +59,9 @@ mod tests {
     #[test]
     fn note() {
         assert_eq!(
-            AssignablePerNoteControllerBorrowedPrivate::<Ump>::from_data(&[
-                0x4214_6FB1,
-                0x46105EE5,
-                0x0,
-                0x0
-            ])
-            .unwrap()
-            .note(),
+            AssignablePerNoteControllerMessage::from_data(&[0x4214_6FB1, 0x46105EE5, 0x0, 0x0])
+                .unwrap()
+                .note(),
             u7::new(0x6F),
         );
     }
@@ -87,14 +69,9 @@ mod tests {
     #[test]
     fn index() {
         assert_eq!(
-            AssignablePerNoteControllerBorrowedPrivate::<Ump>::from_data(&[
-                0x4214_6FB1,
-                0x46105EE5,
-                0x0,
-                0x0
-            ])
-            .unwrap()
-            .index(),
+            AssignablePerNoteControllerMessage::from_data(&[0x4214_6FB1, 0x46105EE5, 0x0, 0x0])
+                .unwrap()
+                .index(),
             0xB1,
         );
     }
@@ -102,14 +79,9 @@ mod tests {
     #[test]
     fn controller_data() {
         assert_eq!(
-            AssignablePerNoteControllerBorrowedPrivate::<Ump>::from_data(&[
-                0x4214_6FB1,
-                0x46105EE5,
-                0x0,
-                0x0
-            ])
-            .unwrap()
-            .controller_data(),
+            AssignablePerNoteControllerMessage::from_data(&[0x4214_6FB1, 0x46105EE5, 0x0, 0x0])
+                .unwrap()
+                .controller_data(),
             0x46105EE5,
         );
     }

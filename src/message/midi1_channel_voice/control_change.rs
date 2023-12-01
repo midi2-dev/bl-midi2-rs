@@ -22,30 +22,30 @@ struct ControlChange {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use generic_array::arr;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn builder() {
         assert_eq!(
-            ControlChangeOwnedPrivate::<Ump>::builder()
+            ControlChangeMessage::builder()
                 .group(u4::new(0xA))
                 .channel(u4::new(0x7))
                 .control(u7::new(0x36))
                 .control_data(u7::new(0x37))
                 .build(),
-            Ok(ControlChangeOwnedPrivate::<Ump>(arr![
+            Ok(ControlChangeMessage::Owned(ControlChangeOwned([
                 0x2AB7_3637,
                 0x0,
                 0x0,
                 0x0
-            ])),
+            ]))),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            ControlChangeBorrowedPrivate::<Ump>::from_data(&[0x2AB7_3637, 0x0, 0x0, 0x0])
+            ControlChangeMessage::from_data(&[0x2AB7_3637, 0x0, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0xA),
@@ -55,7 +55,7 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            ControlChangeBorrowedPrivate::<Ump>::from_data(&[0x2AB7_3637, 0x0, 0x0, 0x0])
+            ControlChangeMessage::from_data(&[0x2AB7_3637, 0x0, 0x0, 0x0])
                 .unwrap()
                 .channel(),
             u4::new(0x7),
@@ -65,7 +65,7 @@ mod tests {
     #[test]
     fn control() {
         assert_eq!(
-            ControlChangeBorrowedPrivate::<Ump>::from_data(&[0x2AB7_3637, 0x0, 0x0, 0x0])
+            ControlChangeMessage::from_data(&[0x2AB7_3637, 0x0, 0x0, 0x0])
                 .unwrap()
                 .control(),
             u7::new(0x36),
@@ -75,49 +75,7 @@ mod tests {
     #[test]
     fn control_data() {
         assert_eq!(
-            ControlChangeBorrowedPrivate::<Ump>::from_data(&[0x2AB7_3637, 0x0, 0x0, 0x0])
-                .unwrap()
-                .control_data(),
-            u7::new(0x37),
-        );
-    }
-
-    #[test]
-    fn builder_bytes() {
-        assert_eq!(
-            ControlChangeOwnedPrivate::<Bytes>::builder()
-                .channel(u4::new(0x7))
-                .control(u7::new(0x36))
-                .control_data(u7::new(0x37))
-                .build(),
-            Ok(ControlChangeOwnedPrivate::<Bytes>(arr![0xB7, 0x36, 0x37])),
-        );
-    }
-
-    #[test]
-    fn channel_bytes() {
-        assert_eq!(
-            ControlChangeBorrowedPrivate::<Bytes>::from_data(&[0xB7, 0x36, 0x37])
-                .unwrap()
-                .channel(),
-            u4::new(0x7),
-        );
-    }
-
-    #[test]
-    fn control_bytes() {
-        assert_eq!(
-            ControlChangeBorrowedPrivate::<Bytes>::from_data(&[0xB7, 0x36, 0x37])
-                .unwrap()
-                .control(),
-            u7::new(0x36),
-        );
-    }
-
-    #[test]
-    fn control_data_bytes() {
-        assert_eq!(
-            ControlChangeBorrowedPrivate::<Bytes>::from_data(&[0xB7, 0x36, 0x37])
+            ControlChangeMessage::from_data(&[0x2AB7_3637, 0x0, 0x0, 0x0])
                 .unwrap()
                 .control_data(),
             u7::new(0x37),

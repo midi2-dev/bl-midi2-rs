@@ -1,27 +1,11 @@
 use crate::*;
 
-pub(crate) trait DataPrivate<B: Buffer> {
-    fn data(&self) -> &[B::Data];
-}
-
 pub trait Data {
     fn data(&self) -> &[u32];
 }
 
 pub trait ByteData {
     fn byte_data(&self) -> &[u8];
-}
-
-pub(crate) trait FromDataPrivate<'a, B: Buffer>: Sized {
-    type Target;
-    fn from_data_unchecked(buffer: &'a [B::Data]) -> Self::Target;
-    fn validate_data(buffer: &'a [B::Data]) -> Result<()>;
-    fn from_data(buffer: &'a [B::Data]) -> Result<Self::Target> {
-        match Self::validate_data(buffer) {
-            Ok(()) => Ok(Self::from_data_unchecked(buffer)),
-            Err(e) => Err(e),
-        }
-    }
 }
 
 pub trait FromData<'a>: Sized {

@@ -8,32 +8,41 @@ struct TimeStamp {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use generic_array::arr;
     use pretty_assertions::assert_eq;
 
     #[test]
     fn builder() {
         assert_eq!(
-            TimeStampOwnedPrivate::builder()
+            TimeStampMessage::builder()
                 .group(u4::new(0x4))
                 .time_stamp(u20::new(0xE_69AE))
                 .build(),
-            Ok(TimeStampOwnedPrivate(arr![0x042E_69AE, 0x0, 0x0, 0x0])),
+            Ok(TimeStampMessage::Owned(TimeStampOwned([
+                0x042E_69AE,
+                0x0,
+                0x0,
+                0x0
+            ]))),
         );
     }
 
     #[test]
     fn builder_default() {
         assert_eq!(
-            TimeStampOwnedPrivate::<Ump>::builder().build(),
-            Ok(TimeStampOwnedPrivate(arr![0x0020_0000, 0x0, 0x0, 0x0])),
+            TimeStampMessage::builder().build(),
+            Ok(TimeStampMessage::Owned(TimeStampOwned([
+                0x0020_0000,
+                0x0,
+                0x0,
+                0x0
+            ]))),
         );
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            TimeStampBorrowedPrivate::from_data(&[0x0F20_0000, 0x0, 0x0, 0x0])
+            TimeStampMessage::from_data(&[0x0F20_0000, 0x0, 0x0, 0x0])
                 .unwrap()
                 .group(),
             u4::new(0xF),
@@ -43,32 +52,10 @@ mod tests {
     #[test]
     fn time_stamp() {
         assert_eq!(
-            TimeStampBorrowedPrivate::<Ump>::from_data(&[0x0021_2345, 0x0, 0x0, 0x0])
+            TimeStampMessage::from_data(&[0x0021_2345, 0x0, 0x0, 0x0])
                 .unwrap()
                 .time_stamp(),
             u20::new(0x12345),
         )
-    }
-
-    #[test]
-    fn message_builder() {
-        assert_eq!(
-            TimeStampMessage::builder()
-                .time_stamp(u20::new(0x87EAB))
-                .build(),
-            Ok(TimeStampMessage::Owned(TimeStampOwned(
-                TimeStampOwnedPrivate(arr![0x0028_7EAB, 0x0, 0x0, 0x0])
-            ))),
-        );
-    }
-
-    #[test]
-    fn message_time_stamp() {
-        assert_eq!(
-            TimeStampMessage::from_data(&[0x0028_7EAB, 0x0, 0x0, 0x0])
-                .unwrap()
-                .time_stamp(),
-            u20::new(0x87EAB),
-        );
     }
 }
