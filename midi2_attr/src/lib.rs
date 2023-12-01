@@ -186,7 +186,7 @@ fn specialised_message_trait_ident(root_ident: &Ident) -> TokenStream {
     quote! {#root_ident}
 }
 
-fn specialized_message_trait(root_ident: &Ident, properties: &Vec<Property>) -> TokenStream {
+fn specialised_message_trait(root_ident: &Ident, properties: &Vec<Property>) -> TokenStream {
     let ident = specialised_message_trait_ident(root_ident);
     let mut methods = TokenStream::new();
     for property in properties.iter().filter(|p| !p.constant) {
@@ -199,7 +199,7 @@ fn specialized_message_trait(root_ident: &Ident, properties: &Vec<Property>) -> 
     }
 }
 
-fn specialized_message_trait_impl_owned(
+fn specialised_message_trait_impl_owned(
     root_ident: &Ident,
     properties: &Vec<Property>,
 ) -> TokenStream {
@@ -224,7 +224,7 @@ fn specialised_message_trait_declare_method(property: &Property) -> TokenStream 
     }
 }
 
-fn specialized_message_trait_impl_borrowed(
+fn specialised_message_trait_impl_borrowed(
     root_ident: &Ident,
     properties: &Vec<Property>,
 ) -> TokenStream {
@@ -241,7 +241,7 @@ fn specialized_message_trait_impl_borrowed(
     }
 }
 
-fn specialized_message_trait_impl_aggregate(
+fn specialised_message_trait_impl_aggregate(
     root_ident: &Ident,
     properties: &Vec<Property>,
 ) -> TokenStream {
@@ -514,15 +514,15 @@ pub fn generate_message(_attrs: TokenStream1, item: TokenStream1) -> TokenStream
     };
 
     let imports = imports();
-    let specialized_message = specialized_message_trait(&root_ident, &properties);
+    let specialised_message = specialised_message_trait(&root_ident, &properties);
 
     let message_owned = message_owned(&root_ident);
     let message_owned_impl = message_owned_impl(&root_ident);
     let message_borrowed = message_borrowed(&root_ident);
-    let specialized_message_trait_impl_owned =
-        specialized_message_trait_impl_owned(&root_ident, &properties);
-    let specialized_message_trait_impl_borrowed =
-        specialized_message_trait_impl_borrowed(&root_ident, &properties);
+    let specialised_message_trait_impl_owned =
+        specialised_message_trait_impl_owned(&root_ident, &properties);
+    let specialised_message_trait_impl_borrowed =
+        specialised_message_trait_impl_borrowed(&root_ident, &properties);
     let builder = builder(&root_ident);
     let builder_impl = builder_impl(&root_ident, &properties);
     let grouped_builder_impl = grouped_builder_impl(&root_ident);
@@ -537,19 +537,19 @@ pub fn generate_message(_attrs: TokenStream1, item: TokenStream1) -> TokenStream
     let aggregate_message = aggregate_message(&root_ident);
     let to_owned_impl_borrowed = to_owned_impl_borrowed(&root_ident);
     let to_owned_impl_aggregate = to_owned_impl_aggregate(&root_ident);
-    let specialized_message_trait_impl_aggregate =
-        specialized_message_trait_impl_aggregate(&root_ident, &properties);
+    let specialised_message_trait_impl_aggregate =
+        specialised_message_trait_impl_aggregate(&root_ident, &properties);
     let from_data_trait_impl_aggreagate = from_data_trait_impl_aggreagate(&root_ident);
 
     quote! {
         #imports
-        #specialized_message
+        #specialised_message
 
         #message_owned
         #message_owned_impl
         #message_borrowed
-        #specialized_message_trait_impl_owned
-        #specialized_message_trait_impl_borrowed
+        #specialised_message_trait_impl_owned
+        #specialised_message_trait_impl_borrowed
         #builder
         #builder_impl
         #grouped_builder_impl
@@ -564,7 +564,7 @@ pub fn generate_message(_attrs: TokenStream1, item: TokenStream1) -> TokenStream
         #aggregate_message
         #to_owned_impl_aggregate
         #to_owned_impl_borrowed
-        #specialized_message_trait_impl_aggregate
+        #specialised_message_trait_impl_aggregate
         #from_data_trait_impl_aggreagate
     }
     .into()
