@@ -190,54 +190,28 @@ fn specialised_message_trait(root_ident: &Ident, properties: &Vec<Property>) -> 
     let ident = specialised_message_trait_ident(root_ident);
     let mut methods = TokenStream::new();
     for property in properties.iter().filter(|p| !p.constant) {
-        methods.extend(specialised_message_trait_declare_method(property));
+        methods.extend(message_impl_method(property, false));
     }
     quote! {
-        pub trait #ident {
+        pub trait #ident: Data {
             #methods
         }
     }
 }
 
-fn specialised_message_trait_impl_owned(
-    root_ident: &Ident,
-    properties: &Vec<Property>,
-) -> TokenStream {
-    let mut methods = TokenStream::new();
-    for property in properties.iter().filter(|p| !p.constant) {
-        methods.extend(message_impl_method(property, false));
-    }
+fn specialised_message_trait_impl_owned(root_ident: &Ident) -> TokenStream {
     let message_ident = message_owned_ident(root_ident);
     let trait_ident = specialised_message_trait_ident(root_ident);
     quote! {
-        impl #trait_ident for #message_ident {
-            #methods
-        }
+        impl #trait_ident for #message_ident {}
     }
 }
 
-fn specialised_message_trait_declare_method(property: &Property) -> TokenStream {
-    let name = &property.name;
-    let ty = &property.ty;
-    quote! {
-        fn #name(&self) -> #ty;
-    }
-}
-
-fn specialised_message_trait_impl_borrowed(
-    root_ident: &Ident,
-    properties: &Vec<Property>,
-) -> TokenStream {
-    let mut methods = TokenStream::new();
-    for property in properties.iter().filter(|p| !p.constant) {
-        methods.extend(message_impl_method(property, false));
-    }
+fn specialised_message_trait_impl_borrowed(root_ident: &Ident) -> TokenStream {
     let message_ident = message_borrowed_ident(root_ident);
     let trait_ident = specialised_message_trait_ident(root_ident);
     quote! {
-        impl<'a> #trait_ident for #message_ident<'a> {
-            #methods
-        }
+        impl<'a> #trait_ident for #message_ident<'a> {}
     }
 }
 
@@ -519,10 +493,9 @@ pub fn generate_message(_attrs: TokenStream1, item: TokenStream1) -> TokenStream
     let message_owned = message_owned(&root_ident);
     let message_owned_impl = message_owned_impl(&root_ident);
     let message_borrowed = message_borrowed(&root_ident);
-    let specialised_message_trait_impl_owned =
-        specialised_message_trait_impl_owned(&root_ident, &properties);
+    let specialised_message_trait_impl_owned = specialised_message_trait_impl_owned(&root_ident);
     let specialised_message_trait_impl_borrowed =
-        specialised_message_trait_impl_borrowed(&root_ident, &properties);
+        specialised_message_trait_impl_borrowed(&root_ident);
     let builder = builder(&root_ident);
     let builder_impl = builder_impl(&root_ident, &properties);
     let grouped_builder_impl = grouped_builder_impl(&root_ident);
