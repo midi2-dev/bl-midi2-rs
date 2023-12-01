@@ -459,12 +459,58 @@ fn from_byte_data_impl_aggregate(root_ident: &Ident) -> TokenStream {
     }
 }
 
+fn copy_byte_data_impl(ident: &Ident, lifetime: bool, properties: &Vec<Property>) -> TokenStream {
+    let mut write_const_data_steps = TokenStream::new();
+    for prop in properties
+        .iter()
+        .filter(|p| p.constant && p.has_byte_scheme())
+    {
+        write_const_data_steps.extend(copy_byte_data_write_const_data_step(prop));
+    }
+
+    let mut convert_property_steps = TokenStream::new();
+    for prop in properties
+        .iter()
+        .filter(|p| p.has_ump_scheme() && p.has_byte_scheme())
+    {
+        convert_property_steps.extend(copy_byte_data_convert_property_step(prop));
+    }
+
+    let lifetime_generic = if lifetime {
+        quote!('b)
+    } else {
+        TokenStream::new()
+    };
+
+    quote! {
+        impl<#lifetime_generic> CopyByteData for #ident<#lifetime_generic> {
+            fn copy_byte_data<'a>(&self, buffer: &'a mut [u8]) -> &'a mut [u8] {
+                #write_const_data_steps
+                #convert_property_steps
+                buffer
+            }
+        }
+    }
+}
+
 fn from_byte_data_validation_step(prop: &Property) -> TokenStream {
     let ty = &prop.ty;
     let ump_schema = &prop.ump_representation;
     let byte_schema = &prop.bytes_representation;
     quote! {
         <Bytes as Property<#ty, #ump_schema, #byte_schema>>::validate(buffer)?;
+    }
+}
+
+fn copy_byte_data_convert_property_step(prop: &Property) -> TokenStream {
+    let ty = &prop.ty;
+    let ump_schema = &prop.ump_representation;
+    let byte_schema = &prop.bytes_representation;
+    quote! {
+        {
+            let v = <Ump as Property<#ty, #ump_schema, #byte_schema>>::get(self.data());
+            <Bytes as Property<#ty, #ump_schema, #byte_schema>>::write(buffer, v);
+        }
     }
 }
 
@@ -477,6 +523,15 @@ fn from_byte_data_convert_property_step(prop: &Property) -> TokenStream {
             let v = <Bytes as Property<#ty, #ump_schema, #byte_schema>>::get(buffer);
             <Ump as Property<#ty, #ump_schema, #byte_schema>>::write(&mut outbuffer, v);
         }
+    }
+}
+
+fn copy_byte_data_write_const_data_step(prop: &Property) -> TokenStream {
+    let ty = &prop.ty;
+    let ump_schema = &prop.ump_representation;
+    let byte_schema = &prop.bytes_representation;
+    quote! {
+        <Bytes as Property<#ty, #ump_schema, #byte_schema>>::write(buffer, Default::default());
     }
 }
 
@@ -652,9 +707,18 @@ pub fn generate_message(_attrs: TokenStream1, item: TokenStream1) -> TokenStream
     if should_implement_from_byte_data(&properties) {
         let from_byte_data_impl_owned = from_byte_data_impl_owned(&root_ident, &properties);
         let from_byte_data_impl_aggregate = from_byte_data_impl_aggregate(&root_ident);
+        let copy_byte_data_borrowed =
+            copy_byte_data_impl(&message_borrowed_ident(&root_ident), true, &properties);
+        let copy_byte_data_owned =
+            copy_byte_data_impl(&message_owned_ident(&root_ident), false, &properties);
+        let copy_byte_data_aggregate =
+            copy_byte_data_impl(&aggregate_message_ident(&root_ident), true, &properties);
         ret.extend(quote! {
             #from_byte_data_impl_owned
             #from_byte_data_impl_aggregate
+            #copy_byte_data_borrowed
+            #copy_byte_data_owned
+            #copy_byte_data_aggregate
         });
     }
 

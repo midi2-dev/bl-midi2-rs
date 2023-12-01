@@ -8,6 +8,10 @@ pub trait ByteData {
     fn byte_data(&self) -> &[u8];
 }
 
+pub trait CopyByteData {
+    fn copy_byte_data<'a>(&self, buffer: &'a mut [u8]) -> &'a mut [u8];
+}
+
 pub trait FromData<'a>: Sized {
     type Target;
     fn from_data_unchecked(buffer: &'a [u32]) -> Self::Target;

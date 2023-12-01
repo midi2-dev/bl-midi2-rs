@@ -70,4 +70,14 @@ mod tests {
             ])))
         )
     }
+
+    #[test]
+    fn copy_byte_data() {
+        assert_eq!(
+            SongSelectMessage::from_data(&[0x10F3_4F00, 0x0, 0x0, 0x0])
+                .unwrap()
+                .copy_byte_data(&mut [0x0; 3]),
+            &[0xF3, 0x4F, 0x0]
+        );
+    }
 }
