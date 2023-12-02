@@ -59,7 +59,3 @@ pub trait Sysex<'a, 'b: 'a> {
 pub trait Streamed {
     fn stream_id(&self) -> u8;
 }
-
-pub trait StreamedBuilder {
-    fn stream_id(self, v: u8) -> Self;
-}
