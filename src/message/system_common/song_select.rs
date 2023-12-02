@@ -61,7 +61,7 @@ mod tests {
     #[test]
     fn from_byte_data() {
         assert_eq!(
-            SongSelectMessage::from_byte_data(&[0xF3, 0x4F, 0x0]),
+            SongSelectMessage::from_byte_data(&[0xF3, 0x4F]),
             Ok(SongSelectMessage::Owned(SongSelectOwned([
                 0x10F3_4F00,
                 0x0,

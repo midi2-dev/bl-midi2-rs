@@ -434,7 +434,11 @@ fn from_data_trait_impl_aggreagate(root_ident: &Ident) -> TokenStream {
     }
 }
 
-fn from_byte_data_impl_owned(root_ident: &Ident, properties: &Vec<Property>) -> TokenStream {
+fn from_byte_data_impl_owned(
+    root_ident: &Ident,
+    properties: &Vec<Property>,
+    sz: usize,
+) -> TokenStream {
     let owned_ident = message_owned_ident(root_ident);
 
     let mut validation_steps = TokenStream::new();
@@ -462,7 +466,7 @@ fn from_byte_data_impl_owned(root_ident: &Ident, properties: &Vec<Property>) -> 
         impl<'a> FromByteData<'a> for #owned_ident {
             type Target = Self;
             fn validate_byte_data(buffer: &'a [u8]) -> Result<()> {
-                if buffer.len() < 3 {
+                if buffer.len() < #sz {
                     return Err(Error::BufferOverflow);
                 }
                 #validation_steps
@@ -717,7 +721,7 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     };
 
     let sz_ump = deduce_message_size(&properties, |p| &p.ump_representation);
-    // let sz_bytes = deduce_message_size(&properties, |p| &p.bytes_representation);
+    let sz_bytes = deduce_message_size(&properties, |p| &p.bytes_representation);
 
     let imports = imports();
     let specialised_message = specialised_message_trait(&root_ident, &properties);
@@ -779,7 +783,8 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     }
 
     if should_implement_from_byte_data(&properties) {
-        let from_byte_data_impl_owned = from_byte_data_impl_owned(&root_ident, &properties);
+        let from_byte_data_impl_owned =
+            from_byte_data_impl_owned(&root_ident, &properties, sz_bytes);
         let from_byte_data_impl_aggregate = from_byte_data_impl_aggregate(&root_ident);
         let write_byte_data_borrowed =
             write_byte_data_impl(&message_borrowed_ident(&root_ident), true, &properties);
