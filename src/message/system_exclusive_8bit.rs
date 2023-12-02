@@ -216,17 +216,9 @@ impl<'a> FromData<'a> for Sysex8Message<'a> {
     }
 }
 
-impl<'a> Grouped for Sysex8Borrowed<'a> {
-    fn group(&self) -> u4 {
-        message_helpers::group_from_packet(self.0)
-    }
-}
+impl<'a> Grouped for Sysex8Borrowed<'a> {}
 
-impl Grouped for Sysex8Owned {
-    fn group(&self) -> u4 {
-        message_helpers::group_from_packet(&self.0)
-    }
-}
+impl Grouped for Sysex8Owned {}
 
 impl<'a> Streamed for Sysex8Borrowed<'a> {
     fn stream_id(&self) -> u8 {
@@ -460,11 +452,7 @@ impl<'a> FromData<'a> for Sysex8MessageGroup<'a> {
     }
 }
 
-impl<'a> Grouped for Sysex8MessageGroup<'a> {
-    fn group(&self) -> u4 {
-        message_helpers::group_from_packet(self.0)
-    }
-}
+impl<'a> Grouped for Sysex8MessageGroup<'a> {}
 
 impl<'a> Streamed for Sysex8MessageGroup<'a> {
     fn stream_id(&self) -> u8 {

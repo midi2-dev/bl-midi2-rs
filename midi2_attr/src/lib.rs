@@ -612,22 +612,14 @@ fn builder_new_write_const_data(properties: &Vec<Property>) -> TokenStream {
 fn grouped_message_trait_impl_owned(root_ident: &Ident) -> TokenStream {
     let message_ident = message_owned_ident(root_ident);
     quote! {
-        impl Grouped for #message_ident {
-            fn group(&self) -> u4 {
-                self.0[0].nibble(1)
-            }
-        }
+        impl Grouped for #message_ident {}
     }
 }
 
 fn grouped_message_trait_impl_borrowed(root_ident: &Ident) -> TokenStream {
     let message_ident = message_borrowed_ident(root_ident);
     quote! {
-        impl<'a> Grouped for #message_ident<'a> {
-            fn group(&self) -> u4 {
-                self.0[0].nibble(1)
-            }
-        }
+        impl<'a> Grouped for #message_ident<'a> {}
     }
 }
 
@@ -842,23 +834,9 @@ pub fn derive_data(item: TokenStream1) -> TokenStream1 {
 pub fn derive_grouped(item: TokenStream1) -> TokenStream1 {
     let input = parse_macro_input!(item as ItemEnum);
     let ident = &input.ident;
-    let mut match_arms = TokenStream::new();
-    for variant in &input.variants {
-        let variant_ident = &variant.ident;
-        match_arms.extend(quote! {
-            #variant_ident(m) => m.group(),
-        });
-    }
     let lifetime_param = enum_lifetime(&input);
     quote! {
-        impl<#lifetime_param> Grouped for #ident<#lifetime_param> {
-            fn group(&self) -> u4 {
-                use #ident::*;
-                match self {
-                    #match_arms
-                }
-            }
-        }
+        impl<#lifetime_param> Grouped for #ident<#lifetime_param> {}
     }
     .into()
 }

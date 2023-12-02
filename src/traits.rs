@@ -1,4 +1,4 @@
-use crate::*;
+use crate::{util::BitOps, *};
 
 pub trait Data {
     fn data(&self) -> &[u32];
@@ -45,8 +45,10 @@ pub trait IntoOwned {
     fn into_owned(self) -> Self::Owned;
 }
 
-pub trait Grouped {
-    fn group(&self) -> u4;
+pub trait Grouped: Data {
+    fn group(&self) -> u4 {
+        self.data()[0].nibble(1)
+    }
 }
 
 pub trait GroupedBuilder {

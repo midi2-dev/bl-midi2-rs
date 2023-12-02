@@ -205,17 +205,9 @@ impl<'a, 'b: 'a> Sysex<'a, 'b> for Sysex7Borrowed<'a> {
     }
 }
 
-impl<'a> Grouped for Sysex7Borrowed<'a> {
-    fn group(&self) -> u4 {
-        message_helpers::group_from_packet(self.0)
-    }
-}
+impl<'a> Grouped for Sysex7Borrowed<'a> {}
 
-impl Grouped for Sysex7Owned {
-    fn group(&self) -> u4 {
-        message_helpers::group_from_packet(&self.0)
-    }
-}
+impl Grouped for Sysex7Owned {}
 
 pub struct Sysex7UmpBuilder<'a>(Result<&'a mut [u32]>);
 
@@ -374,11 +366,7 @@ impl<'a> FromData<'a> for Sysex7MessageGroup<'a> {
     }
 }
 
-impl<'a> Grouped for Sysex7MessageGroup<'a> {
-    fn group(&self) -> u4 {
-        message_helpers::group_from_packet(self.0)
-    }
-}
+impl<'a> Grouped for Sysex7MessageGroup<'a> {}
 
 impl<'a, 'b: 'a> Sysex<'a, 'b> for Sysex7MessageGroup<'a> {
     type PayloadIterator = PayloadIterator<'a>;
