@@ -312,11 +312,21 @@ fn aggregate_message_impl_method(property: &Property) -> TokenStream {
     }
 }
 
-fn builder_impl(root_ident: &Ident, properties: &Vec<Property>) -> TokenStream {
+fn builder_impl(root_ident: &Ident, properties: &Vec<Property>, grouped: bool) -> TokenStream {
     let ident = builder_ident(root_ident);
     let mut methods = TokenStream::new();
     for property in properties.iter().filter(|p| !p.constant) {
         methods.extend(builder_impl_method(property, true));
+    }
+    if grouped {
+        methods.extend(quote!{
+            pub fn group(mut self, v: u4) -> Self {
+                if let Some(buffer) = &mut self.0 {
+                    <Ump as Property<u4, UmpSchema<0x0F00_0000, 0x0, 0x0, 0x0>, ()>>::write(buffer, v);
+                }
+                self
+            }
+        });
     }
     let message_ident = message_owned_ident(root_ident);
     let write_const_data = builder_new_write_const_data(properties);
@@ -334,21 +344,6 @@ fn builder_impl(root_ident: &Ident, properties: &Vec<Property>) -> TokenStream {
                 } else {
                     Err(Error::BufferOverflow)
                 }
-            }
-        }
-    }
-}
-
-fn grouped_builder_impl(root_ident: &Ident) -> TokenStream {
-    let ident = builder_ident(root_ident);
-    let message_ident = message_owned_ident(root_ident);
-    quote! {
-        impl<M: core::convert::From<#message_ident>> GroupedBuilder for #ident<M> {
-            fn group(mut self, v: u4) -> Self {
-                if let Some(buffer) = &mut self.0 {
-                    <Ump as Property<u4, UmpSchema<0x0F00_0000, 0x0, 0x0, 0x0>, ()>>::write(buffer, v);
-                }
-                self
             }
         }
     }
@@ -725,7 +720,7 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     let specialised_message_trait_impl_borrowed =
         specialised_message_trait_impl_borrowed(&root_ident);
     let builder = builder(&root_ident);
-    let builder_impl = builder_impl(&root_ident, &properties);
+    let builder_impl = builder_impl(&root_ident, &properties, args.grouped);
     let data_trait_impl_owned = data_trait_impl_owned(&root_ident, sz_ump);
     let data_trait_impl_borrowed = data_trait_impl_borrowed(&root_ident);
     let from_data_trait_impl = from_data_trait_impl(&root_ident, &properties, sz_ump);
@@ -763,12 +758,10 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     };
 
     if args.grouped {
-        let grouped_builder_impl = grouped_builder_impl(&root_ident);
         let grouped_message_trait_impl_owned = grouped_message_trait_impl_owned(&root_ident);
         let grouped_message_trait_impl_borrowed = grouped_message_trait_impl_borrowed(&root_ident);
 
         ret.extend(quote! {
-            #grouped_builder_impl
             #grouped_message_trait_impl_owned
             #grouped_message_trait_impl_borrowed
         });

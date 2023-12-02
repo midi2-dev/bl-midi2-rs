@@ -245,6 +245,12 @@ impl<'a> Sysex7UmpBuilder<'a> {
         }
         self
     }
+    pub fn group(mut self, g: u4) -> Self {
+        if let Ok(buffer) = &mut self.0 {
+            buffer[0].set_nibble(1, g);
+        }
+        self
+    }
     pub fn new(buffer: &'a mut [u32]) -> Self {
         if buffer.len() >= 2 {
             for b in buffer.iter_mut() {
@@ -261,15 +267,6 @@ impl<'a> Sysex7UmpBuilder<'a> {
             Ok(buffer) => Ok(Sysex7Borrowed(buffer)),
             Err(e) => Err(e.clone()),
         }
-    }
-}
-
-impl<'a> GroupedBuilder for Sysex7UmpBuilder<'a> {
-    fn group(mut self, g: u4) -> Self {
-        if let Ok(buffer) = &mut self.0 {
-            buffer[0].set_nibble(1, g);
-        }
-        self
     }
 }
 

@@ -288,6 +288,12 @@ impl<'a> Sysex8BuilderBorrowed<'a> {
         }
         self
     }
+    pub fn group(mut self, g: u4) -> Self {
+        if let Ok(buffer) = &mut self.0 {
+            buffer[0].set_nibble(1, g);
+        }
+        self
+    }
     fn build(self) -> Result<Sysex8Borrowed<'a>> {
         match self.0 {
             Ok(buffer) => Ok(Sysex8Borrowed(buffer)),
@@ -303,15 +309,6 @@ impl<'a> Sysex8BuilderBorrowed<'a> {
         } else {
             Self(Err(Error::BufferOverflow))
         }
-    }
-}
-
-impl<'a> GroupedBuilder for Sysex8BuilderBorrowed<'a> {
-    fn group(mut self, g: u4) -> Self {
-        if let Ok(buffer) = &mut self.0 {
-            buffer[0].set_nibble(1, g);
-        }
-        self
     }
 }
 
@@ -547,6 +544,17 @@ impl<'a> Sysex8MessageGroupBuilderBorrowed<'a> {
         self.size += 1;
     }
 
+    pub fn group(mut self, g: u4) -> Self {
+        if self.error.is_some() || self.group == g {
+            return self;
+        }
+        self.group = g;
+        for chunk in self.buffer[..self.size * 4].chunks_exact_mut(4) {
+            chunk[0].set_nibble(1, g);
+        }
+        self
+    }
+
     pub fn payload<I: core::iter::Iterator<Item = u8>>(mut self, mut iter: I) -> Self {
         if self.error.is_some() {
             return self;
@@ -615,19 +623,6 @@ impl<'a> Sysex8MessageGroupBuilderBorrowed<'a> {
             return Err(Error::InvalidData);
         };
         Ok(Sysex8MessageGroup(&self.buffer[..4 * self.size]))
-    }
-}
-
-impl<'a> GroupedBuilder for Sysex8MessageGroupBuilderBorrowed<'a> {
-    fn group(mut self, g: u4) -> Self {
-        if self.error.is_some() || self.group == g {
-            return self;
-        }
-        self.group = g;
-        for chunk in self.buffer[..self.size * 4].chunks_exact_mut(4) {
-            chunk[0].set_nibble(1, g);
-        }
-        self
     }
 }
 
