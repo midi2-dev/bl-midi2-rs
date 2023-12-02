@@ -122,7 +122,7 @@ fn deduce_message_size<Repr: Fn(&Property) -> &Type>(
             .iter()
             .rev()
             .position(is_not_zero_int_literal)
-            .map(|v| 4 - v)
+            .map(|v| args.len() - v)
             .unwrap_or(0);
         core::cmp::max(accum, sz)
     })
@@ -669,9 +669,39 @@ fn should_implement_from_byte_data(properties: &Vec<Property>) -> bool {
     properties.iter().any(|p| p.has_byte_scheme())
 }
 
+#[derive(Debug)]
+struct GenerateMessageArgs {
+    grouped: bool,
+}
+
+impl syn::parse::Parse for GenerateMessageArgs {
+    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        let mut args = Vec::new();
+        loop {
+            if let Ok(ident) = input.parse::<Ident>() {
+                args.push(ident.to_string());
+                match input.parse::<syn::Token![,]>() {
+                    Err(_) => {
+                        assert!(input.is_empty());
+                        break;
+                    }
+                    _ => {}
+                }
+            } else {
+                assert!(input.is_empty());
+                break;
+            }
+        }
+        Ok(GenerateMessageArgs {
+            grouped: args.iter().find(|s| *s == "Grouped").is_some(),
+        })
+    }
+}
+
 #[proc_macro_attribute]
-pub fn generate_message(_attrs: TokenStream1, item: TokenStream1) -> TokenStream1 {
+pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1 {
     let input = parse_macro_input!(item as ItemStruct);
+    let args = parse_macro_input!(attrs as GenerateMessageArgs);
 
     let root_ident = input.ident;
     let properties = {
@@ -700,12 +730,9 @@ pub fn generate_message(_attrs: TokenStream1, item: TokenStream1) -> TokenStream
         specialised_message_trait_impl_borrowed(&root_ident);
     let builder = builder(&root_ident);
     let builder_impl = builder_impl(&root_ident, &properties);
-    let grouped_builder_impl = grouped_builder_impl(&root_ident);
     let data_trait_impl_owned = data_trait_impl_owned(&root_ident, sz_ump);
     let data_trait_impl_borrowed = data_trait_impl_borrowed(&root_ident);
     let from_data_trait_impl = from_data_trait_impl(&root_ident, &properties, sz_ump);
-    let grouped_message_trait_impl_owned = grouped_message_trait_impl_owned(&root_ident);
-    let grouped_message_trait_impl_borrowed = grouped_message_trait_impl_borrowed(&root_ident);
     let debug_impl_owned = debug_impl_owned(&root_ident, sz_ump);
     let debug_impl_borrowed = debug_impl_borrowed(&root_ident);
     let impl_aggregate_message = impl_aggregate_message(&root_ident);
@@ -726,12 +753,9 @@ pub fn generate_message(_attrs: TokenStream1, item: TokenStream1) -> TokenStream
         #specialised_message_trait_impl_borrowed
         #builder
         #builder_impl
-        #grouped_builder_impl
         #data_trait_impl_owned
         #data_trait_impl_borrowed
         #from_data_trait_impl
-        #grouped_message_trait_impl_owned
-        #grouped_message_trait_impl_borrowed
         #debug_impl_owned
         #debug_impl_borrowed
         #impl_aggregate_message
@@ -741,6 +765,18 @@ pub fn generate_message(_attrs: TokenStream1, item: TokenStream1) -> TokenStream
         #specialised_message_trait_impl_aggregate
         #from_data_trait_impl_aggreagate
     };
+
+    if args.grouped {
+        let grouped_builder_impl = grouped_builder_impl(&root_ident);
+        let grouped_message_trait_impl_owned = grouped_message_trait_impl_owned(&root_ident);
+        let grouped_message_trait_impl_borrowed = grouped_message_trait_impl_borrowed(&root_ident);
+
+        ret.extend(quote! {
+            #grouped_builder_impl
+            #grouped_message_trait_impl_owned
+            #grouped_message_trait_impl_borrowed
+        });
+    }
 
     if should_implement_from_byte_data(&properties) {
         let from_byte_data_impl_owned = from_byte_data_impl_owned(&root_ident, &properties);

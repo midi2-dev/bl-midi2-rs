@@ -33,7 +33,7 @@ use utility::UtilityBuilder;
 use utility::UtilityMessage;
 use utility::UtilityOwned;
 
-#[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Clone, Debug, PartialEq, Eq)]
+#[derive(derive_more::From, midi2_attr::Data, Clone, Debug, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum Message<'a> {
     Midi1ChannelVoice(Midi1ChannelVoiceMessage<'a>),
@@ -44,7 +44,7 @@ pub enum Message<'a> {
     SystemCommon(SystemCommonMessage<'a>),
 }
 
-#[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Clone, Debug, PartialEq, Eq)]
+#[derive(derive_more::From, midi2_attr::Data, Clone, Debug, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum MessageBorrowed<'a> {
     Midi1ChannelVoice(Midi1ChannelVoiceBorrowed<'a>),
@@ -55,7 +55,7 @@ pub enum MessageBorrowed<'a> {
     SystemCommon(SystemCommonBorrowed<'a>),
 }
 
-#[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Clone, Debug, PartialEq, Eq)]
+#[derive(derive_more::From, midi2_attr::Data, Clone, Debug, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum MessageOwned {
     Midi1ChannelVoice(Midi1ChannelVoiceOwned),

@@ -3,7 +3,7 @@ use crate::message::midi2_channel_voice::controller::Controller;
 const OP_CODE: u32 = 0b0000;
 const MIDI2_CHANNEL_VOICE_TYPE: u32 = 0x4;
 
-#[midi2_attr::generate_message]
+#[midi2_attr::generate_message(Grouped)]
 struct RegisteredPerNoteController {
     ump_type: Property<
         NumericalConstant<MIDI2_CHANNEL_VOICE_TYPE>,
