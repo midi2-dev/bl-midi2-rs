@@ -4,7 +4,9 @@ repos:
   hooks:
   - id: fmt
   - id: cargo-check
+    args: ["--features", "std"]
   - id: clippy
+    args: ["--features", "std", "--", "-D", "warnings"]
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v4.4.0
   hooks:
