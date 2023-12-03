@@ -3,16 +3,36 @@ repos:
   rev: v1.0
   hooks:
   - id: fmt
+    stages: [pre-commit]
+  - id: cargo-check
+    stages: [pre-commit]
   - id: cargo-check
     args: ["--features", "std"]
+    name: cargo-check-std 
+    stages: [pre-commit]
   - id: clippy
-    args: ["--features", "std", "--", "-D", "warnings"]
+    args: [--features, std, --, -D, warnings]
+    stages: [pre-commit]
+  - id: clippy
+    name: clippy-std
+    stages: [pre-commit]
+- repo: https://github.com/crate-ci/committed
+  rev: v1.0.20
+  hooks:
+  - id: committed
+    stages: [commit-msg]
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v4.4.0
   hooks:
   - id: check-added-large-files
+    stages: [pre-commit]
   - id: check-case-conflict
+    stages: [pre-commit]
   - id: check-toml
+    stages: [pre-commit]
   - id: check-yaml
+    stages: [pre-commit]
   - id: detect-private-key
+    stages: [pre-commit]
   - id: mixed-line-ending
+    stages: [pre-commit]
