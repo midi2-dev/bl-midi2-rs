@@ -22,12 +22,6 @@ use system_common::SystemCommonBorrowed;
 use system_common::SystemCommonBuilder;
 use system_common::SystemCommonMessage;
 use system_common::SystemCommonOwned;
-use system_exclusive_7bit::Sysex7Borrowed;
-use system_exclusive_7bit::Sysex7Message;
-use system_exclusive_7bit::Sysex7Owned;
-use system_exclusive_8bit::Sysex8Borrowed;
-use system_exclusive_8bit::Sysex8Message;
-use system_exclusive_8bit::Sysex8Owned;
 use utility::UtilityBorrowed;
 use utility::UtilityBuilder;
 use utility::UtilityMessage;
@@ -38,8 +32,6 @@ use utility::UtilityOwned;
 pub enum Message<'a> {
     Midi1ChannelVoice(Midi1ChannelVoiceMessage<'a>),
     Midi2ChannelVoice(Midi2ChannelVoiceMessage<'a>),
-    Sysex7(Sysex7Message<'a>),
-    Sysex8(Sysex8Message<'a>),
     Utility(UtilityMessage<'a>),
     SystemCommon(SystemCommonMessage<'a>),
 }
@@ -49,8 +41,6 @@ pub enum Message<'a> {
 pub enum MessageBorrowed<'a> {
     Midi1ChannelVoice(Midi1ChannelVoiceBorrowed<'a>),
     Midi2ChannelVoice(Midi2ChannelVoiceBorrowed<'a>),
-    Sysex7(Sysex7Borrowed<'a>),
-    Sysex8(Sysex8Borrowed<'a>),
     Utility(UtilityBorrowed<'a>),
     SystemCommon(SystemCommonBorrowed<'a>),
 }
@@ -60,8 +50,6 @@ pub enum MessageBorrowed<'a> {
 pub enum MessageOwned {
     Midi1ChannelVoice(Midi1ChannelVoiceOwned),
     Midi2ChannelVoice(Midi2ChannelVoiceOwned),
-    Sysex7(Sysex7Owned),
-    Sysex8(Sysex8Owned),
     Utility(UtilityOwned),
     SystemCommon(SystemCommonOwned),
 }
@@ -180,8 +168,8 @@ impl MessageOwned {
 
 const MIDI1_CHANNEL_VOICE_CODE: u8 = 2;
 const MIDI2_CHANNEL_VOICE_CODE: u8 = 4;
-const SYSEX7_CODE: u8 = 3;
-const SYSEX8_CODE: u8 = 5;
+// const SYSEX7_CODE: u8 = 3;
+// const SYSEX8_CODE: u8 = 5;
 const UTILITY_CODE: u8 = 0;
 const SYSTEM_COMMON_CODE: u8 = 1;
 
@@ -196,8 +184,6 @@ impl<'a> FromData<'a> for MessageBorrowed<'a> {
             MIDI2_CHANNEL_VOICE_CODE => {
                 Midi2ChannelVoice(Midi2ChannelVoiceBorrowed::from_data_unchecked(buffer))
             }
-            SYSEX7_CODE => Sysex7(Sysex7Borrowed::from_data_unchecked(buffer)),
-            SYSEX8_CODE => Sysex8(Sysex8Borrowed::from_data_unchecked(buffer)),
             UTILITY_CODE => Utility(UtilityBorrowed::from_data_unchecked(buffer)),
             SYSTEM_COMMON_CODE => SystemCommon(SystemCommonBorrowed::from_data_unchecked(buffer)),
             _ => panic!(),
@@ -207,8 +193,6 @@ impl<'a> FromData<'a> for MessageBorrowed<'a> {
         match u8::from(buffer[0].nibble(0)) {
             MIDI1_CHANNEL_VOICE_CODE => Midi1ChannelVoiceBorrowed::validate_data(buffer),
             MIDI2_CHANNEL_VOICE_CODE => Midi2ChannelVoiceBorrowed::validate_data(buffer),
-            SYSEX7_CODE => Sysex7Borrowed::validate_data(buffer),
-            SYSEX8_CODE => Sysex8Borrowed::validate_data(buffer),
             UTILITY_CODE => UtilityBorrowed::validate_data(buffer),
             SYSTEM_COMMON_CODE => SystemCommonBorrowed::validate_data(buffer),
             _ => Err(Error::InvalidData),
@@ -302,8 +286,6 @@ impl<'a> IntoOwned for MessageBorrowed<'a> {
         match self {
             B::Midi1ChannelVoice(m) => O::Midi1ChannelVoice(m.into_owned()),
             B::Midi2ChannelVoice(m) => O::Midi2ChannelVoice(m.into_owned()),
-            B::Sysex7(m) => O::Sysex7(m.into_owned()),
-            B::Sysex8(m) => O::Sysex8(m.into_owned()),
             B::Utility(m) => O::Utility(m.into_owned()),
             B::SystemCommon(m) => O::SystemCommon(m.into_owned()),
         }
@@ -318,8 +300,6 @@ impl<'a> IntoOwned for Message<'a> {
         match self {
             M::Midi1ChannelVoice(m) => O::Midi1ChannelVoice(m.into_owned()),
             M::Midi2ChannelVoice(m) => O::Midi2ChannelVoice(m.into_owned()),
-            M::Sysex7(m) => O::Sysex7(m.into_owned()),
-            M::Sysex8(m) => O::Sysex8(m.into_owned()),
             M::Utility(m) => O::Utility(m.into_owned()),
             M::SystemCommon(m) => O::SystemCommon(m.into_owned()),
         }
@@ -333,8 +313,6 @@ impl<'a> core::convert::From<MessageBorrowed<'a>> for Message<'a> {
         match value {
             B::Midi1ChannelVoice(m) => M::Midi1ChannelVoice(m.into()),
             B::Midi2ChannelVoice(m) => M::Midi2ChannelVoice(m.into()),
-            B::Sysex7(m) => M::Sysex7(m.into()),
-            B::Sysex8(m) => M::Sysex8(m.into()),
             B::Utility(m) => M::Utility(m.into()),
             B::SystemCommon(m) => M::SystemCommon(m.into()),
         }
@@ -348,8 +326,6 @@ impl<'a> core::convert::From<MessageOwned> for Message<'a> {
         match value {
             O::Midi1ChannelVoice(m) => M::Midi1ChannelVoice(m.into()),
             O::Midi2ChannelVoice(m) => M::Midi2ChannelVoice(m.into()),
-            O::Sysex7(m) => M::Sysex7(m.into()),
-            O::Sysex8(m) => M::Sysex8(m.into()),
             O::Utility(m) => M::Utility(m.into()),
             O::SystemCommon(m) => M::SystemCommon(m.into()),
         }

@@ -56,6 +56,8 @@ pub trait Sysex<'a, 'b: 'a> {
     fn payload(&'b self) -> Self::PayloadIterator;
 }
 
-pub trait Streamed {
-    fn stream_id(&self) -> u8;
+pub trait Streamed: Data {
+    fn stream_id(&self) -> u8 {
+        self.data()[0].octet(2)
+    }
 }
