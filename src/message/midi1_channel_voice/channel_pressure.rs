@@ -69,4 +69,19 @@ mod tests {
             u7::new(0x09),
         );
     }
+
+    #[test]
+    fn into_owned() {
+        assert_eq!(
+            ChannelPressureMessage::from_data(&[0x2FD6_0900, 0x0, 0x0, 0x0])
+                .unwrap()
+                .into_owned(),
+            ChannelPressureOwned::builder()
+                .group(u4::new(0xF))
+                .channel(u4::new(0x6))
+                .pressure(u7::new(0x09))
+                .build()
+                .unwrap(),
+        );
+    }
 }
