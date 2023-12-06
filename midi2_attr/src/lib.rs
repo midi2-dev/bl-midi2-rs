@@ -444,6 +444,20 @@ fn from_data_trait_impl_aggreagate(root_ident: &Ident) -> TokenStream {
     }
 }
 
+fn level2_message_impl_owned(root_ident: &Ident) -> TokenStream {
+    let ident = message_owned_ident(root_ident);
+    quote! {
+        impl Level2Message for #ident {}
+    }
+}
+
+fn level2_message_impl_borrowed(root_ident: &Ident) -> TokenStream {
+    let ident = message_borrowed_ident(root_ident);
+    quote! {
+        impl<'a> Level2Message for #ident<'a> {}
+    }
+}
+
 fn from_byte_data_impl_owned(
     root_ident: &Ident,
     properties: &Vec<Property>,
@@ -771,6 +785,8 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     let specialised_message_trait_impl_aggregate =
         specialised_message_trait_impl_aggregate(&root_ident, &properties, args.channeled);
     let from_data_trait_impl_aggreagate = from_data_trait_impl_aggreagate(&root_ident);
+    let level2_message_impl_borrowed = level2_message_impl_borrowed(&root_ident);
+    let level2_message_impl_owned = level2_message_impl_owned(&root_ident);
 
     let mut ret = quote! {
         #imports
@@ -793,6 +809,8 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
         #into_owned_impl_borrowed
         #specialised_message_trait_impl_aggregate
         #from_data_trait_impl_aggreagate
+        #level2_message_impl_borrowed
+        #level2_message_impl_owned
     };
 
     if args.grouped {

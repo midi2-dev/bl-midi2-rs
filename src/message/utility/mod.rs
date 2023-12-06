@@ -125,18 +125,15 @@ pub fn validate_packet(p: &[u32], op_code: u4) -> Result<()> {
     }
 }
 
-macro_rules! from_message_impl {
-    ($message: ty) => {
-        impl<'a> core::convert::From<$message> for UtilityMessage<'a> {
-            fn from(value: $message) -> Self {
-                <UtilityOwned as core::convert::From<$message>>::from(value).into()
-            }
-        }
-    };
+impl<'a, M> core::convert::From<M> for UtilityMessage<'a>
+where
+    M: Level2Message,
+    UtilityOwned: core::convert::From<M>,
+{
+    fn from(value: M) -> Self {
+        <UtilityOwned as core::convert::From<M>>::from(value).into()
+    }
 }
-
-from_message_impl!(NoOpOwned);
-from_message_impl!(TimeStampOwned);
 
 #[cfg(test)]
 mod tests {

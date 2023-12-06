@@ -67,3 +67,5 @@ pub trait Streamed: Data {
         self.data()[0].octet(2)
     }
 }
+
+pub(crate) trait Level2Message {}

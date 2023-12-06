@@ -505,26 +505,15 @@ impl<'a> IntoOwned for SystemCommonMessage<'a> {
     }
 }
 
-macro_rules! from_message_impl {
-    ($message: ty) => {
-        impl<'a> core::convert::From<$message> for SystemCommonMessage<'a> {
-            fn from(value: $message) -> Self {
-                <SystemCommonOwned as core::convert::From<$message>>::from(value).into()
-            }
-        }
-    };
+impl<'a, M> core::convert::From<M> for SystemCommonMessage<'a>
+where
+    M: Level2Message,
+    SystemCommonOwned: core::convert::From<M>,
+{
+    fn from(value: M) -> Self {
+        <SystemCommonOwned as core::convert::From<M>>::from(value).into()
+    }
 }
-
-from_message_impl!(ActiveSensingOwned);
-from_message_impl!(ContinueOwned);
-from_message_impl!(ResetOwned);
-from_message_impl!(SongPositionPointerOwned);
-from_message_impl!(SongSelectOwned);
-from_message_impl!(StartOwned);
-from_message_impl!(StopOwned);
-from_message_impl!(TimeCodeOwned);
-from_message_impl!(TimingClockOwned);
-from_message_impl!(TuneRequestOwned);
 
 #[cfg(test)]
 mod tests {

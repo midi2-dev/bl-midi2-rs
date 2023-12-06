@@ -466,31 +466,15 @@ impl<'a> core::convert::From<Midi2ChannelVoiceOwned> for Midi2ChannelVoiceMessag
     }
 }
 
-macro_rules! from_message_impl {
-    ($message: ty) => {
-        impl<'a> core::convert::From<$message> for Midi2ChannelVoiceMessage<'a> {
-            fn from(value: $message) -> Self {
-                <Midi2ChannelVoiceOwned as core::convert::From<$message>>::from(value).into()
-            }
-        }
-    };
+impl<'a, M> core::convert::From<M> for Midi2ChannelVoiceMessage<'a>
+where
+    M: Level2Message,
+    Midi2ChannelVoiceOwned: core::convert::From<M>,
+{
+    fn from(value: M) -> Self {
+        <Midi2ChannelVoiceOwned as core::convert::From<M>>::from(value).into()
+    }
 }
-
-from_message_impl!(AssignableControllerOwned);
-from_message_impl!(AssignablePerNoteControllerOwned);
-from_message_impl!(ChannelPitchBendOwned);
-from_message_impl!(ChannelPressureOwned);
-from_message_impl!(ControlChangeOwned);
-from_message_impl!(KeyPressureOwned);
-from_message_impl!(NoteOffOwned);
-from_message_impl!(NoteOnOwned);
-from_message_impl!(PerNoteManagementOwned);
-from_message_impl!(PerNotePitchBendOwned);
-from_message_impl!(ProgramChangeOwned);
-from_message_impl!(RegisteredControllerOwned);
-from_message_impl!(RegisteredPerNoteControllerOwned);
-from_message_impl!(RelativeAssignableControllerOwned);
-from_message_impl!(RelativeRegisteredControllerOwned);
 
 #[cfg(test)]
 mod test {

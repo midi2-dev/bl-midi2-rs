@@ -336,23 +336,15 @@ impl<'a> IntoOwned for Midi1ChannelVoiceMessage<'a> {
     }
 }
 
-macro_rules! from_message_impl {
-    ($message: ty) => {
-        impl<'a> core::convert::From<$message> for Midi1ChannelVoiceMessage<'a> {
-            fn from(value: $message) -> Self {
-                <Midi1ChannelVoiceOwned as core::convert::From<$message>>::from(value).into()
-            }
-        }
-    };
+impl<'a, M> core::convert::From<M> for Midi1ChannelVoiceMessage<'a>
+where
+    M: Level2Message,
+    Midi1ChannelVoiceOwned: core::convert::From<M>,
+{
+    fn from(value: M) -> Self {
+        <Midi1ChannelVoiceOwned as core::convert::From<M>>::from(value).into()
+    }
 }
-
-from_message_impl!(ChannelPressureOwned);
-from_message_impl!(ControlChangeOwned);
-from_message_impl!(KeyPressureOwned);
-from_message_impl!(NoteOffOwned);
-from_message_impl!(NoteOnOwned);
-from_message_impl!(PitchBendOwned);
-from_message_impl!(ProgramChangeOwned);
 
 #[cfg(test)]
 mod test {
