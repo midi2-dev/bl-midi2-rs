@@ -45,6 +45,11 @@ pub trait IntoOwned {
     fn into_owned(self) -> Self::Owned;
 }
 
+pub trait TryIntoOwned {
+    type Owned;
+    fn try_into_owned(self) -> Result<Self::Owned>;
+}
+
 pub trait Grouped: Data {
     fn group(&self) -> u4 {
         self.data()[0].nibble(1)

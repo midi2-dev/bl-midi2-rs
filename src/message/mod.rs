@@ -22,6 +22,16 @@ use system_common::SystemCommonBorrowed;
 use system_common::SystemCommonBuilder;
 use system_common::SystemCommonMessage;
 use system_common::SystemCommonOwned;
+use system_exclusive_7bit::Sysex7Borrowed;
+#[cfg(feature = "std")]
+use system_exclusive_7bit::Sysex7Message;
+#[cfg(feature = "std")]
+use system_exclusive_7bit::Sysex7Owned;
+use system_exclusive_8bit::Sysex8Borrowed;
+#[cfg(feature = "std")]
+use system_exclusive_8bit::Sysex8Message;
+#[cfg(feature = "std")]
+use system_exclusive_8bit::Sysex8Owned;
 use utility::UtilityBorrowed;
 use utility::UtilityBuilder;
 use utility::UtilityMessage;
@@ -34,6 +44,10 @@ pub enum Message<'a> {
     Midi2ChannelVoice(Midi2ChannelVoiceMessage<'a>),
     Utility(UtilityMessage<'a>),
     SystemCommon(SystemCommonMessage<'a>),
+    #[cfg(feature = "std")]
+    Sysex7(Sysex7Message<'a>),
+    #[cfg(feature = "std")]
+    Sysex8(Sysex8Message<'a>),
 }
 
 #[derive(derive_more::From, midi2_attr::Data, Clone, Debug, PartialEq, Eq)]
@@ -43,6 +57,8 @@ pub enum MessageBorrowed<'a> {
     Midi2ChannelVoice(Midi2ChannelVoiceBorrowed<'a>),
     Utility(UtilityBorrowed<'a>),
     SystemCommon(SystemCommonBorrowed<'a>),
+    Sysex7(Sysex7Borrowed<'a>),
+    Sysex8(Sysex8Borrowed<'a>),
 }
 
 #[derive(derive_more::From, midi2_attr::Data, Clone, Debug, PartialEq, Eq)]
@@ -52,6 +68,10 @@ pub enum MessageOwned {
     Midi2ChannelVoice(Midi2ChannelVoiceOwned),
     Utility(UtilityOwned),
     SystemCommon(SystemCommonOwned),
+    #[cfg(feature = "std")]
+    Sysex7(Sysex7Owned),
+    #[cfg(feature = "std")]
+    Sysex8(Sysex8Owned),
 }
 
 impl<'a> Message<'a> {
@@ -168,8 +188,8 @@ impl MessageOwned {
 
 const MIDI1_CHANNEL_VOICE_CODE: u8 = 2;
 const MIDI2_CHANNEL_VOICE_CODE: u8 = 4;
-// const SYSEX7_CODE: u8 = 3;
-// const SYSEX8_CODE: u8 = 5;
+const SYSEX7_CODE: u8 = 3;
+const SYSEX8_CODE: u8 = 5;
 const UTILITY_CODE: u8 = 0;
 const SYSTEM_COMMON_CODE: u8 = 1;
 
@@ -186,6 +206,8 @@ impl<'a> FromData<'a> for MessageBorrowed<'a> {
             }
             UTILITY_CODE => Utility(UtilityBorrowed::from_data_unchecked(buffer)),
             SYSTEM_COMMON_CODE => SystemCommon(SystemCommonBorrowed::from_data_unchecked(buffer)),
+            SYSEX7_CODE => Sysex7(Sysex7Borrowed::from_data_unchecked(buffer)),
+            SYSEX8_CODE => Sysex8(Sysex8Borrowed::from_data_unchecked(buffer)),
             _ => panic!(),
         }
     }
@@ -195,11 +217,14 @@ impl<'a> FromData<'a> for MessageBorrowed<'a> {
             MIDI2_CHANNEL_VOICE_CODE => Midi2ChannelVoiceBorrowed::validate_data(buffer),
             UTILITY_CODE => UtilityBorrowed::validate_data(buffer),
             SYSTEM_COMMON_CODE => SystemCommonBorrowed::validate_data(buffer),
+            SYSEX7_CODE => Sysex7Borrowed::validate_data(buffer),
+            SYSEX8_CODE => Sysex8Borrowed::validate_data(buffer),
             _ => Err(Error::InvalidData),
         }
     }
 }
 
+#[cfg(feature = "std")]
 impl<'a> FromData<'a> for Message<'a> {
     type Target = Self;
     fn validate_data(buffer: &'a [u32]) -> Result<()> {
@@ -207,6 +232,19 @@ impl<'a> FromData<'a> for Message<'a> {
     }
     fn from_data_unchecked(buffer: &'a [u32]) -> Self::Target {
         MessageBorrowed::from_data_unchecked(buffer).into()
+    }
+}
+
+#[cfg(not(feature = "std"))]
+impl<'a> FromData<'a> for Message<'a> {
+    type Target = Self;
+    fn validate_data(buffer: &'a [u32]) -> Result<()> {
+        MessageBorrowed::validate_data(buffer)
+    }
+    fn from_data_unchecked(buffer: &'a [u32]) -> Self::Target {
+        MessageBorrowed::from_data_unchecked(buffer)
+            .try_into()
+            .unwrap()
     }
 }
 
@@ -278,6 +316,23 @@ impl<'b> TryWriteByteData for Message<'b> {
     }
 }
 
+#[cfg(not(feature = "std"))]
+impl<'a> TryIntoOwned for MessageBorrowed<'a> {
+    type Owned = MessageOwned;
+    fn try_into_owned(self) -> Result<Self::Owned> {
+        use MessageBorrowed as B;
+        use MessageOwned as O;
+        match self {
+            B::Midi1ChannelVoice(m) => Ok(O::Midi1ChannelVoice(m.into_owned())),
+            B::Midi2ChannelVoice(m) => Ok(O::Midi2ChannelVoice(m.into_owned())),
+            B::Utility(m) => Ok(O::Utility(m.into_owned())),
+            B::SystemCommon(m) => Ok(O::SystemCommon(m.into_owned())),
+            _ => Err(Error::InvalidData),
+        }
+    }
+}
+
+#[cfg(feature = "std")]
 impl<'a> IntoOwned for MessageBorrowed<'a> {
     type Owned = MessageOwned;
     fn into_owned(self) -> Self::Owned {
@@ -288,10 +343,13 @@ impl<'a> IntoOwned for MessageBorrowed<'a> {
             B::Midi2ChannelVoice(m) => O::Midi2ChannelVoice(m.into_owned()),
             B::Utility(m) => O::Utility(m.into_owned()),
             B::SystemCommon(m) => O::SystemCommon(m.into_owned()),
+            B::Sysex7(m) => O::Sysex7(m.into_owned()),
+            B::Sysex8(m) => O::Sysex8(m.into_owned()),
         }
     }
 }
 
+#[cfg(not(feature = "std"))]
 impl<'a> IntoOwned for Message<'a> {
     type Owned = MessageOwned;
     fn into_owned(self) -> Self::Owned {
@@ -306,6 +364,24 @@ impl<'a> IntoOwned for Message<'a> {
     }
 }
 
+#[cfg(feature = "std")]
+impl<'a> IntoOwned for Message<'a> {
+    type Owned = MessageOwned;
+    fn into_owned(self) -> Self::Owned {
+        use Message as M;
+        use MessageOwned as O;
+        match self {
+            M::Midi1ChannelVoice(m) => O::Midi1ChannelVoice(m.into_owned()),
+            M::Midi2ChannelVoice(m) => O::Midi2ChannelVoice(m.into_owned()),
+            M::Utility(m) => O::Utility(m.into_owned()),
+            M::SystemCommon(m) => O::SystemCommon(m.into_owned()),
+            M::Sysex7(m) => O::Sysex7(m.into_owned()),
+            M::Sysex8(m) => O::Sysex8(m.into_owned()),
+        }
+    }
+}
+
+#[cfg(feature = "std")]
 impl<'a> core::convert::From<MessageBorrowed<'a>> for Message<'a> {
     fn from(value: MessageBorrowed<'a>) -> Self {
         use Message as M;
@@ -315,10 +391,45 @@ impl<'a> core::convert::From<MessageBorrowed<'a>> for Message<'a> {
             B::Midi2ChannelVoice(m) => M::Midi2ChannelVoice(m.into()),
             B::Utility(m) => M::Utility(m.into()),
             B::SystemCommon(m) => M::SystemCommon(m.into()),
+            B::Sysex7(m) => M::Sysex7(m.into()),
+            B::Sysex8(m) => M::Sysex8(m.into()),
         }
     }
 }
 
+#[cfg(not(feature = "std"))]
+impl<'a> core::convert::TryFrom<MessageBorrowed<'a>> for Message<'a> {
+    type Error = Error;
+    fn try_from(value: MessageBorrowed<'a>) -> Result<Self> {
+        use Message as M;
+        use MessageBorrowed as B;
+        match value {
+            B::Midi1ChannelVoice(m) => Ok(M::Midi1ChannelVoice(m.into())),
+            B::Midi2ChannelVoice(m) => Ok(M::Midi2ChannelVoice(m.into())),
+            B::Utility(m) => Ok(M::Utility(m.into())),
+            B::SystemCommon(m) => Ok(M::SystemCommon(m.into())),
+            _ => Err(Error::InvalidData),
+        }
+    }
+}
+
+#[cfg(feature = "std")]
+impl<'a> core::convert::From<MessageOwned> for Message<'a> {
+    fn from(value: MessageOwned) -> Self {
+        use Message as M;
+        use MessageOwned as O;
+        match value {
+            O::Midi1ChannelVoice(m) => M::Midi1ChannelVoice(m.into()),
+            O::Midi2ChannelVoice(m) => M::Midi2ChannelVoice(m.into()),
+            O::Utility(m) => M::Utility(m.into()),
+            O::SystemCommon(m) => M::SystemCommon(m.into()),
+            O::Sysex7(m) => M::Sysex7(m.into()),
+            O::Sysex8(m) => M::Sysex8(m.into()),
+        }
+    }
+}
+
+#[cfg(not(feature = "std"))]
 impl<'a> core::convert::From<MessageOwned> for Message<'a> {
     fn from(value: MessageOwned) -> Self {
         use Message as M;
