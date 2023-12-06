@@ -32,6 +32,43 @@ impl Property<u20, UmpSchema<0x000F_FFFF, 0x0, 0x0, 0x0>, ()> for Ump {
     }
 }
 
+impl<const T: u32, BytesSchema: Schema>
+    Property<NumericalConstant<T>, UmpSchema<0x0C00_0000, 0x0, 0x0, 0x0>, BytesSchema> for Ump
+{
+    fn get(_data: &[<Ump as Buffer>::Data]) -> NumericalConstant<T> {
+        NumericalConstant()
+    }
+    fn write(data: &mut [<Ump as Buffer>::Data], _: NumericalConstant<T>) {
+        data[0x0].set_crumb(2, T.truncate());
+    }
+    fn validate(data: &[<Ump as Buffer>::Data]) -> Result<()> {
+        if u32::from(data[0].crumb(2)) == T {
+            Ok(())
+        } else {
+            Err(Error::InvalidData)
+        }
+    }
+}
+
+impl<const T: u32, BytesSchema: Schema>
+    Property<NumericalConstant<T>, UmpSchema<0x03FF_0000, 0x0, 0x0, 0x0>, BytesSchema> for Ump
+{
+    fn get(_data: &[<Ump as Buffer>::Data]) -> NumericalConstant<T> {
+        NumericalConstant()
+    }
+    fn write(data: &mut [<Ump as Buffer>::Data], _: NumericalConstant<T>) {
+        data[0] &= !0x03FF_0000;
+        data[0] |= T;
+    }
+    fn validate(data: &[<Ump as Buffer>::Data]) -> Result<()> {
+        if data[0] & 0x03FF_0000 == T {
+            Ok(())
+        } else {
+            Err(Error::InvalidData)
+        }
+    }
+}
+
 macro_rules! u4_ump_numerical_constants_property_imp {
     ($ump1:expr,$ump2:expr,$ump3:expr,$ump4:expr,$buffer_index:expr,$nibble_index:expr) => {
         impl<const T: u32, BytesSchema: Schema>
@@ -166,6 +203,70 @@ macro_rules! bool_ump_property_impl {
 
 bool_ump_property_impl!(0x0000_0001, 0x0, 0x0, 0x0, 0, 31);
 bool_ump_property_impl!(0x0000_0002, 0x0, 0x0, 0x0, 0, 30);
+bool_ump_property_impl!(
+    0x0,
+    0b0000_0000_0000_0000_0000_0000_0000_0001,
+    0x0,
+    0x0,
+    1,
+    31
+);
+bool_ump_property_impl!(
+    0x0,
+    0b0000_0000_0000_0000_0000_0000_0000_0010,
+    0x0,
+    0x0,
+    1,
+    30
+);
+bool_ump_property_impl!(
+    0x0,
+    0b0000_0000_0000_0000_0000_0000_0000_0100,
+    0x0,
+    0x0,
+    1,
+    29
+);
+bool_ump_property_impl!(
+    0x0,
+    0b0000_0000_0000_0000_0000_0000_0000_1000,
+    0x0,
+    0x0,
+    1,
+    28
+);
+bool_ump_property_impl!(
+    0x0,
+    0b0000_0000_0000_0000_0000_0000_0001_0000,
+    0x0,
+    0x0,
+    1,
+    27
+);
+bool_ump_property_impl!(
+    0x0,
+    0b0000_0000_0000_0000_0000_0001_0000_0000,
+    0x0,
+    0x0,
+    1,
+    23
+);
+bool_ump_property_impl!(
+    0x0,
+    0b0000_0000_0000_0000_0000_0010_0000_0000,
+    0x0,
+    0x0,
+    1,
+    22
+);
+bool_ump_property_impl!(
+    0x0,
+    0b1000_0000_0000_0000_0000_0000_0000_0000,
+    0x0,
+    0x0,
+    1,
+    0
+);
 
 macro_rules! u4_ump_property_impl {
     ($ump1:expr,$ump2:expr,$ump3:expr,$ump4:expr,$buffer_index:expr,$nibble_index:expr) => {

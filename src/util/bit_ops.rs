@@ -3,6 +3,8 @@ use crate::*;
 pub trait BitOps {
     fn bit(&self, index: usize) -> bool;
     fn set_bit(&mut self, index: usize, v: bool) -> &mut Self;
+    fn crumb(&self, index: usize) -> u2;
+    fn set_crumb(&mut self, index: usize, v: u2) -> &mut Self;
     fn nibble(&self, index: usize) -> u4;
     fn set_nibble(&mut self, index: usize, v: u4) -> &mut Self;
     fn octet(&self, index: usize) -> u8;
@@ -23,6 +25,19 @@ impl BitOps for u32 {
         let shift = 31 - index;
         *self &= !(0b1 << shift);
         *self |= v << shift;
+        self
+    }
+
+    fn crumb(&self, index: usize) -> u2 {
+        assert!(index < 16);
+        (self >> (30 - index * 2) & 0b11).try_into().unwrap()
+    }
+
+    fn set_crumb(&mut self, index: usize, v: u2) -> &mut Self {
+        assert!(index < 16);
+        let shift = 30 - index * 2;
+        *self &= !(0b11 << shift);
+        *self |= u32::from(v) << shift;
         self
     }
 
@@ -79,6 +94,12 @@ impl BitOps for u7 {
         *self |= v << shift;
         self
     }
+    fn crumb(&self, _index: usize) -> u2 {
+        todo!()
+    }
+    fn set_crumb(&mut self, _index: usize, _v: u2) -> &mut Self {
+        todo!()
+    }
     fn nibble(&self, _index: usize) -> u4 {
         todo!()
     }
@@ -111,6 +132,12 @@ impl BitOps for u8 {
         *self &= !(0b1 << shift);
         *self |= v << shift;
         self
+    }
+    fn crumb(&self, _index: usize) -> u2 {
+        todo!()
+    }
+    fn set_crumb(&mut self, _index: usize, _v: u2) -> &mut Self {
+        todo!()
     }
     fn nibble(&self, index: usize) -> u4 {
         assert!(index < 2);
@@ -227,6 +254,34 @@ mod tests_u32 {
         assert_eq!(
             0x0_u32.set_bit(10, true),
             &0b0000_0000_0010_0000_0000_0000_0000_0000,
+        );
+    }
+
+    #[test]
+    fn crumb() {
+        let p = 0b1101_1001_0000_0000_0000_0000_0011_1001_u32;
+        assert!(p.crumb(0) == u2::new(0b11));
+        assert!(p.crumb(1) == u2::new(0b01));
+        assert!(p.crumb(2) == u2::new(0b10));
+        assert!(p.crumb(3) == u2::new(0b01));
+        assert!(p.crumb(13) == u2::new(0b11));
+        assert!(p.crumb(14) == u2::new(0b10));
+        assert!(p.crumb(15) == u2::new(0b01));
+    }
+
+    #[test]
+    fn set_crumb() {
+        assert_eq!(
+            0x0_u32.set_crumb(0, u2::new(0b11)),
+            &0b1100_0000_0000_0000_0000_0000_0000_0000_u32,
+        );
+        assert_eq!(
+            0x0_u32.set_crumb(4, u2::new(0b10)),
+            &0b0000_0000_1000_0000_0000_0000_0000_0000_u32,
+        );
+        assert_eq!(
+            0x0_u32.set_crumb(15, u2::new(0b01)),
+            &0b0000_0000_0000_0000_0000_0000_0000_0001_u32,
         );
     }
 

@@ -8,6 +8,7 @@ pub mod sysex_bytes;
 pub mod system_common;
 pub mod system_exclusive_7bit;
 pub mod system_exclusive_8bit;
+pub mod ump_stream;
 pub mod utility;
 
 use midi1_channel_voice::Midi1ChannelVoiceBorrowed;
@@ -241,7 +242,6 @@ impl<'a> FromByteData<'a> for MessageOwned {
             0xF1..=0xF6 => SystemCommon(SystemCommonOwned::from_byte_data_unchecked(buffer)),
             0xF8..=0xFF => SystemCommon(SystemCommonOwned::from_byte_data_unchecked(buffer)),
             0xF0 => todo!(), // sysex begin
-            0xF7 => todo!(), // sysex end
             _ => panic!(),
         }
     }
