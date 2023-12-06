@@ -1,6 +1,6 @@
 use crate::{
     error::Error,
-    message::helpers as message_helpers,
+    message::helpers,
     result::Result,
     util::{debug, BitOps, Truncate},
     *,
@@ -320,7 +320,7 @@ impl<'a> Sysex8BuilderBorrowed<'a> {
     fn new(buffer: &'a mut [u32]) -> Self {
         if buffer.len() >= 4 {
             buffer[..4].copy_from_slice(&[0x0; 4]);
-            message_helpers::write_type_to_packet(Sysex8PartialBorrowed::OP_CODE, buffer);
+            helpers::write_type_to_packet(Sysex8PartialBorrowed::OP_CODE, buffer);
             buffer[0].set_nibble(3, u4::new(0x1)); // stream id
             Self(Ok(&mut buffer[..4]))
         } else {
@@ -480,8 +480,8 @@ impl<'a> FromData<'a> for Sysex8Borrowed<'a> {
         for chunk in buffer.chunks(4) {
             Sysex8PartialBorrowed::validate_data(chunk)?;
         }
-        message_helpers::sysex_group_consistent_groups(buffer, 4)?;
-        message_helpers::validate_sysex_group_statuses(
+        helpers::sysex_group_consistent_groups(buffer, 4)?;
+        helpers::validate_sysex_group_statuses(
             buffer,
             |s| s == u4::new(0x0),
             |s| s == u4::new(0x1),
