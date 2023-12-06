@@ -51,6 +51,12 @@ pub trait Grouped: Data {
     }
 }
 
+pub trait Channeled: Data {
+    fn channel(&self) -> u4 {
+        self.data()[0].nibble(3)
+    }
+}
+
 pub trait Sysex<'a, 'b: 'a> {
     type PayloadIterator: core::iter::Iterator<Item = u8>;
     fn payload(&'b self) -> Self::PayloadIterator;

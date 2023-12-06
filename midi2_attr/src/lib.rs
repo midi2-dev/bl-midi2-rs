@@ -65,6 +65,10 @@ impl Property {
     fn has_ump_scheme(&self) -> bool {
         !is_unit_tuple(&self.ump_representation)
     }
+
+    fn is_channel(&self) -> bool {
+        self.name == "channel"
+    }
 }
 
 fn is_constant_property(ty: &Type) -> bool {
@@ -236,10 +240,17 @@ fn specialised_message_trait_ident(root_ident: &Ident) -> TokenStream {
     quote! {#root_ident}
 }
 
-fn specialised_message_trait(root_ident: &Ident, properties: &Vec<Property>) -> TokenStream {
+fn specialised_message_trait(
+    root_ident: &Ident,
+    properties: &Vec<Property>,
+    channeled_message: bool,
+) -> TokenStream {
     let ident = specialised_message_trait_ident(root_ident);
     let mut methods = TokenStream::new();
-    for property in properties.iter().filter(|p| !p.constant) {
+    for property in properties
+        .iter()
+        .filter(|p| !p.constant && !(p.is_channel() && channeled_message))
+    {
         methods.extend(message_impl_method(property, false));
     }
     quote! {
@@ -268,9 +279,13 @@ fn specialised_message_trait_impl_borrowed(root_ident: &Ident) -> TokenStream {
 fn specialised_message_trait_impl_aggregate(
     root_ident: &Ident,
     properties: &Vec<Property>,
+    channeled_message: bool,
 ) -> TokenStream {
     let mut methods = TokenStream::new();
-    for property in properties.iter().filter(|p| !p.constant) {
+    for property in properties
+        .iter()
+        .filter(|p| !p.constant && !(p.is_channel() && channeled_message))
+    {
         methods.extend(aggregate_message_impl_method(property));
     }
     let message_ident = aggregate_message_ident(root_ident);
@@ -618,6 +633,27 @@ fn grouped_message_trait_impl_borrowed(root_ident: &Ident) -> TokenStream {
     }
 }
 
+fn channeled_message_trait_impl_owned(root_ident: &Ident) -> TokenStream {
+    let message_ident = message_owned_ident(root_ident);
+    quote! {
+        impl Channeled for #message_ident {}
+    }
+}
+
+fn channeled_message_trait_impl_borrowed(root_ident: &Ident) -> TokenStream {
+    let message_ident = message_borrowed_ident(root_ident);
+    quote! {
+        impl<'a> Channeled for #message_ident<'a> {}
+    }
+}
+
+fn channeled_message_trait_impl_aggregate(root_ident: &Ident) -> TokenStream {
+    let message_ident = aggregate_message_ident(root_ident);
+    quote! {
+        impl<'a> Channeled for #message_ident<'a> {}
+    }
+}
+
 fn debug_impl_owned(root_ident: &Ident, sz: usize) -> TokenStream {
     let message_ident = message_owned_ident(root_ident);
     quote! {
@@ -663,6 +699,7 @@ fn should_implement_from_byte_data(properties: &Vec<Property>) -> bool {
 #[derive(Debug)]
 struct GenerateMessageArgs {
     grouped: bool,
+    channeled: bool,
 }
 
 impl syn::parse::Parse for GenerateMessageArgs {
@@ -685,6 +722,7 @@ impl syn::parse::Parse for GenerateMessageArgs {
         }
         Ok(GenerateMessageArgs {
             grouped: args.iter().find(|s| *s == "Grouped").is_some(),
+            channeled: args.iter().find(|s| *s == "Channeled").is_some(),
         })
     }
 }
@@ -711,7 +749,7 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     let sz_bytes = deduce_message_size(&properties, |p| &p.bytes_representation);
 
     let imports = imports();
-    let specialised_message = specialised_message_trait(&root_ident, &properties);
+    let specialised_message = specialised_message_trait(&root_ident, &properties, args.channeled);
 
     let message_owned = message_owned(&root_ident);
     let message_owned_impl = message_owned_impl(&root_ident);
@@ -731,7 +769,7 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     let into_owned_impl_borrowed = into_owned_impl_borrowed(&root_ident, sz_ump);
     let into_owned_impl_aggregate = into_owned_impl_aggregate(&root_ident);
     let specialised_message_trait_impl_aggregate =
-        specialised_message_trait_impl_aggregate(&root_ident, &properties);
+        specialised_message_trait_impl_aggregate(&root_ident, &properties, args.channeled);
     let from_data_trait_impl_aggreagate = from_data_trait_impl_aggreagate(&root_ident);
 
     let mut ret = quote! {
@@ -764,6 +802,20 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
         ret.extend(quote! {
             #grouped_message_trait_impl_owned
             #grouped_message_trait_impl_borrowed
+        });
+    }
+
+    if args.channeled {
+        let channeled_message_trait_impl_owned = channeled_message_trait_impl_owned(&root_ident);
+        let channeled_message_trait_impl_borrowed =
+            channeled_message_trait_impl_borrowed(&root_ident);
+        let channeled_message_trait_impl_aggregate =
+            channeled_message_trait_impl_aggregate(&root_ident);
+
+        ret.extend(quote! {
+            #channeled_message_trait_impl_owned
+            #channeled_message_trait_impl_borrowed
+            #channeled_message_trait_impl_aggregate
         });
     }
 
@@ -849,6 +901,31 @@ pub fn derive_write_byte_data(item: TokenStream1) -> TokenStream1 {
     quote! {
         impl<#lifetime_param> WriteByteData for #ident<#lifetime_param> {
             fn write_byte_data<'b>(&self, buffer: &'b mut [u8]) -> &'b mut [u8] {
+                use #ident::*;
+                match self {
+                    #match_arms
+                }
+            }
+        }
+    }
+    .into()
+}
+
+#[proc_macro_derive(Channeled)]
+pub fn derive_channeled(item: TokenStream1) -> TokenStream1 {
+    let input = parse_macro_input!(item as ItemEnum);
+    let ident = &input.ident;
+    let mut match_arms = TokenStream::new();
+    for variant in &input.variants {
+        let variant_ident = &variant.ident;
+        match_arms.extend(quote! {
+            #variant_ident(m) => m.channel(),
+        });
+    }
+    let lifetime_param = enum_lifetime(&input);
+    quote! {
+        impl<#lifetime_param> Channeled for #ident<#lifetime_param> {
+            fn channel(&self) -> u4 {
                 use #ident::*;
                 match self {
                     #match_arms

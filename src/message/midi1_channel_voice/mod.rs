@@ -42,6 +42,7 @@ use program_change::ProgramChangeOwned;
 #[derive(
     derive_more::From,
     midi2_attr::Data,
+    midi2_attr::Channeled,
     midi2_attr::Grouped,
     midi2_attr::WriteByteData,
     Clone,
@@ -62,6 +63,7 @@ pub enum Midi1ChannelVoiceMessage<'a> {
 #[derive(
     derive_more::From,
     midi2_attr::Data,
+    midi2_attr::Channeled,
     midi2_attr::Grouped,
     midi2_attr::WriteByteData,
     Clone,
@@ -82,6 +84,7 @@ pub enum Midi1ChannelVoiceBorrowed<'a> {
 #[derive(
     derive_more::From,
     midi2_attr::Data,
+    midi2_attr::Channeled,
     midi2_attr::Grouped,
     midi2_attr::WriteByteData,
     Clone,
@@ -350,3 +353,19 @@ from_message_impl!(NoteOffOwned);
 from_message_impl!(NoteOnOwned);
 from_message_impl!(PitchBendOwned);
 from_message_impl!(ProgramChangeOwned);
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn channel() {
+        assert_eq!(
+            Midi1ChannelVoiceMessage::from_data(&[0x2FD6_0900, 0x0, 0x0, 0x0])
+                .unwrap()
+                .channel(),
+            u4::new(0x6),
+        );
+    }
+}

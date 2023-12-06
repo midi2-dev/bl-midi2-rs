@@ -82,7 +82,16 @@ use relative_registered_controller::RelativeRegisteredControllerBuilder;
 use relative_registered_controller::RelativeRegisteredControllerMessage;
 use relative_registered_controller::RelativeRegisteredControllerOwned;
 
-#[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Clone, Debug, PartialEq, Eq)]
+#[derive(
+    derive_more::From,
+    midi2_attr::Channeled,
+    midi2_attr::Data,
+    midi2_attr::Grouped,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
+)]
 pub enum Midi2ChannelVoiceMessage<'a> {
     AssignableController(AssignableControllerMessage<'a>),
     AssignablePerNoteController(AssignablePerNoteControllerMessage<'a>),
@@ -101,7 +110,16 @@ pub enum Midi2ChannelVoiceMessage<'a> {
     RelativeRegisteredController(RelativeRegisteredControllerMessage<'a>),
 }
 
-#[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Clone, Debug, PartialEq, Eq)]
+#[derive(
+    derive_more::From,
+    midi2_attr::Channeled,
+    midi2_attr::Data,
+    midi2_attr::Grouped,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
+)]
 pub enum Midi2ChannelVoiceBorrowed<'a> {
     AssignableController(AssignableControllerBorrowed<'a>),
     AssignablePerNoteController(AssignablePerNoteControllerBorrowed<'a>),
@@ -120,7 +138,16 @@ pub enum Midi2ChannelVoiceBorrowed<'a> {
     RelativeRegisteredController(RelativeRegisteredControllerBorrowed<'a>),
 }
 
-#[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Clone, Debug, PartialEq, Eq)]
+#[derive(
+    derive_more::From,
+    midi2_attr::Channeled,
+    midi2_attr::Data,
+    midi2_attr::Grouped,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
+)]
 pub enum Midi2ChannelVoiceOwned {
     AssignableController(AssignableControllerOwned),
     AssignablePerNoteController(AssignablePerNoteControllerOwned),
@@ -464,3 +491,19 @@ from_message_impl!(RegisteredControllerOwned);
 from_message_impl!(RegisteredPerNoteControllerOwned);
 from_message_impl!(RelativeAssignableControllerOwned);
 from_message_impl!(RelativeRegisteredControllerOwned);
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn channel() {
+        assert_eq!(
+            Midi2ChannelVoiceMessage::from_data(&[0x4BAC_5900, 0xC0B83064, 0x0, 0x0])
+                .unwrap()
+                .channel(),
+            u4::new(0xC),
+        );
+    }
+}
