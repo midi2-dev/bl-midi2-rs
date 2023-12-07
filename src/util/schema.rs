@@ -58,10 +58,10 @@ impl<const T: u32, BytesSchema: Schema>
     }
     fn write(data: &mut [<Ump as Buffer>::Data], _: NumericalConstant<T>) {
         data[0] &= !0x03FF_0000;
-        data[0] |= T;
+        data[0] |= T << 16;
     }
     fn validate(data: &[<Ump as Buffer>::Data]) -> Result<()> {
-        if data[0] & 0x03FF_0000 == T {
+        if data[0] & 0x03FF_0000 == T << 16 {
             Ok(())
         } else {
             Err(Error::InvalidData)
@@ -320,10 +320,10 @@ macro_rules! u7_ump_property_impl {
             for Ump
         {
             fn get(data: &[<Ump as Buffer>::Data]) -> u7 {
-                data[$buffer_index].octet($octet_index).truncate()
+                data[$buffer_index].septet($octet_index).truncate()
             }
             fn write(data: &mut [<Ump as Buffer>::Data], v: u7) {
-                data[$buffer_index].set_octet($octet_index, (v).into());
+                data[$buffer_index].set_septet($octet_index, (v));
             }
         }
     };
@@ -347,7 +347,7 @@ macro_rules! u7_bytes_property_impl {
                 data[$buffer_index].truncate()
             }
             fn write(data: &mut [<Bytes as Buffer>::Data], v: u7) {
-                data[$buffer_index] = (v).into();
+                data[$buffer_index] = v.into();
             }
         }
     };

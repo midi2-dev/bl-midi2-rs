@@ -48,4 +48,124 @@ mod tests {
             ])))
         );
     }
+
+    #[test]
+    fn ump_version_major() {
+        assert_eq!(
+            EndpointInfoMessage::from_data(&[
+                0xF001_0101,
+                0b1010_0000_0000_0000_0000_0011_0000_0011,
+                0x0,
+                0x0,
+            ])
+            .unwrap()
+            .ump_version_major(),
+            0x1,
+        );
+    }
+
+    #[test]
+    fn ump_version_minor() {
+        assert_eq!(
+            EndpointInfoMessage::from_data(&[
+                0xF001_0101,
+                0b1010_0000_0000_0000_0000_0011_0000_0011,
+                0x0,
+                0x0,
+            ])
+            .unwrap()
+            .ump_version_minor(),
+            0x1,
+        );
+    }
+
+    #[test]
+    fn static_function_blocks() {
+        assert_eq!(
+            EndpointInfoMessage::from_data(&[
+                0xF001_0101,
+                0b1010_0000_0000_0000_0000_0011_0000_0011,
+                0x0,
+                0x0,
+            ])
+            .unwrap()
+            .static_function_blocks(),
+            true,
+        );
+    }
+
+    #[test]
+    fn number_of_function_blocks() {
+        assert_eq!(
+            EndpointInfoMessage::from_data(&[
+                0xF001_0101,
+                0b1010_0000_0000_0000_0000_0011_0000_0011,
+                0x0,
+                0x0,
+            ])
+            .unwrap()
+            .number_of_function_blocks(),
+            u7::new(0x20),
+        );
+    }
+
+    #[test]
+    fn supports_midi2_protocol() {
+        assert_eq!(
+            EndpointInfoMessage::from_data(&[
+                0xF001_0101,
+                0b1010_0000_0000_0000_0000_0011_0000_0011,
+                0x0,
+                0x0,
+            ])
+            .unwrap()
+            .supports_midi2_protocol(),
+            true,
+        );
+    }
+
+    #[test]
+    fn supports_midi1_protocol() {
+        assert_eq!(
+            EndpointInfoMessage::from_data(&[
+                0xF001_0101,
+                0b1010_0000_0000_0000_0000_0011_0000_0011,
+                0x0,
+                0x0,
+            ])
+            .unwrap()
+            .supports_midi1_protocol(),
+            true,
+        );
+    }
+
+    #[test]
+    fn supports_sending_jr_timestamps() {
+        assert_eq!(
+            EndpointInfoMessage::from_data(&[
+                0xF001_0101,
+                0b1010_0000_0000_0000_0000_0011_0000_0011,
+                0x0,
+                0x0,
+            ])
+            .unwrap()
+            .supports_sending_jr_timestamps(),
+            true,
+        );
+    }
+
+    #[test]
+    fn supports_receiving_jr_timestamps() {
+        assert_eq!(
+            EndpointInfoMessage::from_data(&[
+                0xF001_0101,
+                0b1010_0000_0000_0000_0000_0011_0000_0011,
+                0x0,
+                0x0,
+            ])
+            .unwrap()
+            .supports_receiving_jr_timestamps(),
+            true,
+        );
+    }
 }

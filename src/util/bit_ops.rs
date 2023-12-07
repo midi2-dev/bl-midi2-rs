@@ -7,6 +7,8 @@ pub trait BitOps {
     fn set_crumb(&mut self, index: usize, v: u2) -> &mut Self;
     fn nibble(&self, index: usize) -> u4;
     fn set_nibble(&mut self, index: usize, v: u4) -> &mut Self;
+    fn septet(&self, index: usize) -> u7;
+    fn set_septet(&mut self, index: usize, v: u7) -> &mut Self;
     fn octet(&self, index: usize) -> u8;
     fn set_octet(&mut self, index: usize, v: u8) -> &mut Self;
     fn word(&self, index: usize) -> u16;
@@ -50,6 +52,19 @@ impl BitOps for u32 {
         assert!(index < 8);
         let shift = 28 - index * 4;
         *self &= !(0xF << shift);
+        *self |= u32::from(v) << shift;
+        self
+    }
+
+    fn septet(&self, index: usize) -> u7 {
+        assert!(index < 4);
+        (self >> (24 - index * 8) & 0x7F).try_into().unwrap()
+    }
+
+    fn set_septet(&mut self, index: usize, v: u7) -> &mut Self {
+        assert!(index < 4);
+        let shift = 24 - index * 8;
+        *self &= !(0x7F << shift);
         *self |= u32::from(v) << shift;
         self
     }
@@ -106,6 +121,12 @@ impl BitOps for u7 {
     fn set_nibble(&mut self, _index: usize, _v: u4) -> &mut Self {
         todo!()
     }
+    fn septet(&self, _index: usize) -> u7 {
+        panic!()
+    }
+    fn set_septet(&mut self, _index: usize, _v: u7) -> &mut Self {
+        panic!()
+    }
     fn octet(&self, _index: usize) -> u8 {
         panic!()
     }
@@ -149,6 +170,12 @@ impl BitOps for u8 {
         *self &= !(0xF << shift);
         *self |= u8::from(v) << shift;
         self
+    }
+    fn septet(&self, _index: usize) -> u7 {
+        panic!()
+    }
+    fn set_septet(&mut self, _index: usize, _v: u7) -> &mut Self {
+        panic!()
     }
     fn octet(&self, _index: usize) -> u8 {
         *self
