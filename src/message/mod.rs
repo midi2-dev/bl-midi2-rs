@@ -23,12 +23,10 @@ use system_common::SystemCommonBuilder;
 use system_common::SystemCommonMessage;
 use system_common::SystemCommonOwned;
 use system_exclusive_7bit::Sysex7Borrowed;
-#[cfg(feature = "std")]
 use system_exclusive_7bit::Sysex7Message;
 #[cfg(feature = "std")]
 use system_exclusive_7bit::Sysex7Owned;
 use system_exclusive_8bit::Sysex8Borrowed;
-#[cfg(feature = "std")]
 use system_exclusive_8bit::Sysex8Message;
 #[cfg(feature = "std")]
 use system_exclusive_8bit::Sysex8Owned;
@@ -44,9 +42,7 @@ pub enum Message<'a> {
     Midi2ChannelVoice(Midi2ChannelVoiceMessage<'a>),
     Utility(UtilityMessage<'a>),
     SystemCommon(SystemCommonMessage<'a>),
-    #[cfg(feature = "std")]
     Sysex7(Sysex7Message<'a>),
-    #[cfg(feature = "std")]
     Sysex8(Sysex8Message<'a>),
 }
 
@@ -224,7 +220,6 @@ impl<'a> FromData<'a> for MessageBorrowed<'a> {
     }
 }
 
-#[cfg(feature = "std")]
 impl<'a> FromData<'a> for Message<'a> {
     type Target = Self;
     fn validate_data(buffer: &'a [u32]) -> Result<()> {
@@ -232,19 +227,6 @@ impl<'a> FromData<'a> for Message<'a> {
     }
     fn from_data_unchecked(buffer: &'a [u32]) -> Self::Target {
         MessageBorrowed::from_data_unchecked(buffer).into()
-    }
-}
-
-#[cfg(not(feature = "std"))]
-impl<'a> FromData<'a> for Message<'a> {
-    type Target = Self;
-    fn validate_data(buffer: &'a [u32]) -> Result<()> {
-        MessageBorrowed::validate_data(buffer)
-    }
-    fn from_data_unchecked(buffer: &'a [u32]) -> Self::Target {
-        MessageBorrowed::from_data_unchecked(buffer)
-            .try_into()
-            .unwrap()
     }
 }
 
@@ -350,16 +332,17 @@ impl<'a> IntoOwned for MessageBorrowed<'a> {
 }
 
 #[cfg(not(feature = "std"))]
-impl<'a> IntoOwned for Message<'a> {
+impl<'a> TryIntoOwned for Message<'a> {
     type Owned = MessageOwned;
-    fn into_owned(self) -> Self::Owned {
+    fn try_into_owned(self) -> Result<Self::Owned> {
         use Message as M;
         use MessageOwned as O;
         match self {
-            M::Midi1ChannelVoice(m) => O::Midi1ChannelVoice(m.into_owned()),
-            M::Midi2ChannelVoice(m) => O::Midi2ChannelVoice(m.into_owned()),
-            M::Utility(m) => O::Utility(m.into_owned()),
-            M::SystemCommon(m) => O::SystemCommon(m.into_owned()),
+            M::Midi1ChannelVoice(m) => Ok(O::Midi1ChannelVoice(m.into_owned())),
+            M::Midi2ChannelVoice(m) => Ok(O::Midi2ChannelVoice(m.into_owned())),
+            M::Utility(m) => Ok(O::Utility(m.into_owned())),
+            M::SystemCommon(m) => Ok(O::SystemCommon(m.into_owned())),
+            _ => Err(Error::InvalidData),
         }
     }
 }
@@ -381,7 +364,6 @@ impl<'a> IntoOwned for Message<'a> {
     }
 }
 
-#[cfg(feature = "std")]
 impl<'a> core::convert::From<MessageBorrowed<'a>> for Message<'a> {
     fn from(value: MessageBorrowed<'a>) -> Self {
         use Message as M;
@@ -393,22 +375,6 @@ impl<'a> core::convert::From<MessageBorrowed<'a>> for Message<'a> {
             B::SystemCommon(m) => M::SystemCommon(m.into()),
             B::Sysex7(m) => M::Sysex7(m.into()),
             B::Sysex8(m) => M::Sysex8(m.into()),
-        }
-    }
-}
-
-#[cfg(not(feature = "std"))]
-impl<'a> core::convert::TryFrom<MessageBorrowed<'a>> for Message<'a> {
-    type Error = Error;
-    fn try_from(value: MessageBorrowed<'a>) -> Result<Self> {
-        use Message as M;
-        use MessageBorrowed as B;
-        match value {
-            B::Midi1ChannelVoice(m) => Ok(M::Midi1ChannelVoice(m.into())),
-            B::Midi2ChannelVoice(m) => Ok(M::Midi2ChannelVoice(m.into())),
-            B::Utility(m) => Ok(M::Utility(m.into())),
-            B::SystemCommon(m) => Ok(M::SystemCommon(m.into())),
-            _ => Err(Error::InvalidData),
         }
     }
 }

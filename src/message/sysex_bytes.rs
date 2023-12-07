@@ -16,9 +16,9 @@ pub struct Sysex7BytesBuilder<M: core::convert::From<Sysex7BytesOwned>>(
     core::marker::PhantomData<M>,
 );
 
-#[cfg(feature = "std")]
 #[derive(derive_more::From, Debug, Clone, PartialEq, Eq)]
 pub enum Sysex7BytesMessage<'a> {
+    #[cfg(feature = "std")]
     Owned(Sysex7BytesOwned),
     Borrowed(Sysex7BytesBorrowed<'a>),
 }
@@ -87,12 +87,12 @@ impl<'a, 'b: 'a> Sysex<'a, 'b> for Sysex7BytesOwned {
     }
 }
 
-#[cfg(feature = "std")]
 impl<'a, 'b: 'a> Sysex<'a, 'b> for Sysex7BytesMessage<'a> {
     type PayloadIterator = core::iter::Cloned<core::slice::Iter<'a, u8>>;
     fn payload(&'b self) -> Self::PayloadIterator {
         use Sysex7BytesMessage::*;
         match self {
+            #[cfg(feature = "std")]
             Owned(m) => m.payload(),
             Borrowed(m) => m.payload(),
         }
@@ -133,7 +133,6 @@ impl<'a> FromByteData<'a> for Sysex7BytesBorrowed<'a> {
     }
 }
 
-#[cfg(feature = "std")]
 impl<'a> FromByteData<'a> for Sysex7BytesMessage<'a> {
     type Target = Self;
     fn validate_byte_data(buffer: &'a [u8]) -> Result<()> {
@@ -154,6 +153,17 @@ impl<'a> ByteData for Sysex7BytesBorrowed<'a> {
 impl ByteData for Sysex7BytesOwned {
     fn byte_data(&self) -> &[u8] {
         &self.0
+    }
+}
+
+impl<'a> ByteData for Sysex7BytesMessage<'a> {
+    fn byte_data(&self) -> &[u8] {
+        use Sysex7BytesMessage::*;
+        match self {
+            #[cfg(feature = "std")]
+            Owned(m) => m.byte_data(),
+            Borrowed(m) => m.byte_data(),
+        }
     }
 }
 

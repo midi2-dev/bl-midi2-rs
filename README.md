@@ -40,6 +40,7 @@ There are two types which can be used to represent each message from the midi2 s
 Use the `Borrowed` type to get a 'view' onto the underlying data,
 and use the `Owned` type to make a message with an independent lifetime.
 
+#[cfg(feature = "std")]
 ```rust
 use midi2::prelude::*;
 

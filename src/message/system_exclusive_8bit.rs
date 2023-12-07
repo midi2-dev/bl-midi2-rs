@@ -420,9 +420,9 @@ pub struct Sysex8Borrowed<'a>(&'a [u32]);
 #[derive(Clone, PartialEq, Eq)]
 pub struct Sysex8Owned(std::vec::Vec<u32>);
 
-#[cfg(feature = "std")]
 #[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Debug, Clone, PartialEq, Eq)]
 pub enum Sysex8Message<'a> {
+    #[cfg(feature = "std")]
     Owned(Sysex8Owned),
     Borrowed(Sysex8Borrowed<'a>),
 }
@@ -493,7 +493,6 @@ impl<'a> FromData<'a> for Sysex8Borrowed<'a> {
     }
 }
 
-#[cfg(feature = "std")]
 impl<'a> FromData<'a> for Sysex8Message<'a> {
     type Target = Self;
     fn from_data_unchecked(buffer: &'a [u32]) -> Self {
@@ -514,7 +513,6 @@ impl<'a> Streamed for Sysex8Borrowed<'a> {}
 #[cfg(feature = "std")]
 impl Streamed for Sysex8Owned {}
 
-#[cfg(feature = "std")]
 impl<'a> Streamed for Sysex8Message<'a> {}
 
 impl<'a, 'b: 'a> Sysex<'a, 'b> for Sysex8Borrowed<'a> {
@@ -540,12 +538,12 @@ impl<'a, 'b: 'a> Sysex<'a, 'b> for Sysex8Owned {
     }
 }
 
-#[cfg(feature = "std")]
 impl<'a, 'b: 'a> Sysex<'a, 'b> for Sysex8Message<'a> {
     type PayloadIterator = PayloadIterator<'a>;
     fn payload(&'a self) -> Self::PayloadIterator {
         use Sysex8Message::*;
         match self {
+            #[cfg(feature = "std")]
             Owned(m) => m.payload(),
             Borrowed(m) => m.payload(),
         }
