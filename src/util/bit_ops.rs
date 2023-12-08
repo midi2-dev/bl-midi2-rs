@@ -1,4 +1,4 @@
-use crate::*;
+use crate::{util::Truncate, *};
 
 pub trait BitOps {
     fn bit(&self, index: usize) -> bool;
@@ -172,10 +172,13 @@ impl BitOps for u8 {
         self
     }
     fn septet(&self, _index: usize) -> u7 {
-        panic!()
+        self.truncate()
     }
-    fn set_septet(&mut self, _index: usize, _v: u7) -> &mut Self {
-        panic!()
+    fn set_septet(&mut self, index: usize, v: u7) -> &mut Self {
+        assert!(index == 0);
+        *self &= !0x7F;
+        *self |= u8::from(v);
+        self
     }
     fn octet(&self, _index: usize) -> u8 {
         *self

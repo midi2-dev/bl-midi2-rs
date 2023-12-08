@@ -1,3 +1,5 @@
+use crate::util::Encode7Bit;
+
 const OP_CODE: u32 = 0b1100;
 const MIDI2_CHANNEL_VOICE_TYPE: u32 = 0x4;
 
@@ -12,6 +14,33 @@ struct ProgramChange {
     channel: Property<u4, UmpSchema<0x000F_0000, 0x0, 0x0, 0x0>, ()>,
     program: Property<u7, UmpSchema<0x0, 0x7F00_0000, 0x0, 0x0>, ()>,
     bank: Property<Option<u14>, UmpSchema<0x0000_0001, 0x0000_7F7F, 0x0, 0x0>, ()>,
+}
+
+impl<BytesSchema: Schema>
+    Property<Option<u14>, UmpSchema<0x0000_0001, 0x0000_7F7F, 0x0, 0x0>, BytesSchema> for Ump
+{
+    fn get(data: &[<Ump as Buffer>::Data]) -> Option<u14> {
+        if data[0].bit(31) {
+            Some(u14::from_u7s(&[data[1].octet(2), data[1].octet(3)]))
+        } else {
+            None
+        }
+    }
+    fn write(data: &mut [<Ump as Buffer>::Data], v: Option<u14>) {
+        match v {
+            Some(v) => {
+                let mut u7s = [u7::default(); 2];
+                v.to_u7s(&mut u7s);
+                data[1].set_octet(2, u7s[0].into());
+                data[1].set_octet(3, u7s[1].into());
+                data[0].set_bit(31, true);
+            }
+            None => {
+                data[0].set_bit(31, false);
+                data[1].set_word(1, 0x0);
+            }
+        }
+    }
 }
 
 #[cfg(test)]

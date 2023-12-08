@@ -1,3 +1,4 @@
+pub mod device_identity;
 pub mod endpoint_discovery;
 pub mod endpoint_info;
 
