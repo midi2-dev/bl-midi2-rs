@@ -19,9 +19,6 @@ pub use numeric_types::*;
 pub use result::*;
 pub use traits::*;
 
-pub use message::MessageBorrowed;
-pub use message::MessageOwned;
-
 pub mod numeric_types {
     #[rustfmt::skip]
     pub use ux::{
