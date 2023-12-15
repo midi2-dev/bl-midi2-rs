@@ -6,6 +6,8 @@ pub mod endpoint_discovery;
 pub mod endpoint_info;
 pub mod endpoint_name;
 pub mod product_instance_id;
+pub mod stream_configuration_notification;
+pub mod stream_configuration_request;
 
 const TYPE_CODE: u32 = 0xF;
 
