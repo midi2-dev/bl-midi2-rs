@@ -10,6 +10,8 @@ use crate::{
     Error, Result,
 };
 
+const STATUS: u16 = 0x3;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EndpointNameBorrowed<'a>(UmpStreamGroupBorrowed<'a>);
 
@@ -94,7 +96,7 @@ impl<'a> FromData<'a> for EndpointNameBorrowed<'a> {
     }
     fn validate_data(buffer: &'a [u32]) -> Result<()> {
         UmpStreamGroupBorrowed::validate_data(buffer)?;
-        if super::status_from_buffer(buffer) != u10::new(0x3) {
+        if super::status_from_buffer(buffer) != u10::new(STATUS) {
             return Err(Error::InvalidData);
         }
         Ok(())
@@ -133,7 +135,7 @@ impl<M: core::convert::From<EndpointNameOwned>> core::default::Default for Endpo
 impl<M: core::convert::From<EndpointNameOwned>> EndpointNameBuilder<M> {
     pub fn new() -> Self {
         Self(
-            UmpStreamGroupBuilder::new().status(u10::new(0x3)),
+            UmpStreamGroupBuilder::new().status(u10::new(STATUS)),
             Default::default(),
         )
     }
@@ -151,7 +153,7 @@ impl<M: core::convert::From<EndpointNameOwned>> EndpointNameBuilder<M> {
 
 impl<'a> EndpointNameBorrowedBuilder<'a> {
     pub fn new(buffer: &'a mut [u32]) -> Self {
-        Self(UmpStreamGroupBorrowedBuilder::new(buffer).status(u10::new(0x3)))
+        Self(UmpStreamGroupBorrowedBuilder::new(buffer).status(u10::new(STATUS)))
     }
     pub fn build(self) -> Result<EndpointNameBorrowed<'a>> {
         match self.0.build() {

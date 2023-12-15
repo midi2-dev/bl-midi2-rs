@@ -5,6 +5,7 @@ pub mod device_identity;
 pub mod endpoint_discovery;
 pub mod endpoint_info;
 pub mod endpoint_name;
+pub mod product_instance_id;
 
 const TYPE_CODE: u32 = 0xF;
 
