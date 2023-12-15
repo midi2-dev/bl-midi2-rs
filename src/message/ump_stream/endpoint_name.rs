@@ -40,9 +40,8 @@ pub struct NameBytesIterator<'a>(
 
 pub trait EndpointName: Data {
     #[cfg(feature = "std")]
-    fn name(&self) -> std::string::String {
-        let group = UmpStreamGroupBorrowed::from_data_unchecked(self.data());
-        std::string::String::from_utf8(group.payload().filter(|v| *v != 0x0).collect()).unwrap()
+    fn name(&self) -> core::result::Result<std::string::String, std::string::FromUtf8Error> {
+        std::string::String::from_utf8(self.name_utf8_bytes().collect())
     }
 
     fn name_utf8_bytes(&self) -> NameBytesIterator {
@@ -259,7 +258,7 @@ mod tests {
             ])
             .unwrap()
             .name(),
-            std::string::String::from("Gimme some signal 🔊 🙌"),
+            Ok(std::string::String::from("Gimme some signal 🔊 🙌")),
         );
         assert_eq!(
             EndpointNameMessage::from_data(&[
@@ -278,7 +277,7 @@ mod tests {
             ])
             .unwrap()
             .name(),
-            std::string::String::from("Gimme some more signal 🔊 🙌"),
+            Ok(std::string::String::from("Gimme some more signal 🔊 🙌")),
         );
     }
 

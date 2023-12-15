@@ -40,9 +40,10 @@ pub struct NameBytesIterator<'a>(
 
 pub trait ProductInstanceId: Data {
     #[cfg(feature = "std")]
-    fn product_instance_id(&self) -> std::string::String {
-        let group = UmpStreamGroupBorrowed::from_data_unchecked(self.data());
-        std::string::String::from_utf8(group.payload().filter(|v| *v != 0x0).collect()).unwrap()
+    fn product_instance_id(
+        &self,
+    ) -> core::result::Result<std::string::String, std::string::FromUtf8Error> {
+        std::string::String::from_utf8(self.product_instance_id_utf8_bytes().collect())
     }
 
     fn product_instance_id_utf8_bytes(&self) -> NameBytesIterator {
@@ -241,7 +242,7 @@ mod tests {
             ])
             .unwrap()
             .product_instance_id(),
-            std::string::String::from("🎹 PianoPulse ✨"),
+            Ok(std::string::String::from("🎹 PianoPulse ✨")),
         )
     }
 }
