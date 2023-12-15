@@ -12,14 +12,17 @@ pub mod ump_stream;
 pub mod utility;
 
 use midi1_channel_voice::Midi1ChannelVoiceBorrowed;
+#[cfg(feature = "std")]
 use midi1_channel_voice::Midi1ChannelVoiceBuilder;
 use midi1_channel_voice::Midi1ChannelVoiceMessage;
 use midi1_channel_voice::Midi1ChannelVoiceOwned;
 use midi2_channel_voice::Midi2ChannelVoiceBorrowed;
+#[cfg(feature = "std")]
 use midi2_channel_voice::Midi2ChannelVoiceBuilder;
 use midi2_channel_voice::Midi2ChannelVoiceMessage;
 use midi2_channel_voice::Midi2ChannelVoiceOwned;
 use system_common::SystemCommonBorrowed;
+#[cfg(feature = "std")]
 use system_common::SystemCommonBuilder;
 use system_common::SystemCommonMessage;
 use system_common::SystemCommonOwned;
@@ -31,7 +34,14 @@ use system_exclusive_8bit::Sysex8Borrowed;
 use system_exclusive_8bit::Sysex8Message;
 #[cfg(feature = "std")]
 use system_exclusive_8bit::Sysex8Owned;
+use ump_stream::UmpStreamBorrowed;
+#[cfg(feature = "std")]
+use ump_stream::UmpStreamBuilder;
+use ump_stream::UmpStreamMessage;
+#[cfg(feature = "std")]
+use ump_stream::UmpStreamOwned;
 use utility::UtilityBorrowed;
+#[cfg(feature = "std")]
 use utility::UtilityBuilder;
 use utility::UtilityMessage;
 use utility::UtilityOwned;
@@ -41,10 +51,11 @@ use utility::UtilityOwned;
 pub enum Message<'a> {
     Midi1ChannelVoice(Midi1ChannelVoiceMessage<'a>),
     Midi2ChannelVoice(Midi2ChannelVoiceMessage<'a>),
-    Utility(UtilityMessage<'a>),
-    SystemCommon(SystemCommonMessage<'a>),
     Sysex7(Sysex7Message<'a>),
     Sysex8(Sysex8Message<'a>),
+    SystemCommon(SystemCommonMessage<'a>),
+    UmpStream(UmpStreamMessage<'a>),
+    Utility(UtilityMessage<'a>),
 }
 
 #[derive(derive_more::From, midi2_attr::Data, Clone, Debug, PartialEq, Eq)]
@@ -52,10 +63,11 @@ pub enum Message<'a> {
 pub enum MessageBorrowed<'a> {
     Midi1ChannelVoice(Midi1ChannelVoiceBorrowed<'a>),
     Midi2ChannelVoice(Midi2ChannelVoiceBorrowed<'a>),
-    Utility(UtilityBorrowed<'a>),
-    SystemCommon(SystemCommonBorrowed<'a>),
     Sysex7(Sysex7Borrowed<'a>),
     Sysex8(Sysex8Borrowed<'a>),
+    SystemCommon(SystemCommonBorrowed<'a>),
+    UmpStream(UmpStreamBorrowed<'a>),
+    Utility(UtilityBorrowed<'a>),
 }
 
 #[derive(derive_more::From, midi2_attr::Data, Clone, Debug, PartialEq, Eq)]
@@ -63,14 +75,17 @@ pub enum MessageBorrowed<'a> {
 pub enum MessageOwned {
     Midi1ChannelVoice(Midi1ChannelVoiceOwned),
     Midi2ChannelVoice(Midi2ChannelVoiceOwned),
-    Utility(UtilityOwned),
     SystemCommon(SystemCommonOwned),
     #[cfg(feature = "std")]
     Sysex7(Sysex7Owned),
     #[cfg(feature = "std")]
     Sysex8(Sysex8Owned),
+    #[cfg(feature = "std")]
+    UmpStream(UmpStreamOwned),
+    Utility(UtilityOwned),
 }
 
+#[cfg(feature = "std")]
 impl<'a> Message<'a> {
     pub fn builder() -> MessageBuilder<Self> {
         MessageBuilder::new()
@@ -78,6 +93,7 @@ impl<'a> Message<'a> {
 }
 
 #[derive(Default)]
+#[cfg(feature = "std")]
 pub struct MessageBuilder<M>(core::marker::PhantomData<M>)
 where
     M: core::convert::From<utility::time_stamp::TimeStampOwned>
@@ -117,8 +133,24 @@ where
         + core::convert::From<midi1_channel_voice::note_off::NoteOffOwned>
         + core::convert::From<midi1_channel_voice::note_on::NoteOnOwned>
         + core::convert::From<midi1_channel_voice::pitch_bend::PitchBendOwned>
-        + core::convert::From<midi1_channel_voice::program_change::ProgramChangeOwned>;
+        + core::convert::From<midi1_channel_voice::program_change::ProgramChangeOwned>
+        + core::convert::From<ump_stream::device_identity::DeviceIdentityOwned>
+        + core::convert::From<ump_stream::end_of_clip::EndOfClipOwned>
+        + core::convert::From<ump_stream::endpoint_discovery::EndpointDiscoveryOwned>
+        + core::convert::From<ump_stream::endpoint_info::EndpointInfoOwned>
+        + core::convert::From<ump_stream::endpoint_name::EndpointNameOwned>
+        + core::convert::From<ump_stream::function_block_discovery::FunctionBlockDiscoveryOwned>
+        + core::convert::From<ump_stream::function_block_info::FunctionBlockInfoOwned>
+        + core::convert::From<ump_stream::function_block_name::FunctionBlockNameOwned>
+        + core::convert::From<ump_stream::product_instance_id::ProductInstanceIdOwned>
+        + core::convert::From<ump_stream::start_of_clip::StartOfClipOwned>
+        + core::convert::From<
+            ump_stream::stream_configuration_notification::StreamConfigurationNotificationOwned,
+        > + core::convert::From<
+            ump_stream::stream_configuration_request::StreamConfigurationRequestOwned,
+        >;
 
+#[cfg(feature = "std")]
 impl<M> MessageBuilder<M>
 where
     M: core::convert::From<utility::time_stamp::TimeStampOwned>
@@ -158,7 +190,22 @@ where
         + core::convert::From<midi1_channel_voice::note_off::NoteOffOwned>
         + core::convert::From<midi1_channel_voice::note_on::NoteOnOwned>
         + core::convert::From<midi1_channel_voice::pitch_bend::PitchBendOwned>
-        + core::convert::From<midi1_channel_voice::program_change::ProgramChangeOwned>,
+        + core::convert::From<midi1_channel_voice::program_change::ProgramChangeOwned>
+        + core::convert::From<ump_stream::device_identity::DeviceIdentityOwned>
+        + core::convert::From<ump_stream::end_of_clip::EndOfClipOwned>
+        + core::convert::From<ump_stream::endpoint_discovery::EndpointDiscoveryOwned>
+        + core::convert::From<ump_stream::endpoint_info::EndpointInfoOwned>
+        + core::convert::From<ump_stream::endpoint_name::EndpointNameOwned>
+        + core::convert::From<ump_stream::function_block_discovery::FunctionBlockDiscoveryOwned>
+        + core::convert::From<ump_stream::function_block_info::FunctionBlockInfoOwned>
+        + core::convert::From<ump_stream::function_block_name::FunctionBlockNameOwned>
+        + core::convert::From<ump_stream::product_instance_id::ProductInstanceIdOwned>
+        + core::convert::From<ump_stream::start_of_clip::StartOfClipOwned>
+        + core::convert::From<
+            ump_stream::stream_configuration_notification::StreamConfigurationNotificationOwned,
+        > + core::convert::From<
+            ump_stream::stream_configuration_request::StreamConfigurationRequestOwned,
+        >,
 {
     pub fn new() -> Self {
         Self(Default::default())
@@ -175,8 +222,12 @@ where
     pub fn system_common(self) -> SystemCommonBuilder<M> {
         SystemCommonBuilder::new()
     }
+    pub fn ump_stream(self) -> UmpStreamBuilder<M> {
+        UmpStreamBuilder::new()
+    }
 }
 
+#[cfg(feature = "std")]
 impl MessageOwned {
     pub fn builder() -> MessageBuilder<Self> {
         MessageBuilder::new()
@@ -189,6 +240,7 @@ const SYSEX7_CODE: u8 = 3;
 const SYSEX8_CODE: u8 = 5;
 const UTILITY_CODE: u8 = 0;
 const SYSTEM_COMMON_CODE: u8 = 1;
+const UMP_STREAM_CODE: u8 = 0xF;
 
 impl<'a> FromData<'a> for MessageBorrowed<'a> {
     type Target = Self;
@@ -205,6 +257,7 @@ impl<'a> FromData<'a> for MessageBorrowed<'a> {
             SYSTEM_COMMON_CODE => SystemCommon(SystemCommonBorrowed::from_data_unchecked(buffer)),
             SYSEX7_CODE => Sysex7(Sysex7Borrowed::from_data_unchecked(buffer)),
             SYSEX8_CODE => Sysex8(Sysex8Borrowed::from_data_unchecked(buffer)),
+            UMP_STREAM_CODE => UmpStream(UmpStreamBorrowed::from_data_unchecked(buffer)),
             _ => panic!(),
         }
     }
@@ -216,6 +269,7 @@ impl<'a> FromData<'a> for MessageBorrowed<'a> {
             SYSTEM_COMMON_CODE => SystemCommonBorrowed::validate_data(buffer),
             SYSEX7_CODE => Sysex7Borrowed::validate_data(buffer),
             SYSEX8_CODE => Sysex8Borrowed::validate_data(buffer),
+            UMP_STREAM_CODE => UmpStreamBorrowed::validate_data(buffer),
             _ => Err(Error::InvalidData),
         }
     }
@@ -324,6 +378,7 @@ impl<'a> IntoOwned for MessageBorrowed<'a> {
             B::Midi1ChannelVoice(m) => O::Midi1ChannelVoice(m.into_owned()),
             B::Midi2ChannelVoice(m) => O::Midi2ChannelVoice(m.into_owned()),
             B::Utility(m) => O::Utility(m.into_owned()),
+            B::UmpStream(m) => O::UmpStream(m.into_owned()),
             B::SystemCommon(m) => O::SystemCommon(m.into_owned()),
             B::Sysex7(m) => O::Sysex7(m.into_owned()),
             B::Sysex8(m) => O::Sysex8(m.into_owned()),
@@ -357,6 +412,7 @@ impl<'a> IntoOwned for Message<'a> {
             M::Midi1ChannelVoice(m) => O::Midi1ChannelVoice(m.into_owned()),
             M::Midi2ChannelVoice(m) => O::Midi2ChannelVoice(m.into_owned()),
             M::Utility(m) => O::Utility(m.into_owned()),
+            M::UmpStream(m) => O::UmpStream(m.into_owned()),
             M::SystemCommon(m) => O::SystemCommon(m.into_owned()),
             M::Sysex7(m) => O::Sysex7(m.into_owned()),
             M::Sysex8(m) => O::Sysex8(m.into_owned()),
@@ -372,6 +428,7 @@ impl<'a> core::convert::From<MessageBorrowed<'a>> for Message<'a> {
             B::Midi1ChannelVoice(m) => M::Midi1ChannelVoice(m.into()),
             B::Midi2ChannelVoice(m) => M::Midi2ChannelVoice(m.into()),
             B::Utility(m) => M::Utility(m.into()),
+            B::UmpStream(m) => M::UmpStream(m.into()),
             B::SystemCommon(m) => M::SystemCommon(m.into()),
             B::Sysex7(m) => M::Sysex7(m.into()),
             B::Sysex8(m) => M::Sysex8(m.into()),
@@ -388,6 +445,7 @@ impl<'a> core::convert::From<MessageOwned> for Message<'a> {
             O::Midi1ChannelVoice(m) => M::Midi1ChannelVoice(m.into()),
             O::Midi2ChannelVoice(m) => M::Midi2ChannelVoice(m.into()),
             O::Utility(m) => M::Utility(m.into()),
+            O::UmpStream(m) => M::UmpStream(m.into()),
             O::SystemCommon(m) => M::SystemCommon(m.into()),
             O::Sysex7(m) => M::Sysex7(m.into()),
             O::Sysex8(m) => M::Sysex8(m.into()),
@@ -504,7 +562,44 @@ from_midi2_channel_voice_message_impl!(
     midi2_channel_voice::relative_registered_controller::RelativeRegisteredControllerOwned
 );
 
+#[cfg(feature = "std")]
+macro_rules! from_ump_stream_message_impl {
+    ($message: ty) => {
+        from_message_impl!($message, UmpStreamOwned);
+    };
+}
+
+#[cfg(feature = "std")]
+from_ump_stream_message_impl!(ump_stream::device_identity::DeviceIdentityOwned);
+#[cfg(feature = "std")]
+from_ump_stream_message_impl!(ump_stream::end_of_clip::EndOfClipOwned);
+#[cfg(feature = "std")]
+from_ump_stream_message_impl!(ump_stream::endpoint_discovery::EndpointDiscoveryOwned);
+#[cfg(feature = "std")]
+from_ump_stream_message_impl!(ump_stream::endpoint_info::EndpointInfoOwned);
+#[cfg(feature = "std")]
+from_ump_stream_message_impl!(ump_stream::endpoint_name::EndpointNameOwned);
+#[cfg(feature = "std")]
+from_ump_stream_message_impl!(ump_stream::function_block_discovery::FunctionBlockDiscoveryOwned);
+#[cfg(feature = "std")]
+from_ump_stream_message_impl!(ump_stream::function_block_info::FunctionBlockInfoOwned);
+#[cfg(feature = "std")]
+from_ump_stream_message_impl!(ump_stream::function_block_name::FunctionBlockNameOwned);
+#[cfg(feature = "std")]
+from_ump_stream_message_impl!(ump_stream::product_instance_id::ProductInstanceIdOwned);
+#[cfg(feature = "std")]
+from_ump_stream_message_impl!(ump_stream::start_of_clip::StartOfClipOwned);
+#[cfg(feature = "std")]
+from_ump_stream_message_impl!(
+    ump_stream::stream_configuration_notification::StreamConfigurationNotificationOwned
+);
+#[cfg(feature = "std")]
+from_ump_stream_message_impl!(
+    ump_stream::stream_configuration_request::StreamConfigurationRequestOwned
+);
+
 #[cfg(test)]
+#[cfg(feature = "std")]
 mod tests {
     use super::*;
 
