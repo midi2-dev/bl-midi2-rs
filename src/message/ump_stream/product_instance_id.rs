@@ -29,10 +29,11 @@ pub enum ProductInstanceIdMessage<'a> {
 #[cfg(feature = "std")]
 pub struct ProductInstanceIdBuilder<M: core::convert::From<ProductInstanceIdOwned>>(
     UmpStreamGroupBuilder<UmpStreamGroupOwned>,
+    Result<()>,
     core::marker::PhantomData<M>,
 );
 
-pub struct ProductInstanceIdBorrowedBuilder<'a>(UmpStreamGroupBorrowedBuilder<'a>);
+pub struct ProductInstanceIdBorrowedBuilder<'a>(UmpStreamGroupBorrowedBuilder<'a>, Result<()>);
 
 pub struct NameBytesIterator<'a>(
     core::iter::Filter<UmpStreamGroupPayloadIterator<'a>, fn(&u8) -> bool>,
@@ -40,13 +41,11 @@ pub struct NameBytesIterator<'a>(
 
 pub trait ProductInstanceId: Data {
     #[cfg(feature = "std")]
-    fn product_instance_id(
-        &self,
-    ) -> core::result::Result<std::string::String, std::string::FromUtf8Error> {
-        std::string::String::from_utf8(self.product_instance_id_utf8_bytes().collect())
+    fn id(&self) -> core::result::Result<std::string::String, std::string::FromUtf8Error> {
+        std::string::String::from_utf8(self.product_instance_id_bytes().collect())
     }
 
-    fn product_instance_id_utf8_bytes(&self) -> NameBytesIterator {
+    fn product_instance_id_bytes(&self) -> NameBytesIterator {
         let group = UmpStreamGroupBorrowed::from_data_unchecked(self.data());
         NameBytesIterator(group.payload().filter(|v| *v != 0x0))
     }
@@ -139,33 +138,47 @@ impl<M: core::convert::From<ProductInstanceIdOwned>> ProductInstanceIdBuilder<M>
     pub fn new() -> Self {
         Self(
             UmpStreamGroupBuilder::new().status(u10::new(STATUS)),
+            Ok(()),
             Default::default(),
         )
     }
     pub fn build(self) -> Result<M> {
+        self.1?;
         match self.0.build() {
             Ok(m) => Ok(ProductInstanceIdOwned(m).into()),
             Err(e) => Err(e),
         }
     }
-    pub fn product_instance_id(mut self, product_instance_id_str: &str) -> Self {
-        self.0 = self.0.payload(product_instance_id_str.bytes());
+    pub fn id(mut self, id: &str) -> Self {
+        if !id.is_ascii() {
+            self.1 = Err(Error::InvalidData);
+        } else {
+            self.0 = self.0.payload(id.bytes());
+        }
         self
     }
 }
 
 impl<'a> ProductInstanceIdBorrowedBuilder<'a> {
     pub fn new(buffer: &'a mut [u32]) -> Self {
-        Self(UmpStreamGroupBorrowedBuilder::new(buffer).status(u10::new(STATUS)))
+        Self(
+            UmpStreamGroupBorrowedBuilder::new(buffer).status(u10::new(STATUS)),
+            Ok(()),
+        )
     }
     pub fn build(self) -> Result<ProductInstanceIdBorrowed<'a>> {
+        self.1?;
         match self.0.build() {
             Ok(m) => Ok(ProductInstanceIdBorrowed(m)),
             Err(e) => Err(e),
         }
     }
-    pub fn product_instance_id(mut self, product_instance_id_str: &str) -> Self {
-        self.0 = self.0.payload(product_instance_id_str.bytes());
+    pub fn id(mut self, id: &str) -> Self {
+        if !id.is_ascii() {
+            self.1 = Err(Error::InvalidData);
+        } else {
+            self.0 = self.0.payload(id.bytes());
+        }
         self
     }
 }
@@ -185,21 +198,12 @@ mod tests {
         assert_eq!(
             debug::Data(
                 ProductInstanceIdMessage::builder()
-                    .product_instance_id("🎹 PianoPulse ✨")
+                    .id("PianoPulse")
                     .build()
                     .unwrap()
                     .data()
             ),
-            debug::Data(&[
-                0xF404_F09F,
-                0x8EB9_2050,
-                0x6961_6E6F,
-                0x5075_6C73,
-                0xFC04_6520,
-                0xE29C_A800,
-                0x0000_0000,
-                0x0000_0000,
-            ]),
+            debug::Data(&[0xF004_5069, 0x616E_6F50, 0x756C_7365, 0x0000_0000]),
         )
     }
 
@@ -208,41 +212,28 @@ mod tests {
         assert_eq!(
             debug::Data(
                 ProductInstanceIdBorrowed::builder(&mut Ump::random_buffer::<8>())
-                    .product_instance_id("🎹 PianoPulse ✨")
+                    .id("PianoPulse")
                     .build()
                     .unwrap()
                     .data()
             ),
-            debug::Data(&[
-                0xF404_F09F,
-                0x8EB9_2050,
-                0x6961_6E6F,
-                0x5075_6C73,
-                0xFC04_6520,
-                0xE29C_A800,
-                0x0000_0000,
-                0x0000_0000,
-            ]),
+            debug::Data(&[0xF004_5069, 0x616E_6F50, 0x756C_7365, 0x0000_0000]),
         )
     }
 
     #[test]
     #[cfg(feature = "std")]
-    fn product_instance_id() {
+    fn id() {
         assert_eq!(
             ProductInstanceIdMessage::from_data(&[
-                0xF404_F09F,
-                0x8EB9_2050,
-                0x6961_6E6F,
-                0x5075_6C73,
-                0xFC04_6520,
-                0xE29C_A800,
-                0x0000_0000,
+                0xF004_5069,
+                0x616E_6F50,
+                0x756C_7365,
                 0x0000_0000,
             ])
             .unwrap()
-            .product_instance_id(),
-            Ok(std::string::String::from("🎹 PianoPulse ✨")),
+            .id(),
+            Ok(std::string::String::from("PianoPulse")),
         )
     }
 }

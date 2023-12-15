@@ -7,7 +7,7 @@ struct FunctionBlockDiscovery {
         Property<NumericalConstant<UMP_STREAM_TYPE>, UmpSchema<0xF000_0000, 0x0, 0x0, 0x0>, ()>,
     format: Property<NumericalConstant<0x0>, UmpSchema<0x0C00_0000, 0x0, 0x0, 0x0>, ()>,
     status: Property<NumericalConstant<STATUS>, UmpSchema<0x03FF_0000, 0x0, 0x0, 0x0>, ()>,
-    function_block_number: Property<u7, UmpSchema<0x0000_7F00, 0x0, 0x0, 0x0>, ()>,
+    function_block_number: Property<u8, UmpSchema<0x0000_FF00, 0x0, 0x0, 0x0>, ()>,
     requesting_function_block_info:
         Property<bool, UmpSchema<0b0000_0000_0000_0000_0000_0000_0000_0010, 0x0, 0x0, 0x0>, ()>,
     requesting_function_block_name:
@@ -23,7 +23,7 @@ mod tests {
     fn builder() {
         assert_eq!(
             FunctionBlockDiscoveryMessage::builder()
-                .function_block_number(u7::new(0x09))
+                .function_block_number(0x09)
                 .requesting_function_block_info(true)
                 .requesting_function_block_name(true)
                 .build(),
@@ -39,7 +39,7 @@ mod tests {
             FunctionBlockDiscoveryMessage::from_data(&[0xF010_0903])
                 .unwrap()
                 .function_block_number(),
-            u7::new(0x09),
+            0x09,
         );
     }
 

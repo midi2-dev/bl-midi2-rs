@@ -15,14 +15,14 @@ pub struct UmpStreamGroupBorrowed<'a>(&'a [u32]);
 pub struct UmpStreamGroupOwned(std::vec::Vec<u32>);
 
 pub struct UmpStreamGroupBorrowedBuilder<'a> {
-    buffer: &'a mut [u32],
+    pub buffer: &'a mut [u32],
     size: usize,
     error: Result<()>,
 }
 
 #[cfg(feature = "std")]
 pub struct UmpStreamGroupBuilder<M: core::convert::From<UmpStreamGroupOwned>> {
-    buffer: std::vec::Vec<u32>,
+    pub buffer: std::vec::Vec<u32>,
     phantom_message: core::marker::PhantomData<M>,
 }
 
@@ -90,7 +90,7 @@ impl<'a> FromData<'a> for UmpStreamGroupBorrowed<'a> {
         // complete message
         if buffer.len() == 4 && buffer[0].crumb(2) != u2::new(0b00) {
             return Err(Error::InvalidData);
-        } else {
+        } else if buffer.len() > 4 {
             // composite message
             let mut packets = buffer.chunks_exact(4).peekable();
             // start
