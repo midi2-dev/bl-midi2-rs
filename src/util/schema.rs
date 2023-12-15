@@ -260,6 +260,14 @@ bool_ump_property_impl!(
     22
 );
 bool_ump_property_impl!(
+    0b0000_0000_0000_0000_1000_0000_0000_0000,
+    0x0,
+    0x0,
+    0x0,
+    0,
+    16
+);
+bool_ump_property_impl!(
     0x0,
     0b1000_0000_0000_0000_0000_0000_0000_0000,
     0x0,
@@ -291,6 +299,7 @@ u4_ump_property_impl!(0x0000_F000, 0x0, 0x0, 0x0, 0, 4);
 u4_ump_property_impl!(0x0000_0F00, 0x0, 0x0, 0x0, 0, 5);
 u4_ump_property_impl!(0x0000_00F0, 0x0, 0x0, 0x0, 0, 6);
 u4_ump_property_impl!(0x0000_000F, 0x0, 0x0, 0x0, 0, 7);
+u4_ump_property_impl!(0x0, 0x0F00_0000, 0x0, 0x0, 1, 1);
 
 macro_rules! u4_bytes_property_impl {
     ($bytes1:expr,$bytes2:expr,$bytes3:expr,$buffer_index:expr,$nibble_index:expr) => {

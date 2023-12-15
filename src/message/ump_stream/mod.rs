@@ -5,6 +5,8 @@ pub mod device_identity;
 pub mod endpoint_discovery;
 pub mod endpoint_info;
 pub mod endpoint_name;
+pub mod function_block_discovery;
+pub mod function_block_info;
 pub mod product_instance_id;
 pub mod stream_configuration_notification;
 pub mod stream_configuration_request;
