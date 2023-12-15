@@ -9,6 +9,8 @@ use crate::{
     traits::{Data, FromData},
     Error, Result,
 };
+#[cfg(feature = "std")]
+use crate::{IntoOwned, Level2Message};
 
 const STATUS: u16 = 0x4;
 
@@ -182,6 +184,29 @@ impl<'a> ProductInstanceIdBorrowedBuilder<'a> {
         self
     }
 }
+
+#[cfg(feature = "std")]
+impl<'a> IntoOwned for ProductInstanceIdBorrowed<'a> {
+    type Owned = ProductInstanceIdOwned;
+    fn into_owned(self) -> Self::Owned {
+        ProductInstanceIdOwned(self.0.into_owned())
+    }
+}
+
+#[cfg(feature = "std")]
+impl<'a> IntoOwned for ProductInstanceIdMessage<'a> {
+    type Owned = ProductInstanceIdOwned;
+    fn into_owned(self) -> ProductInstanceIdOwned {
+        use ProductInstanceIdMessage::*;
+        match self {
+            Owned(m) => m,
+            Borrowed(m) => m.into_owned(),
+        }
+    }
+}
+
+#[cfg(feature = "std")]
+impl Level2Message for ProductInstanceIdOwned {}
 
 #[cfg(test)]
 mod tests {

@@ -9,6 +9,8 @@ use crate::{
     traits::{Data, FromData},
     Error, Result,
 };
+#[cfg(feature = "std")]
+use crate::{IntoOwned, Level2Message};
 
 const STATUS: u16 = 0x3;
 
@@ -165,6 +167,29 @@ impl<'a> EndpointNameBorrowedBuilder<'a> {
         self
     }
 }
+
+#[cfg(feature = "std")]
+impl<'a> IntoOwned for EndpointNameBorrowed<'a> {
+    type Owned = EndpointNameOwned;
+    fn into_owned(self) -> Self::Owned {
+        EndpointNameOwned(self.0.into_owned())
+    }
+}
+
+#[cfg(feature = "std")]
+impl<'a> IntoOwned for EndpointNameMessage<'a> {
+    type Owned = EndpointNameOwned;
+    fn into_owned(self) -> EndpointNameOwned {
+        use EndpointNameMessage::*;
+        match self {
+            Owned(m) => m,
+            Borrowed(m) => m.into_owned(),
+        }
+    }
+}
+
+#[cfg(feature = "std")]
+impl Level2Message for EndpointNameOwned {}
 
 #[cfg(test)]
 mod tests {

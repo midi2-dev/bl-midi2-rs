@@ -10,6 +10,8 @@ use crate::{
     util::BitOps,
     Error, Result,
 };
+#[cfg(feature = "std")]
+use crate::{IntoOwned, Level2Message};
 
 const STATUS: u16 = 0x12;
 
@@ -229,6 +231,29 @@ impl<'a> FunctionBlockNameBorrowedBuilder<'a> {
         self
     }
 }
+
+#[cfg(feature = "std")]
+impl<'a> IntoOwned for FunctionBlockNameBorrowed<'a> {
+    type Owned = FunctionBlockNameOwned;
+    fn into_owned(self) -> Self::Owned {
+        FunctionBlockNameOwned(self.0.into_owned())
+    }
+}
+
+#[cfg(feature = "std")]
+impl<'a> IntoOwned for FunctionBlockNameMessage<'a> {
+    type Owned = FunctionBlockNameOwned;
+    fn into_owned(self) -> FunctionBlockNameOwned {
+        use FunctionBlockNameMessage::*;
+        match self {
+            Owned(m) => m,
+            Borrowed(m) => m.into_owned(),
+        }
+    }
+}
+
+#[cfg(feature = "std")]
+impl Level2Message for FunctionBlockNameOwned {}
 
 fn filter_name_bytes((i, v): (usize, u8)) -> Option<u8> {
     if i % 14 != 0 && v != 0x0 {
