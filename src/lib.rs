@@ -1,5 +1,5 @@
 #![no_std]
-#![cfg_attr(feature = "std", doc = include_str!("../README.md"))]
+#![doc = include_str!("../README.md")]
 
 #[cfg(feature = "std")]
 extern crate std;

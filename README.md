@@ -40,17 +40,19 @@ There are two types which can be used to represent each message from the midi2 s
 Use the `Borrowed` type to get a 'view' onto the underlying data,
 and use the `Owned` type to make a message with an independent lifetime.
 
-#[cfg(feature = "std")]
 ```rust
 use midi2::prelude::*;
 
-let owned = {
-    let buffer = [0x4405_6C07, 0xE1E3_5E92];
-    let borrowed = Message::from_data(&buffer).unwrap();
-    borrowed.into_owned()
-};
+#[cfg(feature = "std")]
+{
+    let owned = {
+        let buffer = [0x4405_6C07, 0xE1E3_5E92];
+        let borrowed = Message::from_data(&buffer).unwrap();
+        borrowed.into_owned()
+    };
 
-assert_eq!(owned.data(), &[0x4405_6C07, 0xE1E3_5E92]);
+    assert_eq!(owned.data(), &[0x4405_6C07, 0xE1E3_5E92]);
+}
 ```
 
 ## Backwards Compatible
