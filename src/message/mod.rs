@@ -12,17 +12,14 @@ pub mod ump_stream;
 pub mod utility;
 
 use midi1_channel_voice::Midi1ChannelVoiceBorrowed;
-#[cfg(feature = "std")]
 use midi1_channel_voice::Midi1ChannelVoiceBuilder;
 use midi1_channel_voice::Midi1ChannelVoiceMessage;
 use midi1_channel_voice::Midi1ChannelVoiceOwned;
 use midi2_channel_voice::Midi2ChannelVoiceBorrowed;
-#[cfg(feature = "std")]
 use midi2_channel_voice::Midi2ChannelVoiceBuilder;
 use midi2_channel_voice::Midi2ChannelVoiceMessage;
 use midi2_channel_voice::Midi2ChannelVoiceOwned;
 use system_common::SystemCommonBorrowed;
-#[cfg(feature = "std")]
 use system_common::SystemCommonBuilder;
 use system_common::SystemCommonMessage;
 use system_common::SystemCommonOwned;
@@ -41,7 +38,6 @@ use ump_stream::UmpStreamMessage;
 #[cfg(feature = "std")]
 use ump_stream::UmpStreamOwned;
 use utility::UtilityBorrowed;
-#[cfg(feature = "std")]
 use utility::UtilityBuilder;
 use utility::UtilityMessage;
 use utility::UtilityOwned;
@@ -85,7 +81,6 @@ pub enum MessageOwned {
     Utility(UtilityOwned),
 }
 
-#[cfg(feature = "std")]
 impl<'a> Message<'a> {
     pub fn builder() -> MessageBuilder<Self> {
         MessageBuilder::new()
@@ -93,141 +88,91 @@ impl<'a> Message<'a> {
 }
 
 #[derive(Default)]
-#[cfg(feature = "std")]
-pub struct MessageBuilder<M>(core::marker::PhantomData<M>)
-where
-    M: core::convert::From<utility::time_stamp::TimeStampOwned>
-        + core::convert::From<utility::no_op::NoOpOwned>
-        + core::convert::From<system_common::active_sensing::ActiveSensingOwned>
-        + core::convert::From<system_common::cont::ContinueOwned>
-        + core::convert::From<system_common::reset::ResetOwned>
-        + core::convert::From<system_common::song_position_pointer::SongPositionPointerOwned>
-        + core::convert::From<system_common::song_select::SongSelectOwned>
-        + core::convert::From<system_common::start::StartOwned>
-        + core::convert::From<system_common::stop::StopOwned>
-        + core::convert::From<system_common::time_code::TimeCodeOwned>
-        + core::convert::From<system_common::timing_clock::TimingClockOwned>
-        + core::convert::From<system_common::tune_request::TuneRequestOwned>
-        + core::convert::From<midi2_channel_voice::assignable_controller::AssignableControllerOwned>
-        + core::convert::From<
-            midi2_channel_voice::assignable_per_note_controller::AssignablePerNoteControllerOwned,
-        > + core::convert::From<midi2_channel_voice::channel_pitch_bend::ChannelPitchBendOwned>
-        + core::convert::From<midi2_channel_voice::channel_pressure::ChannelPressureOwned>
-        + core::convert::From<midi2_channel_voice::control_change::ControlChangeOwned>
-        + core::convert::From<midi2_channel_voice::key_pressure::KeyPressureOwned>
-        + core::convert::From<midi2_channel_voice::note_off::NoteOffOwned>
-        + core::convert::From<midi2_channel_voice::note_on::NoteOnOwned>
-        + core::convert::From<midi2_channel_voice::per_note_management::PerNoteManagementOwned>
-        + core::convert::From<midi2_channel_voice::per_note_pitch_bend::PerNotePitchBendOwned>
-        + core::convert::From<midi2_channel_voice::program_change::ProgramChangeOwned>
-        + core::convert::From<midi2_channel_voice::registered_controller::RegisteredControllerOwned>
-        + core::convert::From<
-            midi2_channel_voice::registered_per_note_controller::RegisteredPerNoteControllerOwned,
-        > + core::convert::From<
-            midi2_channel_voice::relative_assignable_controller::RelativeAssignableControllerOwned,
-        > + core::convert::From<
-            midi2_channel_voice::relative_registered_controller::RelativeRegisteredControllerOwned,
-        > + core::convert::From<midi1_channel_voice::channel_pressure::ChannelPressureOwned>
-        + core::convert::From<midi1_channel_voice::control_change::ControlChangeOwned>
-        + core::convert::From<midi1_channel_voice::key_pressure::KeyPressureOwned>
-        + core::convert::From<midi1_channel_voice::note_off::NoteOffOwned>
-        + core::convert::From<midi1_channel_voice::note_on::NoteOnOwned>
-        + core::convert::From<midi1_channel_voice::pitch_bend::PitchBendOwned>
-        + core::convert::From<midi1_channel_voice::program_change::ProgramChangeOwned>
-        + core::convert::From<ump_stream::device_identity::DeviceIdentityOwned>
-        + core::convert::From<ump_stream::end_of_clip::EndOfClipOwned>
-        + core::convert::From<ump_stream::endpoint_discovery::EndpointDiscoveryOwned>
-        + core::convert::From<ump_stream::endpoint_info::EndpointInfoOwned>
-        + core::convert::From<ump_stream::endpoint_name::EndpointNameOwned>
-        + core::convert::From<ump_stream::function_block_discovery::FunctionBlockDiscoveryOwned>
-        + core::convert::From<ump_stream::function_block_info::FunctionBlockInfoOwned>
-        + core::convert::From<ump_stream::function_block_name::FunctionBlockNameOwned>
-        + core::convert::From<ump_stream::product_instance_id::ProductInstanceIdOwned>
-        + core::convert::From<ump_stream::start_of_clip::StartOfClipOwned>
-        + core::convert::From<
-            ump_stream::stream_configuration_notification::StreamConfigurationNotificationOwned,
-        > + core::convert::From<
-            ump_stream::stream_configuration_request::StreamConfigurationRequestOwned,
-        >;
+pub struct MessageBuilder<M>(core::marker::PhantomData<M>);
 
-#[cfg(feature = "std")]
-impl<M> MessageBuilder<M>
-where
-    M: core::convert::From<utility::time_stamp::TimeStampOwned>
-        + core::convert::From<utility::no_op::NoOpOwned>
-        + core::convert::From<system_common::active_sensing::ActiveSensingOwned>
-        + core::convert::From<system_common::cont::ContinueOwned>
-        + core::convert::From<system_common::reset::ResetOwned>
-        + core::convert::From<system_common::song_position_pointer::SongPositionPointerOwned>
-        + core::convert::From<system_common::song_select::SongSelectOwned>
-        + core::convert::From<system_common::start::StartOwned>
-        + core::convert::From<system_common::stop::StopOwned>
-        + core::convert::From<system_common::time_code::TimeCodeOwned>
-        + core::convert::From<system_common::timing_clock::TimingClockOwned>
-        + core::convert::From<system_common::tune_request::TuneRequestOwned>
-        + core::convert::From<midi2_channel_voice::assignable_controller::AssignableControllerOwned>
-        + core::convert::From<
-            midi2_channel_voice::assignable_per_note_controller::AssignablePerNoteControllerOwned,
-        > + core::convert::From<midi2_channel_voice::channel_pitch_bend::ChannelPitchBendOwned>
-        + core::convert::From<midi2_channel_voice::channel_pressure::ChannelPressureOwned>
-        + core::convert::From<midi2_channel_voice::control_change::ControlChangeOwned>
-        + core::convert::From<midi2_channel_voice::key_pressure::KeyPressureOwned>
-        + core::convert::From<midi2_channel_voice::note_off::NoteOffOwned>
-        + core::convert::From<midi2_channel_voice::note_on::NoteOnOwned>
-        + core::convert::From<midi2_channel_voice::per_note_management::PerNoteManagementOwned>
-        + core::convert::From<midi2_channel_voice::per_note_pitch_bend::PerNotePitchBendOwned>
-        + core::convert::From<midi2_channel_voice::program_change::ProgramChangeOwned>
-        + core::convert::From<midi2_channel_voice::registered_controller::RegisteredControllerOwned>
-        + core::convert::From<
-            midi2_channel_voice::registered_per_note_controller::RegisteredPerNoteControllerOwned,
-        > + core::convert::From<
-            midi2_channel_voice::relative_assignable_controller::RelativeAssignableControllerOwned,
-        > + core::convert::From<
-            midi2_channel_voice::relative_registered_controller::RelativeRegisteredControllerOwned,
-        > + core::convert::From<midi1_channel_voice::channel_pressure::ChannelPressureOwned>
-        + core::convert::From<midi1_channel_voice::control_change::ControlChangeOwned>
-        + core::convert::From<midi1_channel_voice::key_pressure::KeyPressureOwned>
-        + core::convert::From<midi1_channel_voice::note_off::NoteOffOwned>
-        + core::convert::From<midi1_channel_voice::note_on::NoteOnOwned>
-        + core::convert::From<midi1_channel_voice::pitch_bend::PitchBendOwned>
-        + core::convert::From<midi1_channel_voice::program_change::ProgramChangeOwned>
-        + core::convert::From<ump_stream::device_identity::DeviceIdentityOwned>
-        + core::convert::From<ump_stream::end_of_clip::EndOfClipOwned>
-        + core::convert::From<ump_stream::endpoint_discovery::EndpointDiscoveryOwned>
-        + core::convert::From<ump_stream::endpoint_info::EndpointInfoOwned>
-        + core::convert::From<ump_stream::endpoint_name::EndpointNameOwned>
-        + core::convert::From<ump_stream::function_block_discovery::FunctionBlockDiscoveryOwned>
-        + core::convert::From<ump_stream::function_block_info::FunctionBlockInfoOwned>
-        + core::convert::From<ump_stream::function_block_name::FunctionBlockNameOwned>
-        + core::convert::From<ump_stream::product_instance_id::ProductInstanceIdOwned>
-        + core::convert::From<ump_stream::start_of_clip::StartOfClipOwned>
-        + core::convert::From<
-            ump_stream::stream_configuration_notification::StreamConfigurationNotificationOwned,
-        > + core::convert::From<
-            ump_stream::stream_configuration_request::StreamConfigurationRequestOwned,
-        >,
-{
+impl<M> MessageBuilder<M> {
     pub fn new() -> Self {
         Self(Default::default())
     }
-    pub fn midi1_channel_voice(self) -> Midi1ChannelVoiceBuilder<M> {
+    pub fn midi1_channel_voice(self) -> Midi1ChannelVoiceBuilder<M>
+    where
+        M: core::convert::From<midi1_channel_voice::channel_pressure::ChannelPressureOwned>
+            + core::convert::From<midi1_channel_voice::control_change::ControlChangeOwned>
+            + core::convert::From<midi1_channel_voice::key_pressure::KeyPressureOwned>
+            + core::convert::From<midi1_channel_voice::note_off::NoteOffOwned>
+            + core::convert::From<midi1_channel_voice::note_on::NoteOnOwned>
+            + core::convert::From<midi1_channel_voice::pitch_bend::PitchBendOwned>
+            + core::convert::From<midi1_channel_voice::program_change::ProgramChangeOwned>,
+    {
         Midi1ChannelVoiceBuilder::new()
     }
-    pub fn midi2_channel_voice(self) -> Midi2ChannelVoiceBuilder<M> {
+    pub fn midi2_channel_voice(self) -> Midi2ChannelVoiceBuilder<M> where M: core::convert::From<midi2_channel_voice::channel_pitch_bend::ChannelPitchBendOwned>
+        + core::convert::From<midi2_channel_voice::channel_pressure::ChannelPressureOwned>
+        + core::convert::From<midi2_channel_voice::control_change::ControlChangeOwned>
+        + core::convert::From<midi2_channel_voice::key_pressure::KeyPressureOwned>
+        + core::convert::From<midi2_channel_voice::note_off::NoteOffOwned>
+        + core::convert::From<midi2_channel_voice::note_on::NoteOnOwned>
+        + core::convert::From<midi2_channel_voice::per_note_management::PerNoteManagementOwned>
+        + core::convert::From<midi2_channel_voice::per_note_pitch_bend::PerNotePitchBendOwned>
+        + core::convert::From<midi2_channel_voice::program_change::ProgramChangeOwned>
+        + core::convert::From<midi2_channel_voice::registered_controller::RegisteredControllerOwned>
+        + core::convert::From<
+            midi2_channel_voice::registered_per_note_controller::RegisteredPerNoteControllerOwned,
+        > + core::convert::From<
+            midi2_channel_voice::relative_assignable_controller::RelativeAssignableControllerOwned,
+        > + core::convert::From<
+            midi2_channel_voice::relative_registered_controller::RelativeRegisteredControllerOwned,
+        > + core::convert::From<midi2_channel_voice::assignable_controller::AssignableControllerOwned>
+        + core::convert::From<
+            midi2_channel_voice::assignable_per_note_controller::AssignablePerNoteControllerOwned,
+    >{
         Midi2ChannelVoiceBuilder::new()
     }
-    pub fn utility(self) -> UtilityBuilder<M> {
+    pub fn utility(self) -> UtilityBuilder<M>
+    where
+        M: core::convert::From<utility::time_stamp::TimeStampOwned>
+            + core::convert::From<utility::no_op::NoOpOwned>,
+    {
         UtilityBuilder::new()
     }
-    pub fn system_common(self) -> SystemCommonBuilder<M> {
+    pub fn system_common(self) -> SystemCommonBuilder<M>
+    where
+        M: core::convert::From<system_common::active_sensing::ActiveSensingOwned>
+            + core::convert::From<system_common::cont::ContinueOwned>
+            + core::convert::From<system_common::reset::ResetOwned>
+            + core::convert::From<system_common::song_position_pointer::SongPositionPointerOwned>
+            + core::convert::From<system_common::song_select::SongSelectOwned>
+            + core::convert::From<system_common::start::StartOwned>
+            + core::convert::From<system_common::stop::StopOwned>
+            + core::convert::From<system_common::time_code::TimeCodeOwned>
+            + core::convert::From<system_common::timing_clock::TimingClockOwned>
+            + core::convert::From<system_common::tune_request::TuneRequestOwned>,
+    {
         SystemCommonBuilder::new()
     }
-    pub fn ump_stream(self) -> UmpStreamBuilder<M> {
+    #[cfg(feature = "std")]
+    pub fn ump_stream(self) -> UmpStreamBuilder<M>
+    where
+        M: core::convert::From<ump_stream::device_identity::DeviceIdentityOwned>
+            + core::convert::From<ump_stream::end_of_clip::EndOfClipOwned>
+            + core::convert::From<ump_stream::endpoint_discovery::EndpointDiscoveryOwned>
+            + core::convert::From<ump_stream::endpoint_info::EndpointInfoOwned>
+            + core::convert::From<ump_stream::endpoint_name::EndpointNameOwned>
+            + core::convert::From<ump_stream::function_block_discovery::FunctionBlockDiscoveryOwned>
+            + core::convert::From<ump_stream::function_block_info::FunctionBlockInfoOwned>
+            + core::convert::From<ump_stream::function_block_name::FunctionBlockNameOwned>
+            + core::convert::From<ump_stream::product_instance_id::ProductInstanceIdOwned>
+            + core::convert::From<ump_stream::start_of_clip::StartOfClipOwned>
+            + core::convert::From<
+                ump_stream::stream_configuration_notification::StreamConfigurationNotificationOwned,
+            > + core::convert::From<
+                ump_stream::stream_configuration_request::StreamConfigurationRequestOwned,
+            >,
+    {
         UmpStreamBuilder::new()
     }
 }
 
-#[cfg(feature = "std")]
 impl MessageOwned {
     pub fn builder() -> MessageBuilder<Self> {
         MessageBuilder::new()
@@ -436,7 +381,6 @@ impl<'a> core::convert::From<MessageBorrowed<'a>> for Message<'a> {
     }
 }
 
-#[cfg(feature = "std")]
 impl<'a> core::convert::From<MessageOwned> for Message<'a> {
     fn from(value: MessageOwned) -> Self {
         use Message as M;
@@ -445,24 +389,13 @@ impl<'a> core::convert::From<MessageOwned> for Message<'a> {
             O::Midi1ChannelVoice(m) => M::Midi1ChannelVoice(m.into()),
             O::Midi2ChannelVoice(m) => M::Midi2ChannelVoice(m.into()),
             O::Utility(m) => M::Utility(m.into()),
+            #[cfg(feature = "std")]
             O::UmpStream(m) => M::UmpStream(m.into()),
             O::SystemCommon(m) => M::SystemCommon(m.into()),
+            #[cfg(feature = "std")]
             O::Sysex7(m) => M::Sysex7(m.into()),
+            #[cfg(feature = "std")]
             O::Sysex8(m) => M::Sysex8(m.into()),
-        }
-    }
-}
-
-#[cfg(not(feature = "std"))]
-impl<'a> core::convert::From<MessageOwned> for Message<'a> {
-    fn from(value: MessageOwned) -> Self {
-        use Message as M;
-        use MessageOwned as O;
-        match value {
-            O::Midi1ChannelVoice(m) => M::Midi1ChannelVoice(m.into()),
-            O::Midi2ChannelVoice(m) => M::Midi2ChannelVoice(m.into()),
-            O::Utility(m) => M::Utility(m.into()),
-            O::SystemCommon(m) => M::SystemCommon(m.into()),
         }
     }
 }
@@ -599,7 +532,6 @@ from_ump_stream_message_impl!(
 );
 
 #[cfg(test)]
-#[cfg(feature = "std")]
 mod tests {
     use super::*;
 
