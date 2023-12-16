@@ -568,6 +568,7 @@ from_ump_stream_message_impl!(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(feature = "std")]
     use crate::util::debug;
     use pretty_assertions::assert_eq;
 
