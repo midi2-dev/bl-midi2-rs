@@ -51,6 +51,42 @@ impl<const T: u32, BytesSchema: Schema>
 }
 
 impl<const T: u32, BytesSchema: Schema>
+    Property<NumericalConstant<T>, UmpSchema<0x00C0_0000, 0x0, 0x0, 0x0>, BytesSchema> for Ump
+{
+    fn get(_data: &[<Ump as Buffer>::Data]) -> NumericalConstant<T> {
+        NumericalConstant()
+    }
+    fn write(data: &mut [<Ump as Buffer>::Data], _: NumericalConstant<T>) {
+        data[0x0].set_crumb(4, T.truncate());
+    }
+    fn validate(data: &[<Ump as Buffer>::Data]) -> Result<()> {
+        if u32::from(data[0].crumb(4)) == T {
+            Ok(())
+        } else {
+            Err(Error::InvalidData)
+        }
+    }
+}
+
+impl<const T: u32, BytesSchema: Schema>
+    Property<NumericalConstant<T>, UmpSchema<0x0030_0000, 0x0, 0x0, 0x0>, BytesSchema> for Ump
+{
+    fn get(_data: &[<Ump as Buffer>::Data]) -> NumericalConstant<T> {
+        NumericalConstant()
+    }
+    fn write(data: &mut [<Ump as Buffer>::Data], _: NumericalConstant<T>) {
+        data[0x0].set_crumb(5, T.truncate());
+    }
+    fn validate(data: &[<Ump as Buffer>::Data]) -> Result<()> {
+        if u32::from(data[0].crumb(5)) == T {
+            Ok(())
+        } else {
+            Err(Error::InvalidData)
+        }
+    }
+}
+
+impl<const T: u32, BytesSchema: Schema>
     Property<NumericalConstant<T>, UmpSchema<0x03FF_0000, 0x0, 0x0, 0x0>, BytesSchema> for Ump
 {
     fn get(_data: &[<Ump as Buffer>::Data]) -> NumericalConstant<T> {

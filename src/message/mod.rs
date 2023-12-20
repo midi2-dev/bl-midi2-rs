@@ -2,6 +2,7 @@ use crate::{util::BitOps, *};
 
 mod helpers;
 
+pub mod flex_data;
 pub mod midi1_channel_voice;
 pub mod midi2_channel_voice;
 pub mod sysex_bytes;
