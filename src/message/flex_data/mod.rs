@@ -1,5 +1,6 @@
 use crate::Data;
 
+pub mod set_metronome;
 pub mod set_tempo;
 pub mod set_time_signature;
 
