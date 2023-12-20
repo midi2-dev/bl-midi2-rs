@@ -1,6 +1,7 @@
 use crate::Data;
 
 pub mod set_tempo;
+pub mod set_time_signature;
 
 const TYPE_CODE: u32 = 0xD;
 const SETUP_AND_PERFORMANCE_BANK: u32 = 0x0;
