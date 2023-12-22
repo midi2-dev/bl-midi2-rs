@@ -1,4 +1,4 @@
-use crate::message::flex_data::{SETUP_AND_PERFORMANCE_BANK, TYPE_CODE as FLEX_DATA_TYPE};
+use crate::message::flex_data::{Banked, SETUP_AND_PERFORMANCE_BANK, TYPE_CODE as FLEX_DATA_TYPE};
 
 const STATUS: u32 = 0x0;
 
@@ -18,9 +18,14 @@ struct SetTempo {
         Property<u32, UmpSchema<0x0, 0xFFFF_FFFF, 0x0, 0x0>, ()>,
 }
 
+impl<'a> Banked for SetTempoMessage<'a> {}
+impl<'a> Banked for SetTempoBorrowed<'a> {}
+impl Banked for SetTempoOwned {}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::message::flex_data::Bank;
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -46,6 +51,16 @@ mod tests {
                 .unwrap()
                 .number_of_10_nanosecond_units_per_quarter_note(),
             0xF751FE05,
+        );
+    }
+
+    #[test]
+    fn bank() {
+        assert_eq!(
+            SetTempoMessage::from_data(&[0xD710_0000, 0xF751_FE05,])
+                .unwrap()
+                .bank(),
+            Bank::SetupAndPerformance,
         );
     }
 }

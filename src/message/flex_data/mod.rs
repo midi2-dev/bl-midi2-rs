@@ -1,5 +1,6 @@
 use crate::Data;
 
+pub mod set_key_signature;
 pub mod set_metronome;
 pub mod set_tempo;
 pub mod set_time_signature;
@@ -9,6 +10,7 @@ const SETUP_AND_PERFORMANCE_BANK: u32 = 0x0;
 const _METADATA_TEXT_BANK: u32 = 0x0;
 const _PERFORMANCE_TEXT_BANK: u32 = 0x0;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Bank {
     SetupAndPerformance,
     MetadataText,
