@@ -146,3 +146,10 @@ impl Property<Controller, UmpSchema<0x0000_00FF, 0xFFFF_FFFF, 0x0, 0x0>, ()> for
         validate_index(data[0].octet(3))
     }
 }
+
+impl core::default::Default for Controller {
+    /// Default value is Controller::Modulation(0x0)
+    fn default() -> Self {
+        Controller::Modulation(0x0)
+    }
+}

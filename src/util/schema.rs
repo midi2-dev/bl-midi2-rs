@@ -15,7 +15,11 @@ impl<const D1: u32, const D2: u32, const D3: u32, const D4: u32> Schema
 }
 impl Schema for () {}
 
-pub trait Property<T, UmpSchema: Schema, BytesSchema: Schema>: Buffer {
+pub trait Property<T, UmpSchema: Schema, BytesSchema: Schema>
+where
+    Self: Buffer,
+    T: core::default::Default,
+{
     fn get(data: &[<Self as Buffer>::Data]) -> T;
     fn write(data: &mut [<Self as Buffer>::Data], v: T);
     fn validate(_data: &[<Self as Buffer>::Data]) -> Result<()> {
@@ -579,14 +583,14 @@ impl<BytesSchema: Schema> Property<u14, UmpSchema<0x0, 0x0, 0x7F7F_0000, 0x0>, B
     }
 }
 
-impl<T, UmpSchema: Schema> Property<T, UmpSchema, ()> for Bytes {
+impl<T: Default, UmpSchema: Schema> Property<T, UmpSchema, ()> for Bytes {
     fn get(_: &[<Self as Buffer>::Data]) -> T {
         unreachable!()
     }
     fn write(_: &mut [<Self as Buffer>::Data], _: T) {}
 }
 
-impl<T, BytesSchema: Schema> Property<T, (), BytesSchema> for Ump {
+impl<T: Default, BytesSchema: Schema> Property<T, (), BytesSchema> for Ump {
     fn get(_: &[<Self as Buffer>::Data]) -> T {
         unreachable!()
     }
@@ -595,3 +599,25 @@ impl<T, BytesSchema: Schema> Property<T, (), BytesSchema> for Ump {
 
 #[derive(Default)]
 pub struct NumericalConstant<const T: u32>();
+
+impl Property<Option<u4>, UmpSchema<0x003F_0000, 0x0, 0x0, 0x0>, ()> for Ump {
+    fn get(data: &[<Ump as Buffer>::Data]) -> Option<u4> {
+        if data[0].crumb(5) == u2::new(0x0) {
+            Some(data[0].nibble(3))
+        } else {
+            None
+        }
+    }
+    fn write(data: &mut [<Ump as Buffer>::Data], v: Option<u4>) {
+        match v {
+            Some(channel) => {
+                data[0].set_crumb(5, u2::new(0x0));
+                data[0].set_nibble(3, channel);
+            }
+            None => {
+                data[0].set_crumb(5, u2::new(0x1));
+                data[0].set_nibble(3, u4::new(0x0));
+            }
+        }
+    }
+}

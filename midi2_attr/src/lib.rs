@@ -344,13 +344,13 @@ fn builder_impl(root_ident: &Ident, properties: &Vec<Property>, grouped: bool) -
         });
     }
     let message_ident = message_owned_ident(root_ident);
-    let write_const_data = builder_new_write_const_data(properties);
+    let write_default_values = builder_new_write_default_values(properties);
     quote! {
         impl<M: core::convert::From<#message_ident>> #ident<M> {
             #methods
             pub fn new() -> Self {
                 let mut buffer = [0x0_u32; 4];
-                #write_const_data
+                #write_default_values
                 Self(Some(buffer), Default::default())
             }
             pub fn build(self) -> Result<M> {
@@ -620,9 +620,9 @@ fn validation_steps(properties: &Vec<Property>) -> TokenStream {
     ret
 }
 
-fn builder_new_write_const_data(properties: &Vec<Property>) -> TokenStream {
+fn builder_new_write_default_values(properties: &Vec<Property>) -> TokenStream {
     let mut ret = TokenStream::new();
-    for property in properties.iter().filter(|property| property.constant) {
+    for property in properties.iter() {
         let ump_schema = &property.ump_representation;
         let bytes_schema = &property.bytes_representation;
         let ty = &property.ty;

@@ -66,6 +66,13 @@ impl<BytesSchema: Schema>
     }
 }
 
+impl core::default::Default for UiHint {
+    /// Default value is UiHint::Undeclared
+    fn default() -> Self {
+        UiHint::Undeclared
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Midi1Port {
     RestrictBandwidth,
@@ -152,6 +159,13 @@ impl<BytesSchema: Schema>
             0b11 => Ok(()),
             _ => unreachable!(),
         }
+    }
+}
+
+impl core::default::Default for Direction {
+    /// Default value is Direction::Bidirectional
+    fn default() -> Self {
+        Direction::Bidirectional
     }
 }
 

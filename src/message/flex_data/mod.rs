@@ -1,9 +1,11 @@
 use crate::Data;
 
+pub mod set_chord_name;
 pub mod set_key_signature;
 pub mod set_metronome;
 pub mod set_tempo;
 pub mod set_time_signature;
+mod tonic;
 
 const TYPE_CODE: u32 = 0xD;
 const SETUP_AND_PERFORMANCE_BANK: u32 = 0x0;

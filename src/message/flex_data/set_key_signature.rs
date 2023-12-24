@@ -1,5 +1,5 @@
 use crate::{
-    message::flex_data::{SETUP_AND_PERFORMANCE_BANK, TYPE_CODE as FLEX_DATA_TYPE},
+    message::flex_data::{tonic::Tonic, SETUP_AND_PERFORMANCE_BANK, TYPE_CODE as FLEX_DATA_TYPE},
     util::Truncate,
 };
 
@@ -16,6 +16,7 @@ struct SetTempo {
         (),
     >,
     status: Property<NumericalConstant<STATUS>, UmpSchema<0x0000_00FF, 0x0, 0x0, 0x0>, ()>,
+    channel: Property<Option<u4>, UmpSchema<0x003F_0000, 0x0, 0x0, 0x0>, ()>,
     sharps_flats: Property<SharpsFlats, UmpSchema<0x0, 0xF000_0000, 0x0, 0x0>, ()>,
     tonic: Property<Tonic, UmpSchema<0x0, 0x0F00_0000, 0x0, 0x0>, ()>,
 }
@@ -25,6 +26,13 @@ pub enum SharpsFlats {
     Flats(u3),
     Sharps(u3),
     NonStandard,
+}
+
+impl core::default::Default for SharpsFlats {
+    /// Default is SharpsFlats::Sharps(0)
+    fn default() -> Self {
+        SharpsFlats::Sharps(ux::u3::default())
+    }
 }
 
 impl Property<SharpsFlats, UmpSchema<0x0, 0xF000_0000, 0x0, 0x0>, ()> for Ump {
@@ -51,51 +59,6 @@ impl Property<SharpsFlats, UmpSchema<0x0, 0xF000_0000, 0x0, 0x0>, ()> for Ump {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Tonic {
-    A,
-    B,
-    C,
-    D,
-    E,
-    F,
-    G,
-    NonStandard,
-}
-
-impl Property<Tonic, UmpSchema<0x0, 0x0F00_0000, 0x0, 0x0>, ()> for Ump {
-    fn get(data: &[<Ump as Buffer>::Data]) -> Tonic {
-        use Tonic::*;
-        match u8::from(data[1].nibble(1)) {
-            0x0 => NonStandard,
-            0x1 => A,
-            0x2 => B,
-            0x3 => C,
-            0x4 => D,
-            0x5 => E,
-            0x6 => F,
-            0x7 => G,
-            _ => panic!(),
-        }
-    }
-    fn write(data: &mut [<Ump as Buffer>::Data], v: Tonic) {
-        use Tonic::*;
-        data[1].set_nibble(
-            1,
-            u4::new(match v {
-                A => 0x1,
-                B => 0x2,
-                C => 0x3,
-                D => 0x4,
-                E => 0x5,
-                F => 0x6,
-                G => 0x7,
-                NonStandard => 0x0,
-            }),
-        );
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -110,7 +73,7 @@ mod tests {
                 .sharps_flats(SharpsFlats::Sharps(u3::new(5)))
                 .build(),
             Ok(SetTempoMessage::Owned(SetTempoOwned([
-                0xD400_0005,
+                0xD410_0005,
                 0x5400_0000,
                 0x0,
                 0x0,
@@ -127,7 +90,7 @@ mod tests {
                 .sharps_flats(SharpsFlats::Flats(u3::new(5)))
                 .build(),
             Ok(SetTempoMessage::Owned(SetTempoOwned([
-                0xD400_0005,
+                0xD410_0005,
                 0xB400_0000,
                 0x0,
                 0x0,
@@ -144,7 +107,25 @@ mod tests {
                 .sharps_flats(SharpsFlats::NonStandard)
                 .build(),
             Ok(SetTempoMessage::Owned(SetTempoOwned([
-                0xD400_0005,
+                0xD410_0005,
+                0x8000_0000,
+                0x0,
+                0x0,
+            ]))),
+        );
+    }
+
+    #[test]
+    fn builder_channel() {
+        assert_eq!(
+            SetTempoMessage::builder()
+                .group(u4::new(0x4))
+                .channel(Some(u4::new(0xD)))
+                .tonic(Tonic::NonStandard)
+                .sharps_flats(SharpsFlats::NonStandard)
+                .build(),
+            Ok(SetTempoMessage::Owned(SetTempoOwned([
+                0xD40D_0005,
                 0x8000_0000,
                 0x0,
                 0x0,
@@ -155,7 +136,7 @@ mod tests {
     #[test]
     fn tonic() {
         assert_eq!(
-            SetTempoMessage::from_data(&[0xD400_0005, 0x5400_0000])
+            SetTempoMessage::from_data(&[0xD410_0005, 0x5400_0000])
                 .unwrap()
                 .tonic(),
             Tonic::D,
@@ -165,7 +146,7 @@ mod tests {
     #[test]
     fn sharps_flats() {
         assert_eq!(
-            SetTempoMessage::from_data(&[0xD400_0005, 0x5400_0000])
+            SetTempoMessage::from_data(&[0xD410_0005, 0x5400_0000])
                 .unwrap()
                 .sharps_flats(),
             SharpsFlats::Sharps(u3::new(5)),
@@ -175,7 +156,7 @@ mod tests {
     #[test]
     fn sharps_flats_with_flats() {
         assert_eq!(
-            SetTempoMessage::from_data(&[0xD400_0005, 0xB400_0000])
+            SetTempoMessage::from_data(&[0xD410_0005, 0xB400_0000])
                 .unwrap()
                 .sharps_flats(),
             SharpsFlats::Flats(u3::new(5)),
@@ -185,10 +166,30 @@ mod tests {
     #[test]
     fn sharps_flats_non_standard() {
         assert_eq!(
-            SetTempoMessage::from_data(&[0xD400_0005, 0x8000_0000])
+            SetTempoMessage::from_data(&[0xD410_0005, 0x8000_0000])
                 .unwrap()
                 .sharps_flats(),
             SharpsFlats::NonStandard,
+        );
+    }
+
+    #[test]
+    fn channel() {
+        assert_eq!(
+            SetTempoMessage::from_data(&[0xD40D_0005, 0x8000_0000])
+                .unwrap()
+                .channel(),
+            Some(u4::new(0xD)),
+        );
+    }
+
+    #[test]
+    fn no_channel() {
+        assert_eq!(
+            SetTempoMessage::from_data(&[0xD410_0005, 0x8000_0000])
+                .unwrap()
+                .channel(),
+            None,
         );
     }
 }
