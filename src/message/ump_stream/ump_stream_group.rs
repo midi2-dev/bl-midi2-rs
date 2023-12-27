@@ -1,6 +1,7 @@
 #[cfg(feature = "std")]
 use crate::IntoOwned;
 use crate::{
+    message::helpers as message_helpers,
     numeric_types::*,
     traits::{Data, FromData},
     util::{debug, BitOps},
@@ -85,33 +86,7 @@ impl<'a> FromData<'a> for UmpStreamGroupBorrowed<'a> {
             return Err(Error::InvalidData);
         }
 
-        // consistent packet formats
-
-        // complete message
-        if buffer.len() == 4 && buffer[0].crumb(2) != u2::new(0b00) {
-            return Err(Error::InvalidData);
-        } else if buffer.len() > 4 {
-            // composite message
-            let mut packets = buffer.chunks_exact(4).peekable();
-            // start
-            if packets.next().unwrap()[0].crumb(2) != u2::new(0b01) {
-                return Err(Error::InvalidData);
-            }
-
-            while let Some(packet) = packets.next() {
-                if packets.peek().is_some() {
-                    // continue
-                    if packet[0].crumb(2) != u2::new(0b10) {
-                        return Err(Error::InvalidData);
-                    }
-                } else {
-                    // end
-                    if packet[0].crumb(2) != u2::new(0b11) {
-                        return Err(Error::InvalidData);
-                    }
-                }
-            }
-        }
+        message_helpers::check_flex_data_or_ump_stream_consistent_packet_formats(buffer, 2)?;
 
         Ok(())
     }

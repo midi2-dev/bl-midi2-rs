@@ -1,5 +1,6 @@
 use crate::Data;
 
+pub mod flex_data_group;
 pub mod set_chord_name;
 pub mod set_key_signature;
 pub mod set_metronome;
