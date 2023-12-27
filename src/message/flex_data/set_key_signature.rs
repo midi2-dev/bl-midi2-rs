@@ -1,5 +1,7 @@
 use crate::{
-    message::flex_data::{tonic::Tonic, SETUP_AND_PERFORMANCE_BANK, TYPE_CODE as FLEX_DATA_TYPE},
+    message::flex_data::{
+        tonic::Tonic, FlexData, SETUP_AND_PERFORMANCE_BANK, TYPE_CODE as FLEX_DATA_TYPE,
+    },
     util::Truncate,
 };
 
@@ -20,6 +22,10 @@ struct SetTempo {
     sharps_flats: Property<SharpsFlats, UmpSchema<0x0, 0xF000_0000, 0x0, 0x0>, ()>,
     tonic: Property<Tonic, UmpSchema<0x0, 0x0F00_0000, 0x0, 0x0>, ()>,
 }
+
+impl<'a> FlexData for SetTempoMessage<'a> {}
+impl<'a> FlexData for SetTempoBorrowed<'a> {}
+impl FlexData for SetTempoOwned {}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SharpsFlats {

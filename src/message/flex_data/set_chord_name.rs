@@ -1,5 +1,5 @@
 use crate::message::flex_data::{
-    tonic::Tonic, SETUP_AND_PERFORMANCE_BANK, TYPE_CODE as FLEX_DATA_TYPE,
+    tonic::Tonic, FlexData, SETUP_AND_PERFORMANCE_BANK, TYPE_CODE as FLEX_DATA_TYPE,
 };
 
 const STATUS: u32 = 0x6;
@@ -29,6 +29,10 @@ struct SetChordName {
     bass_alteration1: Property<Option<Alteration>, UmpSchema<0x0, 0x0, 0x0, 0x0000_FF00>, ()>,
     bass_alteration2: Property<Option<Alteration>, UmpSchema<0x0, 0x0, 0x0, 0x0000_00FF>, ()>,
 }
+
+impl<'a> FlexData for SetChordNameMessage<'a> {}
+impl<'a> FlexData for SetChordNameBorrowed<'a> {}
+impl FlexData for SetChordNameOwned {}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SharpsFlats {

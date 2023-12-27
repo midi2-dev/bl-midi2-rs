@@ -1,4 +1,4 @@
-use crate::Data;
+use crate::{traits::Data, util::BitOps};
 
 pub mod flex_data_group;
 pub mod set_chord_name;
@@ -20,7 +20,7 @@ pub enum Bank {
     PerformanceText,
 }
 
-pub trait Banked: Data {
+pub trait FlexData: Data {
     fn bank(&self) -> Bank {
         use Bank::*;
         match (self.data()[0] & 0x0000_FF00) >> 8 {
@@ -29,5 +29,8 @@ pub trait Banked: Data {
             0x2 => PerformanceText,
             _ => panic!(),
         }
+    }
+    fn status(&self) -> u8 {
+        self.data()[0].octet(3)
     }
 }

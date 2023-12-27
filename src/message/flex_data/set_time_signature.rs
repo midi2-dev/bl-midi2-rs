@@ -1,4 +1,6 @@
-use crate::message::flex_data::{SETUP_AND_PERFORMANCE_BANK, TYPE_CODE as FLEX_DATA_TYPE};
+use crate::message::flex_data::{
+    FlexData, SETUP_AND_PERFORMANCE_BANK, TYPE_CODE as FLEX_DATA_TYPE,
+};
 
 const STATUS: u32 = 0x1;
 
@@ -18,6 +20,10 @@ struct SetTimeSignature {
     denominator: Property<u8, UmpSchema<0x0, 0x00FF_0000, 0x0, 0x0>, ()>,
     number_of_32nd_notes: Property<u8, UmpSchema<0x0, 0x0000_FF00, 0x0, 0x0>, ()>,
 }
+
+impl<'a> FlexData for SetTimeSignatureMessage<'a> {}
+impl<'a> FlexData for SetTimeSignatureBorrowed<'a> {}
+impl FlexData for SetTimeSignatureOwned {}
 
 #[cfg(test)]
 mod tests {
