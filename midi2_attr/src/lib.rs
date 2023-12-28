@@ -89,8 +89,12 @@ fn message_borrowed_ident(root_ident: &Ident) -> Ident {
     Ident::new(&format!("{}Borrowed", root_ident), Span::call_site())
 }
 
-fn builder_ident(root_ident: &Ident) -> Ident {
+fn message_builder_ident(root_ident: &Ident) -> Ident {
     Ident::new(&format!("{}Builder", root_ident), Span::call_site())
+}
+
+fn _message_borrowed_builder_ident(root_ident: &Ident) -> Ident {
+    Ident::new(&format!("{}BorrowedBuilder", root_ident), Span::call_site())
 }
 
 fn aggregate_message_ident(root_ident: &Ident) -> Ident {
@@ -153,7 +157,7 @@ fn message_owned(root_ident: &Ident) -> TokenStream {
 
 fn message_owned_impl(root_ident: &Ident) -> TokenStream {
     let ident = message_owned_ident(root_ident);
-    let builder_ident = builder_ident(root_ident);
+    let builder_ident = message_builder_ident(root_ident);
     quote! {
         impl #ident {
              pub fn builder() -> #builder_ident<Self> {
@@ -165,7 +169,7 @@ fn message_owned_impl(root_ident: &Ident) -> TokenStream {
 
 fn impl_aggregate_message(root_ident: &Ident) -> TokenStream {
     let ident = aggregate_message_ident(root_ident);
-    let builder_ident = builder_ident(root_ident);
+    let builder_ident = message_builder_ident(root_ident);
     quote! {
         impl<'a> #ident<'a> {
              pub fn builder() -> #builder_ident<#ident<'a>> {
@@ -229,7 +233,7 @@ fn into_owned_impl_aggregate(root_ident: &Ident) -> TokenStream {
 }
 
 fn builder(root_ident: &Ident) -> TokenStream {
-    let ident = builder_ident(root_ident);
+    let ident = message_builder_ident(root_ident);
     let message_ident = message_owned_ident(root_ident);
     quote! {
         pub struct #ident<M: core::convert::From<#message_ident>>(Option<[u32; 4]>, core::marker::PhantomData<M>);
@@ -328,7 +332,7 @@ fn aggregate_message_impl_method(property: &Property) -> TokenStream {
 }
 
 fn builder_impl(root_ident: &Ident, properties: &Vec<Property>, grouped: bool) -> TokenStream {
-    let ident = builder_ident(root_ident);
+    let ident = message_builder_ident(root_ident);
     let mut methods = TokenStream::new();
     for property in properties.iter().filter(|p| !p.constant) {
         methods.extend(builder_impl_method(property, true));

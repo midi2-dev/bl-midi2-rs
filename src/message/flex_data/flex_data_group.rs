@@ -27,9 +27,8 @@ pub struct FlexDataGroupBorrowedBuilder<'a> {
 }
 
 #[cfg(feature = "std")]
-pub struct FlexDataGroupBuilder<M: core::convert::From<FlexDataGroupOwned>> {
+pub struct FlexDataGroupBuilder {
     pub buffer: std::vec::Vec<u32>,
-    phantom_message: core::marker::PhantomData<M>,
 }
 
 // todo: needs special debug impl since this type
@@ -85,28 +84,28 @@ impl<'a> FromData<'a> for FlexDataGroupBorrowed<'a> {
         }
 
         // consistent bank
-        let bank = bank_from_buffer(buffer);
+        let bank = super::bank_from_buffer(buffer);
         if !buffer
             .chunks_exact(4)
-            .all(|packet| bank_from_buffer(packet) == bank)
+            .all(|packet| super::bank_from_buffer(packet) == bank)
         {
             return Err(Error::InvalidData);
         }
 
         // consistent status
-        let status = status_from_buffer(buffer);
+        let status = super::status_from_buffer(buffer);
         if !buffer
             .chunks_exact(4)
-            .all(|packet| status_from_buffer(packet) == status)
+            .all(|packet| super::status_from_buffer(packet) == status)
         {
             return Err(Error::InvalidData);
         }
 
         // consistent channel
-        let channel = channel_from_buffer(buffer);
+        let channel = super::channel_from_buffer(buffer);
         if !buffer
             .chunks_exact(4)
-            .all(|packet| channel_from_buffer(packet) == channel)
+            .all(|packet| super::channel_from_buffer(packet) == channel)
         {
             return Err(Error::InvalidData);
         }
@@ -151,6 +150,24 @@ impl<'a> FlexDataGroupBorrowedBuilder<'a> {
             Ok(_) => Ok(FlexDataGroupBorrowed(&self.buffer[0..(self.size * 4)])),
             Err(e) => Err(e),
         }
+    }
+    pub fn channel(self, channel: Option<u4>) -> Self {
+        for chunk in self.buffer.chunks_exact_mut(4) {
+            if let Some(v) = channel {
+                chunk[0].set_crumb(5, u2::new(0x0));
+                chunk[0].set_nibble(3, v);
+            } else {
+                chunk[0].set_crumb(5, u2::new(0x1));
+                chunk[0].set_nibble(3, u4::new(0x0));
+            }
+        }
+        self
+    }
+    pub fn group(self, group: u4) -> Self {
+        for chunk in self.buffer.chunks_exact_mut(4) {
+            chunk[0].set_nibble(1, group);
+        }
+        self
     }
     pub fn status(self, v: u8) -> Self {
         for chunk in self.buffer[..self.size * 4].chunks_exact_mut(4) {
@@ -206,15 +223,14 @@ impl<'a> FlexDataGroupBorrowedBuilder<'a> {
 }
 
 #[cfg(feature = "std")]
-impl<M: core::convert::From<FlexDataGroupOwned>> FlexDataGroupBuilder<M> {
+impl FlexDataGroupBuilder {
     pub fn new() -> Self {
         Self {
             buffer: std::vec![0xD010_0000, 0x0, 0x0, 0x0],
-            phantom_message: Default::default(),
         }
     }
-    pub fn build(self) -> Result<M> {
-        Ok(FlexDataGroupOwned(self.buffer).into())
+    pub fn build(self) -> Result<FlexDataGroupOwned> {
+        Ok(FlexDataGroupOwned(self.buffer))
     }
     pub fn status(mut self, v: u8) -> Self {
         for chunk in self.buffer.chunks_exact_mut(4) {
@@ -284,9 +300,7 @@ impl<M: core::convert::From<FlexDataGroupOwned>> FlexDataGroupBuilder<M> {
 }
 
 #[cfg(feature = "std")]
-impl<M: core::convert::From<FlexDataGroupOwned>> core::default::Default
-    for FlexDataGroupBuilder<M>
-{
+impl core::default::Default for FlexDataGroupBuilder {
     fn default() -> Self {
         Self::new()
     }
@@ -302,13 +316,13 @@ where
     FlexDataGroupBorrowed<'b>: 'a,
 {
     fn channel(&'a self) -> Option<u4> {
-        channel_from_buffer(self.0)
+        super::channel_from_buffer(self.0)
     }
     fn status(&'a self) -> u8 {
-        status_from_buffer(self.0)
+        super::status_from_buffer(self.0)
     }
     fn bank(&'a self) -> u8 {
-        bank_from_buffer(self.0)
+        super::bank_from_buffer(self.0)
     }
     fn payload(&'a self) -> PayloadIterator<'b> {
         PayloadIterator::new(self.0)
@@ -321,13 +335,13 @@ where
     FlexDataGroupOwned: 'a,
 {
     fn channel(&'a self) -> Option<u4> {
-        channel_from_buffer(&self.0)
+        super::channel_from_buffer(&self.0)
     }
     fn status(&'a self) -> u8 {
-        status_from_buffer(&self.0)
+        super::status_from_buffer(&self.0)
     }
     fn bank(&'a self) -> u8 {
-        status_from_buffer(&self.0)
+        super::status_from_buffer(&self.0)
     }
     fn payload(&'a self) -> PayloadIterator<'b> {
         PayloadIterator::new(&self.0)
@@ -392,26 +406,14 @@ fn grow_buffer(buffer: &mut [u32], size: usize) {
     buffer[new_end_message_index] |= 0b0000_0000_1100_0000_0000_0000_0000_0000;
 
     // set header data
-    buffer[new_end_message_index].set_octet(2, bank_from_buffer(buffer));
-    buffer[new_end_message_index].set_octet(3, status_from_buffer(buffer));
+    buffer[new_end_message_index].set_octet(2, super::bank_from_buffer(buffer));
+    buffer[new_end_message_index].set_octet(3, super::status_from_buffer(buffer));
     buffer[new_end_message_index].set_nibble(3, buffer[0].nibble(3)); // group
-    let channel = channel_from_buffer(buffer);
+    let channel = super::channel_from_buffer(buffer);
     channel_to_buffer(
         &mut buffer[new_end_message_index..(new_end_message_index + 4)],
         channel,
     );
-}
-
-fn status_from_buffer(buffer: &[u32]) -> u8 {
-    buffer[0].octet(3)
-}
-
-fn bank_from_buffer(buffer: &[u32]) -> u8 {
-    buffer[0].octet(2)
-}
-
-fn channel_from_buffer(buffer: &[u32]) -> Option<u4> {
-    <Ump as Property<Option<u4>, UmpSchema<0x003F_0000, 0x0, 0x0, 0x0>, ()>>::get(buffer)
 }
 
 fn channel_to_buffer(buffer: &mut [u32], channel: Option<u4>) {
