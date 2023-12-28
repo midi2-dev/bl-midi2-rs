@@ -20,6 +20,7 @@ macro_rules! flex_data_text_message {
                 },
                 status_from_buffer,
                 text::TextIterator,
+                FlexData,
             },
             numeric_types::*,
             traits::{Data, FromData, Grouped},
@@ -121,6 +122,9 @@ macro_rules! flex_data_text_message {
 
         impl<'a> Grouped for $borrowed_ident<'a> {}
         impl<'a> Grouped for $message_ident<'a> {}
+
+        impl<'a> FlexData for $borrowed_ident<'a> {}
+        impl<'a> FlexData for $message_ident<'a> {}
     };
 }
 
@@ -136,6 +140,7 @@ macro_rules! flex_data_text_message_std {
                 },
                 status_from_buffer,
                 text::TextIterator,
+                FlexData,
             },
             numeric_types::*,
             traits::{Data, FromData, Grouped, IntoOwned},
@@ -287,6 +292,10 @@ macro_rules! flex_data_text_message_std {
         impl<'a> Grouped for $borrowed_ident<'a> {}
         impl Grouped for $owned_ident {}
         impl<'a> Grouped for $message_ident<'a> {}
+
+        impl<'a> FlexData for $borrowed_ident<'a> {}
+        impl FlexData for $owned_ident {}
+        impl<'a> FlexData for $message_ident<'a> {}
 
         impl<'a> IntoOwned for $borrowed_ident<'a> {
             type Owned = $owned_ident;
@@ -609,5 +618,56 @@ mod tests {
             let borrowed = TestMessage::from_data(&data).unwrap();
             borrowed.into_owned()
         };
+    }
+
+    #[test]
+    fn status() {
+        assert_eq!(
+            TestMessage::from_data(&[
+                0xDC4D_AC3B,
+                0x5379_6E74,
+                0x6820_7769,
+                0x7A61_7264,
+                0xDC8D_AC3B,
+                0x7279_3A20,
+                0x7475_726E,
+                0x696E_6720,
+                0xDC8D_AC3B,
+                0x6B6E_6F62,
+                0x7320_616E,
+                0x6420_666C,
+                0xDC8D_AC3B,
+                0x6970_7069,
+                0x6E67_2073,
+                0x7769_7463,
+                0xDC8D_AC3B,
+                0x6865_7320,
+                0x756E_7469,
+                0x6C20_6974,
+                0xDC8D_AC3B,
+                0x2073_6F75,
+                0x6E64_7320,
+                0x6C69_6B65,
+                0xDC8D_AC3B,
+                0x2061_206C,
+                0x6173_6572,
+                0x2062_6174,
+                0xDC8D_AC3B,
+                0x746C_6520,
+                0x696E_2073,
+                0x7061_6365,
+                0xDC8D_AC3B,
+                0x2120_F09F,
+                0x92AB_F09F,
+                0x948A_F09F,
+                0xDCCD_AC3B,
+                0x9A80_0000,
+                0x0000_0000,
+                0x0000_0000,
+            ])
+            .unwrap()
+            .status(),
+            0x3B
+        );
     }
 }
