@@ -23,7 +23,8 @@ macro_rules! flex_data_text_message {
                 FlexData,
             },
             numeric_types::*,
-            traits::{Data, FromData, Grouped},
+            traits::{Data, FromData, Grouped, Level2Message},
+            util::debug,
             Error, Result,
         };
         use midi2_attr::Data;
@@ -31,7 +32,7 @@ macro_rules! flex_data_text_message {
         #[derive(Clone, PartialEq, Eq)]
         pub struct $borrowed_ident<'a>(FlexDataGroupBorrowed<'a>);
 
-        #[derive(derive_more::From, Clone, Data, PartialEq, Eq)]
+        #[derive(derive_more::From, Clone, Data, Debug, PartialEq, Eq)]
         pub enum $message_ident<'a> {
             Borrowed($borrowed_ident<'a>),
         }
@@ -125,6 +126,14 @@ macro_rules! flex_data_text_message {
 
         impl<'a> FlexData for $borrowed_ident<'a> {}
         impl<'a> FlexData for $message_ident<'a> {}
+
+        impl<'a> Level2Message for $borrowed_ident<'a> {}
+
+        impl<'a> core::fmt::Debug for $borrowed_ident<'a> {
+            fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
+                debug::packet_debug_fmt(self.0.data(), fmt)
+            }
+        }
     };
 }
 
@@ -143,7 +152,8 @@ macro_rules! flex_data_text_message_std {
                 FlexData,
             },
             numeric_types::*,
-            traits::{Data, FromData, Grouped, IntoOwned},
+            traits::{Data, FromData, Grouped, IntoOwned, Level2Message},
+            util::debug,
             Error, Result,
         };
         use midi2_attr::Data;
@@ -154,7 +164,7 @@ macro_rules! flex_data_text_message_std {
         #[derive(Clone, PartialEq, Eq)]
         pub struct $borrowed_ident<'a>(FlexDataGroupBorrowed<'a>);
 
-        #[derive(derive_more::From, Clone, Data, PartialEq, Eq)]
+        #[derive(derive_more::From, Clone, Data, Debug, PartialEq, Eq)]
         pub enum $message_ident<'a> {
             Borrowed($borrowed_ident<'a>),
             Owned($owned_ident),
@@ -319,6 +329,20 @@ macro_rules! flex_data_text_message_std {
                 Self::new()
             }
         }
+
+        impl<'a> Level2Message for $borrowed_ident<'a> {}
+        impl Level2Message for $owned_ident {}
+
+        impl<'a> core::fmt::Debug for $borrowed_ident<'a> {
+            fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
+                debug::packet_debug_fmt(self.0.data(), fmt)
+            }
+        }
+        impl core::fmt::Debug for $owned_ident {
+            fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
+                debug::packet_debug_fmt(self.0.data(), fmt)
+            }
+        }
     };
 }
 
@@ -329,7 +353,6 @@ pub(crate) use flex_data_text_message_std;
 
 #[cfg(test)]
 mod tests {
-    use crate::util::debug;
     use pretty_assertions::assert_eq;
 
     #[cfg(not(feature = "std"))]

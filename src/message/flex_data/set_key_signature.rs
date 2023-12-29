@@ -8,7 +8,7 @@ use crate::{
 const STATUS: u32 = 0x5;
 
 #[midi2_attr::generate_message(Grouped)]
-struct SetTempo {
+struct SetKeySignature {
     ump_type:
         Property<NumericalConstant<FLEX_DATA_TYPE>, UmpSchema<0xF000_0000, 0x0, 0x0, 0x0>, ()>,
     format: Property<NumericalConstant<0x0>, UmpSchema<0x00C0_0000, 0x0, 0x0, 0x0>, ()>,
@@ -23,9 +23,9 @@ struct SetTempo {
     tonic: Property<Tonic, UmpSchema<0x0, 0x0F00_0000, 0x0, 0x0>, ()>,
 }
 
-impl<'a> FlexData for SetTempoMessage<'a> {}
-impl<'a> FlexData for SetTempoBorrowed<'a> {}
-impl FlexData for SetTempoOwned {}
+impl<'a> FlexData for SetKeySignatureMessage<'a> {}
+impl<'a> FlexData for SetKeySignatureBorrowed<'a> {}
+impl FlexData for SetKeySignatureOwned {}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SharpsFlats {
@@ -73,12 +73,12 @@ mod tests {
     #[test]
     fn builder() {
         assert_eq!(
-            SetTempoMessage::builder()
+            SetKeySignatureMessage::builder()
                 .group(u4::new(0x4))
                 .tonic(Tonic::D)
                 .sharps_flats(SharpsFlats::Sharps(u3::new(5)))
                 .build(),
-            Ok(SetTempoMessage::Owned(SetTempoOwned([
+            Ok(SetKeySignatureMessage::Owned(SetKeySignatureOwned([
                 0xD410_0005,
                 0x5400_0000,
                 0x0,
@@ -90,12 +90,12 @@ mod tests {
     #[test]
     fn builder_flats() {
         assert_eq!(
-            SetTempoMessage::builder()
+            SetKeySignatureMessage::builder()
                 .group(u4::new(0x4))
                 .tonic(Tonic::D)
                 .sharps_flats(SharpsFlats::Flats(u3::new(5)))
                 .build(),
-            Ok(SetTempoMessage::Owned(SetTempoOwned([
+            Ok(SetKeySignatureMessage::Owned(SetKeySignatureOwned([
                 0xD410_0005,
                 0xB400_0000,
                 0x0,
@@ -107,12 +107,12 @@ mod tests {
     #[test]
     fn builder_non_standard() {
         assert_eq!(
-            SetTempoMessage::builder()
+            SetKeySignatureMessage::builder()
                 .group(u4::new(0x4))
                 .tonic(Tonic::NonStandard)
                 .sharps_flats(SharpsFlats::NonStandard)
                 .build(),
-            Ok(SetTempoMessage::Owned(SetTempoOwned([
+            Ok(SetKeySignatureMessage::Owned(SetKeySignatureOwned([
                 0xD410_0005,
                 0x8000_0000,
                 0x0,
@@ -124,13 +124,13 @@ mod tests {
     #[test]
     fn builder_channel() {
         assert_eq!(
-            SetTempoMessage::builder()
+            SetKeySignatureMessage::builder()
                 .group(u4::new(0x4))
                 .channel(Some(u4::new(0xD)))
                 .tonic(Tonic::NonStandard)
                 .sharps_flats(SharpsFlats::NonStandard)
                 .build(),
-            Ok(SetTempoMessage::Owned(SetTempoOwned([
+            Ok(SetKeySignatureMessage::Owned(SetKeySignatureOwned([
                 0xD40D_0005,
                 0x8000_0000,
                 0x0,
@@ -142,7 +142,7 @@ mod tests {
     #[test]
     fn tonic() {
         assert_eq!(
-            SetTempoMessage::from_data(&[0xD410_0005, 0x5400_0000])
+            SetKeySignatureMessage::from_data(&[0xD410_0005, 0x5400_0000])
                 .unwrap()
                 .tonic(),
             Tonic::D,
@@ -152,7 +152,7 @@ mod tests {
     #[test]
     fn sharps_flats() {
         assert_eq!(
-            SetTempoMessage::from_data(&[0xD410_0005, 0x5400_0000])
+            SetKeySignatureMessage::from_data(&[0xD410_0005, 0x5400_0000])
                 .unwrap()
                 .sharps_flats(),
             SharpsFlats::Sharps(u3::new(5)),
@@ -162,7 +162,7 @@ mod tests {
     #[test]
     fn sharps_flats_with_flats() {
         assert_eq!(
-            SetTempoMessage::from_data(&[0xD410_0005, 0xB400_0000])
+            SetKeySignatureMessage::from_data(&[0xD410_0005, 0xB400_0000])
                 .unwrap()
                 .sharps_flats(),
             SharpsFlats::Flats(u3::new(5)),
@@ -172,7 +172,7 @@ mod tests {
     #[test]
     fn sharps_flats_non_standard() {
         assert_eq!(
-            SetTempoMessage::from_data(&[0xD410_0005, 0x8000_0000])
+            SetKeySignatureMessage::from_data(&[0xD410_0005, 0x8000_0000])
                 .unwrap()
                 .sharps_flats(),
             SharpsFlats::NonStandard,
@@ -182,7 +182,7 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            SetTempoMessage::from_data(&[0xD40D_0005, 0x8000_0000])
+            SetKeySignatureMessage::from_data(&[0xD40D_0005, 0x8000_0000])
                 .unwrap()
                 .channel(),
             Some(u4::new(0xD)),
@@ -192,7 +192,7 @@ mod tests {
     #[test]
     fn no_channel() {
         assert_eq!(
-            SetTempoMessage::from_data(&[0xD410_0005, 0x8000_0000])
+            SetKeySignatureMessage::from_data(&[0xD410_0005, 0x8000_0000])
                 .unwrap()
                 .channel(),
             None,

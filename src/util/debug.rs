@@ -37,6 +37,18 @@ macro_rules! message_debug_impl_owned {
 pub(crate) use message_debug_impl;
 pub(crate) use message_debug_impl_owned;
 
+pub fn packet_debug_fmt(data: &[u32], fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
+    fmt.write_fmt(format_args!("{}(", stringify!($type_name)))?;
+    let mut iter = data.iter().peekable();
+    while let Some(v) = iter.next() {
+        fmt.write_fmt(format_args!("{v:#010X}"))?;
+        if iter.peek().is_some() {
+            fmt.write_str(",")?;
+        }
+    }
+    fmt.write_str(")")
+}
+
 // dev tool for hex printing of u32 buffers
 // helps to debug on failed test output
 #[derive(PartialEq, Eq)]
