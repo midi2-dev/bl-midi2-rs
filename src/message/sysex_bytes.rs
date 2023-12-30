@@ -225,8 +225,8 @@ impl<M: core::convert::From<Sysex7BytesOwned>> Sysex7BytesBuilder<M> {
     pub fn new() -> Self {
         Self(Ok(std::vec![0xF0_u8]), Default::default())
     }
-    pub fn build(self) -> Result<M> {
-        match self.0 {
+    pub fn build(&self) -> Result<M> {
+        match self.0.clone() {
             Ok(mut cache) => {
                 cache.push(0xF7);
                 Ok(Sysex7BytesOwned(cache).into())
@@ -234,7 +234,7 @@ impl<M: core::convert::From<Sysex7BytesOwned>> Sysex7BytesBuilder<M> {
             Err(e) => Err(e),
         }
     }
-    pub fn payload<I: core::iter::Iterator<Item = u7>>(mut self, data: I) -> Self {
+    pub fn payload<I: core::iter::Iterator<Item = u7>>(&mut self, data: I) -> &mut Self {
         if let Ok(cache) = &mut self.0 {
             for d in data {
                 cache.push(d.into());

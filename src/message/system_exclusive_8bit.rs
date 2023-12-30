@@ -570,7 +570,7 @@ pub struct Sysex8Builder<M: core::convert::From<Sysex8Owned>> {
 
 #[cfg(feature = "std")]
 impl<M: core::convert::From<Sysex8Owned>> Sysex8Builder<M> {
-    pub fn group(mut self, g: u4) -> Self {
+    pub fn group(&mut self, g: u4) -> &mut Self {
         if self.error.is_some() || self.group == g {
             return self;
         }
@@ -580,7 +580,7 @@ impl<M: core::convert::From<Sysex8Owned>> Sysex8Builder<M> {
         self
     }
 
-    pub fn stream_id(mut self, id: u8) -> Self {
+    pub fn stream_id(&mut self, id: u8) -> &mut Self {
         if self.error.is_some() || self.stream_id == id {
             return self;
         }
@@ -592,7 +592,7 @@ impl<M: core::convert::From<Sysex8Owned>> Sysex8Builder<M> {
         self
     }
 
-    pub fn payload<I: core::iter::Iterator<Item = u8>>(mut self, mut iter: I) -> Self {
+    pub fn payload<I: core::iter::Iterator<Item = u8>>(&mut self, mut iter: I) -> &mut Self {
         if self.error.is_some() {
             return self;
         }
@@ -649,11 +649,11 @@ impl<M: core::convert::From<Sysex8Owned>> Sysex8Builder<M> {
         }
     }
 
-    pub fn build(self) -> Result<M> {
+    pub fn build(&self) -> Result<M> {
         let None = &self.error else {
             return Err(Error::InvalidData);
         };
-        Ok(Sysex8Owned(self.buffer).into())
+        Ok(Sysex8Owned(self.buffer.clone()).into())
     }
 
     fn grow(&mut self) {

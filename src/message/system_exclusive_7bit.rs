@@ -618,11 +618,11 @@ impl<'a> Sysex7BorrowedBuilder<'a> {
 
 #[cfg(feature = "std")]
 impl<M: core::convert::From<Sysex7Owned>> Sysex7Builder<M> {
-    pub fn build(self) -> Result<M> {
+    pub fn build(&self) -> Result<M> {
         if let Some(e) = &self.error {
             return Err(e.clone());
         }
-        Ok(Sysex7Owned(self.buffer).into())
+        Ok(Sysex7Owned(self.buffer.clone()).into())
     }
 
     pub fn new() -> Self {
@@ -633,7 +633,7 @@ impl<M: core::convert::From<Sysex7Owned>> Sysex7Builder<M> {
             _phantom_message: Default::default(),
         }
     }
-    pub fn group(mut self, g: u4) -> Self {
+    pub fn group(&mut self, g: u4) -> &mut Self {
         if self.error.is_some() || self.group == g {
             return self;
         }
@@ -644,7 +644,7 @@ impl<M: core::convert::From<Sysex7Owned>> Sysex7Builder<M> {
         }
         self
     }
-    pub fn payload<I: core::iter::Iterator<Item = u7>>(mut self, mut iter: I) -> Self {
+    pub fn payload<I: core::iter::Iterator<Item = u7>>(&mut self, mut iter: I) -> &mut Self {
         if self.error.is_some() {
             return self;
         }
