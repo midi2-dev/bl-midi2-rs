@@ -368,6 +368,18 @@ fn builder_impl(root_ident: &Ident, properties: &Vec<Property>, grouped: bool) -
     }
 }
 
+fn builder_default_impl(root_ident: &Ident) -> TokenStream {
+    let ident = message_builder_ident(root_ident);
+    let message_ident = message_owned_ident(root_ident);
+    quote! {
+        impl<M: core::convert::From<#message_ident>> core::default::Default for #ident<M> {
+            fn default() -> Self {
+                Self::new()
+            }
+        }
+    }
+}
+
 fn builder_impl_method(property: &Property, public: bool) -> TokenStream {
     let name = &property.name;
     let ty = &property.ty;
@@ -777,6 +789,7 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
         specialised_message_trait_impl_borrowed(&root_ident);
     let builder = builder(&root_ident);
     let builder_impl = builder_impl(&root_ident, &properties, args.grouped);
+    let builder_default_impl = builder_default_impl(&root_ident);
     let data_trait_impl_owned = data_trait_impl_owned(&root_ident, sz_ump);
     let data_trait_impl_borrowed = data_trait_impl_borrowed(&root_ident);
     let from_data_trait_impl = from_data_trait_impl(&root_ident, &properties, sz_ump);
@@ -802,6 +815,7 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
         #specialised_message_trait_impl_borrowed
         #builder
         #builder_impl
+        #builder_default_impl
         #data_trait_impl_owned
         #data_trait_impl_borrowed
         #from_data_trait_impl

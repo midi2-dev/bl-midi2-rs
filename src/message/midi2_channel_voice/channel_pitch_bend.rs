@@ -64,4 +64,12 @@ mod tests {
             0x0830_6AF8,
         );
     }
+
+    #[test]
+    fn builder_default() {
+        assert_eq!(
+            ChannelPitchBendBuilder::new().build(),
+            <ChannelPitchBendBuilder<ChannelPitchBendMessage> as Default>::default().build()
+        );
+    }
 }
