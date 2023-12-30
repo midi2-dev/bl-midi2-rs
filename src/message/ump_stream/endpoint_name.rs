@@ -135,19 +135,18 @@ impl<M: core::convert::From<EndpointNameOwned>> core::default::Default for Endpo
 #[cfg(feature = "std")]
 impl<M: core::convert::From<EndpointNameOwned>> EndpointNameBuilder<M> {
     pub fn new() -> Self {
-        Self(
-            UmpStreamGroupBuilder::new().status(u10::new(STATUS)),
-            Default::default(),
-        )
+        let mut builder = UmpStreamGroupBuilder::new();
+        builder.status(u10::new(STATUS));
+        Self(builder, Default::default())
     }
-    pub fn build(self) -> Result<M> {
+    pub fn build(&self) -> Result<M> {
         match self.0.build() {
             Ok(m) => Ok(EndpointNameOwned(m).into()),
             Err(e) => Err(e),
         }
     }
-    pub fn name(mut self, name_str: &str) -> Self {
-        self.0 = self.0.payload(name_str.bytes());
+    pub fn name(&mut self, name_str: &str) -> &mut Self {
+        self.0.payload(name_str.bytes());
         self
     }
 }

@@ -139,23 +139,27 @@ impl<M: core::convert::From<ProductInstanceIdOwned>> core::default::Default
 impl<M: core::convert::From<ProductInstanceIdOwned>> ProductInstanceIdBuilder<M> {
     pub fn new() -> Self {
         Self(
-            UmpStreamGroupBuilder::new().status(u10::new(STATUS)),
+            {
+                let mut builder = UmpStreamGroupBuilder::new();
+                builder.status(u10::new(STATUS));
+                builder
+            },
             Ok(()),
             Default::default(),
         )
     }
-    pub fn build(self) -> Result<M> {
-        self.1?;
+    pub fn build(&self) -> Result<M> {
+        self.1.clone()?;
         match self.0.build() {
             Ok(m) => Ok(ProductInstanceIdOwned(m).into()),
             Err(e) => Err(e),
         }
     }
-    pub fn id(mut self, id: &str) -> Self {
+    pub fn id(&mut self, id: &str) -> &mut Self {
         if !id.is_ascii() {
             self.1 = Err(Error::InvalidData);
         } else {
-            self.0 = self.0.payload(id.bytes());
+            self.0.payload(id.bytes());
         }
         self
     }

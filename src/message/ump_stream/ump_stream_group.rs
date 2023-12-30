@@ -181,17 +181,17 @@ impl<M: core::convert::From<UmpStreamGroupOwned>> UmpStreamGroupBuilder<M> {
             phantom_message: Default::default(),
         }
     }
-    pub fn build(self) -> Result<M> {
-        Ok(UmpStreamGroupOwned(self.buffer).into())
+    pub fn build(&self) -> Result<M> {
+        Ok(UmpStreamGroupOwned(self.buffer.clone()).into())
     }
-    pub fn status(mut self, v: u10) -> Self {
+    pub fn status(&mut self, v: u10) -> &mut Self {
         for chunk in self.buffer.chunks_exact_mut(4) {
             chunk[0] &= !(0x3FF << 16);
             chunk[0] |= u32::from(v) << 16;
         }
         self
     }
-    pub fn payload<I: core::iter::Iterator<Item = u8>>(mut self, mut iter: I) -> Self {
+    pub fn payload<I: core::iter::Iterator<Item = u8>>(&mut self, mut iter: I) -> &mut Self {
         // paylod in batches is not yet supported
         // we reset here
         self.buffer.resize(4, 0x0);

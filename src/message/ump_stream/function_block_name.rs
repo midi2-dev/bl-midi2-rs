@@ -174,19 +174,23 @@ impl<'a> core::iter::Iterator for InterleaveFunctionBlockIterator<'a> {
 impl<M: core::convert::From<FunctionBlockNameOwned>> FunctionBlockNameBuilder<M> {
     pub fn new() -> Self {
         Self(
-            UmpStreamGroupBuilder::new().status(u10::new(STATUS)),
+            {
+                let mut builder = UmpStreamGroupBuilder::new();
+                builder.status(u10::new(STATUS));
+                builder
+            },
             Default::default(),
         )
     }
-    pub fn build(self) -> Result<M> {
+    pub fn build(&self) -> Result<M> {
         match self.0.build() {
             Ok(m) => Ok(FunctionBlockNameOwned(m).into()),
             Err(e) => Err(e),
         }
     }
-    pub fn name(mut self, name_str: &str) -> Self {
+    pub fn name(&mut self, name_str: &str) -> &mut Self {
         let function_block = function_block_from_packet(&self.0.buffer);
-        self.0 = self.0.payload(InterleaveFunctionBlockIterator {
+        self.0.payload(InterleaveFunctionBlockIterator {
             iter: name_str.bytes(),
             function_block,
             packet_index: 0,
@@ -194,7 +198,7 @@ impl<M: core::convert::From<FunctionBlockNameOwned>> FunctionBlockNameBuilder<M>
         self
     }
 
-    pub fn function_block(mut self, v: u8) -> Self {
+    pub fn function_block(&mut self, v: u8) -> &mut Self {
         for chunk in self.0.buffer.chunks_exact_mut(4) {
             chunk[0] &= !0x0000_FF00;
             chunk[0] |= u32::from(v) << 8;

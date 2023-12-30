@@ -357,7 +357,7 @@ fn builder_impl(root_ident: &Ident, properties: &Vec<Property>, grouped: bool) -
                 #write_default_values
                 Self(Some(buffer), Default::default())
             }
-            pub fn build(self) -> Result<M> {
+            pub fn build(&self) -> Result<M> {
                 if let Some(buffer) = self.0 {
                     Ok(#message_ident(buffer).into())
                 } else {
@@ -393,7 +393,7 @@ fn builder_impl_method(property: &Property, public: bool) -> TokenStream {
         ret
     };
     quote! {
-        #visibility fn #name(mut self, v: #ty) -> Self {
+        #visibility fn #name(&mut self, v: #ty) -> &mut Self {
             if let Some(buffer) = &mut self.0 {
                 <Ump as Property<#ty, #ump_schema, #bytes_schema>>::write(buffer, v);
             }
