@@ -229,22 +229,22 @@ impl FlexDataGroupBuilder {
             buffer: std::vec![0xD010_0000, 0x0, 0x0, 0x0],
         }
     }
-    pub fn build(self) -> Result<FlexDataGroupOwned> {
-        Ok(FlexDataGroupOwned(self.buffer))
+    pub fn build(&self) -> Result<FlexDataGroupOwned> {
+        Ok(FlexDataGroupOwned(self.buffer.clone()))
     }
-    pub fn status(mut self, v: u8) -> Self {
+    pub fn status(&mut self, v: u8) -> &mut Self {
         for chunk in self.buffer.chunks_exact_mut(4) {
             chunk[0].set_octet(3, v);
         }
         self
     }
-    pub fn bank(mut self, v: u8) -> Self {
+    pub fn bank(&mut self, v: u8) -> &mut Self {
         for chunk in self.buffer.chunks_exact_mut(4) {
             chunk[0].set_octet(2, v);
         }
         self
     }
-    pub fn channel(mut self, channel: Option<u4>) -> Self {
+    pub fn channel(&mut self, channel: Option<u4>) -> &mut Self {
         for chunk in self.buffer.chunks_exact_mut(4) {
             if let Some(v) = channel {
                 chunk[0].set_crumb(5, u2::new(0x0));
@@ -256,13 +256,13 @@ impl FlexDataGroupBuilder {
         }
         self
     }
-    pub fn group(mut self, group: u4) -> Self {
+    pub fn group(&mut self, group: u4) -> &mut Self {
         for chunk in self.buffer.chunks_exact_mut(4) {
             chunk[0].set_nibble(1, group);
         }
         self
     }
-    pub fn payload<I: core::iter::Iterator<Item = u8>>(mut self, mut iter: I) -> Self {
+    pub fn payload<I: core::iter::Iterator<Item = u8>>(&mut self, mut iter: I) -> &mut Self {
         // paylod in batches is not yet supported
         // we reset here
         self.buffer.resize(4, 0x0);

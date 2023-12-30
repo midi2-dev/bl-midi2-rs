@@ -214,25 +214,25 @@ macro_rules! flex_data_text_message_std {
         impl<'a> $root_ident for $message_ident<'a> {}
 
         impl<M: core::convert::From<$owned_ident>> $builder_ident<M> {
-            pub fn build(self) -> Result<M> {
+            pub fn build(&self) -> Result<M> {
                 Ok($owned_ident(self.0.build()?).into())
             }
-            pub fn text(mut self, string: &str) -> Self {
-                self.0 = self.0.payload(string.bytes());
+            pub fn text(&mut self, string: &str) -> &mut Self {
+                self.0.payload(string.bytes());
                 self
             }
-            pub fn group(mut self, group: u4) -> Self {
-                self.0 = self.0.group(group);
+            pub fn group(&mut self, group: u4) -> &mut Self {
+                self.0.group(group);
                 self
             }
-            pub fn channel(mut self, channel: Option<u4>) -> Self {
-                self.0 = self.0.channel(channel);
+            pub fn channel(&mut self, channel: Option<u4>) -> &mut Self {
+                self.0.channel(channel);
                 self
             }
             pub fn new() -> Self {
                 let mut builder = FlexDataGroupBuilder::new();
-                builder = builder.bank($bank);
-                builder = builder.status($status);
+                builder.bank($bank);
+                builder.status($status);
                 Self(builder, Default::default())
             }
         }
