@@ -10,7 +10,7 @@ struct ControlChange {
     >,
     status: Property<NumericalConstant<OP_CODE>, UmpSchema<0x00F0_0000, 0x0, 0x0, 0x0>, ()>,
     channel: Property<u4, UmpSchema<0x000F_0000, 0x0, 0x0, 0x0>, ()>,
-    index: Property<u7, UmpSchema<0x0000_7F00, 0x0, 0x0, 0x0>, ()>,
+    control: Property<u7, UmpSchema<0x0000_7F00, 0x0, 0x0, 0x0>, ()>,
     control_change_data: Property<u32, UmpSchema<0x0000_0000, 0xFFFF_FFFF, 0x0, 0x0>, ()>,
 }
 
@@ -25,7 +25,7 @@ mod tests {
             ControlChangeMessage::builder()
                 .group(u4::new(0x3))
                 .channel(u4::new(0x9))
-                .index(u7::new(0x30))
+                .control(u7::new(0x30))
                 .control_change_data(0x2468_1012)
                 .build(),
             Ok(ControlChangeMessage::Owned(ControlChangeOwned([
@@ -58,11 +58,11 @@ mod tests {
     }
 
     #[test]
-    fn index() {
+    fn control() {
         assert_eq!(
             ControlChangeMessage::from_data(&[0x43B9_3000, 0x2468_1012, 0x0, 0x0])
                 .unwrap()
-                .index(),
+                .control(),
             u7::new(0x30),
         );
     }
