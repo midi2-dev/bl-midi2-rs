@@ -960,7 +960,7 @@ pub fn derive_ump_debug(item: TokenStream1) -> TokenStream1 {
                 while let Some(v) = iter.next() {
                     fmt.write_fmt(format_args!("{v:#010X}"))?;
                     if iter.peek().is_some() {
-                        fmt.write_str(",")?;
+                        fmt.write_str(", ")?;
                     }
                 }
                 fmt.write_str(")")
@@ -991,7 +991,7 @@ pub fn derive_bytes_debug(item: TokenStream1) -> TokenStream1 {
                 while let Some(v) = iter.next() {
                     fmt.write_fmt(format_args!("{v:#04X}"))?;
                     if iter.peek().is_some() {
-                        fmt.write_str(",")?;
+                        fmt.write_str(", ")?;
                     }
                 }
                 fmt.write_str(")")
