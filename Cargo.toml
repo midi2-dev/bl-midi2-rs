@@ -9,6 +9,7 @@ authors = [
 ]
 
 [features]
+default = ["ci", "midi2-channel-voice"]
 ci = ["sysex-bytes"]
 flex-data = []
 midi1-channel-voice = []
