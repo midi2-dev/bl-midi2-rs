@@ -2,7 +2,7 @@ use crate::{
     error::Error,
     message::helpers as message_helpers,
     result::Result,
-    util::{debug, BitOps, Truncate},
+    util::{BitOps, Truncate},
     *,
 };
 
@@ -94,10 +94,10 @@ impl<'a> core::iter::Iterator for PayloadIterator<'a> {
     }
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(midi2_attr::UmpDebug, Clone, PartialEq, Eq)]
 pub struct Sysex7PartialBorrowed<'a>(&'a [u32]);
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(midi2_attr::UmpDebug, Clone, PartialEq, Eq)]
 pub struct Sysex7PartialOwned([u32; 4]);
 
 #[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Clone, Debug, PartialEq, Eq)]
@@ -109,9 +109,6 @@ pub enum Sysex7PartialMessage<'a> {
 pub trait Sysex7 {
     fn status(&self) -> Status;
 }
-
-debug::message_debug_impl!(Sysex7PartialBorrowed);
-debug::message_debug_impl_owned!(Sysex7PartialOwned);
 
 impl<'a> IntoOwned for Sysex7PartialBorrowed<'a> {
     type Owned = Sysex7PartialOwned;
@@ -1041,6 +1038,7 @@ mod tests {
 #[cfg(feature = "std")]
 mod std_tests {
     use super::*;
+    use crate::util::debug;
     use pretty_assertions::assert_eq;
 
     #[test]

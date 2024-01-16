@@ -2,7 +2,7 @@ use crate::{
     error::Error,
     message::helpers,
     result::Result,
-    util::{debug, BitOps, Truncate},
+    util::{BitOps, Truncate},
     *,
 };
 
@@ -100,10 +100,10 @@ impl<'a> core::iter::Iterator for PayloadIterator<'a> {
     }
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(midi2_attr::UmpDebug, Clone, PartialEq, Eq)]
 pub struct Sysex8PartialBorrowed<'a>(&'a [u32]);
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(midi2_attr::UmpDebug, Clone, PartialEq, Eq)]
 pub struct Sysex8PartialOwned([u32; 4]);
 
 #[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Clone, Debug, PartialEq, Eq)]
@@ -242,9 +242,6 @@ impl Grouped for Sysex8PartialOwned {}
 
 impl<'a> Streamed for Sysex8PartialBorrowed<'a> {}
 impl Streamed for Sysex8PartialOwned {}
-
-debug::message_debug_impl!(Sysex8PartialBorrowed);
-debug::message_debug_impl_owned!(Sysex8PartialOwned);
 
 pub struct Sysex8BuilderBorrowed<'a>(Result<&'a mut [u32]>);
 
@@ -413,11 +410,11 @@ fn validate_data(p: &[u32], status: Status) -> Result<()> {
     }
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(midi2_attr::UmpDebug, Clone, PartialEq, Eq)]
 pub struct Sysex8Borrowed<'a>(&'a [u32]);
 
 #[cfg(feature = "std")]
-#[derive(Clone, PartialEq, Eq)]
+#[derive(midi2_attr::UmpDebug, Clone, PartialEq, Eq)]
 pub struct Sysex8Owned(std::vec::Vec<u32>);
 
 #[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Debug, Clone, PartialEq, Eq)]
@@ -426,11 +423,6 @@ pub enum Sysex8Message<'a> {
     Owned(Sysex8Owned),
     Borrowed(Sysex8Borrowed<'a>),
 }
-
-debug::message_debug_impl!(Sysex8Borrowed);
-
-#[cfg(feature = "std")]
-debug::message_debug_impl_owned!(Sysex8Owned);
 
 impl<'a> Sysex8Borrowed<'a> {
     pub fn messages(&self) -> Sysex8MessageGroupIterator {
@@ -1232,6 +1224,7 @@ mod tests {
 #[cfg(test)]
 mod std_tests {
     use super::*;
+    use crate::util::debug;
     use pretty_assertions::assert_eq;
 
     #[test]

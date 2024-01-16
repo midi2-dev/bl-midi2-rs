@@ -44,9 +44,9 @@ use program_change::ProgramChangeOwned;
     midi2_attr::Data,
     midi2_attr::Channeled,
     midi2_attr::Grouped,
+    midi2_attr::UmpDebug,
     midi2_attr::WriteByteData,
     Clone,
-    Debug,
     PartialEq,
     Eq,
 )]
@@ -65,9 +65,9 @@ pub enum Midi1ChannelVoiceMessage<'a> {
     midi2_attr::Data,
     midi2_attr::Channeled,
     midi2_attr::Grouped,
+    midi2_attr::UmpDebug,
     midi2_attr::WriteByteData,
     Clone,
-    Debug,
     PartialEq,
     Eq,
 )]
@@ -86,9 +86,9 @@ pub enum Midi1ChannelVoiceBorrowed<'a> {
     midi2_attr::Data,
     midi2_attr::Channeled,
     midi2_attr::Grouped,
+    midi2_attr::UmpDebug,
     midi2_attr::WriteByteData,
     Clone,
-    Debug,
     PartialEq,
     Eq,
 )]

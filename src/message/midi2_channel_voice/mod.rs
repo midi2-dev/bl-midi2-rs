@@ -87,8 +87,8 @@ use relative_registered_controller::RelativeRegisteredControllerOwned;
     midi2_attr::Channeled,
     midi2_attr::Data,
     midi2_attr::Grouped,
+    midi2_attr::UmpDebug,
     Clone,
-    Debug,
     PartialEq,
     Eq,
 )]
@@ -115,8 +115,8 @@ pub enum Midi2ChannelVoiceMessage<'a> {
     midi2_attr::Channeled,
     midi2_attr::Data,
     midi2_attr::Grouped,
+    midi2_attr::UmpDebug,
     Clone,
-    Debug,
     PartialEq,
     Eq,
 )]
@@ -143,8 +143,8 @@ pub enum Midi2ChannelVoiceBorrowed<'a> {
     midi2_attr::Channeled,
     midi2_attr::Data,
     midi2_attr::Grouped,
+    midi2_attr::UmpDebug,
     Clone,
-    Debug,
     PartialEq,
     Eq,
 )]

@@ -13,21 +13,45 @@ use time_stamp::TimeStampBuilder;
 use time_stamp::TimeStampMessage;
 use time_stamp::TimeStampOwned;
 
-#[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Clone, Debug, PartialEq, Eq)]
+#[derive(
+    midi2_attr::UmpDebug,
+    derive_more::From,
+    midi2_attr::Data,
+    midi2_attr::Grouped,
+    Clone,
+    PartialEq,
+    Eq,
+)]
 #[non_exhaustive]
 pub enum UtilityMessage<'a> {
     NoOp(NoOpMessage<'a>),
     TimeStamp(TimeStampMessage<'a>),
 }
 
-#[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Clone, Debug, PartialEq, Eq)]
+#[derive(
+    midi2_attr::UmpDebug,
+    derive_more::From,
+    midi2_attr::Data,
+    midi2_attr::Grouped,
+    Clone,
+    PartialEq,
+    Eq,
+)]
 #[non_exhaustive]
 pub enum UtilityBorrowed<'a> {
     NoOp(NoOpBorrowed<'a>),
     TimeStamp(TimeStampBorrowed<'a>),
 }
 
-#[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Clone, Debug, PartialEq, Eq)]
+#[derive(
+    midi2_attr::UmpDebug,
+    derive_more::From,
+    midi2_attr::Data,
+    midi2_attr::Grouped,
+    Clone,
+    PartialEq,
+    Eq,
+)]
 #[non_exhaustive]
 pub enum UtilityOwned {
     NoOp(NoOpOwned),

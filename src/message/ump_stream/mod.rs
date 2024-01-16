@@ -89,7 +89,7 @@ use stream_configuration_request::StreamConfigurationRequestMessage;
 #[cfg(feature = "std")]
 use stream_configuration_request::StreamConfigurationRequestOwned;
 
-#[derive(derive_more::From, midi2_attr::Data, Clone, Debug, PartialEq, Eq)]
+#[derive(midi2_attr::UmpDebug, derive_more::From, midi2_attr::Data, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum UmpStreamMessage<'a> {
     DeviceIdentity(DeviceIdentityMessage<'a>),
@@ -106,7 +106,7 @@ pub enum UmpStreamMessage<'a> {
     StreamConfigurationRequest(StreamConfigurationRequestMessage<'a>),
 }
 
-#[derive(derive_more::From, midi2_attr::Data, Clone, Debug, PartialEq, Eq)]
+#[derive(midi2_attr::UmpDebug, derive_more::From, midi2_attr::Data, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum UmpStreamBorrowed<'a> {
     DeviceIdentity(DeviceIdentityBorrowed<'a>),
@@ -123,7 +123,7 @@ pub enum UmpStreamBorrowed<'a> {
     StreamConfigurationRequest(StreamConfigurationRequestBorrowed<'a>),
 }
 
-#[derive(derive_more::From, midi2_attr::Data, Clone, Debug, PartialEq, Eq)]
+#[derive(midi2_attr::UmpDebug, derive_more::From, midi2_attr::Data, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 #[cfg(feature = "std")]
 pub enum UmpStreamOwned {

@@ -2,6 +2,7 @@ use crate::{util::BitOps, *};
 
 mod helpers;
 
+#[cfg(feature = "flex-data")]
 pub mod flex_data;
 pub mod midi1_channel_voice;
 pub mod midi2_channel_voice;
@@ -12,11 +13,15 @@ pub mod system_exclusive_8bit;
 pub mod ump_stream;
 pub mod utility;
 
+#[cfg(feature = "flex-data")]
 use flex_data::FlexDataBorrowed;
 #[cfg(feature = "std")]
+#[cfg(feature = "flex-data")]
 use flex_data::FlexDataBuilder;
+#[cfg(feature = "flex-data")]
 use flex_data::FlexDataMessage;
 #[cfg(feature = "std")]
+#[cfg(feature = "flex-data")]
 use flex_data::FlexDataOwned;
 use midi1_channel_voice::Midi1ChannelVoiceBorrowed;
 use midi1_channel_voice::Midi1ChannelVoiceBuilder;
@@ -53,9 +58,10 @@ use utility::UtilityBuilder;
 use utility::UtilityMessage;
 use utility::UtilityOwned;
 
-#[derive(derive_more::From, midi2_attr::Data, Clone, Debug, PartialEq, Eq)]
+#[derive(midi2_attr::UmpDebug, derive_more::From, midi2_attr::Data, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum Message<'a> {
+    #[cfg(feature = "flex-data")]
     FlexData(FlexDataMessage<'a>),
     Midi1ChannelVoice(Midi1ChannelVoiceMessage<'a>),
     Midi2ChannelVoice(Midi2ChannelVoiceMessage<'a>),
@@ -66,9 +72,10 @@ pub enum Message<'a> {
     Utility(UtilityMessage<'a>),
 }
 
-#[derive(derive_more::From, midi2_attr::Data, Clone, Debug, PartialEq, Eq)]
+#[derive(midi2_attr::UmpDebug, derive_more::From, midi2_attr::Data, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum MessageBorrowed<'a> {
+    #[cfg(feature = "flex-data")]
     FlexData(FlexDataBorrowed<'a>),
     Midi1ChannelVoice(Midi1ChannelVoiceBorrowed<'a>),
     Midi2ChannelVoice(Midi2ChannelVoiceBorrowed<'a>),
@@ -79,10 +86,11 @@ pub enum MessageBorrowed<'a> {
     Utility(UtilityBorrowed<'a>),
 }
 
-#[derive(derive_more::From, midi2_attr::Data, Clone, Debug, PartialEq, Eq)]
+#[derive(midi2_attr::UmpDebug, derive_more::From, midi2_attr::Data, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum MessageOwned {
     #[cfg(feature = "std")]
+    #[cfg(feature = "flex-data")]
     FlexData(FlexDataOwned),
     Midi1ChannelVoice(Midi1ChannelVoiceOwned),
     Midi2ChannelVoice(Midi2ChannelVoiceOwned),
@@ -111,6 +119,7 @@ impl<M> MessageBuilder<M> {
     }
 
     #[cfg(feature = "std")]
+    #[cfg(feature = "flex-data")]
     pub fn flex_data(self) -> FlexDataBuilder<M>
     where
         M: core::convert::From<flex_data::set_chord_name::SetChordNameOwned>
@@ -242,6 +251,7 @@ impl MessageOwned {
     }
 }
 
+#[cfg(feature = "flex-data")]
 const FLEX_DATA_CODE: u8 = 0xD;
 const MIDI1_CHANNEL_VOICE_CODE: u8 = 2;
 const MIDI2_CHANNEL_VOICE_CODE: u8 = 4;
@@ -256,6 +266,7 @@ impl<'a> FromData<'a> for MessageBorrowed<'a> {
     fn from_data_unchecked(buffer: &'a [u32]) -> Self {
         use MessageBorrowed::*;
         match u8::from(buffer[0].nibble(0)) {
+            #[cfg(feature = "flex-data")]
             FLEX_DATA_CODE => FlexData(FlexDataBorrowed::from_data_unchecked(buffer)),
             MIDI1_CHANNEL_VOICE_CODE => {
                 Midi1ChannelVoice(Midi1ChannelVoiceBorrowed::from_data_unchecked(buffer))
@@ -273,6 +284,7 @@ impl<'a> FromData<'a> for MessageBorrowed<'a> {
     }
     fn validate_data(buffer: &'a [u32]) -> Result<()> {
         match u8::from(buffer[0].nibble(0)) {
+            #[cfg(feature = "flex-data")]
             FLEX_DATA_CODE => FlexDataBorrowed::validate_data(buffer),
             MIDI1_CHANNEL_VOICE_CODE => Midi1ChannelVoiceBorrowed::validate_data(buffer),
             MIDI2_CHANNEL_VOICE_CODE => Midi2ChannelVoiceBorrowed::validate_data(buffer),
@@ -386,6 +398,7 @@ impl<'a> IntoOwned for MessageBorrowed<'a> {
         use MessageBorrowed as B;
         use MessageOwned as O;
         match self {
+            #[cfg(feature = "flex-data")]
             B::FlexData(m) => O::FlexData(m.into_owned()),
             B::Midi1ChannelVoice(m) => O::Midi1ChannelVoice(m.into_owned()),
             B::Midi2ChannelVoice(m) => O::Midi2ChannelVoice(m.into_owned()),
@@ -421,6 +434,7 @@ impl<'a> IntoOwned for Message<'a> {
         use Message as M;
         use MessageOwned as O;
         match self {
+            #[cfg(feature = "flex-data")]
             M::FlexData(m) => O::FlexData(m.into_owned()),
             M::Midi1ChannelVoice(m) => O::Midi1ChannelVoice(m.into_owned()),
             M::Midi2ChannelVoice(m) => O::Midi2ChannelVoice(m.into_owned()),
@@ -438,6 +452,7 @@ impl<'a> core::convert::From<MessageBorrowed<'a>> for Message<'a> {
         use Message as M;
         use MessageBorrowed as B;
         match value {
+            #[cfg(feature = "flex-data")]
             B::FlexData(m) => M::FlexData(m.into()),
             B::Midi1ChannelVoice(m) => M::Midi1ChannelVoice(m.into()),
             B::Midi2ChannelVoice(m) => M::Midi2ChannelVoice(m.into()),
@@ -456,6 +471,7 @@ impl<'a> core::convert::From<MessageOwned> for Message<'a> {
         use MessageOwned as O;
         match value {
             #[cfg(feature = "std")]
+            #[cfg(feature = "flex-data")]
             O::FlexData(m) => M::FlexData(m.into()),
             O::Midi1ChannelVoice(m) => M::Midi1ChannelVoice(m.into()),
             O::Midi2ChannelVoice(m) => M::Midi2ChannelVoice(m.into()),
@@ -617,6 +633,7 @@ from_ump_stream_message_impl!(
 );
 
 #[cfg(feature = "std")]
+#[cfg(feature = "flex-data")]
 macro_rules! from_flex_data_message_impl {
     ($message: ty) => {
         from_message_impl!($message, FlexDataOwned);
@@ -625,52 +642,75 @@ macro_rules! from_flex_data_message_impl {
 
 // from_utility_message_impl!(utility::no_op::NoOpOwned);
 #[cfg(feature = "std")]
+#[cfg(feature = "flex-data")]
 from_flex_data_message_impl!(flex_data::set_chord_name::SetChordNameOwned);
 #[cfg(feature = "std")]
+#[cfg(feature = "flex-data")]
 from_flex_data_message_impl!(flex_data::set_key_signature::SetKeySignatureOwned);
 #[cfg(feature = "std")]
+#[cfg(feature = "flex-data")]
 from_flex_data_message_impl!(flex_data::set_metronome::SetMetronomeOwned);
 #[cfg(feature = "std")]
+#[cfg(feature = "flex-data")]
 from_flex_data_message_impl!(flex_data::set_tempo::SetTempoOwned);
 #[cfg(feature = "std")]
+#[cfg(feature = "flex-data")]
 from_flex_data_message_impl!(flex_data::set_time_signature::SetTimeSignatureOwned);
 #[cfg(feature = "std")]
+#[cfg(feature = "flex-data")]
 from_flex_data_message_impl!(flex_data::unknown_metadata_text::UnknownMetadataTextOwned);
 #[cfg(feature = "std")]
+#[cfg(feature = "flex-data")]
 from_flex_data_message_impl!(flex_data::project_name::ProjectNameOwned);
 #[cfg(feature = "std")]
+#[cfg(feature = "flex-data")]
 from_flex_data_message_impl!(flex_data::composition_name::CompositionNameOwned);
 #[cfg(feature = "std")]
+#[cfg(feature = "flex-data")]
 from_flex_data_message_impl!(flex_data::midi_clip_name::MidiClipNameOwned);
 #[cfg(feature = "std")]
+#[cfg(feature = "flex-data")]
 from_flex_data_message_impl!(flex_data::copyright_notice::CopyrightNoticeOwned);
 #[cfg(feature = "std")]
+#[cfg(feature = "flex-data")]
 from_flex_data_message_impl!(flex_data::composer_name::ComposerNameOwned);
 #[cfg(feature = "std")]
+#[cfg(feature = "flex-data")]
 from_flex_data_message_impl!(flex_data::lyricist_name::LyricistNameOwned);
 #[cfg(feature = "std")]
+#[cfg(feature = "flex-data")]
 from_flex_data_message_impl!(flex_data::arranger_name::ArrangerNameOwned);
 #[cfg(feature = "std")]
+#[cfg(feature = "flex-data")]
 from_flex_data_message_impl!(flex_data::publisher_name::PublisherNameOwned);
 #[cfg(feature = "std")]
+#[cfg(feature = "flex-data")]
 from_flex_data_message_impl!(flex_data::primary_performer_name::PrimaryPerformerNameOwned);
 #[cfg(feature = "std")]
+#[cfg(feature = "flex-data")]
 from_flex_data_message_impl!(
     flex_data::accompanying_performer_name::AccompanyingPerformerNameOwned
 );
 #[cfg(feature = "std")]
+#[cfg(feature = "flex-data")]
 from_flex_data_message_impl!(flex_data::recording_date::RecordingDateOwned);
 #[cfg(feature = "std")]
+#[cfg(feature = "flex-data")]
 from_flex_data_message_impl!(flex_data::recording_location::RecordingLocationOwned);
 #[cfg(feature = "std")]
+#[cfg(feature = "flex-data")]
 from_flex_data_message_impl!(flex_data::unknown_performance_text::UnknownPerformanceTextOwned);
 #[cfg(feature = "std")]
+#[cfg(feature = "flex-data")]
 from_flex_data_message_impl!(flex_data::lyrics::LyricsOwned);
 #[cfg(feature = "std")]
+#[cfg(feature = "flex-data")]
 from_flex_data_message_impl!(flex_data::lyrics_language::LyricsLanguageOwned);
 #[cfg(feature = "std")]
+#[cfg(feature = "flex-data")]
 from_flex_data_message_impl!(flex_data::ruby::RubyOwned);
 #[cfg(feature = "std")]
+#[cfg(feature = "flex-data")]
 from_flex_data_message_impl!(flex_data::ruby_language::RubyLanguageOwned);
 
 #[cfg(test)]
@@ -828,6 +868,7 @@ mod tests {
     }
 
     #[cfg(feature = "std")]
+    #[cfg(feature = "flex-data")]
     #[test]
     fn flex_data_builder() {
         assert_eq!(

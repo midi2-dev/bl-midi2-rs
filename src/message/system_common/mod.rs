@@ -164,9 +164,9 @@ use tune_request::TuneRequestOwned;
     derive_more::From,
     midi2_attr::Data,
     midi2_attr::Grouped,
+    midi2_attr::UmpDebug,
     midi2_attr::WriteByteData,
     Clone,
-    Debug,
     PartialEq,
     Eq,
 )]
@@ -188,9 +188,9 @@ pub enum SystemCommonMessage<'a> {
     derive_more::From,
     midi2_attr::Data,
     midi2_attr::Grouped,
+    midi2_attr::UmpDebug,
     midi2_attr::WriteByteData,
     Clone,
-    Debug,
     PartialEq,
     Eq,
 )]
@@ -212,9 +212,9 @@ pub enum SystemCommonBorrowed<'a> {
     derive_more::From,
     midi2_attr::Data,
     midi2_attr::Grouped,
+    midi2_attr::UmpDebug,
     midi2_attr::WriteByteData,
     Clone,
-    Debug,
     PartialEq,
     Eq,
 )]

@@ -9,7 +9,15 @@ authors = [
 ]
 
 [features]
+flex-data = []
+midi1-channel-voice = []
+midi2-channel-voice = []
 std = []
+sysex7 = []
+sysex8 = []
+system-common = []
+ump-stream = []
+utility = []
 
 [dependencies]
 derive_more = { version = "0.99.17", features = ["from"], default-features = false }

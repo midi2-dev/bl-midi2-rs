@@ -6,17 +6,16 @@ use crate::{
     numeric_types::*,
     traits::{Data, FromData, Grouped},
     util::{
-        debug,
         schema::{Property, UmpSchema},
         BitOps,
     },
     Error, Result,
 };
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(midi2_attr::UmpDebug, Clone, PartialEq, Eq)]
 pub struct FlexDataGroupBorrowed<'a>(&'a [u32]);
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(midi2_attr::UmpDebug, Clone, PartialEq, Eq)]
 #[cfg(feature = "std")]
 pub struct FlexDataGroupOwned(std::vec::Vec<u32>);
 
@@ -30,13 +29,6 @@ pub struct FlexDataGroupBorrowedBuilder<'a> {
 pub struct FlexDataGroupBuilder {
     pub buffer: std::vec::Vec<u32>,
 }
-
-// todo: needs special debug impl since this type
-// should be publicly transparent
-debug::message_debug_impl!(FlexDataGroupBorrowed);
-
-#[cfg(feature = "std")]
-debug::message_debug_impl_owned!(FlexDataGroupOwned);
 
 pub struct PayloadIterator<'a> {
     data: &'a [u32],

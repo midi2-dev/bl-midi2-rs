@@ -1,12 +1,12 @@
 use crate::*;
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(midi2_attr::BytesDebug, Clone, PartialEq, Eq)]
 pub struct Sysex7BytesBorrowed<'a>(&'a [u8]);
 
 pub struct Sysex7BytesBorrowedBuilder<'a>(Result<&'a mut [u8]>, usize);
 
 #[cfg(feature = "std")]
-#[derive(Clone, PartialEq, Eq)]
+#[derive(midi2_attr::BytesDebug, Clone, PartialEq, Eq)]
 pub struct Sysex7BytesOwned(std::vec::Vec<u8>);
 
 #[cfg(feature = "std")]
@@ -21,19 +21,6 @@ pub enum Sysex7BytesMessage<'a> {
     #[cfg(feature = "std")]
     Owned(Sysex7BytesOwned),
     Borrowed(Sysex7BytesBorrowed<'a>),
-}
-
-impl<'a> core::fmt::Debug for Sysex7BytesBorrowed<'a> {
-    fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
-        format_message(fmt, self.0.iter(), "Sysex7BytesBorrowed")
-    }
-}
-
-#[cfg(feature = "std")]
-impl core::fmt::Debug for Sysex7BytesOwned {
-    fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
-        format_message(fmt, self.0.iter(), "Sysex7BytesOwned")
-    }
 }
 
 #[cfg(feature = "std")]
@@ -54,22 +41,6 @@ impl<'a> IntoOwned for Sysex7BytesMessage<'a> {
             Borrowed(m) => m.into_owned(),
         }
     }
-}
-
-fn format_message<'a, I: core::iter::Iterator<Item = &'a u8>>(
-    fmt: &mut core::fmt::Formatter,
-    data: I,
-    name: &str,
-) -> core::fmt::Result {
-    fmt.write_fmt(format_args!("{}(", name))?;
-    let mut iter = data.peekable();
-    while let Some(v) = iter.next() {
-        fmt.write_fmt(format_args!("{v:#04X}"))?;
-        if iter.peek().is_some() {
-            fmt.write_str(",")?;
-        }
-    }
-    fmt.write_str(")")
 }
 
 impl<'a, 'b: 'a> Sysex<'a, 'b> for Sysex7BytesBorrowed<'a> {

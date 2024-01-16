@@ -4,14 +4,14 @@ use crate::{
     message::helpers as message_helpers,
     numeric_types::*,
     traits::{Data, FromData},
-    util::{debug, BitOps},
+    util::BitOps,
     Error, Result,
 };
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(midi2_attr::UmpDebug, Clone, PartialEq, Eq)]
 pub struct UmpStreamGroupBorrowed<'a>(&'a [u32]);
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(midi2_attr::UmpDebug, Clone, PartialEq, Eq)]
 #[cfg(feature = "std")]
 pub struct UmpStreamGroupOwned(std::vec::Vec<u32>);
 
@@ -26,13 +26,6 @@ pub struct UmpStreamGroupBuilder<M: core::convert::From<UmpStreamGroupOwned>> {
     pub buffer: std::vec::Vec<u32>,
     phantom_message: core::marker::PhantomData<M>,
 }
-
-// todo: needs special debug impl since this type
-// should be publicly transparent
-debug::message_debug_impl!(UmpStreamGroupBorrowed);
-
-#[cfg(feature = "std")]
-debug::message_debug_impl_owned!(UmpStreamGroupOwned);
 
 pub struct PayloadIterator<'a> {
     data: &'a [u32],

@@ -3,7 +3,7 @@ use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use syn::{
     parse_macro_input, parse_str, AngleBracketedGenericArguments, Field, Fields, GenericArgument,
-    Ident, ItemEnum, ItemStruct, PathArguments, PathSegment, Type, TypePath,
+    Ident, Item, ItemEnum, ItemStruct, PathArguments, PathSegment, Type, TypePath,
 };
 
 struct Property {
@@ -150,7 +150,7 @@ fn imports() -> TokenStream {
 fn message_owned(root_ident: &Ident) -> TokenStream {
     let ident = message_owned_ident(root_ident);
     quote! {
-        #[derive(Clone, PartialEq, Eq)]
+        #[derive(midi2_attr::UmpDebug, Clone, PartialEq, Eq)]
         pub struct #ident([u32; 4]);
     }
 }
@@ -182,7 +182,7 @@ fn impl_aggregate_message(root_ident: &Ident) -> TokenStream {
 fn message_borrowed(root_ident: &Ident) -> TokenStream {
     let ident = message_borrowed_ident(root_ident);
     quote! {
-        #[derive(Clone, PartialEq, Eq)]
+        #[derive(midi2_attr::UmpDebug, Clone, PartialEq, Eq)]
         pub struct #ident<'a>(&'a [u32]);
     }
 }
@@ -684,44 +684,6 @@ fn channeled_message_trait_impl_aggregate(root_ident: &Ident) -> TokenStream {
     }
 }
 
-fn debug_impl_owned(root_ident: &Ident, sz: usize) -> TokenStream {
-    let message_ident = message_owned_ident(root_ident);
-    quote! {
-        impl core::fmt::Debug for #message_ident {
-            fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
-                fmt.write_fmt(format_args!("{}(", stringify!(#message_ident)))?;
-                let mut iter = self.0[..#sz].iter().peekable();
-                while let Some(v) = iter.next() {
-                    fmt.write_fmt(format_args!("{v:#010X}"))?;
-                    if iter.peek().is_some() {
-                        fmt.write_str(",")?;
-                    }
-                }
-                fmt.write_str(")")
-            }
-        }
-    }
-}
-
-fn debug_impl_borrowed(root_ident: &Ident) -> TokenStream {
-    let message_ident = message_borrowed_ident(root_ident);
-    quote! {
-        impl<'a> core::fmt::Debug for #message_ident<'a> {
-            fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
-                fmt.write_fmt(format_args!("{}(", stringify!(#message_ident)))?;
-                let mut iter = self.0.iter().peekable();
-                while let Some(v) = iter.next() {
-                    fmt.write_fmt(format_args!("{v:#010X}"))?;
-                    if iter.peek().is_some() {
-                        fmt.write_str(",")?;
-                    }
-                }
-                fmt.write_str(")")
-            }
-        }
-    }
-}
-
 fn should_implement_from_byte_data(properties: &Vec<Property>) -> bool {
     properties.iter().any(|p| p.has_byte_scheme())
 }
@@ -793,8 +755,6 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     let data_trait_impl_owned = data_trait_impl_owned(&root_ident, sz_ump);
     let data_trait_impl_borrowed = data_trait_impl_borrowed(&root_ident);
     let from_data_trait_impl = from_data_trait_impl(&root_ident, &properties, sz_ump);
-    let debug_impl_owned = debug_impl_owned(&root_ident, sz_ump);
-    let debug_impl_borrowed = debug_impl_borrowed(&root_ident);
     let impl_aggregate_message = impl_aggregate_message(&root_ident);
     let aggregate_message = aggregate_message(&root_ident);
     let into_owned_impl_borrowed = into_owned_impl_borrowed(&root_ident, sz_ump);
@@ -819,8 +779,6 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
         #data_trait_impl_owned
         #data_trait_impl_borrowed
         #from_data_trait_impl
-        #debug_impl_owned
-        #debug_impl_borrowed
         #impl_aggregate_message
         #aggregate_message
         #into_owned_impl_aggregate
@@ -878,6 +836,15 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
 }
 
 fn enum_lifetime(item: &ItemEnum) -> TokenStream {
+    match item.generics.params.first() {
+        Some(syn::GenericParam::Lifetime(lifetime)) => {
+            quote! { #lifetime }
+        }
+        _ => TokenStream::new(),
+    }
+}
+
+fn struct_lifetime(item: &ItemStruct) -> TokenStream {
     match item.generics.params.first() {
         Some(syn::GenericParam::Lifetime(lifetime)) => {
             quote! { #lifetime }
@@ -966,6 +933,68 @@ pub fn derive_channeled(item: TokenStream1) -> TokenStream1 {
                 match self {
                     #match_arms
                 }
+            }
+        }
+    }
+    .into()
+}
+
+#[proc_macro_derive(UmpDebug)]
+pub fn derive_ump_debug(item: TokenStream1) -> TokenStream1 {
+    let input = parse_macro_input!(item as Item);
+    let ident = match &input {
+        Item::Enum(i) => &i.ident,
+        Item::Struct(i) => &i.ident,
+        _ => panic!("Only enums and structs supported"),
+    };
+    let lifetime_param = match &input {
+        Item::Enum(i) => enum_lifetime(&i),
+        Item::Struct(i) => struct_lifetime(&i),
+        _ => panic!("Only enums and structs supported"),
+    };
+    quote! {
+        impl<#lifetime_param> core::fmt::Debug for #ident<#lifetime_param> {
+            fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
+                fmt.write_fmt(format_args!("{}(", stringify!(#ident)))?;
+                let mut iter = self.data().iter().peekable();
+                while let Some(v) = iter.next() {
+                    fmt.write_fmt(format_args!("{v:#010X}"))?;
+                    if iter.peek().is_some() {
+                        fmt.write_str(",")?;
+                    }
+                }
+                fmt.write_str(")")
+            }
+        }
+    }
+    .into()
+}
+
+#[proc_macro_derive(BytesDebug)]
+pub fn derive_bytes_debug(item: TokenStream1) -> TokenStream1 {
+    let input = parse_macro_input!(item as Item);
+    let ident = match &input {
+        Item::Enum(i) => &i.ident,
+        Item::Struct(i) => &i.ident,
+        _ => panic!("Only enums and structs supported"),
+    };
+    let lifetime_param = match &input {
+        Item::Enum(i) => enum_lifetime(&i),
+        Item::Struct(i) => struct_lifetime(&i),
+        _ => panic!("Only enums and structs supported"),
+    };
+    quote! {
+        impl<#lifetime_param> core::fmt::Debug for #ident<#lifetime_param> {
+            fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
+                fmt.write_fmt(format_args!("{}(", stringify!(#ident)))?;
+                let mut iter = self.byte_data().iter().peekable();
+                while let Some(v) = iter.next() {
+                    fmt.write_fmt(format_args!("{v:#04X}"))?;
+                    if iter.peek().is_some() {
+                        fmt.write_str(",")?;
+                    }
+                }
+                fmt.write_str(")")
             }
         }
     }
