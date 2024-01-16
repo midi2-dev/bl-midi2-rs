@@ -1,14 +1,17 @@
-use crate::{error::Error, result::Result, util::BitOps, *};
-
-pub fn write_type_to_packet(t: u4, p: &mut [u32]) {
+#[cfg(any(feature = "sysex7", feature = "sysex8"))]
+pub fn write_type_to_packet(t: crate::numeric_types::u4, p: &mut [u32]) {
+    use crate::util::BitOps;
     p[0].set_nibble(0, t);
 }
 
-pub fn group_from_packet(p: &[u32]) -> u4 {
+#[cfg(any(feature = "sysex7", feature = "sysex8"))]
+pub fn group_from_packet(p: &[u32]) -> crate::numeric_types::u4 {
+    use crate::util::BitOps;
     p[0].nibble(1)
 }
 
-pub fn sysex_group_consistent_groups(buffer: &[u32], stride: usize) -> Result<()> {
+#[cfg(any(feature = "sysex7", feature = "sysex8"))]
+pub fn sysex_group_consistent_groups(buffer: &[u32], stride: usize) -> crate::result::Result<()> {
     use group_from_packet as gfp;
     if buffer
         .chunks_exact(stride)
@@ -16,14 +19,16 @@ pub fn sysex_group_consistent_groups(buffer: &[u32], stride: usize) -> Result<()
     {
         Ok(())
     } else {
-        Err(Error::InvalidData)
+        Err(crate::error::Error::InvalidData)
     }
 }
 
+#[cfg(any(feature = "ump-stream", feature = "flex-data"))]
 pub fn check_flex_data_or_ump_stream_consistent_packet_formats(
     buffer: &[u32],
     format_crumb_index: usize,
-) -> Result<()> {
+) -> crate::result::Result<()> {
+    use crate::{error::Error, numeric_types::*, util::BitOps};
     // complete message
     if buffer.len() == 4 && buffer[0].crumb(format_crumb_index) != u2::new(0b00) {
         return Err(Error::InvalidData);
@@ -54,11 +59,12 @@ pub fn check_flex_data_or_ump_stream_consistent_packet_formats(
 }
 
 // assumes that buffer contains valid messages
+#[cfg(any(feature = "sysex7", feature = "sysex8"))]
 pub fn validate_sysex_group_statuses<
-    IsComplete: Fn(u4) -> bool,
-    IsBegin: Fn(u4) -> bool,
-    IsContinue: Fn(u4) -> bool,
-    IsEnd: Fn(u4) -> bool,
+    IsComplete: Fn(crate::numeric_types::u4) -> bool,
+    IsBegin: Fn(crate::numeric_types::u4) -> bool,
+    IsContinue: Fn(crate::numeric_types::u4) -> bool,
+    IsEnd: Fn(crate::numeric_types::u4) -> bool,
 >(
     buffer: &[u32],
     is_complete: IsComplete,
@@ -66,7 +72,9 @@ pub fn validate_sysex_group_statuses<
     is_continue: IsContinue,
     is_end: IsEnd,
     stride: usize,
-) -> Result<()> {
+) -> crate::result::Result<()> {
+    use crate::{error::Error, util::BitOps};
+
     let mut iter = buffer.chunks(stride).peekable();
     let first_status = iter.next().unwrap()[0].nibble(2);
 

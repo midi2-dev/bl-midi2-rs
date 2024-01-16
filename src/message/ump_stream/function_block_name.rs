@@ -275,8 +275,8 @@ fn function_block_from_packet(packet: &[u32]) -> u8 {
 mod tests {
     use super::*;
     use crate::{
+        buffer::Ump,
         util::{debug, RandomBuffer},
-        Ump,
     };
     use pretty_assertions::assert_eq;
 

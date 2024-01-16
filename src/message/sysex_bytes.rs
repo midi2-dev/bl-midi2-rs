@@ -218,7 +218,10 @@ impl<M: core::convert::From<Sysex7BytesOwned>> Sysex7BytesBuilder<M> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::{RandomBuffer, Truncate};
+    use crate::{
+        buffer::Bytes,
+        util::{RandomBuffer, Truncate},
+    };
     use pretty_assertions::assert_eq;
 
     #[test]

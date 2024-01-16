@@ -258,6 +258,7 @@ impl<'a> NakBorrowedBuilder<'a> {
 mod tests {
     use super::*;
     use crate::{
+        buffer::Bytes,
         ci::VERSION,
         util::{debug, RandomBuffer},
     };

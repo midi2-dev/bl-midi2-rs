@@ -22,16 +22,19 @@ underlying byte data.
 ```rust
 use midi2::prelude::*;
 
-let message = Message::builder()
-    .midi2_channel_voice()
-    .note_on()
-    .group(u4::new(0xD))
-    .note(u7::new(0x60))
-    .velocity(0x4B57)
-    .build()
-    .unwrap();
+#[cfg(feature = "midi2-channel-voice")]
+{
+    let message = Message::builder()
+        .midi2_channel_voice()
+        .note_on()
+        .group(u4::new(0xD))
+        .note(u7::new(0x60))
+        .velocity(0x4B57)
+        .build()
+        .unwrap();
 
-assert_eq!(message.data(), &[0x4D90_6000, 0x4B57_0000]);
+    assert_eq!(message.data(), &[0x4D90_6000, 0x4B57_0000]);
+}
 ```
 
 ## Borrowed & Owned Messages
@@ -44,6 +47,7 @@ and use the `Owned` type to make a message with an independent lifetime.
 use midi2::prelude::*;
 
 #[cfg(feature = "std")]
+#[cfg(feature = "midi2-channel-voice")]
 {
     let owned = {
         let buffer = [0x4405_6C07, 0xE1E3_5E92];
@@ -62,21 +66,24 @@ Messages can be created from legacy Midi1 byte data.
 ```rust
 use midi2::prelude::*;
 
-let message = Message::from_byte_data(&[0xAB, 0x60, 0x33]);
+#[cfg(feature = "midi1-channel-voice")]
+{
+    let message = Message::from_byte_data(&[0xAB, 0x60, 0x33]);
 
-assert_eq!(
-    message,
-    Message::builder()
-        .midi1_channel_voice()
-        .key_pressure()
-        .channel(u4::new(0xB))
-        .note(u7::new(0x60))
-        .pressure(u7::new(0x33))
-        .build(),
-);
+    assert_eq!(
+        message,
+        Message::builder()
+            .midi1_channel_voice()
+            .key_pressure()
+            .channel(u4::new(0xB))
+            .note(u7::new(0x60))
+            .pressure(u7::new(0x33))
+            .build(),
+    );
 
-// data is converted to ump format
-assert_eq!(message.unwrap().data(), &[0x20AB_6033]);
+    // data is converted to ump format
+    assert_eq!(message.unwrap().data(), &[0x20AB_6033]);
+}
 ```
 
 Serialise ump messages back into Midi1 byte data.
@@ -84,6 +91,7 @@ Serialise ump messages back into Midi1 byte data.
 ```rust
 use midi2::prelude::*;
 
+#[cfg(feature = "midi1-channel-voice")]
 assert_eq!(
     Message::from_data(&[0x20AB_6033])
         .unwrap()
@@ -101,18 +109,21 @@ data can be easily read in a hexidecimal format.
 ```rust
 use midi2::prelude::*;
 
-let message = Message::builder()
-    .system_common()
-    .song_select()
-    .group(u4::new(0xA))
-    .song(u7::new(0x4F))
-    .build()
-    .unwrap();
+#[cfg(feature = "system-common")]
+{
+    let message = Message::builder()
+        .system_common()
+        .song_select()
+        .group(u4::new(0xA))
+        .song(u7::new(0x4F))
+        .build()
+        .unwrap();
 
-assert_eq!(
-    format!("{:?}", message),
-    "Message(0x1AF34F00)",
-);
+    assert_eq!(
+        format!("{:?}", message),
+        "Message(0x1AF34F00)",
+    );
+}
 ```
 
 ## Midi2 Capability Inquiry message wrappers

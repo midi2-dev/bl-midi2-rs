@@ -1,4 +1,5 @@
 use crate::{
+    buffer::{Buffer, Ump},
     error::Error,
     util::{
         schema::{Property, UmpSchema},

@@ -837,7 +837,7 @@ fn grow(buffer: &mut [u32], size: usize, group: u4, stream_id: u8) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::RandomBuffer;
+    use crate::{buffer::Ump, util::RandomBuffer};
 
     #[test]
     fn builder() {

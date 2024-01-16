@@ -5,16 +5,18 @@ repos:
   - id: fmt
     stages: [pre-commit]
   - id: cargo-check
+    args: [--features, "ci,flex-data,midi1-channel-voice,midi2-channel-voice,std,sysex7,sysex8,sysex-bytes,system-common,ump-stream,utility"]
     stages: [pre-commit]
   - id: cargo-check
-    args: ["--features", "std"]
+    args: [--features, "std,ci,flex-data,midi1-channel-voice,midi2-channel-voice,std,sysex7,sysex8,sysex-bytes,system-common,ump-stream,utility"]
     name: cargo-check-std 
     stages: [pre-commit]
   - id: clippy
-    args: [--features, std, --, -D, warnings]
+    args: [--features, "ci,flex-data,midi1-channel-voice,midi2-channel-voice,std,sysex7,sysex8,sysex-bytes,system-common,ump-stream,utility", --, -D, warnings]
     stages: [pre-commit]
   - id: clippy
     name: clippy-std
+    args: [--features, "std,ci,flex-data,midi1-channel-voice,midi2-channel-voice,std,sysex7,sysex8,sysex-bytes,system-common,ump-stream,utility", --, -D, warnings]
     stages: [pre-commit]
 - repo: https://github.com/crate-ci/committed
   rev: v1.0.20

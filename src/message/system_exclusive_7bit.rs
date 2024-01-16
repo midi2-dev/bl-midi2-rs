@@ -755,7 +755,7 @@ fn grow(buffer: &mut [u32], size: usize, group: u4) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::RandomBuffer;
+    use crate::{buffer::Ump, util::RandomBuffer};
 
     #[test]
     fn incorrect_message_type() {

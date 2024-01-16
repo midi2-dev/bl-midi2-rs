@@ -1,5 +1,5 @@
 use crate::{
-    buffer::Ump,
+    buffer::{Buffer, Ump},
     util::{
         schema::{Property, UmpSchema},
         BitOps, Truncate,

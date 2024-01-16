@@ -144,6 +144,7 @@ impl<'a> FromByteData<'a> for DiscoveryQueryBorrowed<'a> {
 mod tests {
     use super::*;
     use crate::{
+        buffer::Bytes,
         ci::VERSION,
         util::{debug, RandomBuffer},
     };

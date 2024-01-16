@@ -194,8 +194,8 @@ impl Level2Message for EndpointNameOwned {}
 mod tests {
     use super::*;
     use crate::{
+        buffer::Ump,
         util::{debug, RandomBuffer},
-        Ump,
     };
     use pretty_assertions::assert_eq;
 

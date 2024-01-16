@@ -13,5 +13,6 @@ pub use bit_ops::BitOps;
 pub use bounded::Bounded;
 pub use encode_7bit::Encode7Bit;
 #[cfg(test)]
+#[allow(unused_imports)]
 pub use random_buffer::*;
 pub use truncate::Truncate;
