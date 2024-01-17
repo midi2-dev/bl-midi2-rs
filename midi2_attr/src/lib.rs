@@ -192,7 +192,7 @@ fn aggregate_message(root_ident: &Ident) -> TokenStream {
     let owned_ident = message_owned_ident(root_ident);
     let borrowed_ident = message_borrowed_ident(root_ident);
     quote! {
-        #[derive(derive_more::From, midi2_attr::Grouped, midi2_attr::Data, Clone, Debug, PartialEq, Eq)]
+        #[derive(midi2_attr::UmpDebug, derive_more::From, midi2_attr::Grouped, midi2_attr::Data, Clone, PartialEq, Eq)]
         pub enum #ident<'a> {
             Owned(#owned_ident),
             Borrowed(#borrowed_ident<'a>),

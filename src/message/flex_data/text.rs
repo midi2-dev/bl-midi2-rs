@@ -32,7 +32,7 @@ macro_rules! flex_data_text_message {
         #[derive(midi2_attr::UmpDebug, Clone, PartialEq, Eq)]
         pub struct $borrowed_ident<'a>(FlexDataGroupBorrowed<'a>);
 
-        #[derive(derive_more::From, Clone, Data, Debug, PartialEq, Eq)]
+        #[derive(midi2_attr::UmpDebug, derive_more::From, Clone, Data, PartialEq, Eq)]
         pub enum $message_ident<'a> {
             Borrowed($borrowed_ident<'a>),
         }
