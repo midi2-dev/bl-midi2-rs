@@ -94,7 +94,7 @@ use utility::UtilityMessage;
 #[cfg(feature = "utility")]
 use utility::UtilityOwned;
 
-#[derive(midi2_attr::UmpDebug, derive_more::From, midi2_attr::Data, Clone, PartialEq, Eq)]
+#[derive(midi2_proc::UmpDebug, derive_more::From, midi2_proc::Data, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum Message<'a> {
     #[cfg(feature = "flex-data")]
@@ -115,7 +115,7 @@ pub enum Message<'a> {
     Utility(UtilityMessage<'a>),
 }
 
-#[derive(midi2_attr::UmpDebug, derive_more::From, midi2_attr::Data, Clone, PartialEq, Eq)]
+#[derive(midi2_proc::UmpDebug, derive_more::From, midi2_proc::Data, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum MessageBorrowed<'a> {
     #[cfg(feature = "flex-data")]
@@ -136,7 +136,7 @@ pub enum MessageBorrowed<'a> {
     Utility(UtilityBorrowed<'a>),
 }
 
-#[derive(midi2_attr::UmpDebug, derive_more::From, midi2_attr::Data, Clone, PartialEq, Eq)]
+#[derive(midi2_proc::UmpDebug, derive_more::From, midi2_proc::Data, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum MessageOwned {
     #[cfg(feature = "std")]

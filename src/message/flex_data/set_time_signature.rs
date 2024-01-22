@@ -4,7 +4,7 @@ use crate::message::flex_data::{
 
 const STATUS: u32 = 0x1;
 
-#[midi2_attr::generate_message(Grouped)]
+#[midi2_proc::generate_message(Grouped)]
 struct SetTimeSignature {
     ump_type:
         Property<NumericalConstant<FLEX_DATA_TYPE>, UmpSchema<0xF000_0000, 0x0, 0x0, 0x0>, ()>,

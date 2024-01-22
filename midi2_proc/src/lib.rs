@@ -150,7 +150,7 @@ fn imports() -> TokenStream {
 fn message_owned(root_ident: &Ident) -> TokenStream {
     let ident = message_owned_ident(root_ident);
     quote! {
-        #[derive(midi2_attr::UmpDebug, Clone, PartialEq, Eq)]
+        #[derive(midi2_proc::UmpDebug, Clone, PartialEq, Eq)]
         pub struct #ident([u32; 4]);
     }
 }
@@ -182,7 +182,7 @@ fn impl_aggregate_message(root_ident: &Ident) -> TokenStream {
 fn message_borrowed(root_ident: &Ident) -> TokenStream {
     let ident = message_borrowed_ident(root_ident);
     quote! {
-        #[derive(midi2_attr::UmpDebug, Clone, PartialEq, Eq)]
+        #[derive(midi2_proc::UmpDebug, Clone, PartialEq, Eq)]
         pub struct #ident<'a>(&'a [u32]);
     }
 }
@@ -192,7 +192,7 @@ fn aggregate_message(root_ident: &Ident) -> TokenStream {
     let owned_ident = message_owned_ident(root_ident);
     let borrowed_ident = message_borrowed_ident(root_ident);
     quote! {
-        #[derive(midi2_attr::UmpDebug, derive_more::From, midi2_attr::Grouped, midi2_attr::Data, Clone, PartialEq, Eq)]
+        #[derive(midi2_proc::UmpDebug, derive_more::From, midi2_proc::Grouped, midi2_proc::Data, Clone, PartialEq, Eq)]
         pub enum #ident<'a> {
             Owned(#owned_ident),
             Borrowed(#borrowed_ident<'a>),

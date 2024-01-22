@@ -1,7 +1,7 @@
 use crate::message::ump_stream::TYPE_CODE as UMP_STREAM_TYPE;
 const STATUS: u32 = 0x5;
 
-#[midi2_attr::generate_message()]
+#[midi2_proc::generate_message()]
 struct StreamConfigurationRequest {
     ump_type:
         Property<NumericalConstant<UMP_STREAM_TYPE>, UmpSchema<0xF000_0000, 0x0, 0x0, 0x0>, ()>,

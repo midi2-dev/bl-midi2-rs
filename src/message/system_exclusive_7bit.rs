@@ -94,13 +94,13 @@ impl<'a> core::iter::Iterator for PayloadIterator<'a> {
     }
 }
 
-#[derive(midi2_attr::UmpDebug, Clone, PartialEq, Eq)]
+#[derive(midi2_proc::UmpDebug, Clone, PartialEq, Eq)]
 pub struct Sysex7PartialBorrowed<'a>(&'a [u32]);
 
-#[derive(midi2_attr::UmpDebug, Clone, PartialEq, Eq)]
+#[derive(midi2_proc::UmpDebug, Clone, PartialEq, Eq)]
 pub struct Sysex7PartialOwned([u32; 4]);
 
-#[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Clone, Debug, PartialEq, Eq)]
+#[derive(derive_more::From, midi2_proc::Data, midi2_proc::Grouped, Clone, Debug, PartialEq, Eq)]
 pub enum Sysex7PartialMessage<'a> {
     Owned(Sysex7PartialOwned),
     Borrowed(Sysex7PartialBorrowed<'a>),
@@ -342,7 +342,7 @@ pub struct Sysex7Borrowed<'a>(&'a [u32]);
 #[cfg(feature = "std")]
 pub struct Sysex7Owned(std::vec::Vec<u32>);
 
-#[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Debug, Clone, PartialEq, Eq)]
+#[derive(derive_more::From, midi2_proc::Data, midi2_proc::Grouped, Debug, Clone, PartialEq, Eq)]
 pub enum Sysex7Message<'a> {
     #[cfg(feature = "std")]
     Owned(Sysex7Owned),

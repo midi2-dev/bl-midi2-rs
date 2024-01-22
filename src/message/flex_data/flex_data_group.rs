@@ -12,10 +12,10 @@ use crate::{
     Error, Result,
 };
 
-#[derive(midi2_attr::UmpDebug, Clone, PartialEq, Eq)]
+#[derive(midi2_proc::UmpDebug, Clone, PartialEq, Eq)]
 pub struct FlexDataGroupBorrowed<'a>(&'a [u32]);
 
-#[derive(midi2_attr::UmpDebug, Clone, PartialEq, Eq)]
+#[derive(midi2_proc::UmpDebug, Clone, PartialEq, Eq)]
 #[cfg(feature = "std")]
 pub struct FlexDataGroupOwned(std::vec::Vec<u32>);
 

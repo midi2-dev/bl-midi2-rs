@@ -420,7 +420,7 @@ const SETUP_AND_PERFORMANCE_BANK: u32 = 0x0;
 const METADATA_TEXT_BANK: u8 = 0x1;
 const PERFORMANCE_TEXT_BANK: u8 = 0x2;
 
-#[derive(midi2_attr::UmpDebug, derive_more::From, midi2_attr::Data, Clone, PartialEq, Eq)]
+#[derive(midi2_proc::UmpDebug, derive_more::From, midi2_proc::Data, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum FlexDataMessage<'a> {
     SetChordName(set_chord_name::SetChordNameMessage<'a>),
@@ -448,7 +448,7 @@ pub enum FlexDataMessage<'a> {
     RubyLanguage(ruby_language::RubyLanguageMessage<'a>),
 }
 
-#[derive(midi2_attr::UmpDebug, derive_more::From, midi2_attr::Data, Clone, PartialEq, Eq)]
+#[derive(midi2_proc::UmpDebug, derive_more::From, midi2_proc::Data, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum FlexDataBorrowed<'a> {
     SetChordName(set_chord_name::SetChordNameBorrowed<'a>),
@@ -476,7 +476,7 @@ pub enum FlexDataBorrowed<'a> {
     RubyLanguage(ruby_language::RubyLanguageBorrowed<'a>),
 }
 
-#[derive(midi2_attr::UmpDebug, derive_more::From, midi2_attr::Data, Clone, PartialEq, Eq)]
+#[derive(midi2_proc::UmpDebug, derive_more::From, midi2_proc::Data, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 #[cfg(feature = "std")]
 pub enum FlexDataOwned {

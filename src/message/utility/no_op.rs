@@ -1,4 +1,4 @@
-#[midi2_attr::generate_message(Grouped)]
+#[midi2_proc::generate_message(Grouped)]
 struct NoOp {
     ump_type: Property<NumericalConstant<0x0>, UmpSchema<0xF000_0000, 0x0, 0x0, 0x0>, ()>,
     status: Property<NumericalConstant<0b0000>, UmpSchema<0x00F0_0000, 0x0, 0x0, 0x0>, ()>,

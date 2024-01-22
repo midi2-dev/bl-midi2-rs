@@ -2,10 +2,10 @@ use crate::traits::{ByteData as ByteDataTrait, Data as DataTrait};
 
 // dev tool for hex printing of u32 buffers
 // helps to debug on failed test output
-#[derive(midi2_attr::UmpDebug, PartialEq, Eq)]
+#[derive(midi2_proc::UmpDebug, PartialEq, Eq)]
 pub struct Data<'a>(pub &'a [u32]);
 
-#[derive(midi2_attr::BytesDebug, PartialEq, Eq)]
+#[derive(midi2_proc::BytesDebug, PartialEq, Eq)]
 pub struct ByteData<'a>(pub &'a [u8]);
 
 impl<'a> DataTrait for Data<'a> {

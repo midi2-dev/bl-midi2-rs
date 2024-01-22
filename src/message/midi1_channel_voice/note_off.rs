@@ -2,7 +2,7 @@ use crate::message::midi1_channel_voice::TYPE_CODE as MIDI1_CHANNEL_VOICE_TYPE;
 
 const OP_CODE: u32 = 0b1000;
 
-#[midi2_attr::generate_message(Grouped, Channeled)]
+#[midi2_proc::generate_message(Grouped, Channeled)]
 struct NoteOff {
     ump_type: Property<
         NumericalConstant<MIDI1_CHANNEL_VOICE_TYPE>,

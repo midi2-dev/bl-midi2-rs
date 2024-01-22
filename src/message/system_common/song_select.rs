@@ -2,7 +2,7 @@ use crate::message::system_common::TYPE_CODE as SYSTEM_COMMON_TYPE_CODE;
 
 const OP_CODE: u32 = 0xF3;
 
-#[midi2_attr::generate_message(Grouped)]
+#[midi2_proc::generate_message(Grouped)]
 struct SongSelect {
     ump_type: Property<
         NumericalConstant<SYSTEM_COMMON_TYPE_CODE>,

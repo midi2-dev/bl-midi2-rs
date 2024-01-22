@@ -84,10 +84,10 @@ use relative_registered_controller::RelativeRegisteredControllerOwned;
 
 #[derive(
     derive_more::From,
-    midi2_attr::Channeled,
-    midi2_attr::Data,
-    midi2_attr::Grouped,
-    midi2_attr::UmpDebug,
+    midi2_proc::Channeled,
+    midi2_proc::Data,
+    midi2_proc::Grouped,
+    midi2_proc::UmpDebug,
     Clone,
     PartialEq,
     Eq,
@@ -112,10 +112,10 @@ pub enum Midi2ChannelVoiceMessage<'a> {
 
 #[derive(
     derive_more::From,
-    midi2_attr::Channeled,
-    midi2_attr::Data,
-    midi2_attr::Grouped,
-    midi2_attr::UmpDebug,
+    midi2_proc::Channeled,
+    midi2_proc::Data,
+    midi2_proc::Grouped,
+    midi2_proc::UmpDebug,
     Clone,
     PartialEq,
     Eq,
@@ -140,10 +140,10 @@ pub enum Midi2ChannelVoiceBorrowed<'a> {
 
 #[derive(
     derive_more::From,
-    midi2_attr::Channeled,
-    midi2_attr::Data,
-    midi2_attr::Grouped,
-    midi2_attr::UmpDebug,
+    midi2_proc::Channeled,
+    midi2_proc::Data,
+    midi2_proc::Grouped,
+    midi2_proc::UmpDebug,
     Clone,
     PartialEq,
     Eq,

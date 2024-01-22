@@ -100,13 +100,13 @@ impl<'a> core::iter::Iterator for PayloadIterator<'a> {
     }
 }
 
-#[derive(midi2_attr::UmpDebug, Clone, PartialEq, Eq)]
+#[derive(midi2_proc::UmpDebug, Clone, PartialEq, Eq)]
 pub struct Sysex8PartialBorrowed<'a>(&'a [u32]);
 
-#[derive(midi2_attr::UmpDebug, Clone, PartialEq, Eq)]
+#[derive(midi2_proc::UmpDebug, Clone, PartialEq, Eq)]
 pub struct Sysex8PartialOwned([u32; 4]);
 
-#[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Clone, Debug, PartialEq, Eq)]
+#[derive(derive_more::From, midi2_proc::Data, midi2_proc::Grouped, Clone, Debug, PartialEq, Eq)]
 pub enum Sysex8PartialMessage<'a> {
     Owned(Sysex8PartialOwned),
     Borrowed(Sysex8PartialBorrowed<'a>),
@@ -410,14 +410,14 @@ fn validate_data(p: &[u32], status: Status) -> Result<()> {
     }
 }
 
-#[derive(midi2_attr::UmpDebug, Clone, PartialEq, Eq)]
+#[derive(midi2_proc::UmpDebug, Clone, PartialEq, Eq)]
 pub struct Sysex8Borrowed<'a>(&'a [u32]);
 
 #[cfg(feature = "std")]
-#[derive(midi2_attr::UmpDebug, Clone, PartialEq, Eq)]
+#[derive(midi2_proc::UmpDebug, Clone, PartialEq, Eq)]
 pub struct Sysex8Owned(std::vec::Vec<u32>);
 
-#[derive(derive_more::From, midi2_attr::Data, midi2_attr::Grouped, Debug, Clone, PartialEq, Eq)]
+#[derive(derive_more::From, midi2_proc::Data, midi2_proc::Grouped, Debug, Clone, PartialEq, Eq)]
 pub enum Sysex8Message<'a> {
     #[cfg(feature = "std")]
     Owned(Sysex8Owned),

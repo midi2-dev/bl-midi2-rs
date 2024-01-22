@@ -27,12 +27,12 @@ macro_rules! flex_data_text_message {
             util::debug,
             Error, Result,
         };
-        use midi2_attr::Data;
+        use midi2_proc::Data;
 
-        #[derive(midi2_attr::UmpDebug, Clone, PartialEq, Eq)]
+        #[derive(midi2_proc::UmpDebug, Clone, PartialEq, Eq)]
         pub struct $borrowed_ident<'a>(FlexDataGroupBorrowed<'a>);
 
-        #[derive(midi2_attr::UmpDebug, derive_more::From, Clone, Data, PartialEq, Eq)]
+        #[derive(midi2_proc::UmpDebug, derive_more::From, Clone, Data, PartialEq, Eq)]
         pub enum $message_ident<'a> {
             Borrowed($borrowed_ident<'a>),
         }
@@ -149,15 +149,15 @@ macro_rules! flex_data_text_message_std {
             traits::{Data, FromData, Grouped, IntoOwned, Level2Message},
             Error, Result,
         };
-        use midi2_attr::Data;
+        use midi2_proc::Data;
 
-        #[derive(midi2_attr::UmpDebug, Clone, PartialEq, Eq)]
+        #[derive(midi2_proc::UmpDebug, Clone, PartialEq, Eq)]
         pub struct $owned_ident(FlexDataGroupOwned);
 
-        #[derive(midi2_attr::UmpDebug, Clone, PartialEq, Eq)]
+        #[derive(midi2_proc::UmpDebug, Clone, PartialEq, Eq)]
         pub struct $borrowed_ident<'a>(FlexDataGroupBorrowed<'a>);
 
-        #[derive(midi2_attr::UmpDebug, derive_more::From, Clone, Data, PartialEq, Eq)]
+        #[derive(midi2_proc::UmpDebug, derive_more::From, Clone, Data, PartialEq, Eq)]
         pub enum $message_ident<'a> {
             Borrowed($borrowed_ident<'a>),
             Owned($owned_ident),

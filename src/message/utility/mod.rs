@@ -14,10 +14,10 @@ use time_stamp::TimeStampMessage;
 use time_stamp::TimeStampOwned;
 
 #[derive(
-    midi2_attr::UmpDebug,
+    midi2_proc::UmpDebug,
     derive_more::From,
-    midi2_attr::Data,
-    midi2_attr::Grouped,
+    midi2_proc::Data,
+    midi2_proc::Grouped,
     Clone,
     PartialEq,
     Eq,
@@ -29,10 +29,10 @@ pub enum UtilityMessage<'a> {
 }
 
 #[derive(
-    midi2_attr::UmpDebug,
+    midi2_proc::UmpDebug,
     derive_more::From,
-    midi2_attr::Data,
-    midi2_attr::Grouped,
+    midi2_proc::Data,
+    midi2_proc::Grouped,
     Clone,
     PartialEq,
     Eq,
@@ -44,10 +44,10 @@ pub enum UtilityBorrowed<'a> {
 }
 
 #[derive(
-    midi2_attr::UmpDebug,
+    midi2_proc::UmpDebug,
     derive_more::From,
-    midi2_attr::Data,
-    midi2_attr::Grouped,
+    midi2_proc::Data,
+    midi2_proc::Grouped,
     Clone,
     PartialEq,
     Eq,

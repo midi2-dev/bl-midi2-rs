@@ -1,12 +1,12 @@
 use crate::*;
 
-#[derive(midi2_attr::BytesDebug, Clone, PartialEq, Eq)]
+#[derive(midi2_proc::BytesDebug, Clone, PartialEq, Eq)]
 pub struct Sysex7BytesBorrowed<'a>(&'a [u8]);
 
 pub struct Sysex7BytesBorrowedBuilder<'a>(Result<&'a mut [u8]>, usize);
 
 #[cfg(feature = "std")]
-#[derive(midi2_attr::BytesDebug, Clone, PartialEq, Eq)]
+#[derive(midi2_proc::BytesDebug, Clone, PartialEq, Eq)]
 pub struct Sysex7BytesOwned(std::vec::Vec<u8>);
 
 #[cfg(feature = "std")]

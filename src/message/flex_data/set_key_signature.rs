@@ -7,7 +7,7 @@ use crate::{
 
 const STATUS: u32 = 0x5;
 
-#[midi2_attr::generate_message(Grouped)]
+#[midi2_proc::generate_message(Grouped)]
 struct SetKeySignature {
     ump_type:
         Property<NumericalConstant<FLEX_DATA_TYPE>, UmpSchema<0xF000_0000, 0x0, 0x0, 0x0>, ()>,

@@ -8,7 +8,7 @@ pub mod time_code;
 
 pub mod tune_request {
     use crate::message::system_common::TYPE_CODE as SYSTEM_COMMON_TYPE_CODE;
-    #[midi2_attr::generate_message(Grouped)]
+    #[midi2_proc::generate_message(Grouped)]
     struct TuneRequest {
         ump_type: Property<
             NumericalConstant<SYSTEM_COMMON_TYPE_CODE>,
@@ -24,7 +24,7 @@ pub mod tune_request {
 }
 pub mod timing_clock {
     use crate::message::system_common::TYPE_CODE as SYSTEM_COMMON_TYPE_CODE;
-    #[midi2_attr::generate_message(Grouped)]
+    #[midi2_proc::generate_message(Grouped)]
     struct TimingClock {
         ump_type: Property<
             NumericalConstant<SYSTEM_COMMON_TYPE_CODE>,
@@ -40,7 +40,7 @@ pub mod timing_clock {
 }
 pub mod start {
     use crate::message::system_common::TYPE_CODE as SYSTEM_COMMON_TYPE_CODE;
-    #[midi2_attr::generate_message(Grouped)]
+    #[midi2_proc::generate_message(Grouped)]
     struct Start {
         ump_type: Property<
             NumericalConstant<SYSTEM_COMMON_TYPE_CODE>,
@@ -56,7 +56,7 @@ pub mod start {
 }
 pub mod cont {
     use crate::message::system_common::TYPE_CODE as SYSTEM_COMMON_TYPE_CODE;
-    #[midi2_attr::generate_message(Grouped)]
+    #[midi2_proc::generate_message(Grouped)]
     struct Continue {
         ump_type: Property<
             NumericalConstant<SYSTEM_COMMON_TYPE_CODE>,
@@ -72,7 +72,7 @@ pub mod cont {
 }
 pub mod stop {
     use crate::message::system_common::TYPE_CODE as SYSTEM_COMMON_TYPE_CODE;
-    #[midi2_attr::generate_message(Grouped)]
+    #[midi2_proc::generate_message(Grouped)]
     struct Stop {
         ump_type: Property<
             NumericalConstant<SYSTEM_COMMON_TYPE_CODE>,
@@ -88,7 +88,7 @@ pub mod stop {
 }
 pub mod active_sensing {
     use crate::message::system_common::TYPE_CODE as SYSTEM_COMMON_TYPE_CODE;
-    #[midi2_attr::generate_message(Grouped)]
+    #[midi2_proc::generate_message(Grouped)]
     struct ActiveSensing {
         ump_type: Property<
             NumericalConstant<SYSTEM_COMMON_TYPE_CODE>,
@@ -104,7 +104,7 @@ pub mod active_sensing {
 }
 pub mod reset {
     use crate::message::system_common::TYPE_CODE as SYSTEM_COMMON_TYPE_CODE;
-    #[midi2_attr::generate_message(Grouped)]
+    #[midi2_proc::generate_message(Grouped)]
     struct Reset {
         ump_type: Property<
             NumericalConstant<SYSTEM_COMMON_TYPE_CODE>,
@@ -162,10 +162,10 @@ use tune_request::TuneRequestOwned;
 
 #[derive(
     derive_more::From,
-    midi2_attr::Data,
-    midi2_attr::Grouped,
-    midi2_attr::UmpDebug,
-    midi2_attr::WriteByteData,
+    midi2_proc::Data,
+    midi2_proc::Grouped,
+    midi2_proc::UmpDebug,
+    midi2_proc::WriteByteData,
     Clone,
     PartialEq,
     Eq,
@@ -186,10 +186,10 @@ pub enum SystemCommonMessage<'a> {
 
 #[derive(
     derive_more::From,
-    midi2_attr::Data,
-    midi2_attr::Grouped,
-    midi2_attr::UmpDebug,
-    midi2_attr::WriteByteData,
+    midi2_proc::Data,
+    midi2_proc::Grouped,
+    midi2_proc::UmpDebug,
+    midi2_proc::WriteByteData,
     Clone,
     PartialEq,
     Eq,
@@ -210,10 +210,10 @@ pub enum SystemCommonBorrowed<'a> {
 
 #[derive(
     derive_more::From,
-    midi2_attr::Data,
-    midi2_attr::Grouped,
-    midi2_attr::UmpDebug,
-    midi2_attr::WriteByteData,
+    midi2_proc::Data,
+    midi2_proc::Grouped,
+    midi2_proc::UmpDebug,
+    midi2_proc::WriteByteData,
     Clone,
     PartialEq,
     Eq,
@@ -561,7 +561,7 @@ mod tests_simple_generic {
     use crate::message::system_common::TYPE_CODE as SYSTEM_COMMON_TYPE_CODE;
     use pretty_assertions::assert_eq;
 
-    #[midi2_attr::generate_message(Grouped)]
+    #[midi2_proc::generate_message(Grouped)]
     struct Test {
         ump_type: Property<
             NumericalConstant<SYSTEM_COMMON_TYPE_CODE>,
