@@ -347,7 +347,7 @@ mod std_tests {
     #[test]
     fn byte_data() {
         assert_eq!(
-            Sysex7BytesOwned::builder()
+            Sysex7BytesMessage::builder()
                 .payload((0u8..20u8).map(|v| v.truncate()))
                 .build()
                 .unwrap()
