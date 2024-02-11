@@ -12,7 +12,7 @@ pub struct Sysex7BytesOwned(std::vec::Vec<u8>);
 #[cfg(feature = "std")]
 #[derive(Clone, PartialEq, Eq)]
 pub struct Sysex7BytesBuilder<M: core::convert::From<Sysex7BytesOwned>>(
-    Result<std::vec::Vec<u8>>,
+    std::vec::Vec<u8>,
     core::marker::PhantomData<M>,
 );
 
@@ -194,24 +194,98 @@ impl<M: core::convert::From<Sysex7BytesOwned>> core::default::Default for Sysex7
 #[cfg(feature = "std")]
 impl<M: core::convert::From<Sysex7BytesOwned>> Sysex7BytesBuilder<M> {
     pub fn new() -> Self {
-        Self(Ok(std::vec![0xF0_u8]), Default::default())
+        Self(std::vec![0xF0_u8], Default::default())
     }
     pub fn build(&self) -> Result<M> {
-        match self.0.clone() {
-            Ok(mut cache) => {
-                cache.push(0xF7);
-                Ok(Sysex7BytesOwned(cache).into())
-            }
-            Err(e) => Err(e),
-        }
+        let mut copy = self.0.clone();
+        copy.push(0xF7);
+        Ok(Sysex7BytesOwned(copy).into())
     }
-    pub fn payload<I: core::iter::Iterator<Item = u7>>(&mut self, data: I) -> &mut Self {
-        if let Ok(cache) = &mut self.0 {
-            for d in data {
-                cache.push(d.into());
-            }
+    pub fn append_payload<I: core::iter::Iterator<Item = u7>>(&mut self, data: I) -> &mut Self {
+        for d in data {
+            self.0.push(d.into());
         }
         self
+    }
+    /// Note: the range must specify an existing subset of
+    /// the currently written payload, otherwise this function
+    /// will panic.
+    pub fn replace_payload_range<
+        I: core::iter::Iterator<Item = u7>,
+        R: core::ops::RangeBounds<usize> + core::iter::Iterator<Item = usize>,
+    >(
+        &mut self,
+        data: I,
+        range: R,
+    ) -> &mut Self {
+        let range_start = match range.start_bound() {
+            core::ops::Bound::Unbounded => 1,
+            core::ops::Bound::Included(&v) => v + 1,
+            core::ops::Bound::Excluded(&v) => v + 2,
+        };
+        let range_end = match range.end_bound() {
+            core::ops::Bound::Unbounded => self.0.len(),
+            core::ops::Bound::Included(&v) => v + 2,
+            core::ops::Bound::Excluded(&v) => v + 1,
+        };
+        let mut start_index_of_following_data = match data.size_hint() {
+            (_, Some(upper)) => {
+                if range.contains(&(range_start + upper)) {
+                    // we have plenty of room for the new data
+                    range_end
+                } else {
+                    // we make room for the new data
+                    let distance = range_start + upper - range_end;
+                    self.shift_tail(range_end, distance, true);
+                    range_end + distance
+                }
+            }
+            (lower, None) => {
+                // not the optimal case - could lead to quadratic complexity copying
+                let distance = lower - range_end;
+                self.shift_tail(range_end, distance, true);
+                range_end + distance
+            }
+        };
+        let mut last_index_written = 0;
+        for (i, d) in (range_start..).zip(data) {
+            if i >= start_index_of_following_data {
+                self.shift_tail(start_index_of_following_data, 1, true);
+                start_index_of_following_data += 1;
+            }
+            self.0[i] = d.into();
+            last_index_written = i;
+        }
+        if last_index_written + 1 < start_index_of_following_data {
+            self.shift_tail(
+                start_index_of_following_data,
+                start_index_of_following_data - last_index_written - 1,
+                false,
+            );
+        }
+        self
+    }
+    pub fn payload<I: core::iter::Iterator<Item = u7>>(&mut self, data: I) -> &mut Self {
+        *self = Self::new();
+        self.append_payload(data);
+        self
+    }
+    fn shift_tail(&mut self, tail_start: usize, distance: usize, forward: bool) {
+        let old_size = self.0.len();
+        if forward {
+            self.0.resize(old_size + distance, 0x0);
+        }
+        let dest = {
+            if forward {
+                tail_start + distance
+            } else {
+                tail_start - distance
+            }
+        };
+        self.0.copy_within(tail_start..old_size, dest);
+        if !forward {
+            self.0.resize(old_size - distance, 0x0);
+        }
     }
 }
 
@@ -308,6 +382,78 @@ mod std_tests {
             Ok(Sysex7BytesMessage::Owned(Sysex7BytesOwned(std::vec![
                 0xF0, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C,
                 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0xF7,
+            ]))),
+        );
+    }
+
+    #[test]
+    fn builder_append_payload() {
+        assert_eq!(
+            Sysex7BytesMessage::builder()
+                .payload((0u8..20u8).map(|v| v.truncate()))
+                .append_payload((20u8..40u8).map(|v| v.truncate()))
+                .build(),
+            Ok(Sysex7BytesMessage::Owned(Sysex7BytesOwned(std::vec![
+                0xF0, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C,
+                0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A,
+                0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0xF7,
+            ]))),
+        );
+    }
+
+    #[test]
+    fn builder_reset_payload() {
+        assert_eq!(
+            Sysex7BytesMessage::builder()
+                .payload((0u8..20u8).map(|v| v.truncate()))
+                .payload((20u8..40u8).map(|v| v.truncate()))
+                .build(),
+            Ok(Sysex7BytesMessage::Owned(Sysex7BytesOwned(std::vec![
+                0xF0, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20,
+                0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0xF7,
+            ]))),
+        );
+    }
+
+    #[test]
+    fn builder_replace_payload_range_equal_replacement() {
+        assert_eq!(
+            Sysex7BytesMessage::builder()
+                .payload((0u8..20u8).map(|v| v.truncate()))
+                .replace_payload_range((20u8..25u8).map(|v| v.truncate()), 5..10)
+                .build(),
+            Ok(Sysex7BytesMessage::Owned(Sysex7BytesOwned(std::vec![
+                0xF0, 0x00, 0x01, 0x02, 0x03, 0x04, 0x14, 0x15, 0x16, 0x17, 0x18, 0x0A, 0x0B, 0x0C,
+                0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0xF7,
+            ]))),
+        );
+    }
+
+    #[test]
+    fn builder_replace_payload_range_smaller_replacement() {
+        assert_eq!(
+            Sysex7BytesMessage::builder()
+                .payload((0u8..20u8).map(|v| v.truncate()))
+                .replace_payload_range((20u8..25u8).map(|v| v.truncate()), 5..15)
+                .build(),
+            Ok(Sysex7BytesMessage::Owned(Sysex7BytesOwned(std::vec![
+                0xF0, 0x00, 0x01, 0x02, 0x03, 0x04, 0x14, 0x15, 0x16, 0x17, 0x18, 0x0F, 0x10, 0x11,
+                0x12, 0x13, 0xF7,
+            ]))),
+        );
+    }
+
+    #[test]
+    fn builder_replace_payload_range_larger_replacement() {
+        assert_eq!(
+            Sysex7BytesMessage::builder()
+                .payload((0u8..20u8).map(|v| v.truncate()))
+                .replace_payload_range((20u8..40u8).map(|v| v.truncate()), 5..10)
+                .build(),
+            Ok(Sysex7BytesMessage::Owned(Sysex7BytesOwned(std::vec![
+                0xF0, 0x00, 0x01, 0x02, 0x03, 0x04, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B,
+                0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x0A, 0x0B,
+                0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0xF7,
             ]))),
         );
     }
