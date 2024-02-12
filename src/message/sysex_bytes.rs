@@ -219,18 +219,18 @@ impl<M: core::convert::From<Sysex7BytesOwned>> Sysex7BytesBuilder<M> {
         range: R,
     ) -> &mut Self {
         let range_start = match range.start_bound() {
-            core::ops::Bound::Unbounded => 1,
-            core::ops::Bound::Included(&v) => v + 1,
-            core::ops::Bound::Excluded(&v) => v + 2,
-        };
+            core::ops::Bound::Unbounded => 0,
+            core::ops::Bound::Included(&v) => v,
+            core::ops::Bound::Excluded(&v) => v + 1,
+        } + 1; // payload starts from 1
         let range_end = match range.end_bound() {
             core::ops::Bound::Unbounded => self.0.len(),
-            core::ops::Bound::Included(&v) => v + 2,
-            core::ops::Bound::Excluded(&v) => v + 1,
+            core::ops::Bound::Included(&v) => v + 1 + 1, // payload starts from 1
+            core::ops::Bound::Excluded(&v) => v + 1,     // payload starts from 1
         };
         let mut start_index_of_following_data = match data.size_hint() {
             (_, Some(upper)) => {
-                if range.contains(&(range_start + upper)) {
+                if range_start + upper - 1 < range_end {
                     // we have plenty of room for the new data
                     range_end
                 } else {
@@ -454,6 +454,21 @@ mod std_tests {
                 0xF0, 0x00, 0x01, 0x02, 0x03, 0x04, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B,
                 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x0A, 0x0B,
                 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0xF7,
+            ]))),
+        );
+    }
+
+    #[test]
+    fn builder_replace_payload_range_to_the_end() {
+        assert_eq!(
+            Sysex7BytesMessage::builder()
+                .payload((0u8..20u8).map(|v| v.truncate()))
+                .replace_payload_range((20u8..40u8).map(|v| v.truncate()), 10..)
+                .build(),
+            Ok(Sysex7BytesMessage::Owned(Sysex7BytesOwned(std::vec![
+                0xF0, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x14, 0x15, 0x16,
+                0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23, 0x24,
+                0x25, 0x26, 0x27, 0xF7,
             ]))),
         );
     }
