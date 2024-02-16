@@ -236,31 +236,32 @@ impl<M: core::convert::From<Sysex7BytesOwned>> Sysex7BytesBuilder<M> {
                 } else {
                     // we make room for the new data
                     let distance = range_start + upper - range_end;
-                    self.shift_tail(range_end, distance, true);
+                    self.shift_tail_forward(range_end, distance);
                     range_end + distance
                 }
             }
             (lower, None) => {
                 // not the optimal case - could lead to quadratic complexity copying
                 let distance = lower - range_end;
-                self.shift_tail(range_end, distance, true);
+                self.shift_tail_forward(range_end, distance);
                 range_end + distance
             }
         };
         let mut last_index_written = 0;
+        let mut shift_for_overflow_distance = 1;
         for (i, d) in (range_start..).zip(data) {
             if i >= start_index_of_following_data {
-                self.shift_tail(start_index_of_following_data, 1, true);
+                self.shift_tail_forward(start_index_of_following_data, shift_for_overflow_distance);
                 start_index_of_following_data += 1;
+                shift_for_overflow_distance *= 2;
             }
             self.0[i] = d.into();
             last_index_written = i;
         }
         if last_index_written + 1 < start_index_of_following_data {
-            self.shift_tail(
+            self.shift_tail_backward(
                 start_index_of_following_data,
                 start_index_of_following_data - last_index_written - 1,
-                false,
             );
         }
         self
@@ -270,22 +271,17 @@ impl<M: core::convert::From<Sysex7BytesOwned>> Sysex7BytesBuilder<M> {
         self.append_payload(data);
         self
     }
-    fn shift_tail(&mut self, tail_start: usize, distance: usize, forward: bool) {
+    fn shift_tail_forward(&mut self, tail_start: usize, distance: usize) {
         let old_size = self.0.len();
-        if forward {
-            self.0.resize(old_size + distance, 0x0);
-        }
-        let dest = {
-            if forward {
-                tail_start + distance
-            } else {
-                tail_start - distance
-            }
-        };
-        self.0.copy_within(tail_start..old_size, dest);
-        if !forward {
-            self.0.resize(old_size - distance, 0x0);
-        }
+        self.0.resize(old_size + distance, 0x0);
+        self.0
+            .copy_within(tail_start..old_size, tail_start + distance);
+    }
+    fn shift_tail_backward(&mut self, tail_start: usize, distance: usize) {
+        let old_size = self.0.len();
+        self.0
+            .copy_within(tail_start..old_size, tail_start - distance);
+        self.0.resize(old_size - distance, 0x0);
     }
 }
 
