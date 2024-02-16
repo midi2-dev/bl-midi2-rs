@@ -138,16 +138,68 @@ impl<'a> ByteData for Sysex7BytesMessage<'a> {
     }
 }
 
-impl<'a> Sysex7BytesBorrowedBuilder<'a> {
-    fn grow(&mut self) {
-        if let Ok(buffer) = &self.0 {
-            if buffer.len() < self.1 + 1 {
-                self.0 = Err(Error::BufferOverflow);
-            } else {
-                self.1 += 1;
-            }
+impl<'a> SysexBuilderInternal for Sysex7BytesBorrowedBuilder<'a> {
+    type ByteType = u7;
+    fn shift_tail_backward(&mut self, payload_index_tail_start: usize, distance: usize) {
+        let Ok(buffer) = &mut self.0 else {
+            return;
+        };
+        let tail_start = payload_index_tail_start + 1;
+        buffer.copy_within(tail_start.., tail_start - distance);
+        self.resize(self.payload_size() - distance);
+    }
+    fn shift_tail_forward(&mut self, payload_index_tail_start: usize, distance: usize) {
+        let tail_end = self.payload_size() + 1;
+        self.resize(self.payload_size() + distance);
+        let Ok(buffer) = &mut self.0 else {
+            return;
+        };
+        let tail_start = payload_index_tail_start + 1;
+        buffer.copy_within(tail_start..tail_end, tail_start + distance);
+    }
+    fn write_datum(&mut self, datum: Self::ByteType, payload_index: usize) {
+        let Ok(buffer) = &mut self.0 else {
+            return;
+        };
+        buffer[payload_index + 1] = datum.into();
+    }
+    fn payload_size(&self) -> usize {
+        self.1 - 1
+    }
+    fn resize(&mut self, payload_size: usize) {
+        let Ok(buffer) = &self.0 else {
+            return;
+        };
+        if buffer.len() < payload_size + 1 {
+            self.0 = Err(Error::BufferOverflow);
+        } else {
+            self.1 = payload_size + 1;
         }
     }
+}
+
+impl<'a> SysexBorrowedBuilder for Sysex7BytesBorrowedBuilder<'a> {
+    type ByteType = u7;
+    fn replace_payload_range<D, R>(mut self, data: D, range: R) -> Self
+    where
+        D: core::iter::Iterator<Item = Self::ByteType>,
+        R: core::ops::RangeBounds<usize> + core::iter::Iterator<Item = usize>,
+    {
+        message_helpers::replace_sysex_payload_range(&mut self, data, range);
+        self
+    }
+    fn payload<I: core::iter::Iterator<Item = u7>>(mut self, data: I) -> Self {
+        message_helpers::replace_sysex_payload_range(&mut self, data, 0..);
+        self
+    }
+    fn append_payload<I: core::iter::Iterator<Item = u7>>(mut self, data: I) -> Self {
+        let end = self.payload_size();
+        message_helpers::replace_sysex_payload_range(&mut self, data, end..);
+        self
+    }
+}
+
+impl<'a> Sysex7BytesBorrowedBuilder<'a> {
     pub fn new(buffer: &'a mut [u8]) -> Self {
         if buffer.len() < 2 {
             Self(Err(Error::BufferOverflow), 0)
@@ -158,7 +210,7 @@ impl<'a> Sysex7BytesBorrowedBuilder<'a> {
     }
     pub fn build(mut self) -> Result<Sysex7BytesBorrowed<'a>> {
         if self.0.is_ok() {
-            self.grow();
+            self.resize(self.payload_size() + 1);
         }
         match self.0 {
             Ok(buffer) => {
@@ -167,20 +219,6 @@ impl<'a> Sysex7BytesBorrowedBuilder<'a> {
             }
             Err(e) => Err(e.clone()),
         }
-    }
-    pub fn payload<I: core::iter::Iterator<Item = u7>>(mut self, data: I) -> Self {
-        for d in data {
-            self.grow();
-            match &mut self.0 {
-                Ok(buffer) => {
-                    buffer[self.1 - 1] = d.into();
-                }
-                Err(_) => {
-                    break;
-                }
-            }
-        }
-        self
     }
 }
 
@@ -231,25 +269,19 @@ impl<M: core::convert::From<Sysex7BytesOwned>> SysexBuilderInternal for Sysex7By
 impl<M: core::convert::From<Sysex7BytesOwned>> SysexBuilder for Sysex7BytesBuilder<M> {
     type ByteType = u7;
     fn append_payload<I: core::iter::Iterator<Item = u7>>(&mut self, data: I) -> &mut Self {
-        for d in data {
-            self.0.push(d.into());
-        }
+        message_helpers::replace_sysex_payload_range(self, data, self.payload_size()..);
         self
     }
-    /// Note: the range must specify an existing subset of
-    /// the currently written payload, otherwise this function
-    /// will panic.
     fn replace_payload_range<D, R>(&mut self, data: D, range: R) -> &mut Self
     where
         D: core::iter::Iterator<Item = Self::ByteType>,
         R: core::ops::RangeBounds<usize> + core::iter::Iterator<Item = usize>,
     {
-        message_helpers::replace_sysex_paload_range(self, data, range);
+        message_helpers::replace_sysex_payload_range(self, data, range);
         self
     }
     fn payload<I: core::iter::Iterator<Item = u7>>(&mut self, data: I) -> &mut Self {
-        *self = Self::new();
-        self.append_payload(data);
+        message_helpers::replace_sysex_payload_range(self, data, 0..);
         self
     }
 }

@@ -77,7 +77,17 @@ pub trait SysexBuilder {
     fn payload<I: core::iter::Iterator<Item = u7>>(&mut self, data: I) -> &mut Self;
 }
 
-pub trait SysexBuilderInternal {
+pub trait SysexBorrowedBuilder {
+    type ByteType;
+    fn append_payload<I: core::iter::Iterator<Item = u7>>(self, data: I) -> Self;
+    fn replace_payload_range<D, R>(self, data: D, range: R) -> Self
+    where
+        D: core::iter::Iterator<Item = Self::ByteType>,
+        R: core::ops::RangeBounds<usize> + core::iter::Iterator<Item = usize>;
+    fn payload<I: core::iter::Iterator<Item = u7>>(self, data: I) -> Self;
+}
+
+pub(crate) trait SysexBuilderInternal {
     type ByteType;
     fn payload_size(&self) -> usize;
     fn resize(&mut self, payload_size: usize);
@@ -87,19 +97,6 @@ pub trait SysexBuilderInternal {
     // payload range from the provided start index to the end is moved backward
     // (contracting the buffer) by the provided distance
     fn shift_tail_backward(&mut self, payload_index_tail_start: usize, distance: usize);
-    // write the payload data into the buffer starting from the
-    // provided start index.
-    // NOTE: the caller must ensure there is enough space in the buffer and
-    // that they wont overwrite any important data.
-    fn write_payload<D: core::iter::Iterator<Item = Self::ByteType>>(
-        &mut self,
-        payload_index_tail_start: usize,
-        data: D,
-    ) {
-        for (d, i) in data.zip(payload_index_tail_start..) {
-            self.write_datum(d, i);
-        }
-    }
     // write the payload datum into the buffer starting at the
     // provided index.
     // NOTE: the caller must ensure there is enough space in the buffer and

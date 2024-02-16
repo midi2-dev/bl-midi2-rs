@@ -5,7 +5,7 @@
 extern crate std;
 
 #[cfg(feature = "ci")]
-pub mod ci;
+// pub mod ci;
 pub mod message;
 
 mod buffer;

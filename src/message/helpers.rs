@@ -102,7 +102,7 @@ pub fn validate_sysex_group_statuses<
     Ok(())
 }
 
-pub fn replace_sysex_paload_range<
+pub fn replace_sysex_payload_range<
     B,
     S: SysexBuilderInternal<ByteType = B>,
     D: core::iter::Iterator<Item = B>,
