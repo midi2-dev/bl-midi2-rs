@@ -1,4 +1,4 @@
-use crate::*;
+use crate::{message::helpers as message_helpers, *};
 
 #[derive(midi2_proc::BytesDebug, Clone, PartialEq, Eq)]
 pub struct Sysex7BytesBorrowed<'a>(&'a [u8]);
@@ -201,7 +201,36 @@ impl<M: core::convert::From<Sysex7BytesOwned>> Sysex7BytesBuilder<M> {
         copy.push(0xF7);
         Ok(Sysex7BytesOwned(copy).into())
     }
-    pub fn append_payload<I: core::iter::Iterator<Item = u7>>(&mut self, data: I) -> &mut Self {
+}
+
+impl<M: core::convert::From<Sysex7BytesOwned>> SysexBuilderInternal for Sysex7BytesBuilder<M> {
+    type ByteType = u7;
+    fn resize(&mut self, payload_size: usize) {
+        self.0.resize(payload_size + 1, 0x0);
+    }
+    fn payload_size(&self) -> usize {
+        self.0.len() - 1
+    }
+    fn write_datum(&mut self, datum: Self::ByteType, payload_index: usize) {
+        self.0[payload_index + 1] = datum.into();
+    }
+    fn shift_tail_forward(&mut self, payload_index_tail_start: usize, distance: usize) {
+        let tail_end = self.payload_size() + 1;
+        self.resize(self.payload_size() + distance);
+        let tail_start = payload_index_tail_start + 1;
+        self.0
+            .copy_within(tail_start..tail_end, tail_start + distance);
+    }
+    fn shift_tail_backward(&mut self, payload_index_tail_start: usize, distance: usize) {
+        let tail_start = payload_index_tail_start + 1;
+        self.0.copy_within(tail_start.., tail_start - distance);
+        self.resize(self.payload_size() - distance);
+    }
+}
+
+impl<M: core::convert::From<Sysex7BytesOwned>> SysexBuilder for Sysex7BytesBuilder<M> {
+    type ByteType = u7;
+    fn append_payload<I: core::iter::Iterator<Item = u7>>(&mut self, data: I) -> &mut Self {
         for d in data {
             self.0.push(d.into());
         }
@@ -210,78 +239,18 @@ impl<M: core::convert::From<Sysex7BytesOwned>> Sysex7BytesBuilder<M> {
     /// Note: the range must specify an existing subset of
     /// the currently written payload, otherwise this function
     /// will panic.
-    pub fn replace_payload_range<
-        I: core::iter::Iterator<Item = u7>,
+    fn replace_payload_range<D, R>(&mut self, data: D, range: R) -> &mut Self
+    where
+        D: core::iter::Iterator<Item = Self::ByteType>,
         R: core::ops::RangeBounds<usize> + core::iter::Iterator<Item = usize>,
-    >(
-        &mut self,
-        data: I,
-        range: R,
-    ) -> &mut Self {
-        let range_start = match range.start_bound() {
-            core::ops::Bound::Unbounded => 0,
-            core::ops::Bound::Included(&v) => v,
-            core::ops::Bound::Excluded(&v) => v + 1,
-        } + 1; // payload starts from 1
-        let range_end = match range.end_bound() {
-            core::ops::Bound::Unbounded => self.0.len(),
-            core::ops::Bound::Included(&v) => v + 1 + 1, // payload starts from 1
-            core::ops::Bound::Excluded(&v) => v + 1,     // payload starts from 1
-        };
-        let mut start_index_of_following_data = match data.size_hint() {
-            (_, Some(upper)) => {
-                if range_start + upper - 1 < range_end {
-                    // we have plenty of room for the new data
-                    range_end
-                } else {
-                    // we make room for the new data
-                    let distance = range_start + upper - range_end;
-                    self.shift_tail_forward(range_end, distance);
-                    range_end + distance
-                }
-            }
-            (lower, None) => {
-                // not the optimal case - could lead to quadratic complexity copying
-                let distance = lower - range_end;
-                self.shift_tail_forward(range_end, distance);
-                range_end + distance
-            }
-        };
-        let mut last_index_written = 0;
-        let mut shift_for_overflow_distance = 1;
-        for (i, d) in (range_start..).zip(data) {
-            if i >= start_index_of_following_data {
-                self.shift_tail_forward(start_index_of_following_data, shift_for_overflow_distance);
-                start_index_of_following_data += 1;
-                shift_for_overflow_distance *= 2;
-            }
-            self.0[i] = d.into();
-            last_index_written = i;
-        }
-        if last_index_written + 1 < start_index_of_following_data {
-            self.shift_tail_backward(
-                start_index_of_following_data,
-                start_index_of_following_data - last_index_written - 1,
-            );
-        }
+    {
+        message_helpers::replace_sysex_paload_range(self, data, range);
         self
     }
-    pub fn payload<I: core::iter::Iterator<Item = u7>>(&mut self, data: I) -> &mut Self {
+    fn payload<I: core::iter::Iterator<Item = u7>>(&mut self, data: I) -> &mut Self {
         *self = Self::new();
         self.append_payload(data);
         self
-    }
-    fn shift_tail_forward(&mut self, tail_start: usize, distance: usize) {
-        let old_size = self.0.len();
-        self.0.resize(old_size + distance, 0x0);
-        self.0
-            .copy_within(tail_start..old_size, tail_start + distance);
-    }
-    fn shift_tail_backward(&mut self, tail_start: usize, distance: usize) {
-        let old_size = self.0.len();
-        self.0
-            .copy_within(tail_start..old_size, tail_start - distance);
-        self.0.resize(old_size - distance, 0x0);
     }
 }
 

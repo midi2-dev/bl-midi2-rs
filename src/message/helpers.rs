@@ -1,3 +1,5 @@
+use crate::traits::SysexBuilderInternal;
+
 #[cfg(any(feature = "sysex7", feature = "sysex8"))]
 pub fn write_type_to_packet(t: crate::numeric_types::u4, p: &mut [u32]) {
     use crate::util::BitOps;
@@ -98,4 +100,63 @@ pub fn validate_sysex_group_statuses<
     }
 
     Ok(())
+}
+
+pub fn replace_sysex_paload_range<
+    B,
+    S: SysexBuilderInternal<ByteType = B>,
+    D: core::iter::Iterator<Item = B>,
+    R: core::ops::RangeBounds<usize> + core::iter::Iterator<Item = usize>,
+>(
+    builder: &mut S,
+    data: D,
+    range: R,
+) {
+    let range_start = match range.start_bound() {
+        core::ops::Bound::Unbounded => 0,
+        core::ops::Bound::Included(&v) => v,
+        core::ops::Bound::Excluded(&v) => v + 1,
+    };
+    let range_end = match range.end_bound() {
+        core::ops::Bound::Unbounded => builder.payload_size(),
+        core::ops::Bound::Included(&v) => v + 1,
+        core::ops::Bound::Excluded(&v) => v,
+    };
+    let mut start_index_of_following_data = match data.size_hint() {
+        (_, Some(upper)) => {
+            if range_start + upper < range_end {
+                // we have plenty of room for the new data
+                range_end
+            } else {
+                // we make room for the new data
+                let distance = range_start + upper - range_end;
+                builder.shift_tail_forward(range_end, distance);
+                range_end + distance
+            }
+        }
+        (lower, None) => {
+            // not the optimal case - could lead to quadratic complexity copying
+            let distance = lower - range_end;
+            builder.shift_tail_forward(range_end, distance);
+            range_end + distance
+        }
+    };
+    let mut last_index_written = 0;
+    let mut shift_for_overflow_distance = 1;
+    for (i, d) in (range_start..).zip(data) {
+        if i >= start_index_of_following_data {
+            // unplanned tail shiifting!
+            builder.shift_tail_forward(start_index_of_following_data, shift_for_overflow_distance);
+            start_index_of_following_data += 1;
+            shift_for_overflow_distance *= 2;
+        }
+        builder.write_datum(d, i);
+        last_index_written = i;
+    }
+    if last_index_written + 1 < start_index_of_following_data {
+        builder.shift_tail_backward(
+            start_index_of_following_data,
+            start_index_of_following_data - last_index_written - 1,
+        );
+    }
 }
