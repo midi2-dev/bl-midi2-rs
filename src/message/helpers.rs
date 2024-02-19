@@ -122,30 +122,31 @@ pub fn replace_sysex_payload_range<
         core::ops::Bound::Included(&v) => v + 1,
         core::ops::Bound::Excluded(&v) => v,
     };
-    let mut start_index_of_following_data = match data.size_hint() {
-        (_, Some(upper)) => {
-            if range_start + upper < range_end {
-                // we have plenty of room for the new data
-                range_end
-            } else {
-                // we make room for the new data
-                let distance = range_start + upper - range_end;
-                builder.shift_tail_forward(range_end, distance);
-                range_end + distance
+    let mut start_index_of_following_data = {
+        let data_size_estimate = match data.size_hint() {
+            (_, Some(upper)) => upper,
+            (lower, None) => {
+                // not the optimal case - could lead to additional copying
+                lower
             }
-        }
-        (lower, None) => {
-            // not the optimal case - could lead to quadratic complexity copying
-            let distance = lower - range_end;
+        };
+        if range_start + data_size_estimate < range_end {
+            // we have room for the new data
+            range_end
+        } else {
+            // we make room for the new data
+            let distance = range_start + data_size_estimate - range_end;
             builder.shift_tail_forward(range_end, distance);
             range_end + distance
         }
     };
+
+    // we write the data
     let mut last_index_written = 0;
     let mut shift_for_overflow_distance = 1;
     for (i, d) in (range_start..).zip(data) {
         if i >= start_index_of_following_data {
-            // unplanned tail shiifting!
+            // unplanned tail shifting!
             builder.shift_tail_forward(start_index_of_following_data, shift_for_overflow_distance);
             start_index_of_following_data += 1;
             shift_for_overflow_distance *= 2;
@@ -153,7 +154,9 @@ pub fn replace_sysex_payload_range<
         builder.write_datum(d, i);
         last_index_written = i;
     }
+
     if last_index_written + 1 < start_index_of_following_data {
+        // we shrink back down to fit the final payload size
         builder.shift_tail_backward(
             start_index_of_following_data,
             start_index_of_following_data - last_index_written - 1,
