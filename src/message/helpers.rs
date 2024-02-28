@@ -1,12 +1,6 @@
 use crate::traits::SysexBuilderInternal;
 
 #[cfg(any(feature = "sysex7", feature = "sysex8"))]
-pub fn write_type_to_packet(t: crate::numeric_types::u4, p: &mut [u32]) {
-    use crate::util::BitOps;
-    p[0].set_nibble(0, t);
-}
-
-#[cfg(any(feature = "sysex7", feature = "sysex8"))]
 pub fn group_from_packet(p: &[u32]) -> crate::numeric_types::u4 {
     use crate::util::BitOps;
     p[0].nibble(1)

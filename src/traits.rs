@@ -69,22 +69,25 @@ pub trait Sysex<'a, 'b: 'a> {
 
 pub trait SysexBuilder {
     type ByteType;
-    fn append_payload<I: core::iter::Iterator<Item = u7>>(&mut self, data: I) -> &mut Self;
+    fn append_payload<I: core::iter::Iterator<Item = Self::ByteType>>(
+        &mut self,
+        data: I,
+    ) -> &mut Self;
     fn replace_payload_range<D, R>(&mut self, data: D, range: R) -> &mut Self
     where
         D: core::iter::Iterator<Item = Self::ByteType>,
         R: core::ops::RangeBounds<usize> + core::iter::Iterator<Item = usize>;
-    fn payload<I: core::iter::Iterator<Item = u7>>(&mut self, data: I) -> &mut Self;
+    fn payload<I: core::iter::Iterator<Item = Self::ByteType>>(&mut self, data: I) -> &mut Self;
 }
 
 pub trait SysexBorrowedBuilder {
     type ByteType;
-    fn append_payload<I: core::iter::Iterator<Item = u7>>(self, data: I) -> Self;
+    fn append_payload<I: core::iter::Iterator<Item = Self::ByteType>>(self, data: I) -> Self;
     fn replace_payload_range<D, R>(self, data: D, range: R) -> Self
     where
         D: core::iter::Iterator<Item = Self::ByteType>,
         R: core::ops::RangeBounds<usize> + core::iter::Iterator<Item = usize>;
-    fn payload<I: core::iter::Iterator<Item = u7>>(self, data: I) -> Self;
+    fn payload<I: core::iter::Iterator<Item = Self::ByteType>>(self, data: I) -> Self;
 }
 
 pub(crate) trait SysexBuilderInternal {
