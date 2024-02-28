@@ -465,8 +465,10 @@ impl<'a> Sysex8BuilderInternal for Sysex8BorrowedBuilder<'a> {
             self.error = Some(Error::BufferOverflow);
             return;
         }
-        for d in &mut self.buffer[self.size..sz] {
-            *d = 0x0;
+        if self.size < sz {
+            for d in &mut self.buffer[self.size..sz] {
+                *d = 0x0;
+            }
         }
         self.size = sz;
     }
@@ -478,15 +480,24 @@ impl<'a> SysexBuilderInternal for Sysex8BorrowedBuilder<'a> {
         resize(self, payload_size);
     }
     fn write_datum(&mut self, datum: Self::ByteType, payload_index: usize) {
+        if self.error.is_some() {
+            return;
+        }
         write_datum(self, datum, payload_index);
     }
     fn payload_size(&self) -> usize {
         payload_size(self)
     }
     fn shift_tail_forward(&mut self, payload_index_tail_start: usize, distance: usize) {
+        if self.error.is_some() {
+            return;
+        }
         shift_tail_forward(self, payload_index_tail_start, distance)
     }
     fn shift_tail_backward(&mut self, payload_index_tail_start: usize, distance: usize) {
+        if self.error.is_some() {
+            return;
+        }
         shift_tail_backward(self, payload_index_tail_start, distance)
     }
 }
@@ -666,7 +677,7 @@ fn shift_tail_backward<B: Sysex8BuilderInternal>(
             i - distance,
         );
     }
-    resize(builder, payload_size(builder) + distance);
+    resize(builder, payload_size(builder) - distance);
 }
 
 #[cfg(test)]
@@ -692,6 +703,38 @@ mod tests {
                 0x0E00_0000,
                 0x0000_0000,
                 0x0000_0000,
+            ])),
+        );
+    }
+
+    #[test]
+    fn builder_payload_with_rubbish_payload_iterator() {
+        use crate::test_support::rubbish_payload_iterator::RubbishPayloadIterator;
+        assert_eq!(
+            // N.B. we need a larger than necessary buffer to account for the
+            // lack of size_hint implementation from the rubbish iterator.
+            Sysex8Borrowed::builder(&mut Ump::random_buffer::<30>())
+                .group(u4::new(0x4))
+                .stream_id(0xBB)
+                .payload(RubbishPayloadIterator::new())
+                .build(),
+            Ok(Sysex8Borrowed(&[
+                0x541E_BB00,
+                0x0102_0304,
+                0x0506_0708,
+                0x090A_0B0C,
+                0x542E_BB0D,
+                0x0E0F_1011,
+                0x1213_1415,
+                0x1617_1819,
+                0x542E_BB1A,
+                0x1B1C_1D1E,
+                0x1F20_2122,
+                0x2324_2526,
+                0x543C_BB27,
+                0x2829_2A2B,
+                0x2C2D_2E2F,
+                0x3031_0000,
             ])),
         );
     }
@@ -974,6 +1017,36 @@ mod std_tests {
                 0x0E00_0000,
                 0x0000_0000,
                 0x0000_0000,
+            ]))),
+        );
+    }
+
+    #[test]
+    fn builder_payload_with_rubbish_payload_iterator() {
+        use crate::test_support::rubbish_payload_iterator::RubbishPayloadIterator;
+        assert_eq!(
+            Sysex8Message::builder()
+                .group(u4::new(0x4))
+                .stream_id(0xBB)
+                .payload(RubbishPayloadIterator::new())
+                .build(),
+            Ok(Sysex8Message::Owned(Sysex8Owned(std::vec![
+                0x541E_BB00,
+                0x0102_0304,
+                0x0506_0708,
+                0x090A_0B0C,
+                0x542E_BB0D,
+                0x0E0F_1011,
+                0x1213_1415,
+                0x1617_1819,
+                0x542E_BB1A,
+                0x1B1C_1D1E,
+                0x1F20_2122,
+                0x2324_2526,
+                0x543C_BB27,
+                0x2829_2A2B,
+                0x2C2D_2E2F,
+                0x3031_0000,
             ]))),
         );
     }

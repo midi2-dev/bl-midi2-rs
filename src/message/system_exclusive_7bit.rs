@@ -286,8 +286,10 @@ impl<'a> Sysex7BuilderInternal for Sysex7BorrowedBuilder<'a> {
         if sz > self.buffer.len() {
             self.error = Some(Error::BufferOverflow);
         } else {
-            for d in &mut self.buffer[self.size..sz] {
-                *d = 0x0;
+            if self.size < sz {
+                for d in &mut self.buffer[self.size..sz] {
+                    *d = 0x0;
+                }
             }
             self.size = sz;
         }
@@ -303,12 +305,21 @@ impl<'a> SysexBuilderInternal for Sysex7BorrowedBuilder<'a> {
         payload_size(self)
     }
     fn write_datum(&mut self, datum: Self::ByteType, payload_index: usize) {
+        if self.error.is_some() {
+            return;
+        }
         write_datum(self, datum, payload_index);
     }
     fn shift_tail_forward(&mut self, payload_index_tail_start: usize, distance: usize) {
+        if self.error.is_some() {
+            return;
+        }
         shift_tail_forward(self, payload_index_tail_start, distance);
     }
     fn shift_tail_backward(&mut self, payload_index_tail_start: usize, distance: usize) {
+        if self.error.is_some() {
+            return;
+        }
         shift_tail_backward(self, payload_index_tail_start, distance);
     }
 }
@@ -545,7 +556,7 @@ fn shift_tail_backward<B: Sysex7BuilderInternal>(
             i - distance,
         );
     }
-    resize(builder, payload_size(builder) + distance);
+    resize(builder, payload_size(builder) - distance);
 }
 
 fn set_group<B: Sysex7BuilderInternal>(builder: &mut B, g: u4) {
@@ -625,7 +636,39 @@ mod tests {
     }
 
     #[test]
-    fn group_from_data_inconsistent_groups() {
+    fn builder_payload_with_rubbish_payload_iterator() {
+        use crate::test_support::rubbish_payload_iterator::RubbishPayloadIterator;
+        assert_eq!(
+            // N.B. we need a larger than necessary buffer to account for the
+            // lack of size_hint implementation from the rubbish iterator.
+            Sysex7Borrowed::builder(&mut Ump::random_buffer::<30>())
+                .payload(RubbishPayloadIterator::new().map(u7::new))
+                .build(),
+            Ok(Sysex7Borrowed(&[
+                0x3016_0001,
+                0x0203_0405,
+                0x3026_0607,
+                0x0809_0A0B,
+                0x3026_0C0D,
+                0x0E0F_1011,
+                0x3026_1213,
+                0x1415_1617,
+                0x3026_1819,
+                0x1A1B_1C1D,
+                0x3026_1E1F,
+                0x2021_2223,
+                0x3026_2425,
+                0x2627_2829,
+                0x3026_2A2B,
+                0x2C2D_2E2F,
+                0x3032_3031,
+                0x0000_0000,
+            ])),
+        );
+    }
+
+    #[test]
+    fn from_data_inconsistent_groups() {
         assert_eq!(
             Sysex7Borrowed::from_data(&[0x3010_0000, 0x0000_0000, 0x3130_0000, 0x0000_0000,]),
             Err(Error::InvalidData),
@@ -633,7 +676,7 @@ mod tests {
     }
 
     #[test]
-    fn group_from_data_incompatible_buffer_size() {
+    fn from_data_incompatible_buffer_size() {
         assert_eq!(
             Sysex7Borrowed::from_data(&[0x3010_0000, 0x0000_0000, 0x3030_0000,]),
             Err(Error::InvalidData),
@@ -641,17 +684,17 @@ mod tests {
     }
 
     #[test]
-    fn group_from_data_complete() {
+    fn from_data_complete() {
         assert!(Sysex7Borrowed::from_data(&[0x3000_0000, 0x0000_0000,]).is_ok());
     }
 
     #[test]
-    fn group_from_data_invalid_message() {
+    fn from_data_invalid_message() {
         assert!(Sysex7Borrowed::from_data(&[0x1000_0000, 0x0000_0000,]).is_err());
     }
 
     #[test]
-    fn group_payload() {
+    fn payload() {
         let mut buffer = [0x0; 8];
         let message_group = Sysex7Borrowed(&[0x3014_0001, 0x0203_0000, 0x3034_0405, 0x0607_0000]);
         for (i, v) in message_group.payload().enumerate() {
@@ -661,13 +704,13 @@ mod tests {
     }
 
     #[test]
-    fn group_payload_count() {
+    fn payload_count() {
         let message_group = Sysex7Borrowed(&[0x3014_0001, 0x0203_0000, 0x3034_0405, 0x0607_0000]);
         assert_eq!(message_group.payload().count(), 8);
     }
 
     #[test]
-    fn group_payload_count_start_from_one() {
+    fn payload_count_start_from_one() {
         let message_group = Sysex7Borrowed(&[0x3014_0001, 0x0203_0000, 0x3034_0405, 0x0607_0000]);
         let mut payload = message_group.payload();
         payload.next();
@@ -675,7 +718,7 @@ mod tests {
     }
 
     #[test]
-    fn group_payload_4th() {
+    fn payload_4th() {
         let message_group = Sysex7Borrowed(&[0x3014_0001, 0x0203_0000, 0x3034_0405, 0x0607_0000]);
         let mut payload = message_group.payload();
         payload.next();
@@ -684,7 +727,7 @@ mod tests {
 
     #[test]
     #[allow(clippy::iter_nth_zero)]
-    fn group_payload_0th() {
+    fn payload_0th() {
         let message_group = Sysex7Borrowed(&[0x3014_0001, 0x0203_0000, 0x3034_0405, 0x0607_0000]);
         let mut payload = message_group.payload();
         payload.next();
@@ -692,7 +735,7 @@ mod tests {
     }
 
     #[test]
-    fn group_payload_nth_last() {
+    fn payload_nth_last() {
         let message_group = Sysex7Borrowed(&[0x3014_0001, 0x0203_0000, 0x3034_0405, 0x0607_0000]);
         let mut payload = message_group.payload();
         payload.next();
@@ -700,7 +743,7 @@ mod tests {
     }
 
     #[test]
-    fn group_payload_nth_past_the_end() {
+    fn payload_nth_past_the_end() {
         let message_group = Sysex7Borrowed(&[0x3014_0001, 0x0203_0000, 0x3034_0405, 0x0607_0000]);
         let mut payload = message_group.payload();
         payload.next();
@@ -708,7 +751,7 @@ mod tests {
     }
 
     #[test]
-    fn group_payload_nth_last_none_left() {
+    fn payload_nth_last_none_left() {
         let message_group = Sysex7Borrowed(&[0x3014_0001, 0x0203_0000, 0x3034_0405, 0x0607_0000]);
         let mut payload = message_group.payload();
         payload.nth(7);
@@ -716,7 +759,7 @@ mod tests {
     }
 
     #[test]
-    fn group_payload_from_sysex7_discovery() {
+    fn payload_from_sysex7_discovery() {
         let group = Sysex7Borrowed(&[
             0x3816_F07E,
             0x7F0D_7101,
@@ -811,6 +854,37 @@ mod std_tests {
                 0x3426_0D0E,
                 0x0A0B_0C0D,
                 0x3431_0E00,
+                0x0000_0000,
+            ]))),
+        );
+    }
+
+    #[test]
+    fn builder_payload_with_rubbish_payload_iterator() {
+        use crate::test_support::rubbish_payload_iterator::RubbishPayloadIterator;
+        assert_eq!(
+            Sysex7Message::builder()
+                .group(u4::new(0x4))
+                .payload(RubbishPayloadIterator::new().map(u7::new))
+                .build(),
+            Ok(Sysex7Message::Owned(Sysex7Owned(std::vec![
+                0x3416_0001,
+                0x0203_0405,
+                0x3426_0607,
+                0x0809_0A0B,
+                0x3426_0C0D,
+                0x0E0F_1011,
+                0x3426_1213,
+                0x1415_1617,
+                0x3426_1819,
+                0x1A1B_1C1D,
+                0x3426_1E1F,
+                0x2021_2223,
+                0x3426_2425,
+                0x2627_2829,
+                0x3426_2A2B,
+                0x2C2D_2E2F,
+                0x3432_3031,
                 0x0000_0000,
             ]))),
         );
