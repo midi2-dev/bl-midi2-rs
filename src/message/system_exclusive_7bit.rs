@@ -557,7 +557,7 @@ fn set_group<B: Sysex7BuilderInternal>(builder: &mut B, g: u4) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{buffer::Ump, util::RandomBuffer};
+    use crate::{buffer::Ump, test_support::random_buffer::RandomBuffer};
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -749,7 +749,7 @@ mod tests {
 #[cfg(feature = "std")]
 mod std_tests {
     use super::*;
-    use crate::util::debug;
+    use crate::test_support::debug;
     use pretty_assertions::assert_eq;
 
     #[test]

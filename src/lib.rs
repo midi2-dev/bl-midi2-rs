@@ -8,6 +8,9 @@ extern crate std;
 pub mod ci;
 pub mod message;
 
+#[cfg(test)]
+pub(crate) mod test_support;
+
 mod buffer;
 mod error;
 mod result;

@@ -939,7 +939,7 @@ mod tests {
     #[cfg(feature = "ump-stream")]
     #[test]
     fn ump_stream_builder() {
-        use crate::util::debug;
+        use crate::test_support::debug;
         use pretty_assertions::assert_eq;
         assert_eq!(
             debug::Data(
@@ -981,7 +981,7 @@ mod tests {
     #[cfg(feature = "sysex8")]
     #[test]
     fn sysex8_builder() {
-        use crate::util::debug;
+        use crate::test_support::debug;
         use pretty_assertions::assert_eq;
         assert_eq!(
             debug::Data(
@@ -1019,7 +1019,7 @@ mod tests {
     #[cfg(feature = "sysex7")]
     #[test]
     fn sysex7_builder() {
-        use crate::util::debug;
+        use crate::test_support::debug;
         use pretty_assertions::assert_eq;
         assert_eq!(
             debug::Data(
@@ -1082,7 +1082,7 @@ mod tests {
     #[cfg(feature = "flex-data")]
     #[test]
     fn flex_data_builder() {
-        use crate::util::debug;
+        use crate::test_support::debug;
         use pretty_assertions::assert_eq;
         assert_eq!(
             debug::Data(

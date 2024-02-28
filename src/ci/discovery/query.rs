@@ -146,7 +146,7 @@ mod tests {
     use crate::{
         buffer::Bytes,
         ci::VERSION,
-        util::{debug, RandomBuffer},
+        test_support::{debug, random_buffer::RandomBuffer},
     };
     use pretty_assertions::assert_eq;
 

@@ -217,7 +217,7 @@ mod tests {
     use super::*;
     use crate::{
         buffer::Ump,
-        util::{debug, RandomBuffer},
+        test_support::{debug, random_buffer::RandomBuffer},
     };
     use pretty_assertions::assert_eq;
 

@@ -291,10 +291,7 @@ impl<M: core::convert::From<Sysex7BytesOwned>> SysexBuilder for Sysex7BytesBuild
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        buffer::Bytes,
-        util::{RandomBuffer, Truncate},
-    };
+    use crate::{buffer::Bytes, test_support::random_buffer::RandomBuffer, util::Truncate};
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -369,7 +366,7 @@ mod tests {
 #[cfg(feature = "std")]
 mod std_tests {
     use super::*;
-    use crate::util::{debug, Truncate};
+    use crate::{test_support::debug, util::Truncate};
     use pretty_assertions::assert_eq;
 
     #[test]

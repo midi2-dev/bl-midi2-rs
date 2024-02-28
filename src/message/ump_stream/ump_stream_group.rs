@@ -313,7 +313,7 @@ fn grow_buffer(buffer: &mut [u32], size: usize) {
 #[cfg(feature = "std")]
 mod tests {
     use super::*;
-    use crate::{buffer::Ump, util::RandomBuffer};
+    use crate::{buffer::Ump, test_support::random_buffer::RandomBuffer};
     use pretty_assertions::assert_eq;
 
     #[test]

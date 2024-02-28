@@ -423,7 +423,7 @@ fn status_from_buffer(buffer: &[u32]) -> u10 {
 #[cfg(feature = "std")]
 mod tests {
     use super::*;
-    use crate::util::debug;
+    use crate::test_support::debug;
     use pretty_assertions::assert_eq;
 
     #[test]

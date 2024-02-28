@@ -335,7 +335,7 @@ pub(crate) use flex_data_text_message_std;
 
 #[cfg(test)]
 mod tests {
-    use crate::util::debug;
+    use crate::test_support::debug;
     use pretty_assertions::assert_eq;
 
     #[cfg(not(feature = "std"))]
