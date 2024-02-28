@@ -142,7 +142,7 @@ pub fn replace_sysex_payload_range<
         if i >= start_index_of_following_data {
             // unplanned tail shifting!
             builder.shift_tail_forward(start_index_of_following_data, shift_for_overflow_distance);
-            start_index_of_following_data += 1;
+            start_index_of_following_data += shift_for_overflow_distance;
             shift_for_overflow_distance *= 2;
         }
         builder.write_datum(d, i);

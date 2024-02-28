@@ -249,7 +249,9 @@ impl<'a> NakBorrowedBuilder<'a> {
             return Err(Error::InvalidData);
         }
         self.sysex_builder = self.sysex_builder.payload(self.standard_data.payload()?);
-        self.sysex_builder = self.sysex_builder.payload(self.nak_data.iter().cloned());
+        self.sysex_builder = self
+            .sysex_builder
+            .append_payload(self.nak_data.iter().cloned());
         Ok(NakBorrowed(self.sysex_builder.build()?))
     }
 }

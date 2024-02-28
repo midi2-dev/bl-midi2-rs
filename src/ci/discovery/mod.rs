@@ -160,10 +160,12 @@ impl<'a> DiscoveryBorrowedBuilder<'a> {
     }
 
     pub fn build(mut self) -> Result<DiscoveryBorrowed<'a>> {
-        self.sysex_builder = self.sysex_builder.payload(self.standard_data.payload()?);
         self.sysex_builder = self
             .sysex_builder
-            .payload(self.discovery_data.iter().cloned());
+            .append_payload(self.standard_data.payload()?);
+        self.sysex_builder = self
+            .sysex_builder
+            .append_payload(self.discovery_data.iter().cloned());
         Ok(DiscoveryBorrowed(self.sysex_builder.build()?))
     }
 }

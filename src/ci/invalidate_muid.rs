@@ -78,11 +78,15 @@ impl<'a> InvalidateMuidBorrowedBuilder<'a> {
             return Err(Error::InvalidData);
         };
 
-        self.sysex_builder = self.sysex_builder.payload(self.standard_data.payload()?);
+        self.sysex_builder = self
+            .sysex_builder
+            .append_payload(self.standard_data.payload()?);
 
         let mut target_muid_data = [u7::default(); 4];
         target.to_u7s(&mut target_muid_data[..]);
-        self.sysex_builder = self.sysex_builder.payload(target_muid_data.iter().cloned());
+        self.sysex_builder = self
+            .sysex_builder
+            .append_payload(target_muid_data.iter().cloned());
 
         Ok(InvalidateMuidBorrowed(self.sysex_builder.build()?))
     }
