@@ -241,6 +241,7 @@ impl<M: core::convert::From<Sysex7BytesOwned>> Sysex7BytesBuilder<M> {
     }
 }
 
+#[cfg(feature = "std")]
 impl<M: core::convert::From<Sysex7BytesOwned>> SysexBuilderInternal for Sysex7BytesBuilder<M> {
     type ByteType = u7;
     fn resize(&mut self, payload_size: usize) {
@@ -266,6 +267,7 @@ impl<M: core::convert::From<Sysex7BytesOwned>> SysexBuilderInternal for Sysex7By
     }
 }
 
+#[cfg(feature = "std")]
 impl<M: core::convert::From<Sysex7BytesOwned>> SysexBuilder for Sysex7BytesBuilder<M> {
     type ByteType = u7;
     fn append_payload<I: core::iter::Iterator<Item = u7>>(&mut self, data: I) -> &mut Self {
