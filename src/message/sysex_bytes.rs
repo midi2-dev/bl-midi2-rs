@@ -188,6 +188,13 @@ impl<'a> SysexBorrowedBuilder for Sysex7BytesBorrowedBuilder<'a> {
         message_helpers::replace_sysex_payload_range(&mut self, data, range);
         self
     }
+    fn insert_payload<D>(mut self, data: D, before: usize) -> Self
+    where
+        D: core::iter::Iterator<Item = Self::ByteType>,
+    {
+        message_helpers::replace_sysex_payload_range(&mut self, data, before..before);
+        self
+    }
     fn payload<I: core::iter::Iterator<Item = u7>>(mut self, data: I) -> Self {
         message_helpers::replace_sysex_payload_range(&mut self, data, 0..);
         self
@@ -274,6 +281,13 @@ impl<M: core::convert::From<Sysex7BytesOwned>> SysexBuilder for Sysex7BytesBuild
         message_helpers::replace_sysex_payload_range(self, data, self.payload_size()..);
         self
     }
+    fn insert_payload<D>(&mut self, data: D, before: usize) -> &mut Self
+    where
+        D: core::iter::Iterator<Item = Self::ByteType>,
+    {
+        message_helpers::replace_sysex_payload_range(self, data, before..before);
+        self
+    }
     fn replace_payload_range<D, R>(&mut self, data: D, range: R) -> &mut Self
     where
         D: core::iter::Iterator<Item = Self::ByteType>,
@@ -321,6 +335,47 @@ mod tests {
                 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A,
                 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
                 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x30, 0x31, 0xF7,
+            ])),
+        );
+    }
+
+    #[test]
+    fn builder_replace_range_with_rubbish_payload_iterator() {
+        use crate::test_support::rubbish_payload_iterator::RubbishPayloadIterator;
+        assert_eq!(
+            // N.B. we need a larger than necessary buffer to account for the
+            // lack of size_hint implementation from the rubbish iterator.
+            Sysex7BytesBorrowed::builder(&mut [0x0; 100])
+                .payload((0..30).map(u7::new))
+                .replace_payload_range(RubbishPayloadIterator::new().map(u7::new), 10..20)
+                .build(),
+            Ok(Sysex7BytesBorrowed(&[
+                0xF0, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0, 0x1, 0x2,
+                0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF, 0x10, 0x11, 0x12,
+                0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20,
+                0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E,
+                0x2F, 0x30, 0x31, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0xF7,
+            ])),
+        );
+    }
+
+    #[test]
+    fn builder_insert_rubbish_payload_iterator() {
+        use crate::test_support::rubbish_payload_iterator::RubbishPayloadIterator;
+        assert_eq!(
+            // N.B. we need a larger than necessary buffer to account for the
+            // lack of size_hint implementation from the rubbish iterator.
+            Sysex7BytesBorrowed::builder(&mut [0x0; 100])
+                .payload((0..20).map(u7::new))
+                .insert_payload(RubbishPayloadIterator::new().map(u7::new), 10)
+                .build(),
+            Ok(Sysex7BytesBorrowed(&[
+                0xF0, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x00, 0x01, 0x02,
+                0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10,
+                0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E,
+                0x1F, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2A, 0x2B, 0x2C,
+                0x2D, 0x2E, 0x2F, 0x30, 0x31, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12,
+                0x13, 0xF7,
             ])),
         );
     }

@@ -10,6 +10,7 @@ trait Sysex7BuilderInternal {
     fn buffer(&self) -> &[u32];
     fn buffer_mut(&mut self) -> &mut [u32];
     fn resize_buffer(&mut self, sz: usize);
+    fn is_error(&self) -> bool;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -294,6 +295,9 @@ impl<'a> Sysex7BuilderInternal for Sysex7BorrowedBuilder<'a> {
             self.size = sz;
         }
     }
+    fn is_error(&self) -> bool {
+        self.error.is_some()
+    }
 }
 
 impl<'a> SysexBuilderInternal for Sysex7BorrowedBuilder<'a> {
@@ -332,6 +336,16 @@ impl<'a> SysexBorrowedBuilder for Sysex7BorrowedBuilder<'a> {
         }
         let sz = self.payload_size();
         message_helpers::replace_sysex_payload_range(&mut self, data, sz..);
+        self
+    }
+    fn insert_payload<D>(mut self, data: D, before: usize) -> Self
+    where
+        D: core::iter::Iterator<Item = Self::ByteType>,
+    {
+        if self.error.is_some() {
+            return self;
+        }
+        message_helpers::replace_sysex_payload_range(&mut self, data, before..before);
         self
     }
     fn replace_payload_range<D, R>(mut self, data: D, range: R) -> Self
@@ -387,6 +401,9 @@ impl<M: core::convert::From<Sysex7Owned>> Sysex7BuilderInternal for Sysex7Builde
     fn resize_buffer(&mut self, sz: usize) {
         self.buffer.resize(sz, 0x0);
     }
+    fn is_error(&self) -> bool {
+        false
+    }
 }
 
 #[cfg(feature = "std")]
@@ -414,6 +431,13 @@ impl<M: core::convert::From<Sysex7Owned>> SysexBuilder for Sysex7Builder<M> {
     type ByteType = u7;
     fn append_payload<I: core::iter::Iterator<Item = u7>>(&mut self, data: I) -> &mut Self {
         message_helpers::replace_sysex_payload_range(self, data, self.payload_size()..);
+        self
+    }
+    fn insert_payload<D>(&mut self, data: D, before: usize) -> &mut Self
+    where
+        D: core::iter::Iterator<Item = Self::ByteType>,
+    {
+        message_helpers::replace_sysex_payload_range(self, data, before..before);
         self
     }
     fn replace_payload_range<D, R>(&mut self, data: D, range: R) -> &mut Self
@@ -494,13 +518,18 @@ fn resize<B: Sysex7BuilderInternal>(builder: &mut B, payload_size: usize) {
         } else {
             // last packet
             chunk[0].set_nibble(2, STATUS_END);
-            chunk[0].set_nibble(
-                3,
-                match payload_size % 6 {
-                    0 => u4::new(6),
-                    r => u4::new(r as u8),
-                },
-            );
+            match payload_size % 6 {
+                0 => {
+                    chunk[0].set_nibble(3, u4::new(6));
+                }
+                r => {
+                    chunk[0].set_nibble(3, u4::new(r as u8));
+                    // zero off the end of the packet
+                    for i in r..6 {
+                        chunk[(i + 2) / 4].set_septet((i + 2) % 4, u7::new(0x0));
+                    }
+                }
+            };
         }
     }
 }
@@ -531,6 +560,9 @@ fn shift_tail_forward<B: Sysex7BuilderInternal>(
 ) {
     let tail_end = payload_size(builder);
     resize(builder, tail_end + distance);
+    if builder.is_error() {
+        return;
+    }
     for i in (payload_index_tail_start..tail_end).rev() {
         let buffer_index = 2 * (i / 6);
         let byte_index = i % 6;
@@ -663,6 +695,84 @@ mod tests {
                 0x2C2D_2E2F,
                 0x3032_3031,
                 0x0000_0000,
+            ])),
+        );
+    }
+
+    #[test]
+    fn builder_replace_range_with_rubbish_payload_iterator() {
+        use crate::test_support::rubbish_payload_iterator::RubbishPayloadIterator;
+        assert_eq!(
+            // N.B. we need a larger than necessary buffer to account for the
+            // lack of size_hint implementation from the rubbish iterator.
+            Sysex7Borrowed::builder(&mut [0x0; 50])
+                .payload((0..30).map(u7::new))
+                .replace_payload_range(RubbishPayloadIterator::new().map(u7::new), 10..20)
+                .build(),
+            Ok(Sysex7Borrowed(&[
+                0x3016_0001,
+                0x0203_0405,
+                0x3026_0607,
+                0x0809_0001,
+                0x3026_0203,
+                0x0405_0607,
+                0x3026_0809,
+                0x0A0B_0C0D,
+                0x3026_0E0F,
+                0x1011_1213,
+                0x3026_1415,
+                0x1617_1819,
+                0x3026_1A1B,
+                0x1C1D_1E1F,
+                0x3026_2021,
+                0x2223_2425,
+                0x3026_2627,
+                0x2829_2A2B,
+                0x3026_2C2D,
+                0x2E2F_3031,
+                0x3026_1415,
+                0x1617_1819,
+                0x3034_1A1B,
+                0x1C1D_0000,
+            ])),
+        );
+    }
+
+    #[test]
+    fn builder_insert_rubbish_payload_iterator() {
+        use crate::test_support::rubbish_payload_iterator::RubbishPayloadIterator;
+        assert_eq!(
+            // N.B. we need a larger than necessary buffer to account for the
+            // lack of size_hint implementation from the rubbish iterator.
+            Sysex7Borrowed::builder(&mut [0x0; 50])
+                .payload((0..20).map(u7::new))
+                .insert_payload(RubbishPayloadIterator::new().map(u7::new), 10)
+                .build(),
+            Ok(Sysex7Borrowed(&[
+                0x3016_0001,
+                0x0203_0405,
+                0x3026_0607,
+                0x0809_0001,
+                0x3026_0203,
+                0x0405_0607,
+                0x3026_0809,
+                0x0A0B_0C0D,
+                0x3026_0E0F,
+                0x1011_1213,
+                0x3026_1415,
+                0x1617_1819,
+                0x3026_1A1B,
+                0x1C1D_1E1F,
+                0x3026_2021,
+                0x2223_2425,
+                0x3026_2627,
+                0x2829_2A2B,
+                0x3026_2C2D,
+                0x2E2F_3031,
+                0x3026_0A0B,
+                0x0C0D_0E0F,
+                0x3034_1011,
+                0x1213_0000,
             ])),
         );
     }

@@ -109,6 +109,7 @@ impl<'a> core::iter::Iterator for PayloadIterator<'a> {
 
 trait Sysex8BuilderInternal {
     fn buffer(&self) -> &[u32];
+    fn is_error(&self) -> bool;
     fn buffer_mut(&mut self) -> &mut [u32];
     fn resize_buffer(&mut self, sz: usize);
 }
@@ -355,6 +356,9 @@ pub struct Sysex8Builder<M: core::convert::From<Sysex8Owned>> {
 
 #[cfg(feature = "std")]
 impl<M: core::convert::From<Sysex8Owned>> Sysex8BuilderInternal for Sysex8Builder<M> {
+    fn is_error(&self) -> bool {
+        false
+    }
     fn buffer(&self) -> &[u32] {
         &self.buffer[..]
     }
@@ -391,6 +395,13 @@ impl<M: core::convert::From<Sysex8Owned>> SysexBuilder for Sysex8Builder<M> {
     type ByteType = u8;
     fn payload<I: core::iter::Iterator<Item = Self::ByteType>>(&mut self, data: I) -> &mut Self {
         message_helpers::replace_sysex_payload_range(self, data, 0..);
+        self
+    }
+    fn insert_payload<D>(&mut self, data: D, before: usize) -> &mut Self
+    where
+        D: core::iter::Iterator<Item = Self::ByteType>,
+    {
+        message_helpers::replace_sysex_payload_range(self, data, before..before);
         self
     }
     fn append_payload<I: core::iter::Iterator<Item = u8>>(&mut self, data: I) -> &mut Self {
@@ -451,6 +462,9 @@ pub struct Sysex8BorrowedBuilder<'a> {
 }
 
 impl<'a> Sysex8BuilderInternal for Sysex8BorrowedBuilder<'a> {
+    fn is_error(&self) -> bool {
+        self.error.is_some()
+    }
     fn buffer(&self) -> &[u32] {
         &self.buffer[..self.size]
     }
@@ -506,6 +520,13 @@ impl<'a> SysexBorrowedBuilder for Sysex8BorrowedBuilder<'a> {
     type ByteType = u8;
     fn payload<I: core::iter::Iterator<Item = Self::ByteType>>(mut self, data: I) -> Self {
         message_helpers::replace_sysex_payload_range(&mut self, data, 0..);
+        self
+    }
+    fn insert_payload<D>(mut self, data: D, before: usize) -> Self
+    where
+        D: core::iter::Iterator<Item = Self::ByteType>,
+    {
+        message_helpers::replace_sysex_payload_range(&mut self, data, before..before);
         self
     }
     fn append_payload<I: core::iter::Iterator<Item = u8>>(mut self, data: I) -> Self {
@@ -613,13 +634,18 @@ fn resize<B: Sysex8BuilderInternal>(builder: &mut B, payload_size: usize) {
         } else {
             // last packet
             chunk[0].set_nibble(2, STATUS_END);
-            chunk[0].set_nibble(
-                3,
-                match payload_size % capacity_without_stream_id() {
-                    0 => u4::new(PACKET_CAPACITY_U8),
-                    r => u4::new(r as u8 + 1),
-                },
-            );
+            match payload_size % capacity_without_stream_id() {
+                0 => {
+                    chunk[0].set_nibble(3, u4::new(PACKET_CAPACITY_U8));
+                }
+                r => {
+                    chunk[0].set_nibble(3, u4::new(r as u8 + 1));
+                    // zero off the end of the packet
+                    for i in r..capacity_without_stream_id() {
+                        chunk[(i + 3) / 4].set_octet((i + 3) % 4, 0x0);
+                    }
+                }
+            };
         }
     }
 }
@@ -651,6 +677,9 @@ fn shift_tail_forward<B: Sysex8BuilderInternal>(
 ) {
     let tail_end = payload_size(builder);
     resize(builder, tail_end + distance);
+    if builder.is_error() {
+        return;
+    }
     for i in (payload_index_tail_start..tail_end).rev() {
         let buffer_index = 4 * (i / capacity_without_stream_id());
         let byte_index = i % capacity_without_stream_id();
@@ -735,6 +764,84 @@ mod tests {
                 0x2829_2A2B,
                 0x2C2D_2E2F,
                 0x3031_0000,
+            ])),
+        );
+    }
+
+    #[test]
+    fn builder_replace_range_with_rubbish_payload_iterator() {
+        use crate::test_support::rubbish_payload_iterator::RubbishPayloadIterator;
+        assert_eq!(
+            // N.B. we need a larger than necessary buffer to account for the
+            // lack of size_hint implementation from the rubbish iterator.
+            Sysex8Borrowed::builder(&mut [0x0; 50])
+                .payload(0..30)
+                .replace_payload_range(RubbishPayloadIterator::new(), 10..20)
+                .build(),
+            Ok(Sysex8Borrowed(&[
+                0x501E_0000,
+                0x0102_0304,
+                0x0506_0708,
+                0x0900_0102,
+                0x502E_0003,
+                0x0405_0607,
+                0x0809_0A0B,
+                0x0C0D_0E0F,
+                0x502E_0010,
+                0x1112_1314,
+                0x1516_1718,
+                0x191A_1B1C,
+                0x502E_001D,
+                0x1E1F_2021,
+                0x2223_2425,
+                0x2627_2829,
+                0x502E_002A,
+                0x2B2C_2D2E,
+                0x2F30_3114,
+                0x1516_1718,
+                0x5036_0019,
+                0x1A1B_1C1D,
+                0x0000_0000,
+                0x0000_0000,
+            ])),
+        );
+    }
+
+    #[test]
+    fn builder_insert_rubbish_payload_iterator() {
+        use crate::test_support::rubbish_payload_iterator::RubbishPayloadIterator;
+        assert_eq!(
+            // N.B. we need a larger than necessary buffer to account for the
+            // lack of size_hint implementation from the rubbish iterator.
+            Sysex8Borrowed::builder(&mut [0x0; 50])
+                .payload(0..20)
+                .insert_payload(RubbishPayloadIterator::new(), 10)
+                .build(),
+            Ok(Sysex8Borrowed(&[
+                0x501E_0000,
+                0x0102_0304,
+                0x0506_0708,
+                0x0900_0102,
+                0x502E_0003,
+                0x0405_0607,
+                0x0809_0A0B,
+                0x0C0D_0E0F,
+                0x502E_0010,
+                0x1112_1314,
+                0x1516_1718,
+                0x191A_1B1C,
+                0x502E_001D,
+                0x1E1F_2021,
+                0x2223_2425,
+                0x2627_2829,
+                0x502E_002A,
+                0x2B2C_2D2E,
+                0x2F30_310A,
+                0x0B0C_0D0E,
+                0x5036_000F,
+                0x1011_1213,
+                0x0000_0000,
+                0x0000_0000,
             ])),
         );
     }
