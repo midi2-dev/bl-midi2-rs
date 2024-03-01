@@ -116,6 +116,11 @@ pub fn replace_sysex_payload_range<
         core::ops::Bound::Included(&v) => v + 1,
         core::ops::Bound::Excluded(&v) => v,
     };
+    if range_start > builder.payload_size() {
+        // the requested range is invalid
+        // grow the payload to fit
+        builder.shift_tail_forward(builder.payload_size(), range_end - builder.payload_size())
+    }
     let mut start_index_of_following_data = {
         let data_size_estimate = match data.size_hint() {
             (_, Some(upper)) => upper,

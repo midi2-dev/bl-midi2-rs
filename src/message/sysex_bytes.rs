@@ -164,6 +164,9 @@ impl<'a> SysexBuilderInternal for Sysex7BytesBorrowedBuilder<'a> {
         buffer[payload_index + 1] = datum.into();
     }
     fn payload_size(&self) -> usize {
+        if self.0.is_err() {
+            return 0;
+        }
         self.1 - 1
     }
     fn resize(&mut self, payload_size: usize) {
@@ -376,6 +379,33 @@ mod tests {
                 0x1F, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2A, 0x2B, 0x2C,
                 0x2D, 0x2E, 0x2F, 0x30, 0x31, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12,
                 0x13, 0xF7,
+            ])),
+        );
+    }
+
+    #[test]
+    fn builder_insert_payload_into_empty_builder() {
+        assert_eq!(
+            Sysex7BytesBorrowed::builder(&mut [0x0; 22])
+                .insert_payload((0..10).map(u7::new), 10)
+                .build(),
+            Ok(Sysex7BytesBorrowed(&[
+                0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x02,
+                0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0xF7,
+            ])),
+        );
+    }
+
+    #[test]
+    fn builder_insert_payload_into_non_empty_short_builder() {
+        assert_eq!(
+            Sysex7BytesBorrowed::builder(&mut [0x0; 22])
+                .payload((0..5).map(u7::new))
+                .insert_payload((0..10).map(u7::new), 10)
+                .build(),
+            Ok(Sysex7BytesBorrowed(&[
+                0xF0, 0x00, 0x01, 0x02, 0x03, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x02,
+                0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0xF7,
             ])),
         );
     }

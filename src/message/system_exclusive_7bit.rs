@@ -778,6 +778,24 @@ mod tests {
     }
 
     #[test]
+    fn builder_insert_payload_into_empty_builder() {
+        assert_eq!(
+            Sysex7Borrowed::builder(&mut Ump::random_buffer::<8>())
+                .insert_payload((0..10).map(u7::new), 10)
+                .build(),
+            Ok(Sysex7Borrowed(&[
+                0x3016_0000,
+                0x0000_0000,
+                0x3026_0000,
+                0x0000_0001,
+                0x3026_0203,
+                0x0405_0607,
+                0x3032_0809,
+                0x0000_0000,
+            ])),
+        );
+    }
+    #[test]
     fn from_data_inconsistent_groups() {
         assert_eq!(
             Sysex7Borrowed::from_data(&[0x3010_0000, 0x0000_0000, 0x3130_0000, 0x0000_0000,]),

@@ -847,6 +847,25 @@ mod tests {
     }
 
     #[test]
+    fn builder_insert_payload_into_empty_builder() {
+        assert_eq!(
+            Sysex8Borrowed::builder(&mut Ump::random_buffer::<8>())
+                .insert_payload(0..10, 10)
+                .build(),
+            Ok(Sysex8Borrowed(&[
+                0x501E_0000,
+                0x0000_0000,
+                0x0000_0000,
+                0x0000_0102,
+                0x5038_0003,
+                0x0405_0607,
+                0x0809_0000,
+                0x0000_0000,
+            ])),
+        );
+    }
+
+    #[test]
     fn builder_metadata_after_payload() {
         let mut buffer = Ump::random_buffer::<8>();
         assert_eq!(
