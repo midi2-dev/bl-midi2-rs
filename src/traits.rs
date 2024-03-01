@@ -62,9 +62,9 @@ pub trait Channeled: Data {
     }
 }
 
-pub trait Sysex<'a, 'b: 'a> {
-    type PayloadIterator: core::iter::Iterator<Item = u8>;
-    fn payload(&'b self) -> Self::PayloadIterator;
+pub trait Sysex<'a> {
+    type PayloadIterator: core::iter::Iterator<Item = u8> + 'a;
+    fn payload<'b: 'a>(&'b self) -> Self::PayloadIterator;
 }
 
 pub trait SysexBuilder {

@@ -312,9 +312,9 @@ impl Streamed for Sysex8Owned {}
 
 impl<'a> Streamed for Sysex8Message<'a> {}
 
-impl<'a, 'b: 'a> Sysex<'a, 'b> for Sysex8Borrowed<'a> {
+impl<'a> Sysex<'a> for Sysex8Borrowed<'a> {
     type PayloadIterator = PayloadIterator<'a>;
-    fn payload(&self) -> Self::PayloadIterator {
+    fn payload<'b: 'a>(&'b self) -> Self::PayloadIterator {
         PayloadIterator {
             data: self.0,
             message_index: 0,
@@ -324,9 +324,9 @@ impl<'a, 'b: 'a> Sysex<'a, 'b> for Sysex8Borrowed<'a> {
 }
 
 #[cfg(feature = "std")]
-impl<'a, 'b: 'a> Sysex<'a, 'b> for Sysex8Owned {
+impl<'a> Sysex<'a> for Sysex8Owned {
     type PayloadIterator = PayloadIterator<'a>;
-    fn payload(&'a self) -> Self::PayloadIterator {
+    fn payload<'b: 'a>(&'b self) -> Self::PayloadIterator {
         PayloadIterator {
             data: &self.0,
             message_index: 0,
@@ -335,9 +335,9 @@ impl<'a, 'b: 'a> Sysex<'a, 'b> for Sysex8Owned {
     }
 }
 
-impl<'a, 'b: 'a> Sysex<'a, 'b> for Sysex8Message<'a> {
+impl<'a> Sysex<'a> for Sysex8Message<'a> {
     type PayloadIterator = PayloadIterator<'a>;
-    fn payload(&'a self) -> Self::PayloadIterator {
+    fn payload<'b: 'a>(&'b self) -> Self::PayloadIterator {
         use Sysex8Message::*;
         match self {
             #[cfg(feature = "std")]

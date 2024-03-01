@@ -216,9 +216,9 @@ impl<'a> FromData<'a> for Sysex7Message<'a> {
 
 impl<'a> Grouped for Sysex7Borrowed<'a> {}
 
-impl<'a, 'b: 'a> Sysex<'a, 'b> for Sysex7Borrowed<'a> {
+impl<'a> Sysex<'a> for Sysex7Borrowed<'a> {
     type PayloadIterator = PayloadIterator<'a>;
-    fn payload(&self) -> Self::PayloadIterator {
+    fn payload<'b: 'a>(&'b self) -> Self::PayloadIterator {
         Self::PayloadIterator {
             data: self.0,
             message_index: 0,
@@ -228,9 +228,9 @@ impl<'a, 'b: 'a> Sysex<'a, 'b> for Sysex7Borrowed<'a> {
 }
 
 #[cfg(feature = "std")]
-impl<'a, 'b: 'a> Sysex<'a, 'b> for Sysex7Owned {
+impl<'a> Sysex<'a> for Sysex7Owned {
     type PayloadIterator = PayloadIterator<'a>;
-    fn payload(&'a self) -> Self::PayloadIterator {
+    fn payload<'b: 'a>(&'b self) -> Self::PayloadIterator {
         Self::PayloadIterator {
             data: &self.0,
             message_index: 0,
@@ -239,9 +239,9 @@ impl<'a, 'b: 'a> Sysex<'a, 'b> for Sysex7Owned {
     }
 }
 
-impl<'a, 'b: 'a> Sysex<'a, 'b> for Sysex7Message<'a> {
+impl<'a> Sysex<'a> for Sysex7Message<'a> {
     type PayloadIterator = PayloadIterator<'a>;
-    fn payload(&'a self) -> Self::PayloadIterator {
+    fn payload<'b: 'a>(&'b self) -> Self::PayloadIterator {
         use Sysex7Message::*;
         match self {
             #[cfg(feature = "std")]

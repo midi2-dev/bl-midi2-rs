@@ -43,24 +43,24 @@ impl<'a> IntoOwned for Sysex7BytesMessage<'a> {
     }
 }
 
-impl<'a, 'b: 'a> Sysex<'a, 'b> for Sysex7BytesBorrowed<'a> {
+impl<'a> Sysex<'a> for Sysex7BytesBorrowed<'a> {
     type PayloadIterator = core::iter::Cloned<core::slice::Iter<'a, u8>>;
-    fn payload(&self) -> Self::PayloadIterator {
+    fn payload<'b: 'a>(&'b self) -> Self::PayloadIterator {
         self.0[1..self.0.len() - 1].iter().cloned()
     }
 }
 
 #[cfg(feature = "std")]
-impl<'a, 'b: 'a> Sysex<'a, 'b> for Sysex7BytesOwned {
+impl<'a> Sysex<'a> for Sysex7BytesOwned {
     type PayloadIterator = core::iter::Cloned<core::slice::Iter<'a, u8>>;
-    fn payload(&'b self) -> Self::PayloadIterator {
+    fn payload<'b: 'a>(&'b self) -> Self::PayloadIterator {
         self.0[1..self.0.len() - 1].iter().cloned()
     }
 }
 
-impl<'a, 'b: 'a> Sysex<'a, 'b> for Sysex7BytesMessage<'a> {
+impl<'a> Sysex<'a> for Sysex7BytesMessage<'a> {
     type PayloadIterator = core::iter::Cloned<core::slice::Iter<'a, u8>>;
-    fn payload(&'b self) -> Self::PayloadIterator {
+    fn payload<'b: 'a>(&'b self) -> Self::PayloadIterator {
         use Sysex7BytesMessage::*;
         match self {
             #[cfg(feature = "std")]
