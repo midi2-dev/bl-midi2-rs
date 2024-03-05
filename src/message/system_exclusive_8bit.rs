@@ -205,7 +205,7 @@ fn validate_data(p: &[u32], status: Status) -> Result<()> {
         Err(Error::InvalidData)
     } else if unexpected_end {
         // data should be set to zero
-        // but we wont make it a hard requirement here
+        // but we won't make it a hard requirement here
         Ok(())
     } else if n > 14 {
         Err(Error::InvalidData)

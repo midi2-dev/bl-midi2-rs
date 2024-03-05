@@ -114,7 +114,7 @@ pub(crate) trait SysexBuilderInternal {
     // write the payload datum into the buffer starting at the
     // provided index.
     // NOTE: the caller must ensure there is enough space in the buffer and
-    // that they wont overwrite any important data.
+    // that they won't overwrite any important data.
     fn write_datum(&mut self, datum: Self::ByteType, payload_index: usize);
 }
 
