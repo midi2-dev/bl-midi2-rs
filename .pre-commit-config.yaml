@@ -4,29 +4,17 @@ repos:
   hooks:
   - id: fmt
     stages: [pre-commit]
-  - id: cargo-check
-    args: [--features, "ci,flex-data,midi1-channel-voice,midi2-channel-voice,std,sysex7,sysex8,sysex-bytes,system-common,ump-stream,utility"]
-    stages: [pre-commit]
-  - id: cargo-check
-    args: [--features, "std,ci,flex-data,midi1-channel-voice,midi2-channel-voice,std,sysex7,sysex8,sysex-bytes,system-common,ump-stream,utility"]
-    name: cargo-check-std 
-    stages: [pre-commit]
-  - id: clippy
-    args: [--features, "ci,flex-data,midi1-channel-voice,midi2-channel-voice,std,sysex7,sysex8,sysex-bytes,system-common,ump-stream,utility", --, -D, warnings]
-    stages: [pre-commit]
-  - id: clippy
-    name: clippy-std
-    args: [--features, "std,ci,flex-data,midi1-channel-voice,midi2-channel-voice,std,sysex7,sysex8,sysex-bytes,system-common,ump-stream,utility", --, -D, warnings]
-    stages: [pre-commit]
-- repo: https://github.com/crate-ci/committed
-  rev: v1.0.20
+- repo: https://github.com/compilerla/conventional-pre-commit
+  rev: v3.2.0
   hooks:
-  - id: committed
+  - id: conventional-pre-commit
     stages: [commit-msg]
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v4.4.0
   hooks:
   - id: check-added-large-files
+    stages: [pre-commit]
+  - id: check-case-conflict
     stages: [pre-commit]
   - id: check-case-conflict
     stages: [pre-commit]

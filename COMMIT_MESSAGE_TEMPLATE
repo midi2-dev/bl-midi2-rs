@@ -1,0 +1,10 @@
+
+# <type>[optional scope]: <description>
+#   │             │
+#   │             └─⫸ e.g. channel-voice, sysex, ci
+#   │
+#   └─⫸  {build, chore, ci, docs, feat, fix, perf, refactor, revert, style, test}
+#
+# [optional body]
+#
+# [optional footer(s)]
