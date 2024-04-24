@@ -1,7 +1,7 @@
-const UNIT_ID_U8: u8 = 0;
-const UNIT_ID_U32: u8 = 1;
+pub const UNIT_ID_U8: u8 = 0;
+pub const UNIT_ID_U32: u8 = 1;
 
-trait UnitPrivate {
+pub(crate) trait UnitPrivate {
     const UNIT_ID: u8;
 
     fn specialise_u32(&self) -> &u32;

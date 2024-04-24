@@ -131,7 +131,9 @@ fn parse_fixed_size(input: syn::parse::ParseStream) -> usize {
 }
 
 fn imports() -> TokenStream {
-    quote! {}
+    quote! {
+        use crate::buffer::UnitPrivate as UnitPrivateGenMessage;
+    }
 }
 
 fn generic_buffer_constraint(args: &GenerateMessageArgs) -> TokenStream {
@@ -233,6 +235,38 @@ fn owned_type_ump(args: &GenerateMessageArgs) -> TokenStream {
     }
 }
 
+fn debug_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream {
+    let constraint = generic_buffer_constraint(args);
+    quote! {
+        impl<B: #constraint> core::fmt::Debug for #root_ident<B> {
+            fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
+                match <<B as crate::buffer::Buffer>::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
+                    crate::buffer::UNIT_ID_U8 => {
+                        let mut iter = self.0.buffer().iter().peekable();
+                        while let Some(v) = iter.next() {
+                            fmt.write_fmt(format_args!("{:#04X}", v.specialise_u8()))?;
+                            if iter.peek().is_some() {
+                                fmt.write_str(", ")?;
+                            }
+                        }
+                    }
+                    crate::buffer::UNIT_ID_U32 => {
+                        let mut iter = self.0.buffer().iter().peekable();
+                        while let Some(v) = iter.next() {
+                            fmt.write_fmt(format_args!("{:#010X}", v.specialise_u32()))?;
+                            if iter.peek().is_some() {
+                                fmt.write_str(", ")?;
+                            }
+                        }
+                    }
+                    _ => unreachable!(),
+                }
+                Ok(())
+            }
+        }
+    }
+}
+
 pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1 {
     let input = syn::parse_macro_input!(item as syn::ItemStruct);
     let args = syn::parse_macro_input!(attrs as GenerateMessageArgs);
@@ -243,12 +277,14 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     let message = message(root_ident, &args);
     let message_impl = message_impl(root_ident, &args, &properties);
     let message_owned_impl = message_owned_impl(root_ident, &args, &properties);
+    let debug_impl = debug_impl(root_ident, &args);
 
     quote! {
         #imports
         #message
         #message_impl
         #message_owned_impl
+        #debug_impl
     }
     .into()
 }
