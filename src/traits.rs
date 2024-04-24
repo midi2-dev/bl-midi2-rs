@@ -1,107 +1,49 @@
-use crate::{util::BitOps, *};
-
-pub trait Data {
-    fn data(&self) -> &[u32];
+pub trait Data<B: crate::buffer::Buffer> {
+    fn data(&self) -> &[B::Unit];
 }
 
-pub trait ByteData {
-    fn byte_data(&self) -> &[u8];
+pub trait Grouped<B: crate::buffer::Ump>: Data<B> {
+    fn group(&self) -> crate::u4;
+    fn set_group(&mut self, group: crate::u4)
+    where
+        B: crate::buffer::BufferMut;
 }
 
-pub trait WriteByteData {
-    fn write_byte_data<'a>(&self, buffer: &'a mut [u8]) -> &'a mut [u8];
+pub trait Channeled<B: crate::buffer::Buffer> {
+    fn channel(&self) -> crate::u4;
+    fn set_channel(&mut self, channel: crate::u4)
+    where
+        B: crate::buffer::BufferMut;
 }
 
-pub trait TryWriteByteData {
-    fn try_write_byte_data<'a>(&self, buffer: &'a mut [u8]) -> Result<&'a mut [u8]>;
+pub trait Streamed<B: crate::buffer::Ump> {
+    fn stream_id(&self) -> u8;
+    fn set_stream_id(&mut self, channel: u8)
+    where
+        B: crate::buffer::BufferMut;
 }
 
-pub trait FromData<'a>: Sized {
-    type Target;
-    fn from_data_unchecked(buffer: &'a [u32]) -> Self::Target;
-    fn validate_data(buffer: &'a [u32]) -> Result<()>;
-    fn from_data(buffer: &'a [u32]) -> Result<Self::Target> {
-        match Self::validate_data(buffer) {
-            Ok(()) => Ok(Self::from_data_unchecked(buffer)),
-            Err(e) => Err(e),
-        }
-    }
-}
-
-pub trait FromByteData<'a>: Sized {
-    type Target;
-    fn from_byte_data_unchecked(buffer: &'a [u8]) -> Self::Target;
-    fn validate_byte_data(buffer: &'a [u8]) -> Result<()>;
-    fn from_byte_data(buffer: &'a [u8]) -> Result<Self::Target> {
-        match Self::validate_byte_data(buffer) {
-            Ok(()) => Ok(Self::from_byte_data_unchecked(buffer)),
-            Err(e) => Err(e),
-        }
-    }
-}
-
-pub trait IntoOwned {
-    type Owned;
-    fn into_owned(self) -> Self::Owned;
-}
-
-pub trait TryIntoOwned {
-    type Owned;
-    fn try_into_owned(self) -> Result<Self::Owned>;
-}
-
-pub trait Grouped: Data {
-    fn group(&self) -> u4 {
-        self.data()[0].nibble(1)
-    }
-}
-
-pub trait Channeled: Data {
-    fn channel(&self) -> u4 {
-        self.data()[0].nibble(3)
-    }
-}
-
-pub trait Sysex<'a> {
-    type PayloadIterator: core::iter::Iterator<Item = u8> + 'a;
-    fn payload<'b: 'a>(&'b self) -> Self::PayloadIterator;
-}
-
-pub trait SysexBuilder {
+pub trait Sysex {
     type ByteType;
-    fn append_payload<D>(&mut self, data: D) -> &mut Self
+    type PayloadIterator: core::iter::Iterator<Item = u8>;
+
+    fn payload(&self) -> Self::PayloadIterator;
+    fn append_payload<D>(&mut self, data: D) -> crate::result::Result<()>
     where
         D: core::iter::Iterator<Item = Self::ByteType>;
-    fn insert_payload<D>(&mut self, data: D, before: usize) -> &mut Self
+    fn insert_payload<D>(&mut self, data: D, before: usize) -> crate::result::Result<()>
     where
         D: core::iter::Iterator<Item = Self::ByteType>;
-    fn replace_payload_range<D, R>(&mut self, data: D, range: R) -> &mut Self
+    fn replace_payload_range<D, R>(&mut self, data: D, range: R) -> crate::result::Result<()>
     where
         D: core::iter::Iterator<Item = Self::ByteType>,
         R: core::ops::RangeBounds<usize> + core::iter::Iterator<Item = usize>;
-    fn payload<D>(&mut self, data: D) -> &mut Self
+    fn set_payload<D>(&mut self, data: D) -> crate::result::Result<()>
     where
         D: core::iter::Iterator<Item = Self::ByteType>;
 }
 
-pub trait SysexBorrowedBuilder {
-    type ByteType;
-    fn append_payload<D>(self, data: D) -> Self
-    where
-        D: core::iter::Iterator<Item = Self::ByteType>;
-    fn insert_payload<D>(self, data: D, before: usize) -> Self
-    where
-        D: core::iter::Iterator<Item = Self::ByteType>;
-    fn replace_payload_range<D, R>(self, data: D, range: R) -> Self
-    where
-        D: core::iter::Iterator<Item = Self::ByteType>,
-        R: core::ops::RangeBounds<usize> + core::iter::Iterator<Item = usize>;
-    fn payload<D>(self, data: D) -> Self
-    where
-        D: core::iter::Iterator<Item = Self::ByteType>;
-}
-
-pub(crate) trait SysexBuilderInternal {
+pub(crate) trait SysexInternal {
     type ByteType;
     fn payload_size(&self) -> usize;
     fn resize(&mut self, payload_size: usize);
@@ -116,12 +58,6 @@ pub(crate) trait SysexBuilderInternal {
     // NOTE: the caller must ensure there is enough space in the buffer and
     // that they won't overwrite any important data.
     fn write_datum(&mut self, datum: Self::ByteType, payload_index: usize);
-}
-
-pub trait Streamed: Data {
-    fn stream_id(&self) -> u8 {
-        self.data()[0].octet(2)
-    }
 }
 
 pub(crate) trait Level2Message {}

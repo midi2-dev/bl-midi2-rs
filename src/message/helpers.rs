@@ -1,4 +1,4 @@
-use crate::traits::SysexBuilderInternal;
+use crate::traits::SysexInternal;
 
 #[cfg(any(feature = "sysex7", feature = "sysex8"))]
 pub fn group_from_packet(p: &[u32]) -> crate::numeric_types::u4 {
@@ -98,7 +98,7 @@ pub fn validate_sysex_group_statuses<
 
 pub fn replace_sysex_payload_range<
     B,
-    S: SysexBuilderInternal<ByteType = B>,
+    S: SysexInternal<ByteType = B>,
     D: core::iter::Iterator<Item = B>,
     R: core::ops::RangeBounds<usize> + core::iter::Iterator<Item = usize>,
 >(

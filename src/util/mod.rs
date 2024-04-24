@@ -3,7 +3,9 @@ mod bounded;
 mod encode_7bit;
 mod truncate;
 
+pub mod property;
 pub mod schema;
+
 pub use bit_ops::BitOps;
 pub use bounded::Bounded;
 pub use encode_7bit::Encode7Bit;
