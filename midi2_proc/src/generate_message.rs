@@ -9,6 +9,18 @@ struct Property {
     constant: bool,
 }
 
+impl Property {
+    fn implement_via_trait(&self) -> bool {
+        self.is_group() || self.is_channel()
+    }
+    fn is_group(&self) -> bool {
+        self.ident == "group"
+    }
+    fn is_channel(&self) -> bool {
+        self.ident == "channel"
+    }
+}
+
 #[allow(dead_code)]
 fn has_attr(field: &syn::Field, id: &str) -> bool {
     field.attrs.iter().any(|attr| {
@@ -174,9 +186,12 @@ fn message_impl(
     let constraint = generic_buffer_constraint(args);
 
     let mut methods = TokenStream::new();
-    for property in properties.iter().filter(|p| !p.constant) {
-        methods.extend(property_getter(property));
-        methods.extend(property_setter(property));
+    for property in properties
+        .iter()
+        .filter(|p| !p.constant && !p.implement_via_trait())
+    {
+        methods.extend(property_getter(property, true));
+        methods.extend(property_setter(property, true));
     }
 
     quote! {
@@ -186,37 +201,51 @@ fn message_impl(
     }
 }
 
-fn property_getter(property: &Property) -> TokenStream {
+fn property_getter(property: &Property, public: bool) -> TokenStream {
     let meta_type = &property.meta_type;
     let ident = &property.ident;
     let ty = &property.ty;
+    let pub_token = if public {
+        quote! { pub }
+    } else {
+        TokenStream::new()
+    };
     quote! {
-        pub fn #ident(&self) -> #ty {
+        #pub_token fn #ident(&self) -> #ty {
             <#meta_type as crate::util::property::Property<B>>::read(&self.0).unwrap()
         }
     }
 }
 
-fn property_setter(property: &Property) -> TokenStream {
+fn property_setter(property: &Property, public: bool) -> TokenStream {
     let meta_type = &property.meta_type;
     let ident = syn::Ident::new(
         format!("set_{}", &property.ident.to_string()).as_str(),
         proc_macro2::Span::call_site(),
     );
     let ty = &property.ty;
+    let pub_token = if public {
+        quote! { pub }
+    } else {
+        TokenStream::new()
+    };
     quote! {
-        pub fn #ident(&mut self, value: #ty) where B: crate::buffer::BufferMut {
+        #pub_token fn #ident(&mut self, value: #ty) where B: crate::buffer::BufferMut {
             <#meta_type as crate::util::property::Property<B>>::write(&mut self.0, value).unwrap();
         }
     }
 }
 
-fn message_owned_impl(
+fn message_new_impl(
     root_ident: &syn::Ident,
     args: &GenerateMessageArgs,
     properties: &Vec<Property>,
 ) -> TokenStream {
-    let owned_type = owned_type_ump(args);
+    let owned_type = match args.representation() {
+        Representation::Bytes => owned_type_bytes(args),
+        Representation::Ump => owned_type_ump(args),
+        Representation::UmpOrBytes => owned_type_ump(args),
+    };
     let mut set_defaults = TokenStream::new();
     for property in properties {
         let meta_type = &property.meta_type;
@@ -238,10 +267,44 @@ fn message_owned_impl(
     }
 }
 
+fn secondary_new_impl(
+    root_ident: &syn::Ident,
+    args: &GenerateMessageArgs,
+    properties: &Vec<Property>,
+) -> TokenStream {
+    let owned_type = owned_type_bytes(args);
+    let mut set_defaults = TokenStream::new();
+    for property in properties.iter().filter(|p| !p.is_group()) {
+        let meta_type = &property.meta_type;
+        set_defaults.extend(quote! {
+            <#meta_type as crate::util::property::Property<#owned_type>>::write(
+                &mut buffer,
+                <#meta_type as crate::util::property::Property<#owned_type>>::default(),
+            ).unwrap();
+        });
+    }
+    quote! {
+        impl #root_ident<#owned_type> {
+            pub fn new_bytes() -> Self {
+                let mut buffer: #owned_type = core::default::Default::default();
+                #set_defaults
+                #root_ident(buffer)
+            }
+        }
+    }
+}
+
 fn owned_type_ump(args: &GenerateMessageArgs) -> TokenStream {
     match args.min_size_ump {
         Some(size) => quote! { [u32; #size] },
         None => quote! { std::vec::Vec<u32> },
+    }
+}
+
+fn owned_type_bytes(args: &GenerateMessageArgs) -> TokenStream {
+    match args.min_size_bytes {
+        Some(size) => quote! { [u8; #size] },
+        None => quote! { std::vec::Vec<u8> },
     }
 }
 
@@ -294,7 +357,7 @@ fn try_from_slice_impl(
         Representation::Ump => quote! { u32 },
         Representation::Bytes => quote! { u8 },
     };
-    for property in properties {
+    for property in properties.iter().filter(|p| !p.implement_via_trait()) {
         let meta_type = &property.meta_type;
         validation_steps.extend(quote! {
             <#meta_type as PropertyGenMessage<&[#unit_type]>>::read(&buffer)?;
@@ -311,6 +374,28 @@ fn try_from_slice_impl(
     }
 }
 
+fn grouped_impl(root_ident: &syn::Ident, property: &Property) -> TokenStream {
+    let setter = property_setter(property, false);
+    let getter = property_getter(property, false);
+    quote! {
+        impl<B: crate::buffer::Ump> crate::traits::Grouped<B> for #root_ident<B> {
+            #getter
+            #setter
+        }
+    }
+}
+
+fn channeled_impl(root_ident: &syn::Ident, property: &Property) -> TokenStream {
+    let setter = property_setter(property, false);
+    let getter = property_getter(property, false);
+    quote! {
+        impl<B: crate::buffer::Buffer> crate::traits::Channeled<B> for #root_ident<B> {
+            #getter
+            #setter
+        }
+    }
+}
+
 pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1 {
     let input = syn::parse_macro_input!(item as syn::ItemStruct);
     let args = syn::parse_macro_input!(attrs as GenerateMessageArgs);
@@ -320,17 +405,30 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     let imports = imports();
     let message = message(root_ident, &args);
     let message_impl = message_impl(root_ident, &args, &properties);
-    let message_owned_impl = message_owned_impl(root_ident, &args, &properties);
+    let message_new_impl = message_new_impl(root_ident, &args, &properties);
     let debug_impl = debug_impl(root_ident, &args);
     let try_from_slice_impl = try_from_slice_impl(root_ident, &args, &properties);
 
-    quote! {
+    let mut tokens = TokenStream::new();
+
+    tokens.extend(quote! {
         #imports
         #message
         #message_impl
-        #message_owned_impl
+        #message_new_impl
         #debug_impl
         #try_from_slice_impl
+    });
+
+    if let Representation::UmpOrBytes = args.representation() {
+        tokens.extend(secondary_new_impl(root_ident, &args, &properties))
     }
-    .into()
+    if let Some(property) = properties.iter().find(|p| p.is_group()) {
+        tokens.extend(grouped_impl(root_ident, property));
+    }
+    if let Some(property) = properties.iter().find(|p| p.is_channel()) {
+        tokens.extend(channeled_impl(root_ident, property));
+    }
+
+    tokens.into()
 }

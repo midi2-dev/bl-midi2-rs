@@ -1,7 +1,9 @@
 use crate::{
     buffer::{UnitPrivate, UNIT_ID_U32, UNIT_ID_U8},
     message::{
-        common_properties::{ChannelProperty, ChannelVoiceStatusProperty, UmpMessageTypeProperty},
+        common_properties::{
+            ChannelProperty, ChannelVoiceStatusProperty, GroupProperty, UmpMessageTypeProperty,
+        },
         midi1_channel_voice::UMP_MESSAGE_TYPE,
     },
     numeric_types::*,
@@ -18,6 +20,8 @@ struct ChannelPressure {
     status: (),
     #[property(ChannelProperty)]
     channel: u4,
+    #[property(GroupProperty)]
+    group: u4,
     #[property(PressureProperty)]
     pressure: u7,
 }
@@ -64,15 +68,24 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for PressurePr
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::traits::{Channeled, Grouped};
     use pretty_assertions::assert_eq;
 
     #[test]
-    fn builder() {
+    fn setters() {
         let mut message = ChannelPressure::new();
-        // message.set_group(u4::new(0xF));
+        message.set_group(u4::new(0xF));
         message.set_channel(u4::new(0x6));
         message.set_pressure(u7::new(0x09));
         assert_eq!(message, ChannelPressure([0x2FD6_0900]));
+    }
+
+    #[test]
+    fn setters_bytes() {
+        let mut message = ChannelPressure::new_bytes();
+        message.set_channel(u4::new(0x6));
+        message.set_pressure(u7::new(0x09));
+        assert_eq!(message, ChannelPressure([0xD6, 0x09]));
     }
 
     // #[test]

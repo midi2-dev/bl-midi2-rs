@@ -2,7 +2,7 @@ pub trait Data<B: crate::buffer::Buffer> {
     fn data(&self) -> &[B::Unit];
 }
 
-pub trait Grouped<B: crate::buffer::Ump>: Data<B> {
+pub trait Grouped<B: crate::buffer::Ump> {
     fn group(&self) -> crate::u4;
     fn set_group(&mut self, group: crate::u4)
     where
