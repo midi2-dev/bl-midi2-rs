@@ -240,6 +240,7 @@ fn debug_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStrea
     quote! {
         impl<B: #constraint> core::fmt::Debug for #root_ident<B> {
             fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
+                fmt.write_fmt(format_args!("{}([", stringify!(#root_ident)))?;
                 match <<B as crate::buffer::Buffer>::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
                     crate::buffer::UNIT_ID_U8 => {
                         let mut iter = self.0.buffer().iter().peekable();
@@ -261,6 +262,7 @@ fn debug_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStrea
                     }
                     _ => unreachable!(),
                 }
+                fmt.write_str("])")?;
                 Ok(())
             }
         }
