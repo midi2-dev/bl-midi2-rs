@@ -5,16 +5,12 @@ use crate::message::{
 
 const STATUS: u8 = 0x0;
 
-#[midi2_proc::generate_message(Ump, FixedSizeUmp(1))]
+#[midi2_proc::generate_message(FixedSize, MinSizeUmp(1))]
 struct NoOp {
     #[property(UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
-    #[ump]
-    #[constant]
-    ump_type: crate::u4,
+    ump_type: (),
     #[property(UtilityStatusProperty<STATUS>)]
-    #[ump]
-    #[constant]
-    status: crate::u4,
+    status: (),
 }
 
 #[cfg(test)]

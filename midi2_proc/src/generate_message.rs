@@ -7,10 +7,9 @@ struct Property {
     meta_type: TokenStream,
     ty: syn::Type,
     constant: bool,
-    ump_representation: bool,
-    bytes_representation: bool,
 }
 
+#[allow(dead_code)]
 fn has_attr(field: &syn::Field, id: &str) -> bool {
     field.attrs.iter().any(|attr| {
         let syn::Meta::Path(path) = &attr.meta else {
@@ -60,41 +59,43 @@ fn properties(input: &syn::ItemStruct) -> Vec<Property> {
                 .clone(),
             ty: field.ty.clone(),
             meta_type: meta_type(field),
-            constant: has_attr(field, "constant"),
-            ump_representation: has_attr(field, "ump"),
-            bytes_representation: has_attr(field, "bytes"),
+            constant: is_unit_tuple(&field.ty),
         })
         .collect()
 }
 
-#[derive(Debug)]
+fn is_unit_tuple(ty: &syn::Type) -> bool {
+    match ty {
+        syn::Type::Tuple(tup) => tup.elems.len() == 0,
+        _ => false,
+    }
+}
+
+#[derive(Debug, Default)]
 struct GenerateMessageArgs {
-    ump_repr: bool,
-    bytes_repr: bool,
-    fixed_size_ump: Option<usize>,
-    fixed_size_bytes: Option<usize>,
+    fixed_size: bool,
+    min_size_ump: Option<usize>,
+    min_size_bytes: Option<usize>,
 }
 
 impl syn::parse::Parse for GenerateMessageArgs {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
-        let mut args = Vec::new();
-        let mut fixed_size_ump: Option<usize> = None;
-        let mut fixed_size_bytes: Option<usize> = None;
+        let mut args: GenerateMessageArgs = Default::default();
         loop {
             let Ok(ident) = input.parse::<syn::Ident>() else {
                 assert!(input.is_empty());
                 break;
             };
-            args.push(ident.to_string());
 
-            match args.last().unwrap().as_str() {
-                "FixedSizeUmp" => {
-                    fixed_size_ump = Some(parse_fixed_size(input));
-                }
-                "FixedSizeBytes" => {
-                    fixed_size_bytes = Some(parse_fixed_size(input));
-                }
-                _ => {}
+            let ident = ident.to_string();
+            if ident == "FixedSize" {
+                args.fixed_size = true;
+            }
+            if ident == "MinSizeUmp" {
+                args.min_size_ump = Some(parse_fixed_size(input));
+            }
+            if ident == "MinSizeBytes" {
+                args.min_size_bytes = Some(parse_fixed_size(input));
             }
 
             if let Err(_) = input.parse::<syn::Token![,]>() {
@@ -103,12 +104,7 @@ impl syn::parse::Parse for GenerateMessageArgs {
             }
         }
 
-        Ok(GenerateMessageArgs {
-            ump_repr: args.iter().find(|s| *s == "Ump").is_some(),
-            bytes_repr: args.iter().find(|s| *s == "Bytes").is_some(),
-            fixed_size_bytes,
-            fixed_size_ump,
-        })
+        Ok(args)
     }
 }
 
@@ -137,11 +133,11 @@ fn imports() -> TokenStream {
 }
 
 fn generic_buffer_constraint(args: &GenerateMessageArgs) -> TokenStream {
-    if args.ump_repr && args.bytes_repr {
+    if args.min_size_ump.is_some() && args.min_size_bytes.is_some() {
         quote! { crate::buffer::Buffer }
-    } else if args.ump_repr && !args.bytes_repr {
+    } else if args.min_size_ump.is_some() && !args.min_size_bytes.is_some() {
         quote! { crate::buffer::Ump }
-    } else if !args.ump_repr && args.bytes_repr {
+    } else if !args.min_size_ump.is_some() && args.min_size_bytes.is_some() {
         quote! { crate::buffer::Bytes }
     } else {
         unreachable!()
@@ -229,7 +225,7 @@ fn message_owned_impl(
 }
 
 fn owned_type_ump(args: &GenerateMessageArgs) -> TokenStream {
-    match args.fixed_size_ump {
+    match args.min_size_ump {
         Some(size) => quote! { [u32; #size] },
         None => quote! { std::vec::Vec<u32> },
     }

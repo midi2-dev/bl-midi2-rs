@@ -5,10 +5,10 @@ pub struct UmpMessageTypeProperty<const TYPE: u8>;
 impl<const TYPE: u8, B: crate::buffer::Ump> crate::util::property::Property<B>
     for UmpMessageTypeProperty<TYPE>
 {
-    type Type = u8;
+    type Type = ();
     fn read(buffer: &B) -> crate::result::Result<Self::Type> {
         if buffer.buffer()[0].nibble(0) == crate::u4::new(TYPE) {
-            Ok(<Self as crate::util::property::Property<B>>::default())
+            Ok(())
         } else {
             Err(crate::Error::InvalidData)
         }
@@ -21,7 +21,7 @@ impl<const TYPE: u8, B: crate::buffer::Ump> crate::util::property::Property<B>
         Ok(())
     }
     fn default() -> Self::Type {
-        0x0
+        ()
     }
 }
 
@@ -30,10 +30,10 @@ pub struct UtilityStatusProperty<const STATUS: u8>;
 impl<const STATUS: u8, B: crate::buffer::Ump> crate::util::property::Property<B>
     for UtilityStatusProperty<STATUS>
 {
-    type Type = u8;
+    type Type = ();
     fn read(buffer: &B) -> crate::result::Result<Self::Type> {
         if buffer.buffer()[0].nibble(2) == crate::u4::new(STATUS) {
-            Ok(<Self as crate::util::property::Property<B>>::default())
+            Ok(())
         } else {
             Err(crate::Error::InvalidData)
         }
@@ -46,6 +46,6 @@ impl<const STATUS: u8, B: crate::buffer::Ump> crate::util::property::Property<B>
         Ok(())
     }
     fn default() -> Self::Type {
-        0x0
+        ()
     }
 }
