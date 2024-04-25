@@ -1,4 +1,6 @@
-use crate::buffer::{Buffer, BufferDefault, BufferMut, BufferResizable, Ump, Unit};
+use crate::buffer::{
+    Buffer, BufferDefault, BufferFixedSize, BufferMut, BufferResizable, Ump, Unit,
+};
 
 pub trait Data<B: Buffer> {
     fn data(&self) -> &[B::Unit];
@@ -82,7 +84,7 @@ where
 pub trait TryRebufferFrom<
     U: Unit,
     A: Buffer<Unit = U>,
-    B: Buffer<Unit = U> + BufferMut + BufferDefault,
+    B: Buffer<Unit = U> + BufferMut + BufferDefault + BufferFixedSize,
     T,
 >: Sized
 {
@@ -92,15 +94,20 @@ pub trait TryRebufferFrom<
 pub trait TryRebufferInto<
     U: Unit,
     A: Buffer<Unit = U>,
-    B: Buffer<Unit = U> + BufferMut + BufferDefault,
+    B: Buffer<Unit = U> + BufferMut + BufferDefault + BufferFixedSize,
     T,
 >: Sized
 {
     fn try_rebuffer_into(self) -> core::result::Result<T, crate::error::BufferOverflow>;
 }
 
-impl<U: Unit, A: Buffer<Unit = U>, B: Buffer<Unit = U> + BufferMut + BufferDefault, T, V>
-    TryRebufferInto<U, A, B, V> for T
+impl<
+        U: Unit,
+        A: Buffer<Unit = U>,
+        B: Buffer<Unit = U> + BufferMut + BufferDefault + BufferFixedSize,
+        T,
+        V,
+    > TryRebufferInto<U, A, B, V> for T
 where
     V: TryRebufferFrom<U, A, B, T>,
 {
@@ -109,8 +116,13 @@ where
     }
 }
 
-impl<U: Unit, A: Buffer<Unit = U>, B: Buffer<Unit = U> + BufferMut + BufferDefault, T, V>
-    TryRebufferFrom<U, A, B, T> for V
+impl<
+        U: Unit,
+        A: Buffer<Unit = U>,
+        B: Buffer<Unit = U> + BufferMut + BufferDefault + BufferFixedSize,
+        T,
+        V,
+    > TryRebufferFrom<U, A, B, T> for V
 where
     V: Data<B> + WithBuffer<B>,
     T: Data<A>,

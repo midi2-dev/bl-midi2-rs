@@ -81,6 +81,8 @@ pub trait BufferResizable {
     fn resize(&mut self, size: usize);
 }
 
+pub trait BufferFixedSize {}
+
 pub trait Ump: Buffer<Unit = u32> {}
 
 impl<B: Buffer<Unit = u32>> Ump for B {}
@@ -127,6 +129,8 @@ impl<const SIZE: usize, U: Unit> BufferDefault for [U; SIZE] {
         [U::zero(); SIZE]
     }
 }
+
+impl<const SIZE: usize, U: Unit> BufferFixedSize for [U; SIZE] {}
 
 impl<U: Unit> Buffer for std::vec::Vec<U> {
     type Unit = U;

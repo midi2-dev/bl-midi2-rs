@@ -68,9 +68,7 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for PressurePr
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::traits::{
-        Channeled, Data, Grouped, RebufferFrom, RebufferInto, TryRebufferFrom, TryRebufferInto,
-    };
+    use crate::traits::{Channeled, Data, Grouped};
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -159,6 +157,13 @@ mod tests {
             &[0xD6_u8, 0x09_u8]
         );
     }
+}
+
+#[cfg(test)]
+mod rebuffer_tests {
+    use super::*;
+    use crate::traits::{RebufferFrom, RebufferInto, TryRebufferFrom, TryRebufferInto};
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn rebuffer_from() {
@@ -234,5 +239,23 @@ mod tests {
         let borrowed = ChannelPressure::try_from(&buffer[..]).unwrap();
         let owned: ChannelPressure<std::vec::Vec<u8>> = borrowed.rebuffer_into();
         assert_eq!(owned, ChannelPressure(std::vec![0xD6_u8, 0x09_u8]),);
+    }
+
+    #[test]
+    fn try_rebuffer_into() {
+        let buffer = [0x2FD6_0900_u32];
+        let borrowed = ChannelPressure::try_from(&buffer[..]).unwrap();
+        let owned: core::result::Result<ChannelPressure<[u32; 1]>, crate::error::BufferOverflow> =
+            borrowed.try_rebuffer_into();
+        assert_eq!(owned, Ok(ChannelPressure([0x2FD6_0900_u32])));
+    }
+
+    #[test]
+    fn try_rebuffer_into_bytes() {
+        let buffer = [0xD6_u8, 0x09_u8];
+        let borrowed = ChannelPressure::try_from(&buffer[..]).unwrap();
+        let owned: core::result::Result<ChannelPressure<[u8; 2]>, crate::error::BufferOverflow> =
+            borrowed.try_rebuffer_into();
+        assert_eq!(owned, Ok(ChannelPressure([0xD6_u8, 0x09_u8])));
     }
 }
