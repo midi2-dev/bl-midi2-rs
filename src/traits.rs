@@ -1,5 +1,5 @@
 use crate::buffer::{
-    Buffer, BufferDefault, BufferFixedSize, BufferMut, BufferResizable, Ump, Unit,
+    Buffer, BufferDefault, BufferFixedSize, BufferMut, BufferResizable, Bytes, Ump, Unit,
 };
 
 pub trait Data<B: Buffer> {
@@ -137,6 +137,40 @@ where
     }
 }
 
+pub trait FromBytes<A: Bytes, B: Ump + BufferMut + BufferDefault + BufferResizable, T> {
+    fn from_bytes(other: T) -> Self;
+}
+
+pub trait IntoUmp<A: Bytes, B: Ump + BufferMut + BufferDefault + BufferResizable, T> {
+    fn into_ump(self) -> T;
+}
+
+impl<A: Bytes, B: Ump + BufferMut + BufferDefault + BufferResizable, T, U> IntoUmp<A, B, U> for T
+where
+    U: FromBytes<A, B, T>,
+{
+    fn into_ump(self) -> U {
+        <U as FromBytes<A, B, T>>::from_bytes(self)
+    }
+}
+
+pub trait FromUmp<A: Ump, B: Bytes + BufferMut + BufferDefault + BufferResizable, T> {
+    fn from_ump(other: T) -> Self;
+}
+
+pub trait IntoBytes<A: Ump, B: Bytes + BufferMut + BufferDefault + BufferResizable, T> {
+    fn into_bytes(self) -> T;
+}
+
+impl<A: Ump, B: Bytes + BufferMut + BufferDefault + BufferResizable, T, U> IntoBytes<A, B, U> for T
+where
+    U: FromUmp<A, B, T>,
+{
+    fn into_bytes(self) -> U {
+        <U as FromUmp<A, B, T>>::from_ump(self)
+    }
+}
+
 pub trait Sysex {
     type ByteType;
     type PayloadIterator: core::iter::Iterator<Item = u8>;
@@ -172,6 +206,10 @@ pub(crate) trait SysexInternal {
     // NOTE: the caller must ensure there is enough space in the buffer and
     // that they won't overwrite any important data.
     fn write_datum(&mut self, datum: Self::ByteType, payload_index: usize);
+}
+
+pub(crate) trait MinSize<B: Buffer> {
+    fn min_size() -> usize;
 }
 
 pub(crate) trait Size<B: Buffer> {

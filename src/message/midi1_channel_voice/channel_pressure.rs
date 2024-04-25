@@ -68,7 +68,7 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for PressurePr
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::traits::{Channeled, Data, Grouped};
+    use crate::traits::{Channeled, Data, FromBytes, FromUmp, Grouped};
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -155,6 +155,26 @@ mod tests {
                 .unwrap()
                 .data(),
             &[0xD6_u8, 0x09_u8]
+        );
+    }
+
+    #[test]
+    fn from_bytes() {
+        let buffer = [0xD6_u8, 0x09_u8];
+        let borrowed = ChannelPressure::try_from(&buffer[..]).unwrap();
+        assert_eq!(
+            ChannelPressure::<std::vec::Vec<u32>>::from_bytes(borrowed),
+            ChannelPressure(std::vec![0x20D6_0900_u32]),
+        );
+    }
+
+    #[test]
+    fn from_ump() {
+        let buffer = [0x2FD6_0900_u32];
+        let borrowed = ChannelPressure::try_from(&buffer[..]).unwrap();
+        assert_eq!(
+            ChannelPressure::<std::vec::Vec<u8>>::from_ump(borrowed),
+            ChannelPressure(std::vec![0xD6_u8, 0x09_u8]),
         );
     }
 }

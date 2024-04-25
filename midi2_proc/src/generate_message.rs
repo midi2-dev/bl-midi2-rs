@@ -259,6 +259,8 @@ fn message_new_impl(
         impl #root_ident<#owned_type> {
             pub fn new() -> Self {
                 let mut buffer: #owned_type = core::default::Default::default();
+                // todo
+                // buffer.resize(Self::min_size())
                 #set_defaults
                 #root_ident(buffer)
             }
@@ -286,6 +288,8 @@ fn secondary_new_impl(
         impl #root_ident<#owned_type> {
             pub fn new_bytes() -> Self {
                 let mut buffer: #owned_type = core::default::Default::default();
+                // todo
+                // buffer.resize(Self::min_size())
                 #set_defaults
                 #root_ident(buffer)
             }
@@ -307,7 +311,17 @@ fn owned_type_bytes(args: &GenerateMessageArgs) -> TokenStream {
     }
 }
 
-fn size_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream {
+fn size_impl(root_ident: &syn::Ident) -> TokenStream {
+    quote! {
+        impl<B: crate::buffer::Buffer> crate::traits::Size<B> for #root_ident<B> {
+            fn size(&self) -> usize {
+                <Self as crate::traits::MinSize<B>>::min_size()
+            }
+        }
+    }
+}
+
+fn min_size_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream {
     let body = match (&args.min_size_ump, &args.min_size_bytes) {
         (&Some(ump_size), &Some(bytes_size)) => quote! {
             match <B::Unit as UnitPrivateGenMessage>::UNIT_ID {
@@ -321,8 +335,8 @@ fn size_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream
         (None, None) => panic!("Couldn't deduce message size"),
     };
     quote! {
-        impl<B: crate::buffer::Buffer> crate::traits::Size<B> for #root_ident<B> {
-            fn size(&self) -> usize {
+        impl<B: crate::buffer::Buffer> crate::traits::MinSize<B> for #root_ident<B> {
+            fn min_size() -> usize {
                 #body
             }
         }
@@ -437,6 +451,66 @@ fn channeled_impl(root_ident: &syn::Ident, property: &Property) -> TokenStream {
     }
 }
 
+fn from_bytes_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
+    let mut convert_properties = TokenStream::new();
+    for property in properties.iter().filter(|p| !p.is_group()) {
+        let meta_type = &property.meta_type;
+        convert_properties.extend(quote! {
+            <#meta_type as PropertyGenMessage<B>>::write(
+                &mut buffer,
+                <#meta_type as PropertyGenMessage<A>>::read(&other.0).unwrap()
+            );
+        });
+    }
+    quote! {
+        impl<
+                A: crate::buffer::Bytes,
+                B: crate::buffer::Ump
+                    + crate::buffer::BufferMut
+                    + crate::buffer::BufferDefault
+                    + crate::buffer::BufferResizable,
+            > crate::traits::FromBytes<A, B, #root_ident<A>> for #root_ident<B>
+        {
+            fn from_bytes(other: #root_ident<A>) -> Self {
+                let mut buffer = <B as crate::buffer::BufferDefault>::default();
+                buffer.resize(<#root_ident<B> as crate::traits::MinSize<B>>::min_size());
+                #convert_properties
+                Self(buffer)
+            }
+        }
+    }
+}
+
+fn from_ump_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
+    let mut convert_properties = TokenStream::new();
+    for property in properties.iter().filter(|p| !p.is_group()) {
+        let meta_type = &property.meta_type;
+        convert_properties.extend(quote! {
+            <#meta_type as PropertyGenMessage<B>>::write(
+                &mut buffer,
+                <#meta_type as PropertyGenMessage<A>>::read(&other.0).unwrap()
+            );
+        });
+    }
+    quote! {
+        impl<
+                A: crate::buffer::Ump,
+                B: crate::buffer::Bytes
+                    + crate::buffer::BufferMut
+                    + crate::buffer::BufferDefault
+                    + crate::buffer::BufferResizable,
+            > crate::traits::FromUmp<A, B, #root_ident<A>> for #root_ident<B>
+        {
+            fn from_ump(other: #root_ident<A>) -> Self {
+                let mut buffer = <B as crate::buffer::BufferDefault>::default();
+                buffer.resize(<#root_ident<B> as crate::traits::MinSize<B>>::min_size());
+                #convert_properties
+                Self(buffer)
+            }
+        }
+    }
+}
+
 pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1 {
     let input = syn::parse_macro_input!(item as syn::ItemStruct);
     let args = syn::parse_macro_input!(attrs as GenerateMessageArgs);
@@ -449,6 +523,7 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     let message_new_impl = message_new_impl(root_ident, &args, &properties);
     let debug_impl = debug_impl(root_ident, &args);
     let data_impl = data_impl(root_ident);
+    let min_size_impl = min_size_impl(root_ident, &args);
     let with_buffer_impl = with_buffer_impl(root_ident);
     let try_from_slice_impl = try_from_slice_impl(root_ident, &args, &properties);
 
@@ -461,6 +536,7 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
         #message_new_impl
         #debug_impl
         #data_impl
+        #min_size_impl
         #with_buffer_impl
         #try_from_slice_impl
     });
@@ -469,13 +545,17 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
         tokens.extend(secondary_new_impl(root_ident, &args, &properties))
     }
     if args.fixed_size {
-        tokens.extend(size_impl(root_ident, &args))
+        tokens.extend(size_impl(root_ident))
     }
     if let Some(property) = properties.iter().find(|p| p.is_group()) {
         tokens.extend(grouped_impl(root_ident, property));
     }
     if let Some(property) = properties.iter().find(|p| p.is_channel()) {
         tokens.extend(channeled_impl(root_ident, property));
+    }
+    if let Representation::UmpOrBytes = args.representation() {
+        tokens.extend(from_bytes_impl(root_ident, &properties));
+        tokens.extend(from_ump_impl(root_ident, &properties));
     }
 
     tokens.into()
