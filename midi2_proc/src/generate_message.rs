@@ -78,6 +78,23 @@ struct GenerateMessageArgs {
     min_size_bytes: Option<usize>,
 }
 
+enum Representation {
+    Ump,
+    Bytes,
+    UmpOrBytes,
+}
+
+impl GenerateMessageArgs {
+    fn representation(&self) -> Representation {
+        match (&self.min_size_ump, &self.min_size_bytes) {
+            (&Some(_), &Some(_)) => Representation::UmpOrBytes,
+            (None, &Some(_)) => Representation::Bytes,
+            (&Some(_), None) => Representation::Ump,
+            (None, None) => panic!("Couldn't deduce message representation"),
+        }
+    }
+}
+
 impl syn::parse::Parse for GenerateMessageArgs {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         let mut args: GenerateMessageArgs = Default::default();
@@ -129,18 +146,15 @@ fn parse_fixed_size(input: syn::parse::ParseStream) -> usize {
 fn imports() -> TokenStream {
     quote! {
         use crate::buffer::UnitPrivate as UnitPrivateGenMessage;
+        use crate::util::property::Property as PropertyGenMessage;
     }
 }
 
 fn generic_buffer_constraint(args: &GenerateMessageArgs) -> TokenStream {
-    if args.min_size_ump.is_some() && args.min_size_bytes.is_some() {
-        quote! { crate::buffer::Buffer }
-    } else if args.min_size_ump.is_some() && !args.min_size_bytes.is_some() {
-        quote! { crate::buffer::Ump }
-    } else if !args.min_size_ump.is_some() && args.min_size_bytes.is_some() {
-        quote! { crate::buffer::Bytes }
-    } else {
-        unreachable!()
+    match args.representation() {
+        Representation::UmpOrBytes => quote! { crate::buffer::Buffer },
+        Representation::Bytes => quote! { crate::buffer::Bytes },
+        Representation::Ump => quote! { crate::buffer::Ump },
     }
 }
 
@@ -265,6 +279,38 @@ fn debug_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStrea
     }
 }
 
+fn try_from_slice_impl(
+    root_ident: &syn::Ident,
+    args: &GenerateMessageArgs,
+    properties: &Vec<Property>,
+) -> TokenStream {
+    let mut validation_steps = TokenStream::new();
+    let generic_unit = match args.representation() {
+        Representation::UmpOrBytes => quote! { U: crate::buffer::Buffer },
+        _ => TokenStream::new(),
+    };
+    let unit_type = match args.representation() {
+        Representation::UmpOrBytes => quote! { U },
+        Representation::Ump => quote! { u32 },
+        Representation::Bytes => quote! { u8 },
+    };
+    for property in properties {
+        let meta_type = &property.meta_type;
+        validation_steps.extend(quote! {
+            <#meta_type as PropertyGenMessage<&[#unit_type]>>::read(&buffer)?;
+        });
+    }
+    quote! {
+        impl<'a, #generic_unit> core::convert::TryFrom<&'a [#unit_type]> for #root_ident<&'a [#unit_type]> {
+            type Error = crate::error::Error;
+            fn try_from(buffer: &'a [#unit_type]) -> Result<Self, Self::Error> {
+                #validation_steps
+                Ok(#root_ident(buffer))
+            }
+        }
+    }
+}
+
 pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1 {
     let input = syn::parse_macro_input!(item as syn::ItemStruct);
     let args = syn::parse_macro_input!(attrs as GenerateMessageArgs);
@@ -276,6 +322,7 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     let message_impl = message_impl(root_ident, &args, &properties);
     let message_owned_impl = message_owned_impl(root_ident, &args, &properties);
     let debug_impl = debug_impl(root_ident, &args);
+    let try_from_slice_impl = try_from_slice_impl(root_ident, &args, &properties);
 
     quote! {
         #imports
@@ -283,6 +330,7 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
         #message_impl
         #message_owned_impl
         #debug_impl
+        #try_from_slice_impl
     }
     .into()
 }

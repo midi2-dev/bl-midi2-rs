@@ -22,11 +22,11 @@ mod tests {
         assert_eq!(NoOp::new(), NoOp([0x0000_0000]));
     }
 
-    // #[test]
-    // fn group() {
-    //     assert_eq!(
-    //         NoOp::try_from(&[0x0000_0000][..]),
-    //         Ok(NoOp(&[0x0000_0000][..]))
-    //     );
-    // }
+    #[test]
+    fn from_data() {
+        assert_eq!(
+            NoOp::try_from(&[0x0000_0000][..]),
+            Ok(NoOp(&[0x0000_0000][..]))
+        );
+    }
 }
