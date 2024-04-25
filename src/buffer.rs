@@ -9,8 +9,6 @@ pub(crate) trait UnitPrivate: Copy {
 
     fn specialise_u8(&self) -> &u8;
     fn specialise_u8_mut(&mut self) -> &mut u8;
-
-    fn zero() -> Self;
 }
 
 impl UnitPrivate for u8 {
@@ -28,10 +26,6 @@ impl UnitPrivate for u8 {
     }
     fn specialise_u8_mut(&mut self) -> &mut u8 {
         self
-    }
-
-    fn zero() -> Self {
-        0x0
     }
 }
 
@@ -51,16 +45,22 @@ impl UnitPrivate for u32 {
     fn specialise_u8_mut(&mut self) -> &mut u8 {
         unreachable!()
     }
+}
 
+#[allow(private_bounds)]
+pub trait Unit: UnitPrivate {
+    fn zero() -> Self;
+}
+impl Unit for u8 {
     fn zero() -> Self {
         0x0
     }
 }
-
-#[allow(private_bounds)]
-pub trait Unit: UnitPrivate {}
-impl Unit for u8 {}
-impl Unit for u32 {}
+impl Unit for u32 {
+    fn zero() -> Self {
+        0x0
+    }
+}
 
 pub trait Buffer {
     type Unit: Unit;
@@ -69,20 +69,16 @@ pub trait Buffer {
 
 pub trait BufferMut: Buffer {
     fn buffer_mut(&mut self) -> &mut [<Self as Buffer>::Unit];
-    /// For buffer which can change size, this method will
-    /// set the size of the underlying slice. Where the slice
-    /// would be extended, values are initialised with the value 0x0.
-    ///
-    /// For buffers which are fixed length this method will
-    /// return an Err whenever the requested size exceeds
-    /// the fixed size of the underlying buffer.
-    fn resize(&mut self, size: usize) -> core::result::Result<(), crate::error::BufferOverflow>;
 }
 
 // N.B. This is needed because core::default::Default
 // is not implemented for arrays which are generic over size
 pub trait BufferDefault {
     fn default() -> Self;
+}
+
+pub trait BufferResizable {
+    fn resize(&mut self, size: usize);
 }
 
 pub trait Ump: Buffer<Unit = u32> {}
@@ -111,13 +107,6 @@ impl<'a, U: Unit> BufferMut for &'a mut [U] {
     fn buffer_mut(&mut self) -> &mut [<Self as Buffer>::Unit] {
         self
     }
-    fn resize(&mut self, size: usize) -> core::result::Result<(), crate::error::BufferOverflow> {
-        if size > self.len() {
-            Err(crate::error::BufferOverflow)
-        } else {
-            Ok(())
-        }
-    }
 }
 
 impl<const SIZE: usize, U: Unit> Buffer for [U; SIZE] {
@@ -130,13 +119,6 @@ impl<const SIZE: usize, U: Unit> Buffer for [U; SIZE] {
 impl<const SIZE: usize, U: Unit> BufferMut for [U; SIZE] {
     fn buffer_mut(&mut self) -> &mut [<Self as Buffer>::Unit] {
         &mut self[..]
-    }
-    fn resize(&mut self, size: usize) -> core::result::Result<(), crate::error::BufferOverflow> {
-        if size > SIZE {
-            Err(crate::error::BufferOverflow)
-        } else {
-            Ok(())
-        }
     }
 }
 
@@ -157,9 +139,11 @@ impl<U: Unit> BufferMut for std::vec::Vec<U> {
     fn buffer_mut(&mut self) -> &mut [<Self as Buffer>::Unit] {
         self
     }
-    fn resize(&mut self, size: usize) -> core::result::Result<(), crate::error::BufferOverflow> {
+}
+
+impl<U: Unit> BufferResizable for std::vec::Vec<U> {
+    fn resize(&mut self, size: usize) {
         self.resize(size, U::zero());
-        Ok(())
     }
 }
 

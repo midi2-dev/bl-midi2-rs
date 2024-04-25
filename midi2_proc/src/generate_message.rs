@@ -307,6 +307,28 @@ fn owned_type_bytes(args: &GenerateMessageArgs) -> TokenStream {
     }
 }
 
+fn size_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream {
+    let body = match (&args.min_size_ump, &args.min_size_bytes) {
+        (&Some(ump_size), &Some(bytes_size)) => quote! {
+            match <B::Unit as UnitPrivateGenMessage>::UNIT_ID {
+                crate::buffer::UNIT_ID_U32 => #ump_size,
+                crate::buffer::UNIT_ID_U8 => #bytes_size,
+                _ => unreachable!(),
+            }
+        },
+        (None, &Some(bytes_size)) => quote! { #bytes_size },
+        (&Some(ump_size), None) => quote! { #ump_size },
+        (None, None) => panic!("Couldn't deduce message size"),
+    };
+    quote! {
+        impl<B: crate::buffer::Buffer> crate::traits::Size<B> for #root_ident<B> {
+            fn size(&self) -> usize {
+                #body
+            }
+        }
+    }
+}
+
 fn debug_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream {
     let constraint = generic_buffer_constraint(args);
     quote! {
@@ -351,6 +373,16 @@ fn data_impl(root_ident: &syn::Ident) -> TokenStream {
     }
 }
 
+fn with_buffer_impl(root_ident: &syn::Ident) -> TokenStream {
+    quote! {
+        impl<B: crate::buffer::Buffer> crate::traits::WithBuffer<B> for #root_ident<B> {
+            fn with_buffer(buffer: B) -> Self {
+                Self(buffer)
+            }
+        }
+    }
+}
+
 fn try_from_slice_impl(
     root_ident: &syn::Ident,
     args: &GenerateMessageArgs,
@@ -378,6 +410,37 @@ fn try_from_slice_impl(
             fn try_from(buffer: &'a [#unit_type]) -> Result<Self, Self::Error> {
                 #validation_steps
                 Ok(#root_ident(buffer))
+            }
+        }
+    }
+}
+
+fn from_message_impl(
+    root_ident: &syn::Ident,
+    args: &GenerateMessageArgs,
+    properties: &Vec<Property>,
+) -> TokenStream {
+    let mut copy_properties = TokenStream::new();
+    for property in properties.iter().filter(|p| !p.is_group()) {
+        let meta_type = &property.meta_type;
+        copy_properties.extend(quote! {
+            <#meta_type as crate::util::property::Property<C>>::write(
+                &mut buffer,
+                <#meta_type as crate::util::property::Property<B>>::read(&value.0).unwrap(),
+            ).unwrap();
+        });
+    }
+    quote! {
+        impl<
+                U: crate::buffer::Unit,
+                B: crate::buffer::Buffer<Unit = U>,
+                C: crate::buffer::Buffer<Unit = U> + crate::buffer::BufferMut + crate::buffer::BufferDefault,
+            > crate::traits::FromMessage<#root_ident<B>> for #root_ident<C>
+        {
+            fn from_message(value: #root_ident<B>) -> Self {
+                let mut buffer = <C as crate::buffer::BufferDefault>::default();
+                #copy_properties
+                Self(buffer)
             }
         }
     }
@@ -417,7 +480,9 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     let message_new_impl = message_new_impl(root_ident, &args, &properties);
     let debug_impl = debug_impl(root_ident, &args);
     let data_impl = data_impl(root_ident);
+    let with_buffer_impl = with_buffer_impl(root_ident);
     let try_from_slice_impl = try_from_slice_impl(root_ident, &args, &properties);
+    let from_message_impl = from_message_impl(root_ident, &args, &properties);
 
     let mut tokens = TokenStream::new();
 
@@ -428,11 +493,16 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
         #message_new_impl
         #debug_impl
         #data_impl
+        #with_buffer_impl
         #try_from_slice_impl
+        // #from_message_impl
     });
 
     if let Representation::UmpOrBytes = args.representation() {
         tokens.extend(secondary_new_impl(root_ident, &args, &properties))
+    }
+    if args.fixed_size {
+        tokens.extend(size_impl(root_ident, &args))
     }
     if let Some(property) = properties.iter().find(|p| p.is_group()) {
         tokens.extend(grouped_impl(root_ident, property));

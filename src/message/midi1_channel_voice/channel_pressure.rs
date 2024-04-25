@@ -68,7 +68,7 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for PressurePr
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::traits::{Channeled, Data, Grouped};
+    use crate::traits::{Channeled, Data, Grouped, RebufferFrom};
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -158,13 +158,23 @@ mod tests {
         );
     }
 
-    // #[test]
-    // fn into_owned() {
-    //     assert_eq!(
-    //         ChannelPressure::<[u32; 1]>::from(
-    //             ChannelPressure::try_from(&[0x2FD6_0900_u32][..]).unwrap()
-    //         ),
-    //         ChannelPressure([0x2FD6_0900_u32]),
-    //     );
-    // }
+    #[test]
+    fn rebuffer_from() {
+        let buffer = [0x2FD6_0900_u32];
+        let borrowed = ChannelPressure::try_from(&buffer[..]).unwrap();
+        assert_eq!(
+            ChannelPressure::<std::vec::Vec<u32>>::rebuffer_from(borrowed),
+            ChannelPressure(std::vec![0x2FD6_0900_u32]),
+        );
+    }
+
+    #[test]
+    fn rebuffer_from_bytes() {
+        let buffer = [0xD6_u8, 0x09_u8];
+        let borrowed = ChannelPressure::try_from(&buffer[..]).unwrap();
+        assert_eq!(
+            ChannelPressure::<std::vec::Vec<u8>>::rebuffer_from(borrowed),
+            ChannelPressure(std::vec![0xD6_u8, 0x09_u8]),
+        );
+    }
 }
