@@ -68,7 +68,9 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for PressurePr
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::traits::{Channeled, Data, Grouped, RebufferFrom, TryRebufferFrom};
+    use crate::traits::{
+        Channeled, Data, Grouped, RebufferFrom, RebufferInto, TryRebufferFrom, TryRebufferInto,
+    };
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -216,5 +218,21 @@ mod tests {
             ChannelPressure::<[u8; 0]>::try_rebuffer_from(borrowed),
             Err(crate::error::BufferOverflow),
         );
+    }
+
+    #[test]
+    fn rebuffer_into() {
+        let buffer = [0x2FD6_0900_u32];
+        let borrowed = ChannelPressure::try_from(&buffer[..]).unwrap();
+        let owned: ChannelPressure<std::vec::Vec<u32>> = borrowed.rebuffer_into();
+        assert_eq!(owned, ChannelPressure(std::vec![0x2FD6_0900_u32]),);
+    }
+
+    #[test]
+    fn rebuffer_into_bytes() {
+        let buffer = [0xD6_u8, 0x09_u8];
+        let borrowed = ChannelPressure::try_from(&buffer[..]).unwrap();
+        let owned: ChannelPressure<std::vec::Vec<u8>> = borrowed.rebuffer_into();
+        assert_eq!(owned, ChannelPressure(std::vec![0xD6_u8, 0x09_u8]),);
     }
 }

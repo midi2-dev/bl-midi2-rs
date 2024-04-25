@@ -96,7 +96,7 @@ pub trait TryRebufferInto<
     T,
 >: Sized
 {
-    fn rebuffer_into(self) -> core::result::Result<T, crate::error::BufferOverflow>;
+    fn try_rebuffer_into(self) -> core::result::Result<T, crate::error::BufferOverflow>;
 }
 
 impl<U: Unit, A: Buffer<Unit = U>, B: Buffer<Unit = U> + BufferMut + BufferDefault, T, V>
@@ -104,7 +104,7 @@ impl<U: Unit, A: Buffer<Unit = U>, B: Buffer<Unit = U> + BufferMut + BufferDefau
 where
     V: TryRebufferFrom<U, A, B, T>,
 {
-    fn rebuffer_into(self) -> core::result::Result<V, crate::error::BufferOverflow> {
+    fn try_rebuffer_into(self) -> core::result::Result<V, crate::error::BufferOverflow> {
         <V as TryRebufferFrom<U, A, B, T>>::try_rebuffer_from(self)
     }
 }
