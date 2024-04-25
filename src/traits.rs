@@ -79,19 +79,51 @@ where
     }
 }
 
-//
-// pub trait UmpIntoUmp<A: Ump, B: Ump, T: Data<A>>: Data<B> + Sized {
-//     fn into_ump(self) -> T;
-// }
+pub trait TryRebufferFrom<
+    U: Unit,
+    A: Buffer<Unit = U>,
+    B: Buffer<Unit = U> + BufferMut + BufferDefault,
+    T,
+>: Sized
+{
+    fn try_rebuffer_from(value: T) -> core::result::Result<Self, crate::error::BufferOverflow>;
+}
 
-// impl<A: Ump, B: Ump, T: Data<A>, U: Data<B>> UmpIntoUmp<U> for T
-// where
-//     U: UmpFromUmp<A, B, T>,
-// {
-//     fn into_ump(self) -> U {
-//         <U as UmpFromUmp<A, B, T>>::from_ump(self)
-//     }
-// }
+pub trait TryRebufferInto<
+    U: Unit,
+    A: Buffer<Unit = U>,
+    B: Buffer<Unit = U> + BufferMut + BufferDefault,
+    T,
+>: Sized
+{
+    fn rebuffer_into(self) -> core::result::Result<T, crate::error::BufferOverflow>;
+}
+
+impl<U: Unit, A: Buffer<Unit = U>, B: Buffer<Unit = U> + BufferMut + BufferDefault, T, V>
+    TryRebufferInto<U, A, B, V> for T
+where
+    V: TryRebufferFrom<U, A, B, T>,
+{
+    fn rebuffer_into(self) -> core::result::Result<V, crate::error::BufferOverflow> {
+        <V as TryRebufferFrom<U, A, B, T>>::try_rebuffer_from(self)
+    }
+}
+
+impl<U: Unit, A: Buffer<Unit = U>, B: Buffer<Unit = U> + BufferMut + BufferDefault, T, V>
+    TryRebufferFrom<U, A, B, T> for V
+where
+    V: Data<B> + WithBuffer<B>,
+    T: Data<A>,
+{
+    fn try_rebuffer_from(value: T) -> core::result::Result<Self, crate::error::BufferOverflow> {
+        let mut buffer = <B as BufferDefault>::default();
+        if value.data().len() > buffer.buffer().len() {
+            return Err(crate::error::BufferOverflow);
+        }
+        buffer.buffer_mut().copy_from_slice(value.data());
+        Ok(<Self as WithBuffer<B>>::with_buffer(buffer))
+    }
+}
 
 pub trait Sysex {
     type ByteType;
