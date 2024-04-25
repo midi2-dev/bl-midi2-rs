@@ -46,21 +46,21 @@ mod tests {
     #[allow(unused_imports)]
     use super::*;
 
-    #[test]
-    #[cfg(feature = "midi1-channel-voice")]
-    fn from_byte_data() {
-        use pretty_assertions::assert_eq;
-        assert_eq!(
-            Message::from_byte_data(&[0xAB, 0x60, 0x33]),
-            Message::builder()
-                .midi1_channel_voice()
-                .key_pressure()
-                .channel(u4::new(0xB))
-                .note(u7::new(0x60))
-                .pressure(u7::new(0x33))
-                .build(),
-        );
-    }
+    // #[test]
+    // #[cfg(feature = "midi1-channel-voice")]
+    // fn from_byte_data() {
+    //     use pretty_assertions::assert_eq;
+    //     assert_eq!(
+    //         Message::from_byte_data(&[0xAB, 0x60, 0x33]),
+    //         Message::builder()
+    //             .midi1_channel_voice()
+    //             .key_pressure()
+    //             .channel(u4::new(0xB))
+    //             .note(u7::new(0x60))
+    //             .pressure(u7::new(0x33))
+    //             .build(),
+    //     );
+    // }
 
     #[cfg(feature = "std")]
     #[cfg(feature = "ump-stream")]

@@ -205,7 +205,7 @@ fn property_setter(property: &Property) -> TokenStream {
     );
     let ty = &property.ty;
     quote! {
-        pub fn #ident(&mut self, value: #ty) -> #ty where B: crate::buffer::BufferMut {
+        pub fn #ident(&mut self, value: #ty) where B: crate::buffer::BufferMut {
             <#meta_type as crate::util::property::Property<B>>::write(&mut self.0, value).unwrap();
         }
     }
@@ -286,7 +286,7 @@ fn try_from_slice_impl(
 ) -> TokenStream {
     let mut validation_steps = TokenStream::new();
     let generic_unit = match args.representation() {
-        Representation::UmpOrBytes => quote! { U: crate::buffer::Buffer },
+        Representation::UmpOrBytes => quote! { U: crate::buffer::Unit },
         _ => TokenStream::new(),
     };
     let unit_type = match args.representation() {

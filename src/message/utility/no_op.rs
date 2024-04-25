@@ -1,5 +1,5 @@
 use crate::message::{
-    common_properties::{UmpMessageTypeProperty, UtilityStatusProperty},
+    common_properties::{ChannelVoiceStatusProperty, UmpMessageTypeProperty},
     utility::UMP_MESSAGE_TYPE,
 };
 
@@ -9,7 +9,7 @@ const STATUS: u8 = 0x0;
 struct NoOp {
     #[property(UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
-    #[property(UtilityStatusProperty<STATUS>)]
+    #[property(ChannelVoiceStatusProperty<STATUS>)]
     status: (),
 }
 
