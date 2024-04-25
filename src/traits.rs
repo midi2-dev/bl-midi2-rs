@@ -59,5 +59,3 @@ pub(crate) trait SysexInternal {
     // that they won't overwrite any important data.
     fn write_datum(&mut self, datum: Self::ByteType, payload_index: usize);
 }
-
-pub(crate) trait Level2Message {}

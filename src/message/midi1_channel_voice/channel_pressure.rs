@@ -68,7 +68,7 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for PressurePr
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::traits::{Channeled, Grouped};
+    use crate::traits::{Channeled, Data, Grouped};
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -138,18 +138,33 @@ mod tests {
         );
     }
 
+    #[test]
+    fn data() {
+        assert_eq!(
+            ChannelPressure::try_from(&[0x2FD6_0900_u32][..])
+                .unwrap()
+                .data(),
+            &[0x2FD6_0900]
+        );
+    }
+
+    #[test]
+    fn data_bytes() {
+        assert_eq!(
+            ChannelPressure::try_from(&[0xD6_u8, 0x09_u8][..])
+                .unwrap()
+                .data(),
+            &[0xD6_u8, 0x09_u8]
+        );
+    }
+
     // #[test]
     // fn into_owned() {
     //     assert_eq!(
-    //         ChannelPressureMessage::from_data(&[0x2FD6_0900, 0x0, 0x0, 0x0])
-    //             .unwrap()
-    //             .into_owned(),
-    //         ChannelPressureOwned::builder()
-    //             .group(u4::new(0xF))
-    //             .channel(u4::new(0x6))
-    //             .pressure(u7::new(0x09))
-    //             .build()
-    //             .unwrap(),
+    //         ChannelPressure::<[u32; 1]>::from(
+    //             ChannelPressure::try_from(&[0x2FD6_0900_u32][..]).unwrap()
+    //         ),
+    //         ChannelPressure([0x2FD6_0900_u32]),
     //     );
     // }
 }

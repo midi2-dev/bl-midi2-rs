@@ -170,11 +170,10 @@ fn generic_buffer_constraint(args: &GenerateMessageArgs) -> TokenStream {
     }
 }
 
-fn message(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream {
-    let constraint = generic_buffer_constraint(args);
+fn message(root_ident: &syn::Ident) -> TokenStream {
     quote! {
         #[derive(PartialEq, Eq)]
-        pub struct #root_ident<B: #constraint>(B);
+        pub struct #root_ident<B: crate::buffer::Buffer>(B);
     }
 }
 
@@ -342,6 +341,16 @@ fn debug_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStrea
     }
 }
 
+fn data_impl(root_ident: &syn::Ident) -> TokenStream {
+    quote! {
+        impl<B: crate::buffer::Buffer> crate::traits::Data<B> for #root_ident<B> {
+            fn data(&self) -> &[B::Unit] {
+                self.0.buffer()
+            }
+        }
+    }
+}
+
 fn try_from_slice_impl(
     root_ident: &syn::Ident,
     args: &GenerateMessageArgs,
@@ -403,10 +412,11 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     let root_ident = &input.ident;
 
     let imports = imports();
-    let message = message(root_ident, &args);
+    let message = message(root_ident);
     let message_impl = message_impl(root_ident, &args, &properties);
     let message_new_impl = message_new_impl(root_ident, &args, &properties);
     let debug_impl = debug_impl(root_ident, &args);
+    let data_impl = data_impl(root_ident);
     let try_from_slice_impl = try_from_slice_impl(root_ident, &args, &properties);
 
     let mut tokens = TokenStream::new();
@@ -417,6 +427,7 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
         #message_impl
         #message_new_impl
         #debug_impl
+        #data_impl
         #try_from_slice_impl
     });
 
