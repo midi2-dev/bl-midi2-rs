@@ -48,7 +48,7 @@ impl<const STATUS: u8, B: crate::buffer::Buffer> crate::util::property::Property
             }
             UNIT_ID_U8 => {
                 let b = buffer.buffer()[0].specialise_u8();
-                u4::new(*b)
+                b.nibble(0)
             }
             _ => unreachable!(),
         };

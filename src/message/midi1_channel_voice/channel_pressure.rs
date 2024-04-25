@@ -88,36 +88,56 @@ mod tests {
         assert_eq!(message, ChannelPressure([0xD6, 0x09]));
     }
 
-    // #[test]
-    // fn group() {
-    //     assert_eq!(
-    //         ChannelPressureMessage::from_data(&[0x2FD6_0900, 0x0, 0x0, 0x0])
-    //             .unwrap()
-    //             .group(),
-    //         u4::new(0xF),
-    //     );
-    // }
-    //
-    // #[test]
-    // fn channel() {
-    //     assert_eq!(
-    //         ChannelPressureMessage::from_data(&[0x2FD6_0900, 0x0, 0x0, 0x0])
-    //             .unwrap()
-    //             .channel(),
-    //         u4::new(0x6),
-    //     );
-    // }
-    //
-    // #[test]
-    // fn pressure() {
-    //     assert_eq!(
-    //         ChannelPressureMessage::from_data(&[0x2FD6_0900, 0x0, 0x0, 0x0])
-    //             .unwrap()
-    //             .pressure(),
-    //         u7::new(0x09),
-    //     );
-    // }
-    //
+    #[test]
+    fn group() {
+        assert_eq!(
+            ChannelPressure::try_from(&[0x2FD6_0900][..])
+                .unwrap()
+                .group(),
+            u4::new(0xF),
+        );
+    }
+
+    #[test]
+    fn channel() {
+        assert_eq!(
+            ChannelPressure::try_from(&[0x2FD6_0900_u32][..])
+                .unwrap()
+                .channel(),
+            u4::new(0x6),
+        );
+    }
+
+    #[test]
+    fn pressure() {
+        assert_eq!(
+            ChannelPressure::try_from(&[0x2FD6_0900_u32][..])
+                .unwrap()
+                .pressure(),
+            u7::new(0x09),
+        );
+    }
+
+    #[test]
+    fn channel_bytes() {
+        assert_eq!(
+            ChannelPressure::try_from(&[0xD6_u8, 0x09_u8][..])
+                .unwrap()
+                .channel(),
+            u4::new(0x6),
+        );
+    }
+
+    #[test]
+    fn pressure_bytes() {
+        assert_eq!(
+            ChannelPressure::try_from(&[0xD6_u8, 0x09_u8][..])
+                .unwrap()
+                .pressure(),
+            u7::new(0x09),
+        );
+    }
+
     // #[test]
     // fn into_owned() {
     //     assert_eq!(
