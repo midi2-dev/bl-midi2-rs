@@ -10,7 +10,7 @@ impl<const TYPE: u8, B: crate::buffer::Ump> crate::util::property::Property<B>
         if buffer.buffer()[0].nibble(0) == crate::u4::new(TYPE) {
             Ok(())
         } else {
-            Err(crate::Error::InvalidData)
+            Err(crate::Error::InvalidData("Incorrect ump message type"))
         }
     }
     fn write(buffer: &mut B, _v: Self::Type) -> crate::result::Result<()>
@@ -35,7 +35,9 @@ impl<const STATUS: u8, B: crate::buffer::Ump> crate::util::property::Property<B>
         if buffer.buffer()[0].nibble(2) == crate::u4::new(STATUS) {
             Ok(())
         } else {
-            Err(crate::Error::InvalidData)
+            Err(crate::Error::InvalidData(
+                "Incorrect utility message status",
+            ))
         }
     }
     fn write(buffer: &mut B, _v: Self::Type) -> crate::result::Result<()>

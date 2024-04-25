@@ -4,6 +4,7 @@
 #[cfg(feature = "std")]
 extern crate std;
 
+pub mod buffer;
 #[cfg(feature = "ci")]
 pub mod ci;
 pub mod message;
@@ -11,7 +12,6 @@ pub mod message;
 #[cfg(test)]
 pub(crate) mod test_support;
 
-mod buffer;
 mod error;
 mod result;
 mod traits;
