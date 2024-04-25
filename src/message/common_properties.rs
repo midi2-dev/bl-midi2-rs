@@ -118,3 +118,22 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for ChannelPro
         u4::new(0x0)
     }
 }
+
+pub struct GroupProperty;
+
+impl<B: crate::buffer::Ump> crate::util::property::Property<B> for GroupProperty {
+    type Type = u4;
+    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
+        Ok(buffer.buffer()[0].nibble(1))
+    }
+    fn write(buffer: &mut B, v: Self::Type) -> crate::result::Result<()>
+    where
+        B: crate::buffer::BufferMut,
+    {
+        buffer.buffer_mut()[0].set_nibble(1, v);
+        Ok(())
+    }
+    fn default() -> Self::Type {
+        u4::new(0x0)
+    }
+}

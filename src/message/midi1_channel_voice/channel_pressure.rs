@@ -61,70 +61,62 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for PressurePr
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     use pretty_assertions::assert_eq;
-//
-//     #[test]
-//     fn builder() {
-//         assert_eq!(
-//             ChannelPressureMessage::builder()
-//                 .group(u4::new(0xF))
-//                 .channel(u4::new(0x6))
-//                 .pressure(u7::new(0x09))
-//                 .build(),
-//             Ok(ChannelPressureMessage::Owned(ChannelPressureOwned([
-//                 0x2FD6_0900,
-//                 0x0,
-//                 0x0,
-//                 0x0
-//             ]))),
-//         );
-//     }
-//
-//     #[test]
-//     fn group() {
-//         assert_eq!(
-//             ChannelPressureMessage::from_data(&[0x2FD6_0900, 0x0, 0x0, 0x0])
-//                 .unwrap()
-//                 .group(),
-//             u4::new(0xF),
-//         );
-//     }
-//
-//     #[test]
-//     fn channel() {
-//         assert_eq!(
-//             ChannelPressureMessage::from_data(&[0x2FD6_0900, 0x0, 0x0, 0x0])
-//                 .unwrap()
-//                 .channel(),
-//             u4::new(0x6),
-//         );
-//     }
-//
-//     #[test]
-//     fn pressure() {
-//         assert_eq!(
-//             ChannelPressureMessage::from_data(&[0x2FD6_0900, 0x0, 0x0, 0x0])
-//                 .unwrap()
-//                 .pressure(),
-//             u7::new(0x09),
-//         );
-//     }
-//
-//     #[test]
-//     fn into_owned() {
-//         assert_eq!(
-//             ChannelPressureMessage::from_data(&[0x2FD6_0900, 0x0, 0x0, 0x0])
-//                 .unwrap()
-//                 .into_owned(),
-//             ChannelPressureOwned::builder()
-//                 .group(u4::new(0xF))
-//                 .channel(u4::new(0x6))
-//                 .pressure(u7::new(0x09))
-//                 .build()
-//                 .unwrap(),
-//         );
-//     }
-// }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn builder() {
+        let mut message = ChannelPressure::new();
+        // message.set_group(u4::new(0xF));
+        message.set_channel(u4::new(0x6));
+        message.set_pressure(u7::new(0x09));
+        assert_eq!(message, ChannelPressure([0x2FD6_0900]));
+    }
+
+    // #[test]
+    // fn group() {
+    //     assert_eq!(
+    //         ChannelPressureMessage::from_data(&[0x2FD6_0900, 0x0, 0x0, 0x0])
+    //             .unwrap()
+    //             .group(),
+    //         u4::new(0xF),
+    //     );
+    // }
+    //
+    // #[test]
+    // fn channel() {
+    //     assert_eq!(
+    //         ChannelPressureMessage::from_data(&[0x2FD6_0900, 0x0, 0x0, 0x0])
+    //             .unwrap()
+    //             .channel(),
+    //         u4::new(0x6),
+    //     );
+    // }
+    //
+    // #[test]
+    // fn pressure() {
+    //     assert_eq!(
+    //         ChannelPressureMessage::from_data(&[0x2FD6_0900, 0x0, 0x0, 0x0])
+    //             .unwrap()
+    //             .pressure(),
+    //         u7::new(0x09),
+    //     );
+    // }
+    //
+    // #[test]
+    // fn into_owned() {
+    //     assert_eq!(
+    //         ChannelPressureMessage::from_data(&[0x2FD6_0900, 0x0, 0x0, 0x0])
+    //             .unwrap()
+    //             .into_owned(),
+    //         ChannelPressureOwned::builder()
+    //             .group(u4::new(0xF))
+    //             .channel(u4::new(0x6))
+    //             .pressure(u7::new(0x09))
+    //             .build()
+    //             .unwrap(),
+    //     );
+    // }
+}
