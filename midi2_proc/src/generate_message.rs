@@ -415,37 +415,6 @@ fn try_from_slice_impl(
     }
 }
 
-fn from_message_impl(
-    root_ident: &syn::Ident,
-    args: &GenerateMessageArgs,
-    properties: &Vec<Property>,
-) -> TokenStream {
-    let mut copy_properties = TokenStream::new();
-    for property in properties.iter().filter(|p| !p.is_group()) {
-        let meta_type = &property.meta_type;
-        copy_properties.extend(quote! {
-            <#meta_type as crate::util::property::Property<C>>::write(
-                &mut buffer,
-                <#meta_type as crate::util::property::Property<B>>::read(&value.0).unwrap(),
-            ).unwrap();
-        });
-    }
-    quote! {
-        impl<
-                U: crate::buffer::Unit,
-                B: crate::buffer::Buffer<Unit = U>,
-                C: crate::buffer::Buffer<Unit = U> + crate::buffer::BufferMut + crate::buffer::BufferDefault,
-            > crate::traits::FromMessage<#root_ident<B>> for #root_ident<C>
-        {
-            fn from_message(value: #root_ident<B>) -> Self {
-                let mut buffer = <C as crate::buffer::BufferDefault>::default();
-                #copy_properties
-                Self(buffer)
-            }
-        }
-    }
-}
-
 fn grouped_impl(root_ident: &syn::Ident, property: &Property) -> TokenStream {
     let setter = property_setter(property, false);
     let getter = property_getter(property, false);
@@ -482,7 +451,6 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     let data_impl = data_impl(root_ident);
     let with_buffer_impl = with_buffer_impl(root_ident);
     let try_from_slice_impl = try_from_slice_impl(root_ident, &args, &properties);
-    let from_message_impl = from_message_impl(root_ident, &args, &properties);
 
     let mut tokens = TokenStream::new();
 
@@ -495,7 +463,6 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
         #data_impl
         #with_buffer_impl
         #try_from_slice_impl
-        // #from_message_impl
     });
 
     if let Representation::UmpOrBytes = args.representation() {

@@ -258,4 +258,22 @@ mod rebuffer_tests {
             borrowed.try_rebuffer_into();
         assert_eq!(owned, Ok(ChannelPressure([0xD6_u8, 0x09_u8])));
     }
+
+    #[test]
+    fn try_rebuffer_into_fail() {
+        let buffer = [0x2FD6_0900_u32];
+        let borrowed = ChannelPressure::try_from(&buffer[..]).unwrap();
+        let owned: core::result::Result<ChannelPressure<[u32; 0]>, crate::error::BufferOverflow> =
+            borrowed.try_rebuffer_into();
+        assert_eq!(owned, Err(crate::error::BufferOverflow));
+    }
+
+    #[test]
+    fn try_rebuffer_into_bytes_fail() {
+        let buffer = [0xD6_u8, 0x09_u8];
+        let borrowed = ChannelPressure::try_from(&buffer[..]).unwrap();
+        let owned: core::result::Result<ChannelPressure<[u8; 0]>, crate::error::BufferOverflow> =
+            borrowed.try_rebuffer_into();
+        assert_eq!(owned, Err(crate::error::BufferOverflow));
+    }
 }
