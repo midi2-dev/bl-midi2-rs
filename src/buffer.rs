@@ -1,3 +1,5 @@
+use crate::error::BufferOverflow;
+
 pub(crate) const UNIT_ID_U8: u8 = 0;
 pub(crate) const UNIT_ID_U32: u8 = 1;
 
@@ -77,11 +79,13 @@ pub trait BufferDefault {
     fn default() -> Self;
 }
 
-pub trait BufferResizable {
+pub trait BufferResize {
     fn resize(&mut self, size: usize);
 }
 
-pub trait BufferFixedSize {}
+pub trait BufferTryResize {
+    fn try_resize(&mut self, size: usize) -> Result<(), BufferOverflow>;
+}
 
 pub trait Ump: Buffer<Unit = u32> {}
 
@@ -130,7 +134,15 @@ impl<const SIZE: usize, U: Unit> BufferDefault for [U; SIZE] {
     }
 }
 
-impl<const SIZE: usize, U: Unit> BufferFixedSize for [U; SIZE] {}
+impl<const SIZE: usize, U: Unit> BufferTryResize for [U; SIZE] {
+    fn try_resize(&mut self, size: usize) -> Result<(), BufferOverflow> {
+        if size > self.len() {
+            Err(BufferOverflow)
+        } else {
+            Ok(())
+        }
+    }
+}
 
 impl<U: Unit> Buffer for std::vec::Vec<U> {
     type Unit = U;
@@ -145,7 +157,7 @@ impl<U: Unit> BufferMut for std::vec::Vec<U> {
     }
 }
 
-impl<U: Unit> BufferResizable for std::vec::Vec<U> {
+impl<U: Unit> BufferResize for std::vec::Vec<U> {
     fn resize(&mut self, size: usize) {
         self.resize(size, U::zero());
     }

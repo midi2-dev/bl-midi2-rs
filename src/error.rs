@@ -11,7 +11,7 @@ pub enum Error {
 }
 
 impl core::convert::From<BufferOverflow> for Error {
-    fn from(value: BufferOverflow) -> Self {
+    fn from(_: BufferOverflow) -> Self {
         Error::BufferOverflow
     }
 }

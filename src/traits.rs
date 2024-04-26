@@ -1,5 +1,5 @@
 use crate::buffer::{
-    Buffer, BufferDefault, BufferFixedSize, BufferMut, BufferResizable, Bytes, Ump, Unit,
+    Buffer, BufferDefault, BufferMut, BufferResize, BufferTryResize, Bytes, Ump, Unit,
 };
 
 pub trait Data<B: Buffer> {
@@ -30,7 +30,7 @@ pub trait Streamed<B: Ump> {
 pub trait RebufferFrom<
     U: Unit,
     A: Buffer<Unit = U>,
-    B: Buffer<Unit = U> + BufferMut + BufferDefault + BufferResizable,
+    B: Buffer<Unit = U> + BufferMut + BufferDefault + BufferResize,
     T,
 >: Sized
 {
@@ -40,7 +40,7 @@ pub trait RebufferFrom<
 pub trait RebufferInto<
     U: Unit,
     A: Buffer<Unit = U>,
-    B: Buffer<Unit = U> + BufferMut + BufferDefault + BufferResizable,
+    B: Buffer<Unit = U> + BufferMut + BufferDefault + BufferResize,
     T,
 >: Sized
 {
@@ -50,7 +50,7 @@ pub trait RebufferInto<
 impl<
         U: Unit,
         A: Buffer<Unit = U>,
-        B: Buffer<Unit = U> + BufferMut + BufferDefault + BufferResizable,
+        B: Buffer<Unit = U> + BufferMut + BufferDefault + BufferResize,
         T,
         V,
     > RebufferInto<U, A, B, V> for T
@@ -65,7 +65,7 @@ where
 impl<
         U: Unit,
         A: Buffer<Unit = U>,
-        B: Buffer<Unit = U> + BufferMut + BufferDefault + BufferResizable,
+        B: Buffer<Unit = U> + BufferMut + BufferDefault + BufferResize,
         T,
         V,
     > RebufferFrom<U, A, B, T> for V
@@ -84,7 +84,7 @@ where
 pub trait TryRebufferFrom<
     U: Unit,
     A: Buffer<Unit = U>,
-    B: Buffer<Unit = U> + BufferMut + BufferDefault + BufferFixedSize,
+    B: Buffer<Unit = U> + BufferMut + BufferDefault + BufferTryResize,
     T,
 >: Sized
 {
@@ -94,7 +94,7 @@ pub trait TryRebufferFrom<
 pub trait TryRebufferInto<
     U: Unit,
     A: Buffer<Unit = U>,
-    B: Buffer<Unit = U> + BufferMut + BufferDefault + BufferFixedSize,
+    B: Buffer<Unit = U> + BufferMut + BufferDefault + BufferTryResize,
     T,
 >: Sized
 {
@@ -104,7 +104,7 @@ pub trait TryRebufferInto<
 impl<
         U: Unit,
         A: Buffer<Unit = U>,
-        B: Buffer<Unit = U> + BufferMut + BufferDefault + BufferFixedSize,
+        B: Buffer<Unit = U> + BufferMut + BufferDefault + BufferTryResize,
         T,
         V,
     > TryRebufferInto<U, A, B, V> for T
@@ -119,7 +119,7 @@ where
 impl<
         U: Unit,
         A: Buffer<Unit = U>,
-        B: Buffer<Unit = U> + BufferMut + BufferDefault + BufferFixedSize,
+        B: Buffer<Unit = U> + BufferMut + BufferDefault + BufferTryResize,
         T,
         V,
     > TryRebufferFrom<U, A, B, T> for V
@@ -129,23 +129,21 @@ where
 {
     fn try_rebuffer_from(value: T) -> core::result::Result<Self, crate::error::BufferOverflow> {
         let mut buffer = <B as BufferDefault>::default();
-        if value.data().len() > buffer.buffer().len() {
-            return Err(crate::error::BufferOverflow);
-        }
+        buffer.try_resize(value.data().len())?;
         buffer.buffer_mut().copy_from_slice(value.data());
         Ok(<Self as WithBuffer<B>>::with_buffer(buffer))
     }
 }
 
-pub trait FromBytes<A: Bytes, B: Ump + BufferMut + BufferDefault + BufferResizable, T> {
+pub trait FromBytes<A: Bytes, B: Ump + BufferMut + BufferDefault + BufferResize, T> {
     fn from_bytes(other: T) -> Self;
 }
 
-pub trait IntoUmp<A: Bytes, B: Ump + BufferMut + BufferDefault + BufferResizable, T> {
+pub trait IntoUmp<A: Bytes, B: Ump + BufferMut + BufferDefault + BufferResize, T> {
     fn into_ump(self) -> T;
 }
 
-impl<A: Bytes, B: Ump + BufferMut + BufferDefault + BufferResizable, T, U> IntoUmp<A, B, U> for T
+impl<A: Bytes, B: Ump + BufferMut + BufferDefault + BufferResize, T, U> IntoUmp<A, B, U> for T
 where
     U: FromBytes<A, B, T>,
 {
@@ -154,15 +152,15 @@ where
     }
 }
 
-pub trait FromUmp<A: Ump, B: Bytes + BufferMut + BufferDefault + BufferResizable, T> {
+pub trait FromUmp<A: Ump, B: Bytes + BufferMut + BufferDefault + BufferResize, T> {
     fn from_ump(other: T) -> Self;
 }
 
-pub trait IntoBytes<A: Ump, B: Bytes + BufferMut + BufferDefault + BufferResizable, T> {
+pub trait IntoBytes<A: Ump, B: Bytes + BufferMut + BufferDefault + BufferResize, T> {
     fn into_bytes(self) -> T;
 }
 
-impl<A: Ump, B: Bytes + BufferMut + BufferDefault + BufferResizable, T, U> IntoBytes<A, B, U> for T
+impl<A: Ump, B: Bytes + BufferMut + BufferDefault + BufferResize, T, U> IntoBytes<A, B, U> for T
 where
     U: FromUmp<A, B, T>,
 {

@@ -468,7 +468,7 @@ fn from_bytes_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> Token
                 B: crate::buffer::Ump
                     + crate::buffer::BufferMut
                     + crate::buffer::BufferDefault
-                    + crate::buffer::BufferResizable,
+                    + crate::buffer::BufferResize,
             > crate::traits::FromBytes<A, B, #root_ident<A>> for #root_ident<B>
         {
             fn from_bytes(other: #root_ident<A>) -> Self {
@@ -498,7 +498,7 @@ fn from_ump_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenSt
                 B: crate::buffer::Bytes
                     + crate::buffer::BufferMut
                     + crate::buffer::BufferDefault
-                    + crate::buffer::BufferResizable,
+                    + crate::buffer::BufferResize,
             > crate::traits::FromUmp<A, B, #root_ident<A>> for #root_ident<B>
         {
             fn from_ump(other: #root_ident<A>) -> Self {
