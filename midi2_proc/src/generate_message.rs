@@ -275,7 +275,7 @@ fn secondary_new_impl(
 ) -> TokenStream {
     let owned_type = owned_type_bytes(args);
     let mut set_defaults = TokenStream::new();
-    for property in properties.iter().filter(|p| !p.is_group()) {
+    for property in properties {
         let meta_type = &property.meta_type;
         set_defaults.extend(quote! {
             <#meta_type as crate::util::property::Property<#owned_type>>::write(
@@ -311,9 +311,10 @@ fn owned_type_bytes(args: &GenerateMessageArgs) -> TokenStream {
     }
 }
 
-fn size_impl(root_ident: &syn::Ident) -> TokenStream {
+fn size_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream {
+    let constraint = generic_buffer_constraint(args);
     quote! {
-        impl<B: crate::buffer::Buffer> crate::traits::Size<B> for #root_ident<B> {
+        impl<B: #constraint> crate::traits::Size<B> for #root_ident<B> {
             fn size(&self) -> usize {
                 <Self as crate::traits::MinSize<B>>::min_size()
             }
@@ -334,8 +335,9 @@ fn min_size_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenSt
         (&Some(ump_size), None) => quote! { #ump_size },
         (None, None) => panic!("Couldn't deduce message size"),
     };
+    let constraint = generic_buffer_constraint(args);
     quote! {
-        impl<B: crate::buffer::Buffer> crate::traits::MinSize<B> for #root_ident<B> {
+        impl<B: #constraint> crate::traits::MinSize<B> for #root_ident<B> {
             fn min_size() -> usize {
                 #body
             }
@@ -377,9 +379,10 @@ fn debug_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStrea
     }
 }
 
-fn data_impl(root_ident: &syn::Ident) -> TokenStream {
+fn data_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream {
+    let constraint = generic_buffer_constraint(args);
     quote! {
-        impl<B: crate::buffer::Buffer> crate::traits::Data<B> for #root_ident<B> {
+        impl<B: #constraint> crate::traits::Data<B> for #root_ident<B> {
             fn data(&self) -> &[B::Unit] {
                 self.0.buffer()
             }
@@ -429,6 +432,40 @@ fn try_from_slice_impl(
     }
 }
 
+fn new_with_buffer_impl(
+    root_ident: &syn::Ident,
+    args: &GenerateMessageArgs,
+    properties: &Vec<Property>,
+) -> TokenStream {
+    let constraint = generic_buffer_constraint(args);
+    let mut initialise_properties = TokenStream::new();
+    for property in properties {
+        let meta_type = &property.meta_type;
+        initialise_properties.extend(quote! {
+            <#meta_type as PropertyGenMessage<B>>::write(
+                &mut buffer,
+                <#meta_type as PropertyGenMessage<B>>::default(),
+            );
+        });
+    }
+    quote! {
+        impl<B: #constraint
+                    + crate::buffer::BufferMut
+                    + crate::buffer::BufferDefault
+                    + crate::buffer::BufferResize
+        > #root_ident<B>
+        {
+            pub fn new_with_buffer() -> #root_ident<B>
+            {
+                let mut buffer = <B as crate::buffer::BufferDefault>::default();
+                buffer.resize(<Self as crate::traits::MinSize<B>>::min_size());
+                #initialise_properties
+                #root_ident::<B>(buffer)
+            }
+        }
+    }
+}
+
 fn grouped_impl(root_ident: &syn::Ident, property: &Property) -> TokenStream {
     let setter = property_setter(property, false);
     let getter = property_getter(property, false);
@@ -453,7 +490,7 @@ fn channeled_impl(root_ident: &syn::Ident, property: &Property) -> TokenStream {
 
 fn from_bytes_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
     let mut convert_properties = TokenStream::new();
-    for property in properties.iter().filter(|p| !p.is_group()) {
+    for property in properties {
         let meta_type = &property.meta_type;
         convert_properties.extend(quote! {
             <#meta_type as PropertyGenMessage<B>>::write(
@@ -483,7 +520,7 @@ fn from_bytes_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> Token
 
 fn from_ump_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
     let mut convert_properties = TokenStream::new();
-    for property in properties.iter().filter(|p| !p.is_group()) {
+    for property in properties {
         let meta_type = &property.meta_type;
         convert_properties.extend(quote! {
             <#meta_type as PropertyGenMessage<B>>::write(
@@ -522,10 +559,11 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     let message_impl = message_impl(root_ident, &args, &properties);
     let message_new_impl = message_new_impl(root_ident, &args, &properties);
     let debug_impl = debug_impl(root_ident, &args);
-    let data_impl = data_impl(root_ident);
+    let data_impl = data_impl(root_ident, &args);
     let min_size_impl = min_size_impl(root_ident, &args);
     let with_buffer_impl = with_buffer_impl(root_ident);
     let try_from_slice_impl = try_from_slice_impl(root_ident, &args, &properties);
+    let new_with_buffer_impl = new_with_buffer_impl(root_ident, &args, &properties);
 
     let mut tokens = TokenStream::new();
 
@@ -539,13 +577,14 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
         #min_size_impl
         #with_buffer_impl
         #try_from_slice_impl
+        #new_with_buffer_impl
     });
 
     if let Representation::UmpOrBytes = args.representation() {
         tokens.extend(secondary_new_impl(root_ident, &args, &properties))
     }
     if args.fixed_size {
-        tokens.extend(size_impl(root_ident))
+        tokens.extend(size_impl(root_ident, &args))
     }
     if let Some(property) = properties.iter().find(|p| p.is_group()) {
         tokens.extend(grouped_impl(root_ident, property));

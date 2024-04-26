@@ -121,16 +121,26 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for ChannelPro
 
 pub struct GroupProperty;
 
-impl<B: crate::buffer::Ump> crate::util::property::Property<B> for GroupProperty {
+impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for GroupProperty {
     type Type = u4;
     fn read(buffer: &B) -> crate::result::Result<Self::Type> {
-        Ok(buffer.buffer()[0].nibble(1))
+        match <B::Unit as UnitPrivate>::UNIT_ID {
+            UNIT_ID_U32 => {
+                let b = buffer.buffer()[0].specialise_u32();
+                Ok(b.nibble(1))
+            }
+            UNIT_ID_U8 => Ok(<Self as crate::util::property::Property<B>>::default()),
+            _ => unreachable!(),
+        }
     }
     fn write(buffer: &mut B, v: Self::Type) -> crate::result::Result<()>
     where
         B: crate::buffer::BufferMut,
     {
-        buffer.buffer_mut()[0].set_nibble(1, v);
+        if <B::Unit as UnitPrivate>::UNIT_ID == UNIT_ID_U32 {
+            let b = buffer.buffer_mut()[0].specialise_u32_mut();
+            b.set_nibble(1, v);
+        }
         Ok(())
     }
     fn default() -> Self::Type {
