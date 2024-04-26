@@ -517,16 +517,7 @@ fn channeled_impl(root_ident: &syn::Ident, property: &Property) -> TokenStream {
 }
 
 fn from_bytes_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
-    let mut convert_properties = TokenStream::new();
-    for property in properties {
-        let meta_type = &property.meta_type;
-        convert_properties.extend(quote! {
-            <#meta_type as PropertyGenMessage<B>>::write(
-                &mut buffer,
-                <#meta_type as PropertyGenMessage<A>>::read(&other.0).unwrap()
-            );
-        });
-    }
+    let convert_properties = convert_propertys_from_bytes_to_ump(properties);
     quote! {
         impl<
                 A: crate::buffer::Bytes,
@@ -546,7 +537,28 @@ fn from_bytes_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> Token
     }
 }
 
-fn from_ump_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
+fn try_from_bytes_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
+    let convert_properties = convert_propertys_from_bytes_to_ump(properties);
+    quote! {
+        impl<
+                A: crate::buffer::Bytes,
+                B: crate::buffer::Ump
+                    + crate::buffer::BufferMut
+                    + crate::buffer::BufferDefault
+                    + crate::buffer::BufferTryResize,
+            > crate::traits::TryFromBytes<A, B, #root_ident<A>> for #root_ident<B>
+        {
+            fn try_from_bytes(other: #root_ident<A>) -> core::result::Result<Self, crate::error::BufferOverflow> {
+                let mut buffer = <B as crate::buffer::BufferDefault>::default();
+                buffer.try_resize(<#root_ident<B> as crate::traits::MinSize<B>>::min_size())?;
+                #convert_properties
+                Ok(Self(buffer))
+            }
+        }
+    }
+}
+
+fn convert_propertys_from_bytes_to_ump(properties: &Vec<Property>) -> TokenStream {
     let mut convert_properties = TokenStream::new();
     for property in properties {
         let meta_type = &property.meta_type;
@@ -557,6 +569,11 @@ fn from_ump_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenSt
             );
         });
     }
+    convert_properties
+}
+
+fn from_ump_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
+    let convert_properties = convert_propertys_from_ump_to_bytes(properties);
     quote! {
         impl<
                 A: crate::buffer::Ump,
@@ -574,6 +591,41 @@ fn from_ump_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenSt
             }
         }
     }
+}
+
+fn try_from_ump_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
+    let convert_properties = convert_propertys_from_ump_to_bytes(properties);
+    quote! {
+        impl<
+                A: crate::buffer::Ump,
+                B: crate::buffer::Bytes
+                    + crate::buffer::BufferMut
+                    + crate::buffer::BufferDefault
+                    + crate::buffer::BufferTryResize,
+            > crate::traits::TryFromUmp<A, B, #root_ident<A>> for #root_ident<B>
+        {
+            fn try_from_ump(other: #root_ident<A>) -> core::result::Result<Self, crate::error::BufferOverflow> {
+                let mut buffer = <B as crate::buffer::BufferDefault>::default();
+                buffer.try_resize(<#root_ident<B> as crate::traits::MinSize<B>>::min_size())?;
+                #convert_properties
+                Ok(Self(buffer))
+            }
+        }
+    }
+}
+
+fn convert_propertys_from_ump_to_bytes(properties: &Vec<Property>) -> TokenStream {
+    let mut convert_properties = TokenStream::new();
+    for property in properties {
+        let meta_type = &property.meta_type;
+        convert_properties.extend(quote! {
+            <#meta_type as PropertyGenMessage<B>>::write(
+                &mut buffer,
+                <#meta_type as PropertyGenMessage<A>>::read(&other.0).unwrap()
+            );
+        });
+    }
+    convert_properties
 }
 
 pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1 {
@@ -626,6 +678,8 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     if let Representation::UmpOrBytes = args.representation() {
         tokens.extend(from_bytes_impl(root_ident, &properties));
         tokens.extend(from_ump_impl(root_ident, &properties));
+        tokens.extend(try_from_bytes_impl(root_ident, &properties));
+        tokens.extend(try_from_ump_impl(root_ident, &properties));
     }
 
     tokens.into()
