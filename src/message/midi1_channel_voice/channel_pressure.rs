@@ -101,6 +101,22 @@ mod tests {
     }
 
     #[test]
+    fn from_outsized_data() {
+        assert_eq!(
+            ChannelPressure::try_from(&[0x20D0_0000_u32, 0x0_u32][..]),
+            Ok(ChannelPressure(&[0x20D0_0000_u32, 0x0_u32][..])),
+        );
+    }
+
+    #[test]
+    fn from_empty_data() {
+        assert_eq!(
+            ChannelPressure::try_from(&<[u32; 0] as Default>::default()[..]),
+            Err(crate::error::Error::InvalidData("Slice is too short")),
+        );
+    }
+
+    #[test]
     fn channel() {
         assert_eq!(
             ChannelPressure::try_from(&[0x2FD6_0900_u32][..])
