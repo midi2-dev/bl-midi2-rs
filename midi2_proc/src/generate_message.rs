@@ -235,7 +235,7 @@ fn property_setter(property: &Property, public: bool) -> TokenStream {
     }
 }
 
-fn message_new_impl(
+fn message_new_arr_impl(
     root_ident: &syn::Ident,
     args: &GenerateMessageArgs,
     properties: &Vec<Property>,
@@ -257,7 +257,7 @@ fn message_new_impl(
     }
     quote! {
         impl #root_ident<#owned_type> {
-            pub fn new() -> Self {
+            pub fn new_arr() -> Self {
                 let mut buffer: #owned_type = core::default::Default::default();
                 // todo
                 // buffer.resize(Self::min_size())
@@ -268,7 +268,7 @@ fn message_new_impl(
     }
 }
 
-fn secondary_new_impl(
+fn secondary_new_arr_impl(
     root_ident: &syn::Ident,
     args: &GenerateMessageArgs,
     properties: &Vec<Property>,
@@ -286,10 +286,8 @@ fn secondary_new_impl(
     }
     quote! {
         impl #root_ident<#owned_type> {
-            pub fn new_bytes() -> Self {
+            pub fn new_arr_bytes() -> Self {
                 let mut buffer: #owned_type = core::default::Default::default();
-                // todo
-                // buffer.resize(Self::min_size())
                 #set_defaults
                 #root_ident(buffer)
             }
@@ -455,7 +453,7 @@ fn new_with_buffer_impl(
                     + crate::buffer::BufferResize
         > #root_ident<B>
         {
-            pub fn new_with_buffer() -> #root_ident<B>
+            pub fn new() -> #root_ident<B>
             {
                 let mut buffer = <B as crate::buffer::BufferDefault>::default();
                 buffer.resize(<Self as crate::traits::MinSize<B>>::min_size());
@@ -557,7 +555,6 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     let imports = imports();
     let message = message(root_ident);
     let message_impl = message_impl(root_ident, &args, &properties);
-    let message_new_impl = message_new_impl(root_ident, &args, &properties);
     let debug_impl = debug_impl(root_ident, &args);
     let data_impl = data_impl(root_ident, &args);
     let min_size_impl = min_size_impl(root_ident, &args);
@@ -571,7 +568,6 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
         #imports
         #message
         #message_impl
-        #message_new_impl
         #debug_impl
         #data_impl
         #min_size_impl
@@ -580,8 +576,11 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
         #new_with_buffer_impl
     });
 
-    if let Representation::UmpOrBytes = args.representation() {
-        tokens.extend(secondary_new_impl(root_ident, &args, &properties))
+    if args.fixed_size {
+        tokens.extend(message_new_arr_impl(root_ident, &args, &properties));
+        if let Representation::UmpOrBytes = args.representation() {
+            tokens.extend(secondary_new_arr_impl(root_ident, &args, &properties));
+        }
     }
     if args.fixed_size {
         tokens.extend(size_impl(root_ident, &args))

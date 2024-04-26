@@ -73,7 +73,7 @@ mod tests {
 
     #[test]
     fn setters() {
-        let mut message = ChannelPressure::new();
+        let mut message = ChannelPressure::new_arr();
         message.set_group(u4::new(0xF));
         message.set_channel(u4::new(0x6));
         message.set_pressure(u7::new(0x09));
@@ -82,7 +82,7 @@ mod tests {
 
     #[test]
     fn setters_bytes() {
-        let mut message = ChannelPressure::new_bytes();
+        let mut message = ChannelPressure::new_arr_bytes();
         message.set_channel(u4::new(0x6));
         message.set_pressure(u7::new(0x09));
         assert_eq!(message, ChannelPressure([0xD6, 0x09]));
@@ -181,8 +181,8 @@ mod tests {
     #[test]
     fn new_with_custom_buffer() {
         assert_eq!(
-            ChannelPressure::<std::vec::Vec<u32>>::new_with_buffer(),
-            ChannelPressure::new().rebuffer_into(),
+            ChannelPressure::<std::vec::Vec<u32>>::new(),
+            ChannelPressure::new_arr().rebuffer_into(),
         )
     }
 }

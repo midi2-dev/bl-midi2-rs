@@ -19,7 +19,7 @@ mod tests {
 
     #[test]
     fn new() {
-        assert_eq!(NoOp::new(), NoOp([0x0000_0000]));
+        assert_eq!(NoOp::new_arr(), NoOp([0x0000_0000]));
     }
 
     #[test]
