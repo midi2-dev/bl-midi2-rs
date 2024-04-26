@@ -161,6 +161,14 @@ mod tests {
     }
 
     #[test]
+    fn data_with_outsized_buffer() {
+        assert_eq!(
+            ChannelPressure::<[u32; 2]>::try_new().unwrap().data(),
+            &[0x20D0_0000]
+        );
+    }
+
+    #[test]
     fn from_bytes() {
         let buffer = [0xD6_u8, 0x09_u8];
         let borrowed = ChannelPressure::try_from(&buffer[..]).unwrap();

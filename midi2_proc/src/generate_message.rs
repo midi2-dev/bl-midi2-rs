@@ -159,6 +159,7 @@ fn imports() -> TokenStream {
     quote! {
         use crate::buffer::UnitPrivate as UnitPrivateGenMessage;
         use crate::util::property::Property as PropertyGenMessage;
+        use crate::traits::Size as SizeGenMessage;
     }
 }
 
@@ -382,7 +383,7 @@ fn data_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream
     quote! {
         impl<B: #constraint> crate::traits::Data<B> for #root_ident<B> {
             fn data(&self) -> &[B::Unit] {
-                self.0.buffer()
+                &self.0.buffer()[..self.size()]
             }
         }
     }
