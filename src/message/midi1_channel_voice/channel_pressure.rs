@@ -185,6 +185,46 @@ mod tests {
             ChannelPressure::new_arr().rebuffer_into(),
         )
     }
+
+    #[test]
+    fn new_with_custom_buffer_bytes() {
+        assert_eq!(
+            ChannelPressure::<std::vec::Vec<u8>>::new(),
+            ChannelPressure::new_arr_bytes().rebuffer_into(),
+        )
+    }
+
+    #[test]
+    fn try_new_with_custom_buffer() {
+        assert_eq!(
+            ChannelPressure::<[u32; 2]>::try_new(),
+            Ok(ChannelPressure([0x20D0_0000, 0x0]))
+        )
+    }
+
+    #[test]
+    fn try_new_with_custom_buffer_bytes() {
+        assert_eq!(
+            ChannelPressure::<[u8; 3]>::try_new(),
+            Ok(ChannelPressure([0xD0, 0x00, 0x0]))
+        )
+    }
+
+    #[test]
+    fn try_new_with_custom_buffer_fail() {
+        assert_eq!(
+            ChannelPressure::<[u32; 0]>::try_new(),
+            Err(crate::error::BufferOverflow),
+        )
+    }
+
+    #[test]
+    fn try_new_with_custom_buffer_bytes_fail() {
+        assert_eq!(
+            ChannelPressure::<[u8; 1]>::try_new(),
+            Err(crate::error::BufferOverflow),
+        )
+    }
 }
 
 #[cfg(test)]

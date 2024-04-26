@@ -430,22 +430,13 @@ fn try_from_slice_impl(
     }
 }
 
-fn new_with_buffer_impl(
+fn new_impl(
     root_ident: &syn::Ident,
     args: &GenerateMessageArgs,
     properties: &Vec<Property>,
 ) -> TokenStream {
     let constraint = generic_buffer_constraint(args);
-    let mut initialise_properties = TokenStream::new();
-    for property in properties {
-        let meta_type = &property.meta_type;
-        initialise_properties.extend(quote! {
-            <#meta_type as PropertyGenMessage<B>>::write(
-                &mut buffer,
-                <#meta_type as PropertyGenMessage<B>>::default(),
-            );
-        });
-    }
+    let initialise_properties = initialise_property_statements(properties);
     quote! {
         impl<B: #constraint
                     + crate::buffer::BufferMut
@@ -462,6 +453,45 @@ fn new_with_buffer_impl(
             }
         }
     }
+}
+
+fn try_new_impl(
+    root_ident: &syn::Ident,
+    args: &GenerateMessageArgs,
+    properties: &Vec<Property>,
+) -> TokenStream {
+    let constraint = generic_buffer_constraint(args);
+    let initialise_properties = initialise_property_statements(properties);
+    quote! {
+        impl<B: #constraint
+                    + crate::buffer::BufferMut
+                    + crate::buffer::BufferDefault
+                    + crate::buffer::BufferTryResize
+        > #root_ident<B>
+        {
+            pub fn try_new() -> core::result::Result<#root_ident<B>, crate::error::BufferOverflow>
+            {
+                let mut buffer = <B as crate::buffer::BufferDefault>::default();
+                buffer.try_resize(<Self as crate::traits::MinSize<B>>::min_size())?;
+                #initialise_properties
+                Ok(#root_ident::<B>(buffer))
+            }
+        }
+    }
+}
+
+fn initialise_property_statements(properties: &Vec<Property>) -> TokenStream {
+    let mut initialise_properties = TokenStream::new();
+    for property in properties {
+        let meta_type = &property.meta_type;
+        initialise_properties.extend(quote! {
+            <#meta_type as PropertyGenMessage<B>>::write(
+                &mut buffer,
+                <#meta_type as PropertyGenMessage<B>>::default(),
+            );
+        });
+    }
+    initialise_properties
 }
 
 fn grouped_impl(root_ident: &syn::Ident, property: &Property) -> TokenStream {
@@ -560,7 +590,8 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     let min_size_impl = min_size_impl(root_ident, &args);
     let with_buffer_impl = with_buffer_impl(root_ident);
     let try_from_slice_impl = try_from_slice_impl(root_ident, &args, &properties);
-    let new_with_buffer_impl = new_with_buffer_impl(root_ident, &args, &properties);
+    let new_impl = new_impl(root_ident, &args, &properties);
+    let try_new_impl = try_new_impl(root_ident, &args, &properties);
 
     let mut tokens = TokenStream::new();
 
@@ -573,7 +604,8 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
         #min_size_impl
         #with_buffer_impl
         #try_from_slice_impl
-        #new_with_buffer_impl
+        #new_impl
+        #try_new_impl
     });
 
     if args.fixed_size {
