@@ -53,11 +53,13 @@ impl UnitPrivate for u32 {
 pub trait Unit: UnitPrivate {
     fn zero() -> Self;
 }
+
 impl Unit for u8 {
     fn zero() -> Self {
         0x0
     }
 }
+
 impl Unit for u32 {
     fn zero() -> Self {
         0x0

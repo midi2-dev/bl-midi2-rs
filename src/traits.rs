@@ -22,7 +22,7 @@ pub trait Channeled<B: Buffer> {
 
 pub trait Streamed<B: Ump> {
     fn stream_id(&self) -> u8;
-    fn set_stream_id(&mut self, channel: u8)
+    fn set_stream_id(&mut self, stream_id: u8)
     where
         B: BufferMut;
 }
