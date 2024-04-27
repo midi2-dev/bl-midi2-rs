@@ -1,5 +1,5 @@
 pub mod channel_pressure;
-// pub mod control_change;
+pub mod control_change;
 // pub mod key_pressure;
 // pub mod note_off;
 // pub mod note_on;

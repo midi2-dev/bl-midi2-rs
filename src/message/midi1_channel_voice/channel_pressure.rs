@@ -1,75 +1,36 @@
 use crate::{
-    buffer::{UnitPrivate, UNIT_ID_U32, UNIT_ID_U8},
-    message::{
-        common_properties::{
-            ChannelProperty, ChannelVoiceStatusProperty, GroupProperty, UmpMessageTypeProperty,
-        },
-        midi1_channel_voice::UMP_MESSAGE_TYPE,
-    },
-    numeric_types::*,
-    util::BitOps,
+    message::{common_properties, midi1_channel_voice::UMP_MESSAGE_TYPE},
+    util::schema,
 };
 
 const STATUS: u8 = 0b1101;
 
 #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
 struct ChannelPressure {
-    #[property(UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
+    #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
-    #[property(ChannelVoiceStatusProperty<STATUS>)]
+    #[property(common_properties::ChannelVoiceStatusProperty<STATUS>)]
     status: (),
-    #[property(ChannelProperty)]
-    channel: u4,
-    #[property(GroupProperty)]
-    group: u4,
-    #[property(PressureProperty)]
-    pressure: u7,
-}
-
-struct PressureProperty;
-
-impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for PressureProperty {
-    type Type = u7;
-    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
-        match <B::Unit as UnitPrivate>::UNIT_ID {
-            UNIT_ID_U32 => {
-                let b = buffer.buffer()[0].specialise_u32();
-                Ok(b.septet(2))
-            }
-            UNIT_ID_U8 => {
-                let b = buffer.buffer()[1].specialise_u8();
-                Ok(b.septet(0))
-            }
-            _ => unreachable!(),
-        }
-    }
-    fn write(buffer: &mut B, v: Self::Type) -> crate::result::Result<()>
-    where
-        B: crate::buffer::BufferMut,
-    {
-        match <B::Unit as UnitPrivate>::UNIT_ID {
-            UNIT_ID_U32 => {
-                let b = buffer.buffer_mut()[0].specialise_u32_mut();
-                b.set_septet(2, v);
-            }
-            UNIT_ID_U8 => {
-                let b = buffer.buffer_mut()[1].specialise_u8_mut();
-                b.set_septet(0, v);
-            }
-            _ => unreachable!(),
-        }
-        Ok(())
-    }
-    fn default() -> Self::Type {
-        u7::new(0x0)
-    }
+    #[property(common_properties::ChannelProperty)]
+    channel: crate::numeric_types::u4,
+    #[property(common_properties::GroupProperty)]
+    group: crate::numeric_types::u4,
+    #[property(common_properties::HybridSchemaProperty<
+        crate::numeric_types::u7,
+        schema::Bytes<0x00, 0x7F, 0x0>,
+        schema::Ump<0x0000_7F00, 0x0, 0x0, 0x0>,
+    >)]
+    pressure: crate::numeric_types::u7,
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::traits::{
-        Channeled, Data, FromBytes, FromUmp, Grouped, RebufferInto, TryFromBytes, TryFromUmp,
+    use crate::{
+        numeric_types::*,
+        traits::{
+            Channeled, Data, FromBytes, FromUmp, Grouped, RebufferInto, TryFromBytes, TryFromUmp,
+        },
     };
     use pretty_assertions::assert_eq;
 

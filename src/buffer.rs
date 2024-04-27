@@ -1,54 +1,5 @@
 use crate::error::BufferOverflow;
 
-pub(crate) const UNIT_ID_U8: u8 = 0;
-pub(crate) const UNIT_ID_U32: u8 = 1;
-
-pub(crate) trait UnitPrivate: Copy {
-    const UNIT_ID: u8;
-
-    fn specialise_u32(&self) -> &u32;
-    fn specialise_u32_mut(&mut self) -> &mut u32;
-
-    fn specialise_u8(&self) -> &u8;
-    fn specialise_u8_mut(&mut self) -> &mut u8;
-}
-
-impl UnitPrivate for u8 {
-    const UNIT_ID: u8 = 0;
-
-    fn specialise_u32(&self) -> &u32 {
-        unreachable!()
-    }
-    fn specialise_u32_mut(&mut self) -> &mut u32 {
-        unreachable!()
-    }
-
-    fn specialise_u8(&self) -> &u8 {
-        self
-    }
-    fn specialise_u8_mut(&mut self) -> &mut u8 {
-        self
-    }
-}
-
-impl UnitPrivate for u32 {
-    const UNIT_ID: u8 = 1;
-
-    fn specialise_u32(&self) -> &u32 {
-        self
-    }
-    fn specialise_u32_mut(&mut self) -> &mut u32 {
-        self
-    }
-
-    fn specialise_u8(&self) -> &u8 {
-        unreachable!()
-    }
-    fn specialise_u8_mut(&mut self) -> &mut u8 {
-        unreachable!()
-    }
-}
-
 #[allow(private_bounds)]
 pub trait Unit: UnitPrivate {
     fn zero() -> Self;
@@ -168,5 +119,99 @@ impl<U: Unit> BufferResize for std::vec::Vec<U> {
 impl<U: Unit> BufferDefault for std::vec::Vec<U> {
     fn default() -> Self {
         Default::default()
+    }
+}
+
+pub(crate) const UNIT_ID_U8: u8 = 0;
+pub(crate) const UNIT_ID_U32: u8 = 1;
+
+pub(crate) trait UnitPrivate: Copy {
+    const UNIT_ID: u8;
+    fn specialise_buffer_u8(buffer: &[Self]) -> &[u8];
+    fn specialise_buffer_u8_mut(buffer: &mut [Self]) -> &mut [u8];
+
+    fn specialise_buffer_u32(buffer: &[Self]) -> &[u32];
+    fn specialise_buffer_u32_mut(buffer: &mut [Self]) -> &mut [u32];
+}
+
+impl UnitPrivate for u8 {
+    const UNIT_ID: u8 = 0;
+    fn specialise_buffer_u8(buffer: &[Self]) -> &[u8] {
+        buffer
+    }
+    fn specialise_buffer_u8_mut(buffer: &mut [Self]) -> &mut [u8] {
+        buffer
+    }
+    fn specialise_buffer_u32(_: &[Self]) -> &[u32] {
+        unreachable!()
+    }
+    fn specialise_buffer_u32_mut(_: &mut [Self]) -> &mut [u32] {
+        unreachable!()
+    }
+}
+
+impl UnitPrivate for u32 {
+    const UNIT_ID: u8 = 1;
+    fn specialise_buffer_u8(_: &[Self]) -> &[u8] {
+        unreachable!()
+    }
+    fn specialise_buffer_u8_mut(_: &mut [Self]) -> &mut [u8] {
+        unreachable!()
+    }
+    fn specialise_buffer_u32(buffer: &[Self]) -> &[u32] {
+        buffer
+    }
+    fn specialise_buffer_u32_mut(buffer: &mut [Self]) -> &mut [u32] {
+        buffer
+    }
+}
+
+pub(crate) trait SpecialiseU32<B: Buffer> {
+    fn specialise_u32(&self) -> &[u32];
+    fn specialise_u32_mut(&mut self) -> &mut [u32]
+    where
+        B: BufferMut;
+}
+
+impl<B: Buffer> SpecialiseU32<B> for B {
+    fn specialise_u32(&self) -> &[u32] {
+        match B::Unit::UNIT_ID {
+            UNIT_ID_U32 => <B::Unit as UnitPrivate>::specialise_buffer_u32(self.buffer()),
+            _ => unreachable!(),
+        }
+    }
+    fn specialise_u32_mut(&mut self) -> &mut [u32]
+    where
+        B: BufferMut,
+    {
+        match B::Unit::UNIT_ID {
+            UNIT_ID_U32 => <B::Unit as UnitPrivate>::specialise_buffer_u32_mut(self.buffer_mut()),
+            _ => unreachable!(),
+        }
+    }
+}
+
+pub(crate) trait SpecialiseU8<B: Buffer> {
+    fn specialise_u8(&self) -> &[u8];
+    fn specialise_u8_mut(&mut self) -> &mut [u8]
+    where
+        B: BufferMut;
+}
+
+impl<B: Buffer> SpecialiseU8<B> for B {
+    fn specialise_u8(&self) -> &[u8] {
+        match B::Unit::UNIT_ID {
+            UNIT_ID_U8 => <B::Unit as UnitPrivate>::specialise_buffer_u8(self.buffer()),
+            _ => unreachable!(),
+        }
+    }
+    fn specialise_u8_mut(&mut self) -> &mut [u8]
+    where
+        B: BufferMut,
+    {
+        match B::Unit::UNIT_ID {
+            UNIT_ID_U8 => <B::Unit as UnitPrivate>::specialise_buffer_u8_mut(self.buffer_mut()),
+            _ => unreachable!(),
+        }
     }
 }

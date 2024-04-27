@@ -158,6 +158,8 @@ fn parse_fixed_size(input: syn::parse::ParseStream) -> usize {
 fn imports() -> TokenStream {
     quote! {
         use crate::buffer::UnitPrivate as UnitPrivateGenMessage;
+        use crate::buffer::SpecialiseU32 as SpecialiseU32GenMessage;
+        use crate::buffer::SpecialiseU8 as SpecialiseU8GenMessage;
         use crate::util::property::Property as PropertyGenMessage;
         use crate::traits::Size as SizeGenMessage;
     }
@@ -352,18 +354,20 @@ fn debug_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStrea
                 fmt.write_fmt(format_args!("{}([", stringify!(#root_ident)))?;
                 match <<B as crate::buffer::Buffer>::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
                     crate::buffer::UNIT_ID_U8 => {
-                        let mut iter = self.0.buffer().iter().peekable();
+                        let buff = self.0.buffer();
+                        let mut iter = buff.specialise_u8().iter().peekable();
                         while let Some(v) = iter.next() {
-                            fmt.write_fmt(format_args!("{:#04X}", v.specialise_u8()))?;
+                            fmt.write_fmt(format_args!("{:#04X}", v))?;
                             if iter.peek().is_some() {
                                 fmt.write_str(", ")?;
                             }
                         }
                     }
                     crate::buffer::UNIT_ID_U32 => {
-                        let mut iter = self.0.buffer().iter().peekable();
+                        let buff = self.0.buffer();
+                        let mut iter = buff.specialise_u32().iter().peekable();
                         while let Some(v) = iter.next() {
-                            fmt.write_fmt(format_args!("{:#010X}", v.specialise_u32()))?;
+                            fmt.write_fmt(format_args!("{:#010X}", v))?;
                             if iter.peek().is_some() {
                                 fmt.write_str(", ")?;
                             }
