@@ -496,7 +496,7 @@ fn initialise_property_statements(properties: &Vec<Property>) -> TokenStream {
             <#meta_type as PropertyGenMessage<B>>::write(
                 &mut buffer,
                 <#meta_type as PropertyGenMessage<B>>::default(),
-            );
+            ).unwrap();
         });
     }
     initialise_properties
@@ -525,7 +525,7 @@ fn channeled_impl(root_ident: &syn::Ident, property: &Property) -> TokenStream {
 }
 
 fn from_bytes_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
-    let convert_properties = convert_propertys_from_bytes_to_ump(properties);
+    let convert_properties = convert_properties_from_bytes_to_ump(properties);
     quote! {
         impl<
                 A: crate::buffer::Bytes,
@@ -546,7 +546,7 @@ fn from_bytes_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> Token
 }
 
 fn try_from_bytes_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
-    let convert_properties = convert_propertys_from_bytes_to_ump(properties);
+    let convert_properties = convert_properties_from_bytes_to_ump(properties);
     quote! {
         impl<
                 A: crate::buffer::Bytes,
@@ -566,7 +566,7 @@ fn try_from_bytes_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> T
     }
 }
 
-fn convert_propertys_from_bytes_to_ump(properties: &Vec<Property>) -> TokenStream {
+fn convert_properties_from_bytes_to_ump(properties: &Vec<Property>) -> TokenStream {
     let mut convert_properties = TokenStream::new();
     for property in properties {
         let meta_type = &property.meta_type;
@@ -574,14 +574,14 @@ fn convert_propertys_from_bytes_to_ump(properties: &Vec<Property>) -> TokenStrea
             <#meta_type as PropertyGenMessage<B>>::write(
                 &mut buffer,
                 <#meta_type as PropertyGenMessage<A>>::read(&other.0).unwrap()
-            );
+            ).unwrap();
         });
     }
     convert_properties
 }
 
 fn from_ump_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
-    let convert_properties = convert_propertys_from_ump_to_bytes(properties);
+    let convert_properties = convert_properties_from_ump_to_bytes(properties);
     quote! {
         impl<
                 A: crate::buffer::Ump,
@@ -602,7 +602,7 @@ fn from_ump_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenSt
 }
 
 fn try_from_ump_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
-    let convert_properties = convert_propertys_from_ump_to_bytes(properties);
+    let convert_properties = convert_properties_from_ump_to_bytes(properties);
     quote! {
         impl<
                 A: crate::buffer::Ump,
@@ -622,7 +622,7 @@ fn try_from_ump_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> Tok
     }
 }
 
-fn convert_propertys_from_ump_to_bytes(properties: &Vec<Property>) -> TokenStream {
+fn convert_properties_from_ump_to_bytes(properties: &Vec<Property>) -> TokenStream {
     let mut convert_properties = TokenStream::new();
     for property in properties {
         let meta_type = &property.meta_type;
@@ -630,7 +630,7 @@ fn convert_propertys_from_ump_to_bytes(properties: &Vec<Property>) -> TokenStrea
             <#meta_type as PropertyGenMessage<B>>::write(
                 &mut buffer,
                 <#meta_type as PropertyGenMessage<A>>::read(&other.0).unwrap()
-            );
+            ).unwrap();
         });
     }
     convert_properties
