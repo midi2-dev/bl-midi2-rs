@@ -1,10 +1,10 @@
 pub mod channel_pressure;
 pub mod control_change;
-// pub mod key_pressure;
-// pub mod note_off;
-// pub mod note_on;
-// pub mod pitch_bend;
-// pub mod program_change;
+pub mod key_pressure;
+pub mod note_off;
+pub mod note_on;
+pub mod pitch_bend;
+pub mod program_change;
 
 pub const UMP_MESSAGE_TYPE: u8 = 0x2;
 

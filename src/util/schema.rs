@@ -267,6 +267,18 @@ u14_ump_property_impl!(0x0, 0x0, 0x0000_7F7F, 0x0, 2, 1);
 u14_ump_property_impl!(0x0, 0x0, 0x0, 0x7F7F_0000, 3, 0);
 u14_ump_property_impl!(0x0, 0x0, 0x0, 0x0000_7F7F, 3, 1);
 
+impl BytesSchemaRepr<Bytes<0x0, 0x7F, 0x7F>> for u14 {
+    fn read(buffer: &[u8]) -> Self {
+        u14::from_u7s(&[buffer[1].septet(0), buffer[2].septet(0)])
+    }
+    fn write(buffer: &mut [u8], v: Self) {
+        let mut u7s = [u7::default(); 2];
+        v.to_u7s(&mut u7s);
+        buffer[1].set_septet(0, u7s[0]);
+        buffer[2].set_septet(0, u7s[1]);
+    }
+}
+
 macro_rules! u16_ump_property_impl {
     ($ump1:expr,$ump2:expr,$ump3:expr,$ump4:expr,$buffer_index:expr,$word_index:expr) => {
         impl UmpSchemaRepr<Ump<$ump1, $ump2, $ump3, $ump4>> for u16 {
