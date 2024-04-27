@@ -175,7 +175,7 @@ fn generic_buffer_constraint(args: &GenerateMessageArgs) -> TokenStream {
 
 fn message(root_ident: &syn::Ident) -> TokenStream {
     quote! {
-        #[derive(PartialEq, Eq)]
+        #[derive(PartialEq, Eq, midi2_proc::Debug)]
         pub struct #root_ident<B: crate::buffer::Buffer>(B);
     }
 }
@@ -341,42 +341,6 @@ fn min_size_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenSt
         impl<B: #constraint> crate::traits::MinSize<B> for #root_ident<B> {
             fn min_size() -> usize {
                 #body
-            }
-        }
-    }
-}
-
-fn debug_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream {
-    let constraint = generic_buffer_constraint(args);
-    quote! {
-        impl<B: #constraint> core::fmt::Debug for #root_ident<B> {
-            fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
-                fmt.write_fmt(format_args!("{}([", stringify!(#root_ident)))?;
-                match <<B as crate::buffer::Buffer>::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
-                    crate::buffer::UNIT_ID_U8 => {
-                        let buff = self.0.buffer();
-                        let mut iter = buff.specialise_u8().iter().peekable();
-                        while let Some(v) = iter.next() {
-                            fmt.write_fmt(format_args!("{:#04X}", v))?;
-                            if iter.peek().is_some() {
-                                fmt.write_str(", ")?;
-                            }
-                        }
-                    }
-                    crate::buffer::UNIT_ID_U32 => {
-                        let buff = self.0.buffer();
-                        let mut iter = buff.specialise_u32().iter().peekable();
-                        while let Some(v) = iter.next() {
-                            fmt.write_fmt(format_args!("{:#010X}", v))?;
-                            if iter.peek().is_some() {
-                                fmt.write_str(", ")?;
-                            }
-                        }
-                    }
-                    _ => unreachable!(),
-                }
-                fmt.write_str("])")?;
-                Ok(())
             }
         }
     }
@@ -645,7 +609,6 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     let imports = imports();
     let message = message(root_ident);
     let message_impl = message_impl(root_ident, &args, &properties);
-    let debug_impl = debug_impl(root_ident, &args);
     let data_impl = data_impl(root_ident, &args);
     let min_size_impl = min_size_impl(root_ident, &args);
     let with_buffer_impl = with_buffer_impl(root_ident);
@@ -659,7 +622,6 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
         #imports
         #message
         #message_impl
-        #debug_impl
         #data_impl
         #min_size_impl
         #with_buffer_impl

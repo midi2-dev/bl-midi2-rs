@@ -18,22 +18,12 @@ pub fn derive_grouped(item: TokenStream1) -> TokenStream1 {
     derives::grouped(item)
 }
 
-#[proc_macro_derive(WriteByteData)]
-pub fn derive_write_byte_data(item: TokenStream1) -> TokenStream1 {
-    derives::write_byte_data(item)
-}
-
 #[proc_macro_derive(Channeled)]
 pub fn derive_channeled(item: TokenStream1) -> TokenStream1 {
     derives::channeled(item)
 }
 
-#[proc_macro_derive(UmpDebug)]
+#[proc_macro_derive(Debug)]
 pub fn derive_ump_debug(item: TokenStream1) -> TokenStream1 {
-    derives::ump_debug(item)
-}
-
-#[proc_macro_derive(BytesDebug)]
-pub fn derive_bytes_debug(item: TokenStream1) -> TokenStream1 {
-    derives::bytes_debug(item)
+    derives::debug(item)
 }
