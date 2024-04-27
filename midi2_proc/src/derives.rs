@@ -41,9 +41,8 @@ pub fn grouped(item: TokenStream1) -> TokenStream1 {
             #variant_ident(m) => m.set_group(group),
         });
     }
-    let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
     quote! {
-        impl #impl_generics crate::traits::Grouped<B> for #ident #ty_generics #where_clause {
+        impl<B: crate::buffer::Ump> crate::traits::Grouped<B> for #ident<B> {
             fn group(&self) -> crate::u4 {
                 use #ident::*;
                 match self {
