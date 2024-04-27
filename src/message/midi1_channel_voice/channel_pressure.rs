@@ -351,4 +351,19 @@ mod rebuffer_tests {
             borrowed.try_rebuffer_into();
         assert_eq!(owned, Err(crate::error::BufferOverflow));
     }
+
+    #[test]
+    fn clone() {
+        let message = ChannelPressure::new_arr();
+        let clone = message.clone();
+        assert_eq!(message, clone);
+    }
+
+    #[test]
+    fn clone_borrowed() {
+        let buffer = [0x2FD6_0900_u32];
+        let borrowed = ChannelPressure::try_from(&buffer[..]).unwrap();
+        let clone = borrowed.clone();
+        assert_eq!(borrowed, clone);
+    }
 }

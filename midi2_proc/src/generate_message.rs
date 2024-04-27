@@ -452,6 +452,16 @@ fn try_new_impl(
     }
 }
 
+fn clone_impl(root_ident: &syn::Ident) -> TokenStream {
+    quote! {
+        impl<B: crate::buffer::Buffer + core::clone::Clone> core::clone::Clone for #root_ident<B> {
+            fn clone(&self) -> Self {
+                Self(self.0.clone())
+            }
+        }
+    }
+}
+
 fn initialise_property_statements(properties: &Vec<Property>) -> TokenStream {
     let mut initialise_properties = TokenStream::new();
     for property in properties {
@@ -615,6 +625,7 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     let try_from_slice_impl = try_from_slice_impl(root_ident, &args, &properties);
     let new_impl = new_impl(root_ident, &args, &properties);
     let try_new_impl = try_new_impl(root_ident, &args, &properties);
+    let clone_impl = clone_impl(root_ident);
 
     let mut tokens = TokenStream::new();
 
@@ -628,6 +639,7 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
         #try_from_slice_impl
         #new_impl
         #try_new_impl
+        #clone_impl
     });
 
     if args.fixed_size {
