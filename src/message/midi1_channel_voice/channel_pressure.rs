@@ -3,7 +3,7 @@ use crate::{
     util::schema,
 };
 
-const STATUS: u8 = 0b1101;
+pub(crate) const STATUS: u8 = 0b1101;
 
 #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
 struct ChannelPressure {
