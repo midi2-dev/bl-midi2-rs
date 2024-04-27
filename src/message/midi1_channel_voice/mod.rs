@@ -76,7 +76,7 @@ mod test {
     use super::*;
     use crate::{
         numeric_types::*,
-        traits::{Channeled, Grouped},
+        traits::{Channeled, FromBytes, Grouped},
     };
     use pretty_assertions::assert_eq;
 
@@ -108,5 +108,12 @@ mod test {
                 .group(),
             u4::new(0xF),
         );
+    }
+
+    #[test]
+    fn from_bytes() {
+        let buffer = [0xD6_u8, 0x09_u8];
+        let borrowed = Midi1ChannelVoice::try_from(&buffer[..]);
+        // let owned = Midi1ChannelVoice::<std::vec::Vec<u32>>::from_bytes(borrowed);
     }
 }

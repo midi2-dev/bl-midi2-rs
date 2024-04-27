@@ -1,6 +1,4 @@
-use crate::buffer::{
-    Buffer, BufferDefault, BufferMut, BufferResize, BufferTryResize, Bytes, Ump, Unit,
-};
+use crate::buffer::{Buffer, BufferMut, Ump};
 
 pub trait Data<B: Buffer> {
     fn data(&self) -> &[B::Unit];
@@ -27,184 +25,105 @@ pub trait Streamed<B: Ump> {
         B: BufferMut;
 }
 
-pub trait RebufferFrom<
-    U: Unit,
-    A: Buffer<Unit = U>,
-    B: Buffer<Unit = U> + BufferMut + BufferDefault + BufferResize,
-    T,
->: Sized
-{
+pub trait RebufferFrom<T>: Sized {
     fn rebuffer_from(value: T) -> Self;
 }
 
-pub trait RebufferInto<
-    U: Unit,
-    A: Buffer<Unit = U>,
-    B: Buffer<Unit = U> + BufferMut + BufferDefault + BufferResize,
-    T,
->: Sized
-{
+pub trait RebufferInto<T>: Sized {
     fn rebuffer_into(self) -> T;
 }
 
-impl<
-        U: Unit,
-        A: Buffer<Unit = U>,
-        B: Buffer<Unit = U> + BufferMut + BufferDefault + BufferResize,
-        T,
-        V,
-    > RebufferInto<U, A, B, V> for T
+impl<T, V> RebufferInto<V> for T
 where
-    V: RebufferFrom<U, A, B, T>,
+    V: RebufferFrom<T>,
 {
     fn rebuffer_into(self) -> V {
-        <V as RebufferFrom<U, A, B, T>>::rebuffer_from(self)
+        <V as RebufferFrom<T>>::rebuffer_from(self)
     }
 }
 
-impl<
-        U: Unit,
-        A: Buffer<Unit = U>,
-        B: Buffer<Unit = U> + BufferMut + BufferDefault + BufferResize,
-        T,
-        V,
-    > RebufferFrom<U, A, B, T> for V
-where
-    V: Data<B> + WithBuffer<B>,
-    T: Data<A>,
-{
-    fn rebuffer_from(value: T) -> Self {
-        let mut buffer = <B as BufferDefault>::default();
-        buffer.resize(value.data().len());
-        buffer.buffer_mut().copy_from_slice(value.data());
-        <Self as WithBuffer<B>>::with_buffer(buffer)
-    }
-}
-
-pub trait TryRebufferFrom<
-    U: Unit,
-    A: Buffer<Unit = U>,
-    B: Buffer<Unit = U> + BufferMut + BufferDefault + BufferTryResize,
-    T,
->: Sized
-{
+pub trait TryRebufferFrom<T>: Sized {
     fn try_rebuffer_from(value: T) -> core::result::Result<Self, crate::error::BufferOverflow>;
 }
 
-pub trait TryRebufferInto<
-    U: Unit,
-    A: Buffer<Unit = U>,
-    B: Buffer<Unit = U> + BufferMut + BufferDefault + BufferTryResize,
-    T,
->: Sized
-{
+pub trait TryRebufferInto<T>: Sized {
     fn try_rebuffer_into(self) -> core::result::Result<T, crate::error::BufferOverflow>;
 }
 
-impl<
-        U: Unit,
-        A: Buffer<Unit = U>,
-        B: Buffer<Unit = U> + BufferMut + BufferDefault + BufferTryResize,
-        T,
-        V,
-    > TryRebufferInto<U, A, B, V> for T
+impl<T, V> TryRebufferInto<V> for T
 where
-    V: TryRebufferFrom<U, A, B, T>,
+    V: TryRebufferFrom<T>,
 {
     fn try_rebuffer_into(self) -> core::result::Result<V, crate::error::BufferOverflow> {
-        <V as TryRebufferFrom<U, A, B, T>>::try_rebuffer_from(self)
+        <V as TryRebufferFrom<T>>::try_rebuffer_from(self)
     }
 }
 
-impl<
-        U: Unit,
-        A: Buffer<Unit = U>,
-        B: Buffer<Unit = U> + BufferMut + BufferDefault + BufferTryResize,
-        T,
-        V,
-    > TryRebufferFrom<U, A, B, T> for V
-where
-    V: Data<B> + WithBuffer<B>,
-    T: Data<A>,
-{
-    fn try_rebuffer_from(value: T) -> core::result::Result<Self, crate::error::BufferOverflow> {
-        let mut buffer = <B as BufferDefault>::default();
-        buffer.try_resize(value.data().len())?;
-        buffer.buffer_mut().copy_from_slice(value.data());
-        Ok(<Self as WithBuffer<B>>::with_buffer(buffer))
-    }
-}
-
-pub trait FromBytes<A: Bytes, B: Ump + BufferMut + BufferDefault + BufferResize, T>: Sized {
+pub trait FromBytes<T>: Sized {
     fn from_bytes(other: T) -> Self;
 }
 
-pub trait IntoUmp<A: Bytes, B: Ump + BufferMut + BufferDefault + BufferResize, T> {
+pub trait IntoUmp<T> {
     fn into_ump(self) -> T;
 }
 
-impl<A: Bytes, B: Ump + BufferMut + BufferDefault + BufferResize, T, U> IntoUmp<A, B, U> for T
+impl<T, U> IntoUmp<U> for T
 where
-    U: FromBytes<A, B, T>,
+    U: FromBytes<T>,
 {
     fn into_ump(self) -> U {
-        <U as FromBytes<A, B, T>>::from_bytes(self)
+        <U as FromBytes<T>>::from_bytes(self)
     }
 }
 
-pub trait FromUmp<A: Ump, B: Bytes + BufferMut + BufferDefault + BufferResize, T>: Sized {
+pub trait FromUmp<T>: Sized {
     fn from_ump(other: T) -> Self;
 }
 
-pub trait IntoBytes<A: Ump, B: Bytes + BufferMut + BufferDefault + BufferResize, T> {
+pub trait IntoBytes<T> {
     fn into_bytes(self) -> T;
 }
 
-impl<A: Ump, B: Bytes + BufferMut + BufferDefault + BufferResize, T, U> IntoBytes<A, B, U> for T
+impl<T, U> IntoBytes<U> for T
 where
-    U: FromUmp<A, B, T>,
+    U: FromUmp<T>,
 {
     fn into_bytes(self) -> U {
-        <U as FromUmp<A, B, T>>::from_ump(self)
+        <U as FromUmp<T>>::from_ump(self)
     }
 }
 
-pub trait TryFromBytes<A: Bytes, B: Ump + BufferMut + BufferDefault + BufferTryResize, T>:
-    Sized
-{
+pub trait TryFromBytes<T>: Sized {
     fn try_from_bytes(other: T) -> Result<Self, crate::error::BufferOverflow>;
 }
 
-pub trait TryIntoUmp<A: Bytes, B: Ump + BufferMut + BufferDefault + BufferTryResize, T> {
+pub trait TryIntoUmp<T> {
     fn try_into_ump(self) -> Result<T, crate::error::BufferOverflow>;
 }
 
-impl<A: Bytes, B: Ump + BufferMut + BufferDefault + BufferTryResize, T, U> TryIntoUmp<A, B, U> for T
+impl<T, U> TryIntoUmp<U> for T
 where
-    U: TryFromBytes<A, B, T>,
+    U: TryFromBytes<T>,
 {
     fn try_into_ump(self) -> Result<U, crate::error::BufferOverflow> {
-        <U as TryFromBytes<A, B, T>>::try_from_bytes(self)
+        <U as TryFromBytes<T>>::try_from_bytes(self)
     }
 }
 
-pub trait TryFromUmp<A: Ump, B: Bytes + BufferMut + BufferDefault + BufferTryResize, T>:
-    Sized
-{
+pub trait TryFromUmp<T>: Sized {
     fn try_from_ump(other: T) -> Result<Self, crate::error::BufferOverflow>;
 }
 
-pub trait TryIntoBytes<A: Ump, B: Bytes + BufferMut + BufferDefault + BufferTryResize, T> {
+pub trait TryIntoBytes<T> {
     fn try_into_bytes(self) -> Result<T, crate::error::BufferOverflow>;
 }
 
-impl<A: Ump, B: Bytes + BufferMut + BufferDefault + BufferTryResize, T, U> TryIntoBytes<A, B, U>
-    for T
+impl<T, U> TryIntoBytes<U> for T
 where
-    U: TryFromUmp<A, B, T>,
+    U: TryFromUmp<T>,
 {
     fn try_into_bytes(self) -> Result<U, crate::error::BufferOverflow> {
-        <U as TryFromUmp<A, B, T>>::try_from_ump(self)
+        <U as TryFromUmp<T>>::try_from_ump(self)
     }
 }
 
