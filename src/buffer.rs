@@ -36,6 +36,13 @@ pub trait BufferResize {
     fn resize(&mut self, size: usize);
 }
 
+/// This trait can be implemented by buffers with
+/// fallible memory allocation.
+///
+/// It can also be implemented by buffers of a fixed size.
+/// In this case `try_resize` should return Ok whenever
+/// the requested size is less than or equal to the fixed
+/// size of the buffer and an Err otherwise.
 pub trait BufferTryResize {
     fn try_resize(&mut self, size: usize) -> Result<(), BufferOverflow>;
 }
