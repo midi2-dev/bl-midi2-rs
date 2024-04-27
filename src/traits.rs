@@ -171,7 +171,3 @@ pub(crate) trait MinSize<B: Buffer> {
 pub(crate) trait Size<B: Buffer> {
     fn size(&self) -> usize;
 }
-
-pub(crate) trait WithBuffer<B: Buffer> {
-    fn with_buffer(buffer: B) -> Self;
-}

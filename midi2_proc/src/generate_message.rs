@@ -358,16 +358,6 @@ fn data_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream
     }
 }
 
-fn with_buffer_impl(root_ident: &syn::Ident) -> TokenStream {
-    quote! {
-        impl<B: crate::buffer::Buffer> crate::traits::WithBuffer<B> for #root_ident<B> {
-            fn with_buffer(buffer: B) -> Self {
-                Self(buffer)
-            }
-        }
-    }
-}
-
 fn try_from_slice_impl(
     root_ident: &syn::Ident,
     args: &GenerateMessageArgs,
@@ -692,7 +682,6 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     let message_impl = message_impl(root_ident, &args, &properties);
     let data_impl = data_impl(root_ident, &args);
     let min_size_impl = min_size_impl(root_ident, &args);
-    let with_buffer_impl = with_buffer_impl(root_ident);
     let try_from_slice_impl = try_from_slice_impl(root_ident, &args, &properties);
     let rebuffer_from_impl = rebuffer_from_impl(root_ident, &args);
     let try_rebuffer_from_impl = try_rebuffer_from_impl(root_ident, &args);
@@ -708,7 +697,6 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
         #message_impl
         #data_impl
         #min_size_impl
-        #with_buffer_impl
         #try_from_slice_impl
         #rebuffer_from_impl
         #try_rebuffer_from_impl
