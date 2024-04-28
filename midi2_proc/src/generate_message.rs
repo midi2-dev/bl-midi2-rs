@@ -259,8 +259,6 @@ fn message_new_arr_impl(
         impl #root_ident<#owned_type> {
             pub fn new_arr() -> Self {
                 let mut buffer: #owned_type = core::default::Default::default();
-                // todo
-                // buffer.resize(Self::min_size())
                 #set_defaults
                 #root_ident(buffer)
             }

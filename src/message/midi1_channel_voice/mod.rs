@@ -29,6 +29,7 @@ pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x2;
     midi2_proc::TryFromUmp,
     midi2_proc::RebufferFrom,
     midi2_proc::TryRebufferFrom,
+    Clone,
     Debug,
     PartialEq,
     Eq,
@@ -149,6 +150,14 @@ mod test {
         let borrowed = Midi1ChannelVoice::try_from(&buffer[..]).unwrap();
         let owned = Midi1ChannelVoice::<[u8; 3]>::try_from_ump(borrowed).unwrap();
         assert_eq!(owned.data(), &[0xD6, 0x09]);
+    }
+
+    #[test]
+    fn clone() {
+        let buffer = [0x20D6_0900_u32];
+        let borrowed = Midi1ChannelVoice::try_from(&buffer[..]).unwrap();
+        let cloned = borrowed.clone();
+        assert_eq!(borrowed.data(), cloned.data());
     }
 
     #[test]
