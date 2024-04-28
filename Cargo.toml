@@ -10,11 +10,10 @@ authors = [
 
 [features]
 default = ["ci", "midi2-channel-voice"]
-ci = ["sysex-bytes"]
+ci = ["sysex7"]
 flex-data = []
 midi1-channel-voice = []
 midi2-channel-voice = []
-sysex-bytes = []
 std = []
 sysex7 = []
 sysex8 = []

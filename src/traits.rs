@@ -127,24 +127,15 @@ where
     }
 }
 
-pub trait Sysex {
-    type ByteType;
-    type PayloadIterator: core::iter::Iterator<Item = u8>;
+pub trait Sysex<B: crate::buffer::Buffer> {
+    type Byte;
+    type PayloadIterator: core::iter::Iterator<Item = Self::Byte>;
 
     fn payload(&self) -> Self::PayloadIterator;
-    fn append_payload<D>(&mut self, data: D) -> crate::result::Result<()>
-    where
-        D: core::iter::Iterator<Item = Self::ByteType>;
-    fn insert_payload<D>(&mut self, data: D, before: usize) -> crate::result::Result<()>
-    where
-        D: core::iter::Iterator<Item = Self::ByteType>;
-    fn replace_payload_range<D, R>(&mut self, data: D, range: R) -> crate::result::Result<()>
-    where
-        D: core::iter::Iterator<Item = Self::ByteType>,
-        R: core::ops::RangeBounds<usize> + core::iter::Iterator<Item = usize>;
     fn set_payload<D>(&mut self, data: D) -> crate::result::Result<()>
     where
-        D: core::iter::Iterator<Item = Self::ByteType>;
+        D: core::iter::Iterator<Item = Self::Byte>,
+        B: crate::buffer::BufferMut;
 }
 
 pub(crate) trait SysexInternal {

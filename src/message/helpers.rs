@@ -6,6 +6,8 @@ pub fn group_from_packet(p: &[u32]) -> crate::numeric_types::u4 {
     p[0].nibble(1)
 }
 
+pub const ERR_INCONSISTENT_GROUPS: &str = "Inconsistent groups across packets";
+
 #[cfg(any(feature = "sysex7", feature = "sysex8"))]
 pub fn sysex_group_consistent_groups(buffer: &[u32], stride: usize) -> crate::result::Result<()> {
     use group_from_packet as gfp;
@@ -15,7 +17,7 @@ pub fn sysex_group_consistent_groups(buffer: &[u32], stride: usize) -> crate::re
     {
         Ok(())
     } else {
-        Err(crate::error::Error::InvalidData)
+        Err(crate::error::Error::InvalidData(ERR_INCONSISTENT_GROUPS))
     }
 }
 
@@ -54,6 +56,15 @@ pub fn check_flex_data_or_ump_stream_consistent_packet_formats(
     Ok(())
 }
 
+pub const ERR_SYSEX_EXPECTED_COMPLETE: &str =
+    "A one-packet sysex message should have Complete status";
+pub const ERR_SYSEX_EXPECTED_BEGIN: &str =
+    "The first packet of a multi-packet sysex message should have status Begin";
+pub const ERR_SYSEX_EXPECTED_CONTINUE: &str =
+    "The packet statuses between first and last should be Continue";
+pub const ERR_SYSEX_EXPECTED_END: &str =
+    "The last packet of a multi-packet sysex message should have status End";
+
 // assumes that buffer contains valid messages
 #[cfg(any(feature = "sysex7", feature = "sysex8"))]
 pub fn validate_sysex_group_statuses<
@@ -78,18 +89,21 @@ pub fn validate_sysex_group_statuses<
         if is_complete(first_status) {
             return Ok(());
         } else {
-            return Err(Error::InvalidData);
+            return Err(Error::InvalidData(ERR_SYSEX_EXPECTED_COMPLETE));
         }
     }
 
     if !is_begin(first_status) {
-        return Err(Error::InvalidData);
+        return Err(Error::InvalidData(ERR_SYSEX_EXPECTED_BEGIN));
     }
 
     while let Some(chunk) = iter.next() {
         let status = chunk[0].nibble(2);
-        if (iter.peek().is_some() && !is_continue(status)) && !is_end(status) {
-            return Err(Error::InvalidData);
+        if iter.peek().is_some() && !is_continue(status) {
+            return Err(Error::InvalidData(ERR_SYSEX_EXPECTED_CONTINUE));
+        }
+        if iter.peek().is_none() && !is_end(status) {
+            return Err(Error::InvalidData(ERR_SYSEX_EXPECTED_END));
         }
     }
 
