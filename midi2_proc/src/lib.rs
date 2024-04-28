@@ -37,3 +37,13 @@ pub fn derive_from_bytes(item: TokenStream1) -> TokenStream1 {
 pub fn derive_from_ump(item: TokenStream1) -> TokenStream1 {
     derives::from_ump(item)
 }
+
+#[proc_macro_derive(TryFromBytes)]
+pub fn derive_try_from_bytes(item: TokenStream1) -> TokenStream1 {
+    derives::try_from_bytes(item)
+}
+
+#[proc_macro_derive(TryFromUmp)]
+pub fn derive_try_from_ump(item: TokenStream1) -> TokenStream1 {
+    derives::try_from_ump(item)
+}

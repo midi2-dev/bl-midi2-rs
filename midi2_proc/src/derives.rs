@@ -56,6 +56,35 @@ pub fn from_bytes(item: TokenStream1) -> TokenStream1 {
     .into()
 }
 
+pub fn try_from_bytes(item: TokenStream1) -> TokenStream1 {
+    let input = parse_macro_input!(item as ItemEnum);
+    let ident = &input.ident;
+    let mut match_arms = TokenStream::new();
+    for variant in &input.variants {
+        let variant_ident = &variant.ident;
+        match_arms.extend(quote! {
+            #ident::#variant_ident(m) => #variant_ident::<B>::try_from_bytes(m)?.into(),
+        });
+    }
+    quote! {
+        impl<
+                A: crate::buffer::Bytes,
+                B: crate::buffer::Ump
+                    + crate::buffer::BufferDefault
+                    + crate::buffer::BufferMut
+                    + crate::buffer::BufferTryResize,
+            > crate::traits::TryFromBytes<#ident<A>> for #ident<B>
+        {
+            fn try_from_bytes(other: #ident<A>) -> core::result::Result<Self, crate::error::BufferOverflow> {
+                Ok(match other {
+                    #match_arms
+                })
+            }
+        }
+    }
+    .into()
+}
+
 pub fn from_ump(item: TokenStream1) -> TokenStream1 {
     let input = parse_macro_input!(item as ItemEnum);
     let ident = &input.ident;
@@ -79,6 +108,35 @@ pub fn from_ump(item: TokenStream1) -> TokenStream1 {
                 match other {
                     #match_arms
                 }
+            }
+        }
+    }
+    .into()
+}
+
+pub fn try_from_ump(item: TokenStream1) -> TokenStream1 {
+    let input = parse_macro_input!(item as ItemEnum);
+    let ident = &input.ident;
+    let mut match_arms = TokenStream::new();
+    for variant in &input.variants {
+        let variant_ident = &variant.ident;
+        match_arms.extend(quote! {
+            #ident::#variant_ident(m) => #variant_ident::<B>::try_from_ump(m)?.into(),
+        });
+    }
+    quote! {
+        impl<
+                A: crate::buffer::Ump,
+                B: crate::buffer::Bytes
+                    + crate::buffer::BufferDefault
+                    + crate::buffer::BufferMut
+                    + crate::buffer::BufferTryResize,
+            > crate::traits::TryFromUmp<#ident<A>> for #ident<B>
+        {
+            fn try_from_ump(other: #ident<A>) -> core::result::Result<Self, crate::error::BufferOverflow> {
+                Ok(match other {
+                    #match_arms
+                })
             }
         }
     }
