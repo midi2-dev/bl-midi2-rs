@@ -28,6 +28,9 @@ const ERR_NO_BEGIN_BYTE: &str = "Sysex messages should begin 0xF0";
 const ERR_NO_END_BYTE: &str = "Sysex messages should end 0xF7";
 const ERR_INVALID_PACKET_SIZE: &str = "Size field can not exceed 6";
 
+const START_BYTE: u8 = 0xF0;
+const END_BYTE: u8 = 0xF7;
+
 struct Sysex7BytesBeginByte;
 
 impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for Sysex7BytesBeginByte {
@@ -35,7 +38,7 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for Sysex7Byte
     fn read(buffer: &B) -> crate::result::Result<Self::Type> {
         match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
             crate::buffer::UNIT_ID_U8 => {
-                if buffer.specialise_u8()[0] != 0xF0 {
+                if buffer.specialise_u8()[0] != START_BYTE {
                     Err(crate::error::Error::InvalidData(ERR_NO_BEGIN_BYTE))
                 } else {
                     Ok(())
@@ -51,7 +54,7 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for Sysex7Byte
     {
         match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
             crate::buffer::UNIT_ID_U8 => {
-                buffer.specialise_u8_mut()[0] = 0xF0;
+                buffer.specialise_u8_mut()[0] = START_BYTE;
                 Ok(())
             }
             crate::buffer::UNIT_ID_U32 => Ok(()),
@@ -71,7 +74,7 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for Sysex7Byte
         match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
             crate::buffer::UNIT_ID_U8 => {
                 let last = buffer.buffer().len() - 1;
-                if buffer.specialise_u8()[last] != 0xF7 {
+                if buffer.specialise_u8()[last] != END_BYTE {
                     Err(crate::error::Error::InvalidData(ERR_NO_END_BYTE))
                 } else {
                     Ok(())
@@ -88,7 +91,7 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for Sysex7Byte
         match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
             crate::buffer::UNIT_ID_U8 => {
                 let last = buffer.buffer().len() - 1;
-                buffer.specialise_u8_mut()[last] = 0xF7;
+                buffer.specialise_u8_mut()[last] = END_BYTE;
                 Ok(())
             }
             crate::buffer::UNIT_ID_U32 => Ok(()),
@@ -207,15 +210,100 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for ValidPacke
     }
 }
 
+pub struct PayloadIterator<B: crate::buffer::Buffer>(B);
+
+impl<B: crate::buffer::Buffer> core::iter::Iterator for PayloadIterator<B> {
+    type Item = numeric_types::u7;
+    fn next(&mut self) -> Option<Self::Item> {
+        todo!()
+    }
+}
+
+impl<B: crate::buffer::Buffer> crate::traits::Sysex<B> for Sysex7<B> {
+    type Byte = numeric_types::u7;
+    type PayloadIterator = PayloadIterator<B>;
+    fn payload(&self) -> Self::PayloadIterator {
+        todo!()
+    }
+    fn set_payload<D>(&mut self, data: D)
+    where
+        D: core::iter::Iterator<Item = Self::Byte>,
+        B: crate::buffer::BufferMut + crate::buffer::BufferResize,
+    {
+        message_helpers::set_sysex_data(self, data)
+    }
+    fn try_set_payload<D>(
+        &mut self,
+        data: D,
+    ) -> core::result::Result<(), crate::error::BufferOverflow>
+    where
+        D: core::iter::Iterator<Item = Self::Byte>,
+        B: crate::buffer::BufferMut + crate::buffer::BufferTryResize,
+    {
+        message_helpers::try_set_sysex_data(self, data)
+    }
+}
+
+impl<B: crate::buffer::Buffer> crate::traits::SysexInternal<B> for Sysex7<B> {
+    fn resize(&mut self, payload_size: usize)
+    where
+        B: crate::buffer::BufferMut + crate::buffer::BufferResize,
+    {
+        match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
+            crate::buffer::UNIT_ID_U8 => {
+                let buffer_sz = payload_size + 2;
+                self.0.resize(buffer_sz);
+                self.0.specialise_u8_mut()[buffer_sz - 1] = END_BYTE;
+            }
+            crate::buffer::UNIT_ID_U32 => {
+                todo!()
+            }
+            _ => unreachable!(),
+        }
+    }
+    fn try_resize(
+        &mut self,
+        payload_size: usize,
+    ) -> core::result::Result<(), crate::error::BufferOverflow>
+    where
+        B: crate::buffer::BufferMut + crate::buffer::BufferTryResize,
+    {
+        match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
+            crate::buffer::UNIT_ID_U8 => {
+                let buffer_sz = payload_size + 2;
+                self.0.try_resize(buffer_sz)?;
+                self.0.specialise_u8_mut()[buffer_sz - 1] = END_BYTE;
+                Ok(())
+            }
+            crate::buffer::UNIT_ID_U32 => {
+                todo!()
+            }
+            _ => unreachable!(),
+        }
+    }
+    fn write_datum(&mut self, datum: Self::Byte, payload_index: usize)
+    where
+        B: crate::buffer::BufferMut,
+    {
+        match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
+            crate::buffer::UNIT_ID_U8 => {
+                self.0.specialise_u8_mut()[payload_index + 1] = datum.into();
+            }
+            crate::buffer::UNIT_ID_U32 => {
+                todo!()
+            }
+            _ => unreachable!(),
+        }
+    }
+    fn payload_size(&self) -> usize {
+        self.size() - 2
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    // use crate::{
-    //     numeric_types::*,
-    //     traits::{
-    //         Channeled, Data, FromBytes, FromUmp, Grouped, RebufferInto, TryFromBytes, TryFromUmp,
-    //     },
-    // };
+    use crate::{numeric_types::*, traits::Sysex};
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -392,6 +480,19 @@ mod tests {
                 ][..]
             ),
             Err(crate::Error::InvalidData(ERR_INVALID_PACKET_SIZE)),
+        );
+    }
+
+    #[test]
+    fn set_payload_sysex() {
+        let mut message = Sysex7::<std::vec::Vec<u8>>::new();
+        message.set_payload((0u8..20u8).map(u7::new));
+        assert_eq!(
+            message,
+            Sysex7(std::vec![
+                0xF0, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C,
+                0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0xF7,
+            ])
         );
     }
 }

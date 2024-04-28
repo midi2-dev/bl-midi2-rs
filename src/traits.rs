@@ -132,27 +132,36 @@ pub trait Sysex<B: crate::buffer::Buffer> {
     type PayloadIterator: core::iter::Iterator<Item = Self::Byte>;
 
     fn payload(&self) -> Self::PayloadIterator;
-    fn set_payload<D>(&mut self, data: D) -> crate::result::Result<()>
+    fn set_payload<D>(&mut self, data: D)
     where
         D: core::iter::Iterator<Item = Self::Byte>,
-        B: crate::buffer::BufferMut;
+        B: crate::buffer::BufferMut + crate::buffer::BufferResize;
+    fn try_set_payload<D>(
+        &mut self,
+        data: D,
+    ) -> core::result::Result<(), crate::error::BufferOverflow>
+    where
+        D: core::iter::Iterator<Item = Self::Byte>,
+        B: crate::buffer::BufferMut + crate::buffer::BufferTryResize;
 }
 
-pub(crate) trait SysexInternal {
-    type ByteType;
+pub(crate) trait SysexInternal<B: crate::buffer::Buffer>: Sysex<B> {
     fn payload_size(&self) -> usize;
-    fn resize(&mut self, payload_size: usize);
-    // payload range from the provided start index to the end is moved forward
-    // (expanding the buffer) by the provided distance
-    fn shift_tail_forward(&mut self, payload_index_tail_start: usize, distance: usize);
-    // payload range from the provided start index to the end is moved backward
-    // (contracting the buffer) by the provided distance
-    fn shift_tail_backward(&mut self, payload_index_tail_start: usize, distance: usize);
-    // write the payload datum into the buffer starting at the
+    fn resize(&mut self, payload_size: usize)
+    where
+        B: crate::buffer::BufferMut + crate::buffer::BufferResize;
+    fn try_resize(
+        &mut self,
+        payload_size: usize,
+    ) -> core::result::Result<(), crate::error::BufferOverflow>
+    where
+        B: crate::buffer::BufferMut + crate::buffer::BufferTryResize;
+    // write the payload range into the buffer starting at the
     // provided index.
-    // NOTE: the caller must ensure there is enough space in the buffer and
-    // that they won't overwrite any important data.
-    fn write_datum(&mut self, datum: Self::ByteType, payload_index: usize);
+    // NOTE: the caller must ensure there is enough space in the buffer
+    fn write_datum(&mut self, datum: Self::Byte, payload_index: usize)
+    where
+        B: crate::buffer::BufferMut;
 }
 
 pub(crate) trait MinSize<B: Buffer> {

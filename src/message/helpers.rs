@@ -110,69 +110,95 @@ pub fn validate_sysex_group_statuses<
     Ok(())
 }
 
-pub fn replace_sysex_payload_range<
-    B,
-    S: SysexInternal<ByteType = B>,
-    D: core::iter::Iterator<Item = B>,
-    R: core::ops::RangeBounds<usize> + core::iter::Iterator<Item = usize>,
+pub fn try_set_sysex_data<
+    B: crate::buffer::Buffer + crate::buffer::BufferMut + crate::buffer::BufferTryResize,
+    S: SysexInternal<B>,
+    D: core::iter::Iterator<Item = <S as crate::traits::Sysex<B>>::Byte>,
 >(
-    builder: &mut S,
+    sysex: &mut S,
     data: D,
-    range: R,
-) {
-    let range_start = match range.start_bound() {
-        core::ops::Bound::Unbounded => 0,
-        core::ops::Bound::Included(&v) => v,
-        core::ops::Bound::Excluded(&v) => v + 1,
-    };
-    let range_end = match range.end_bound() {
-        core::ops::Bound::Unbounded => builder.payload_size(),
-        core::ops::Bound::Included(&v) => v + 1,
-        core::ops::Bound::Excluded(&v) => v,
-    };
-    if range_start > builder.payload_size() {
-        // the requested range is invalid
-        // grow the payload to fit
-        builder.shift_tail_forward(builder.payload_size(), range_end - builder.payload_size())
+) -> core::result::Result<(), crate::error::BufferOverflow> {
+    match try_set_sysex_data_impl(sysex, data, |s, sz| s.try_resize(sz)) {
+        Err(e) => {
+            // if the write failed we reset the message
+            // back to zero data
+            sysex.try_resize(0)?;
+            Err(e)
+        }
+        Ok(()) => Ok(()),
     }
-    let mut start_index_of_following_data = {
-        let data_size_estimate = match data.size_hint() {
-            (_, Some(upper)) => upper,
-            (lower, None) => {
-                // not the optimal case - could lead to additional copying
-                lower
+}
+
+pub fn set_sysex_data<
+    B: crate::buffer::Buffer + crate::buffer::BufferMut + crate::buffer::BufferResize,
+    S: SysexInternal<B>,
+    D: core::iter::Iterator<Item = <S as crate::traits::Sysex<B>>::Byte>,
+>(
+    sysex: &mut S,
+    data: D,
+) {
+    try_set_sysex_data_impl(sysex, data, |s, sz| {
+        s.resize(sz);
+        Ok(())
+    })
+    .expect("Resizable buffers should not fail here")
+}
+
+fn try_set_sysex_data_impl<
+    B: crate::buffer::Buffer + crate::buffer::BufferMut,
+    S: SysexInternal<B>,
+    D: core::iter::Iterator<Item = <S as crate::traits::Sysex<B>>::Byte>,
+    R: FnMut(&mut S, usize) -> core::result::Result<(), crate::error::BufferOverflow>,
+>(
+    sysex: &mut S,
+    mut data: D,
+    mut resize: R,
+) -> core::result::Result<(), crate::error::BufferOverflow> {
+    let mut running_data_size_estimate: Option<usize> = None;
+    let mut written = 0;
+    let mut shift_for_overflow_distance = 1;
+    'main: loop {
+        let size = match running_data_size_estimate.as_mut() {
+            None => {
+                // make an initial estimate
+                let init_size = match data.size_hint() {
+                    (_, Some(upper)) => upper,
+                    // not the optimal case - could lead to additional copying
+                    (lower, None) => lower,
+                };
+                running_data_size_estimate = Some(init_size);
+                init_size
+            }
+            Some(v) => {
+                // we underestimated.
+                // resize to make more space
+                *v += shift_for_overflow_distance;
+                shift_for_overflow_distance *= 2;
+                *v
             }
         };
-        if range_start + data_size_estimate < range_end {
-            // we have room for the new data
-            range_end
-        } else {
-            // we make room for the new data
-            let distance = range_start + data_size_estimate - range_end;
-            builder.shift_tail_forward(range_end, distance);
-            range_end + distance
-        }
-    };
 
-    // we write the data
-    let mut last_index_written = 0;
-    let mut shift_for_overflow_distance = 1;
-    for (i, d) in (range_start..).zip(data) {
-        if i >= start_index_of_following_data {
-            // unplanned tail shifting!
-            builder.shift_tail_forward(start_index_of_following_data, shift_for_overflow_distance);
-            start_index_of_following_data += shift_for_overflow_distance;
-            shift_for_overflow_distance *= 2;
+        resize(sysex, size)?;
+
+        for _ in written..size {
+            match data.next() {
+                Some(v) => {
+                    sysex.write_datum(v, written);
+                    written += 1;
+                }
+                None => {
+                    break 'main;
+                }
+            }
         }
-        builder.write_datum(d, i);
-        last_index_written = i;
     }
 
-    if last_index_written + 1 < start_index_of_following_data {
-        // we shrink back down to fit the final payload size
-        builder.shift_tail_backward(
-            start_index_of_following_data,
-            start_index_of_following_data - last_index_written - 1,
-        );
+    if let Some(estimate) = running_data_size_estimate {
+        if written < estimate {
+            // we shrink the buffer back down to the correct size
+            resize(sysex, written)?;
+        }
     }
+
+    Ok(())
 }
