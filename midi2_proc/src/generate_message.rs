@@ -420,8 +420,9 @@ fn rebuffer_from_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> To
         {
             fn rebuffer_from(other: #root_ident<A>) -> Self {
                 let mut buffer = <B as crate::buffer::BufferDefault>::default();
-                buffer.resize(other.data().len());
-                buffer.buffer_mut().copy_from_slice(other.data());
+                let message_size = other.data().len();
+                buffer.resize(message_size);
+                buffer.buffer_mut()[..message_size].copy_from_slice(other.data());
                 #root_ident(buffer)
             }
         }
@@ -455,8 +456,9 @@ fn try_rebuffer_from_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -
         {
             fn try_rebuffer_from(other: #root_ident<A>) -> core::result::Result<Self, crate::error::BufferOverflow> {
                 let mut buffer = <B as crate::buffer::BufferDefault>::default();
-                buffer.try_resize(other.data().len())?;
-                buffer.buffer_mut().copy_from_slice(other.data());
+                let message_size = other.data().len();
+                buffer.try_resize(message_size)?;
+                buffer.buffer_mut()[..message_size].copy_from_slice(other.data());
                 Ok(#root_ident(buffer))
             }
         }

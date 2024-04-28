@@ -143,6 +143,66 @@ pub fn try_from_ump(item: TokenStream1) -> TokenStream1 {
     .into()
 }
 
+pub fn rebuffer_from(item: TokenStream1) -> TokenStream1 {
+    let input = parse_macro_input!(item as ItemEnum);
+    let ident = &input.ident;
+    let mut match_arms = TokenStream::new();
+    for variant in &input.variants {
+        let variant_ident = &variant.ident;
+        match_arms.extend(quote! {
+            #ident::#variant_ident(m) => #variant_ident::<B>::rebuffer_from(m).into(),
+        });
+    }
+    quote! {
+        impl<
+                U: crate::buffer::Unit,
+                A: crate::buffer::Buffer<Unit = U>,
+                B: crate::buffer::Buffer<Unit = U>
+                    + crate::buffer::BufferMut
+                    + crate::buffer::BufferDefault
+                    + crate::buffer::BufferResize
+            > crate::traits::RebufferFrom<#ident<A>> for #ident<B>
+        {
+            fn rebuffer_from(other: #ident<A>) -> Self {
+                match other {
+                    #match_arms
+                }
+            }
+        }
+    }
+    .into()
+}
+
+pub fn try_rebuffer_from(item: TokenStream1) -> TokenStream1 {
+    let input = parse_macro_input!(item as ItemEnum);
+    let ident = &input.ident;
+    let mut match_arms = TokenStream::new();
+    for variant in &input.variants {
+        let variant_ident = &variant.ident;
+        match_arms.extend(quote! {
+            #ident::#variant_ident(m) => #variant_ident::<B>::try_rebuffer_from(m)?.into(),
+        });
+    }
+    quote! {
+        impl<
+                U: crate::buffer::Unit,
+                A: crate::buffer::Buffer<Unit = U>,
+                B: crate::buffer::Buffer<Unit = U>
+                    + crate::buffer::BufferMut
+                    + crate::buffer::BufferDefault
+                    + crate::buffer::BufferTryResize
+            > crate::traits::TryRebufferFrom<#ident<A>> for #ident<B>
+        {
+            fn try_rebuffer_from(other: #ident<A>) -> core::result::Result<Self, crate::error::BufferOverflow> {
+                Ok(match other {
+                    #match_arms
+                })
+            }
+        }
+    }
+    .into()
+}
+
 pub fn grouped(item: TokenStream1) -> TokenStream1 {
     let input = parse_macro_input!(item as ItemEnum);
     let ident = &input.ident;

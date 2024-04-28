@@ -27,6 +27,8 @@ pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x2;
     midi2_proc::FromUmp,
     midi2_proc::TryFromBytes,
     midi2_proc::TryFromUmp,
+    midi2_proc::RebufferFrom,
+    midi2_proc::TryRebufferFrom,
     Debug,
     PartialEq,
     Eq,
@@ -56,7 +58,7 @@ impl<'a, U: crate::buffer::Unit> core::convert::TryFrom<&'a [U]> for Midi1Channe
             pitch_bend::STATUS => PitchBend::try_from(buffer)?.into(),
             program_change::STATUS => ProgramChange::try_from(buffer)?.into(),
             _ => Err(crate::error::Error::InvalidData(
-                "Unknown channel voice status",
+                "Unknown midi1 channel voice status",
             ))?,
         })
     }
@@ -80,7 +82,10 @@ mod test {
     use super::*;
     use crate::{
         numeric_types::*,
-        traits::{Channeled, Data, FromBytes, FromUmp, Grouped, TryFromBytes, TryFromUmp},
+        traits::{
+            Channeled, Data, FromBytes, FromUmp, Grouped, RebufferInto, TryFromBytes, TryFromUmp,
+            TryRebufferInto,
+        },
     };
     use pretty_assertions::assert_eq;
 
@@ -144,5 +149,24 @@ mod test {
         let borrowed = Midi1ChannelVoice::try_from(&buffer[..]).unwrap();
         let owned = Midi1ChannelVoice::<[u8; 3]>::try_from_ump(borrowed).unwrap();
         assert_eq!(owned.data(), &[0xD6, 0x09]);
+    }
+
+    #[test]
+    fn rebuffer_into() {
+        let message: Midi1ChannelVoice<std::vec::Vec<u32>> =
+            Midi1ChannelVoice::try_from(&[0x2FD6_0900_u32][..])
+                .unwrap()
+                .rebuffer_into();
+        assert_eq!(message.data(), &[0x2FD6_0900]);
+    }
+
+    #[test]
+    fn try_rebuffer_into() {
+        let message: Midi1ChannelVoice<[u32; 4]> =
+            Midi1ChannelVoice::try_from(&[0x2FD6_0900_u32][..])
+                .unwrap()
+                .try_rebuffer_into()
+                .unwrap();
+        assert_eq!(message.data(), &[0x2FD6_0900]);
     }
 }
