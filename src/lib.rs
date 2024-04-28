@@ -1,7 +1,7 @@
 #![no_std]
 #![doc = include_str!("../README.md")]
 
-#[cfg(feature = "std")]
+#[cfg(test)]
 extern crate std;
 
 pub mod buffer;

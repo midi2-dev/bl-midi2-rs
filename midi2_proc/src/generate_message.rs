@@ -240,25 +240,25 @@ fn message_new_arr_impl(
     args: &GenerateMessageArgs,
     properties: &Vec<Property>,
 ) -> TokenStream {
-    let owned_type = match args.representation() {
-        Representation::Bytes => owned_type_bytes(args),
-        Representation::Ump => owned_type_ump(args),
-        Representation::UmpOrBytes => owned_type_ump(args),
+    let arr_type = match args.representation() {
+        Representation::Bytes => arr_type_bytes(),
+        Representation::Ump => arr_type_ump(),
+        Representation::UmpOrBytes => arr_type_ump(),
     };
     let mut set_defaults = TokenStream::new();
     for property in properties {
         let meta_type = &property.meta_type;
         set_defaults.extend(quote! {
-            <#meta_type as crate::util::property::Property<#owned_type>>::write(
+            <#meta_type as crate::util::property::Property<#arr_type>>::write(
                 &mut buffer,
-                <#meta_type as crate::util::property::Property<#owned_type>>::default(),
+                <#meta_type as crate::util::property::Property<#arr_type>>::default(),
             ).unwrap();
         });
     }
     quote! {
-        impl #root_ident<#owned_type> {
+        impl #root_ident<#arr_type> {
             pub fn new_arr() -> Self {
-                let mut buffer: #owned_type = core::default::Default::default();
+                let mut buffer: #arr_type = core::default::Default::default();
                 #set_defaults
                 #root_ident(buffer)
             }
@@ -271,21 +271,21 @@ fn secondary_new_arr_impl(
     args: &GenerateMessageArgs,
     properties: &Vec<Property>,
 ) -> TokenStream {
-    let owned_type = owned_type_bytes(args);
+    let arr_type = arr_type_bytes();
     let mut set_defaults = TokenStream::new();
     for property in properties {
         let meta_type = &property.meta_type;
         set_defaults.extend(quote! {
-            <#meta_type as crate::util::property::Property<#owned_type>>::write(
+            <#meta_type as crate::util::property::Property<#arr_type>>::write(
                 &mut buffer,
-                <#meta_type as crate::util::property::Property<#owned_type>>::default(),
+                <#meta_type as crate::util::property::Property<#arr_type>>::default(),
             ).unwrap();
         });
     }
     quote! {
-        impl #root_ident<#owned_type> {
+        impl #root_ident<#arr_type> {
             pub fn new_arr_bytes() -> Self {
-                let mut buffer: #owned_type = core::default::Default::default();
+                let mut buffer: #arr_type = core::default::Default::default();
                 #set_defaults
                 #root_ident(buffer)
             }
@@ -293,18 +293,12 @@ fn secondary_new_arr_impl(
     }
 }
 
-fn owned_type_ump(args: &GenerateMessageArgs) -> TokenStream {
-    match args.min_size_ump {
-        Some(_) => quote! { [u32; 4] },
-        None => quote! { std::vec::Vec<u32> },
-    }
+fn arr_type_ump() -> TokenStream {
+    quote! { [u32; 4] }
 }
 
-fn owned_type_bytes(args: &GenerateMessageArgs) -> TokenStream {
-    match args.min_size_bytes {
-        Some(_) => quote! { [u8; 3] },
-        None => quote! { std::vec::Vec<u8> },
-    }
+fn arr_type_bytes() -> TokenStream {
+    quote! { [u8; 3] }
 }
 
 fn size_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream {
