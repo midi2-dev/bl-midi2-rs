@@ -27,3 +27,13 @@ pub fn derive_channeled(item: TokenStream1) -> TokenStream1 {
 pub fn derive_ump_debug(item: TokenStream1) -> TokenStream1 {
     derives::debug(item)
 }
+
+#[proc_macro_derive(FromBytes)]
+pub fn derive_from_bytes(item: TokenStream1) -> TokenStream1 {
+    derives::from_bytes(item)
+}
+
+#[proc_macro_derive(FromUmp)]
+pub fn derive_from_ump(item: TokenStream1) -> TokenStream1 {
+    derives::from_ump(item)
+}

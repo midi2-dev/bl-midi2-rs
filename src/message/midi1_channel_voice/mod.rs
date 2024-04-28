@@ -23,6 +23,8 @@ pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x2;
     midi2_proc::Data,
     midi2_proc::Channeled,
     midi2_proc::Grouped,
+    midi2_proc::FromBytes,
+    midi2_proc::FromUmp,
     Debug,
     PartialEq,
     Eq,
@@ -76,7 +78,7 @@ mod test {
     use super::*;
     use crate::{
         numeric_types::*,
-        traits::{Channeled, FromBytes, Grouped},
+        traits::{Channeled, Data, FromBytes, FromUmp, Grouped},
     };
     use pretty_assertions::assert_eq;
 
@@ -113,7 +115,16 @@ mod test {
     #[test]
     fn from_bytes() {
         let buffer = [0xD6_u8, 0x09_u8];
-        let borrowed = Midi1ChannelVoice::try_from(&buffer[..]);
-        // let owned = Midi1ChannelVoice::<std::vec::Vec<u32>>::from_bytes(borrowed);
+        let borrowed = Midi1ChannelVoice::try_from(&buffer[..]).unwrap();
+        let owned = Midi1ChannelVoice::<std::vec::Vec<u32>>::from_bytes(borrowed);
+        assert_eq!(owned.data(), &[0x20D6_0900]);
+    }
+
+    #[test]
+    fn from_ump() {
+        let buffer = [0x20D6_0900_u32];
+        let borrowed = Midi1ChannelVoice::try_from(&buffer[..]).unwrap();
+        let owned = Midi1ChannelVoice::<std::vec::Vec<u8>>::from_ump(borrowed);
+        assert_eq!(owned.data(), &[0xD6, 0x09]);
     }
 }

@@ -27,6 +27,64 @@ pub fn data(item: TokenStream1) -> TokenStream1 {
     .into()
 }
 
+pub fn from_bytes(item: TokenStream1) -> TokenStream1 {
+    let input = parse_macro_input!(item as ItemEnum);
+    let ident = &input.ident;
+    let mut match_arms = TokenStream::new();
+    for variant in &input.variants {
+        let variant_ident = &variant.ident;
+        match_arms.extend(quote! {
+            #ident::#variant_ident(m) => #variant_ident::<B>::from_bytes(m).into(),
+        });
+    }
+    quote! {
+        impl<
+                A: crate::buffer::Bytes,
+                B: crate::buffer::Ump
+                    + crate::buffer::BufferDefault
+                    + crate::buffer::BufferMut
+                    + crate::buffer::BufferResize,
+            > crate::traits::FromBytes<#ident<A>> for #ident<B>
+        {
+            fn from_bytes(other: #ident<A>) -> Self {
+                match other {
+                    #match_arms
+                }
+            }
+        }
+    }
+    .into()
+}
+
+pub fn from_ump(item: TokenStream1) -> TokenStream1 {
+    let input = parse_macro_input!(item as ItemEnum);
+    let ident = &input.ident;
+    let mut match_arms = TokenStream::new();
+    for variant in &input.variants {
+        let variant_ident = &variant.ident;
+        match_arms.extend(quote! {
+            #ident::#variant_ident(m) => #variant_ident::<B>::from_ump(m).into(),
+        });
+    }
+    quote! {
+        impl<
+                A: crate::buffer::Ump,
+                B: crate::buffer::Bytes
+                    + crate::buffer::BufferDefault
+                    + crate::buffer::BufferMut
+                    + crate::buffer::BufferResize,
+            > crate::traits::FromUmp<#ident<A>> for #ident<B>
+        {
+            fn from_ump(other: #ident<A>) -> Self {
+                match other {
+                    #match_arms
+                }
+            }
+        }
+    }
+    .into()
+}
+
 pub fn grouped(item: TokenStream1) -> TokenStream1 {
     let input = parse_macro_input!(item as ItemEnum);
     let ident = &input.ident;
