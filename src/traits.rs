@@ -147,18 +147,25 @@ pub trait Sysex<B: crate::buffer::Buffer> {
 
 pub(crate) trait SysexInternal<B: crate::buffer::Buffer>: Sysex<B> {
     fn payload_size(&self) -> usize;
+
+    // resize the underlying buffer to accommodate the requested amount
+    // of bytes. The newly allocated data should be assumed to be
+    // written to immediately after this call - so it doesn't matter
+    // if we leave the buffer dirty.
     fn resize(&mut self, payload_size: usize)
     where
         B: crate::buffer::BufferMut + crate::buffer::BufferResize;
+
+    // fallible version of the above
     fn try_resize(
         &mut self,
         payload_size: usize,
     ) -> core::result::Result<(), crate::error::BufferOverflow>
     where
         B: crate::buffer::BufferMut + crate::buffer::BufferTryResize;
-    // write the payload range into the buffer starting at the
-    // provided index.
-    // NOTE: the caller must ensure there is enough space in the buffer
+
+    // write byte into the buffer at the provided index.
+    // NOTE: the caller must ensure the buffer is large enough
     fn write_datum(&mut self, datum: Self::Byte, payload_index: usize)
     where
         B: crate::buffer::BufferMut;

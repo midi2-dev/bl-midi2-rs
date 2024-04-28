@@ -148,11 +148,11 @@ fn try_set_sysex_data_impl<
     B: crate::buffer::Buffer + crate::buffer::BufferMut,
     S: SysexInternal<B>,
     D: core::iter::Iterator<Item = <S as crate::traits::Sysex<B>>::Byte>,
-    R: FnMut(&mut S, usize) -> core::result::Result<(), crate::error::BufferOverflow>,
+    R: Fn(&mut S, usize) -> core::result::Result<(), crate::error::BufferOverflow>,
 >(
     sysex: &mut S,
     mut data: D,
-    mut resize: R,
+    resize: R,
 ) -> core::result::Result<(), crate::error::BufferOverflow> {
     let mut running_data_size_estimate: Option<usize> = None;
     let mut written = 0;

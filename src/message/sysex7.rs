@@ -222,9 +222,11 @@ impl<B: crate::buffer::Buffer> core::iter::Iterator for PayloadIterator<B> {
 impl<B: crate::buffer::Buffer> crate::traits::Sysex<B> for Sysex7<B> {
     type Byte = numeric_types::u7;
     type PayloadIterator = PayloadIterator<B>;
+
     fn payload(&self) -> Self::PayloadIterator {
         todo!()
     }
+
     fn set_payload<D>(&mut self, data: D)
     where
         D: core::iter::Iterator<Item = Self::Byte>,
@@ -232,6 +234,7 @@ impl<B: crate::buffer::Buffer> crate::traits::Sysex<B> for Sysex7<B> {
     {
         message_helpers::set_sysex_data(self, data)
     }
+
     fn try_set_payload<D>(
         &mut self,
         data: D,
@@ -261,6 +264,7 @@ impl<B: crate::buffer::Buffer> crate::traits::SysexInternal<B> for Sysex7<B> {
             _ => unreachable!(),
         }
     }
+
     fn try_resize(
         &mut self,
         payload_size: usize,
@@ -281,6 +285,7 @@ impl<B: crate::buffer::Buffer> crate::traits::SysexInternal<B> for Sysex7<B> {
             _ => unreachable!(),
         }
     }
+
     fn write_datum(&mut self, datum: Self::Byte, payload_index: usize)
     where
         B: crate::buffer::BufferMut,
@@ -295,6 +300,7 @@ impl<B: crate::buffer::Buffer> crate::traits::SysexInternal<B> for Sysex7<B> {
             _ => unreachable!(),
         }
     }
+
     fn payload_size(&self) -> usize {
         self.size() - 2
     }
