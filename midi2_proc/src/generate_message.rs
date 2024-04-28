@@ -297,14 +297,14 @@ fn secondary_new_arr_impl(
 
 fn owned_type_ump(args: &GenerateMessageArgs) -> TokenStream {
     match args.min_size_ump {
-        Some(size) => quote! { [u32; #size] },
+        Some(_) => quote! { [u32; 4] },
         None => quote! { std::vec::Vec<u32> },
     }
 }
 
 fn owned_type_bytes(args: &GenerateMessageArgs) -> TokenStream {
     match args.min_size_bytes {
-        Some(size) => quote! { [u8; #size] },
+        Some(_) => quote! { [u8; 3] },
         None => quote! { std::vec::Vec<u8> },
     }
 }

@@ -40,7 +40,7 @@ mod tests {
         message.set_group(u4::new(0xF));
         message.set_channel(u4::new(0x6));
         message.set_pressure(u7::new(0x09));
-        assert_eq!(message, ChannelPressure([0x2FD6_0900]));
+        assert_eq!(message, ChannelPressure([0x2FD6_0900, 0x0, 0x0, 0x0]));
     }
 
     #[test]
@@ -48,7 +48,7 @@ mod tests {
         let mut message = ChannelPressure::new_arr_bytes();
         message.set_channel(u4::new(0x6));
         message.set_pressure(u7::new(0x09));
-        assert_eq!(message, ChannelPressure([0xD6, 0x09]));
+        assert_eq!(message, ChannelPressure([0xD6, 0x09, 0x0]));
     }
 
     #[test]
