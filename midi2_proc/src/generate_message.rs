@@ -1,3 +1,4 @@
+use crate::common::Representation;
 use proc_macro::TokenStream as TokenStream1;
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -90,12 +91,6 @@ struct GenerateMessageArgs {
     min_size_bytes: Option<usize>,
 }
 
-enum Representation {
-    Ump,
-    Bytes,
-    UmpOrBytes,
-}
-
 impl GenerateMessageArgs {
     fn representation(&self) -> Representation {
         match (&self.min_size_ump, &self.min_size_bytes) {
@@ -174,10 +169,11 @@ fn generic_buffer_constraint(args: &GenerateMessageArgs) -> TokenStream {
     }
 }
 
-fn message(root_ident: &syn::Ident) -> TokenStream {
+fn message(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream {
+    let constraint = generic_buffer_constraint(args);
     quote! {
         #[derive(PartialEq, Eq, midi2_proc::Debug)]
-        pub struct #root_ident<B: crate::buffer::Buffer>(B);
+        pub struct #root_ident<B: #constraint>(B);
     }
 }
 
@@ -394,27 +390,7 @@ fn try_from_slice_impl(
 }
 
 fn rebuffer_from_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream {
-    let generics = match args.representation() {
-        Representation::Ump => quote! {
-            <
-                A: crate::buffer::Ump,
-                B: crate::buffer::Ump + crate::buffer::BufferMut + crate::buffer::BufferDefault + crate::buffer::BufferResize,
-            >
-        },
-        Representation::Bytes => quote! {
-            <
-                A: crate::buffer::Bytes,
-                B: crate::buffer::Bytes + crate::buffer::BufferMut + crate::buffer::BufferDefault + crate::buffer::BufferResize,
-            >
-        },
-        Representation::UmpOrBytes => quote! {
-            <
-                U: crate::buffer::Unit,
-                A: crate::buffer::Buffer<Unit = U>,
-                B: crate::buffer::Buffer<Unit = U> + crate::buffer::BufferMut + crate::buffer::BufferDefault + crate::buffer::BufferResize,
-            >
-        },
-    };
+    let generics = crate::common::rebuffer_generics(args.representation());
     quote! {
         impl #generics crate::traits::RebufferFrom<#root_ident<A>> for #root_ident<B>
         {
@@ -430,27 +406,7 @@ fn rebuffer_from_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> To
 }
 
 fn try_rebuffer_from_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream {
-    let generics = match args.representation() {
-        Representation::Ump => quote! {
-            <
-                A: crate::buffer::Ump,
-                B: crate::buffer::Ump + crate::buffer::BufferMut + crate::buffer::BufferDefault + crate::buffer::BufferTryResize,
-            >
-        },
-        Representation::Bytes => quote! {
-            <
-                A: crate::buffer::Bytes,
-                B: crate::buffer::Bytes + crate::buffer::BufferMut + crate::buffer::BufferDefault + crate::buffer::BufferTryResize,
-            >
-        },
-        Representation::UmpOrBytes => quote! {
-            <
-                U: crate::buffer::Unit,
-                A: crate::buffer::Buffer<Unit = U>,
-                B: crate::buffer::Buffer<Unit = U> + crate::buffer::BufferMut + crate::buffer::BufferDefault + crate::buffer::BufferTryResize,
-            >
-        },
-    };
+    let generics = crate::common::try_rebuffer_generics(args.representation());
     quote! {
         impl #generics crate::traits::TryRebufferFrom<#root_ident<A>> for #root_ident<B>
         {
@@ -515,9 +471,10 @@ fn try_new_impl(
     }
 }
 
-fn clone_impl(root_ident: &syn::Ident) -> TokenStream {
+fn clone_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream {
+    let constraint = generic_buffer_constraint(args);
     quote! {
-        impl<B: crate::buffer::Buffer + core::clone::Clone> core::clone::Clone for #root_ident<B> {
+        impl<B: #constraint + core::clone::Clone> core::clone::Clone for #root_ident<B> {
             fn clone(&self) -> Self {
                 Self(self.0.clone())
             }
@@ -680,7 +637,7 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     let root_ident = &input.ident;
 
     let imports = imports();
-    let message = message(root_ident);
+    let message = message(root_ident, &args);
     let message_impl = message_impl(root_ident, &args, &properties);
     let data_impl = data_impl(root_ident, &args);
     let min_size_impl = min_size_impl(root_ident, &args);
@@ -689,7 +646,7 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     let try_rebuffer_from_impl = try_rebuffer_from_impl(root_ident, &args);
     let new_impl = new_impl(root_ident, &args, &properties);
     let try_new_impl = try_new_impl(root_ident, &args, &properties);
-    let clone_impl = clone_impl(root_ident);
+    let clone_impl = clone_impl(root_ident, &args);
 
     let mut tokens = TokenStream::new();
 

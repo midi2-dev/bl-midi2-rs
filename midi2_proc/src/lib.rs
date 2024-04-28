@@ -1,5 +1,6 @@
 use proc_macro::TokenStream as TokenStream1;
 
+mod common;
 mod derives;
 mod generate_message;
 

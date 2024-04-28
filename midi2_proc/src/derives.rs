@@ -1,3 +1,4 @@
+use crate::common;
 use proc_macro::TokenStream as TokenStream1;
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -14,9 +15,12 @@ pub fn data(item: TokenStream1) -> TokenStream1 {
         });
     }
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
+    let buffer_type_ident = common::buffer_generic(&input.generics)
+        .expect("Expected buffer generic")
+        .ident();
     quote! {
-        impl #impl_generics  crate::traits::Data<B> for #ident #ty_generics #where_clause  {
-            fn data(&self) -> &[B::Unit] {
+        impl #impl_generics  crate::traits::Data<#buffer_type_ident> for #ident #ty_generics #where_clause  {
+            fn data(&self) -> &[#buffer_type_ident::Unit] {
                 use #ident::*;
                 match self {
                     #match_arms
@@ -153,15 +157,15 @@ pub fn rebuffer_from(item: TokenStream1) -> TokenStream1 {
             #ident::#variant_ident(m) => #variant_ident::<B>::rebuffer_from(m).into(),
         });
     }
+    let generics = common::rebuffer_generics(
+        match common::buffer_generic(&input.generics).expect("No buffer generic found.") {
+            common::BufferGeneric::Ump(_) => common::Representation::Ump,
+            common::BufferGeneric::Bytes(_) => common::Representation::Bytes,
+            common::BufferGeneric::UmpOrBytes(_) => common::Representation::UmpOrBytes,
+        },
+    );
     quote! {
-        impl<
-                U: crate::buffer::Unit,
-                A: crate::buffer::Buffer<Unit = U>,
-                B: crate::buffer::Buffer<Unit = U>
-                    + crate::buffer::BufferMut
-                    + crate::buffer::BufferDefault
-                    + crate::buffer::BufferResize
-            > crate::traits::RebufferFrom<#ident<A>> for #ident<B>
+        impl #generics crate::traits::RebufferFrom<#ident<A>> for #ident<B>
         {
             fn rebuffer_from(other: #ident<A>) -> Self {
                 match other {
@@ -183,15 +187,15 @@ pub fn try_rebuffer_from(item: TokenStream1) -> TokenStream1 {
             #ident::#variant_ident(m) => #variant_ident::<B>::try_rebuffer_from(m)?.into(),
         });
     }
+    let generics = common::try_rebuffer_generics(
+        match common::buffer_generic(&input.generics).expect("No buffer generic found.") {
+            common::BufferGeneric::Ump(_) => common::Representation::Ump,
+            common::BufferGeneric::Bytes(_) => common::Representation::Bytes,
+            common::BufferGeneric::UmpOrBytes(_) => common::Representation::UmpOrBytes,
+        },
+    );
     quote! {
-        impl<
-                U: crate::buffer::Unit,
-                A: crate::buffer::Buffer<Unit = U>,
-                B: crate::buffer::Buffer<Unit = U>
-                    + crate::buffer::BufferMut
-                    + crate::buffer::BufferDefault
-                    + crate::buffer::BufferTryResize
-            > crate::traits::TryRebufferFrom<#ident<A>> for #ident<B>
+        impl #generics crate::traits::TryRebufferFrom<#ident<A>> for #ident<B>
         {
             fn try_rebuffer_from(other: #ident<A>) -> core::result::Result<Self, crate::error::BufferOverflow> {
                 Ok(match other {
@@ -254,8 +258,11 @@ pub fn channeled(item: TokenStream1) -> TokenStream1 {
         });
     }
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
+    let buffer_id = common::buffer_generic(&input.generics)
+        .expect("Expected buffer generic")
+        .ident();
     quote! {
-        impl #impl_generics crate::traits::Channeled<B> for #ident #ty_generics #where_clause {
+        impl #impl_generics crate::traits::Channeled<#buffer_id> for #ident #ty_generics #where_clause {
             fn channel(&self) -> crate::u4 {
                 use #ident::*;
                 match self {
@@ -264,7 +271,7 @@ pub fn channeled(item: TokenStream1) -> TokenStream1 {
             }
             fn set_channel(&mut self, channel: crate::u4)
             where
-                B: crate::buffer::BufferMut
+                #buffer_id: crate::buffer::BufferMut
             {
                 use #ident::*;
                 match self {
@@ -289,11 +296,14 @@ pub fn debug(item: TokenStream1) -> TokenStream1 {
         _ => panic!("Only enums and structs supported"),
     };
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
+    let buffer_id = common::buffer_generic(&generics)
+        .expect("Expected buffer generic")
+        .ident();
     quote! {
         impl #impl_generics core::fmt::Debug for #ident #ty_generics #where_clause {
             fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
                 fmt.write_fmt(format_args!("{}([", stringify!(#ident)))?;
-                match <<B as crate::buffer::Buffer>::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
+                match <<#buffer_id as crate::buffer::Buffer>::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
                     crate::buffer::UNIT_ID_U8 => {
                         let buff = self.0.buffer();
                         let mut iter = buff.specialise_u8().iter().peekable();
