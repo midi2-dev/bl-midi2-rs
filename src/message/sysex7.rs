@@ -211,31 +211,20 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for ValidPacke
 }
 
 #[derive(Debug, Clone)]
-struct BytesPayloadIterator<'a, U: crate::buffer::Unit>(
-    core::iter::Cloned<core::slice::Iter<'a, u8>>,
-    core::marker::PhantomData<U>,
-);
-
-#[derive(Debug, Clone)]
-pub struct UmpPayloadIterator<'a, U: crate::buffer::Unit> {
-    data: &'a [u32],
-    message_index: usize,
+pub struct PayloadIterator<'a, U: crate::buffer::Unit> {
+    data: &'a [U],
     payload_index: usize,
-    _unit: core::marker::PhantomData<U>,
+    // unused in bytes mode
+    packet_index: usize,
 }
-
-union PayloadIteratorPrivate<'a, U: crate::buffer::Unit> {
-    bytes: core::mem::ManuallyDrop<BytesPayloadIterator<'a, U>>,
-    ump: core::mem::ManuallyDrop<UmpPayloadIterator<'a, U>>,
-}
-
-pub struct PayloadIterator<'a, U: crate::buffer::Unit>(PayloadIteratorPrivate<'a, U>);
 
 impl<'a, U: crate::buffer::Unit> core::iter::Iterator for PayloadIterator<'a, U> {
     type Item = numeric_types::u7;
     fn next(&mut self) -> Option<Self::Item> {
         match U::UNIT_ID {
-            crate::buffer::UNIT_ID_U8 => unsafe { (*self.0.bytes).0.next().map(u7::new) },
+            crate::buffer::UNIT_ID_U8 => {
+                todo!()
+            }
             crate::buffer::UNIT_ID_U32 => {
                 todo!()
             }
@@ -243,22 +232,47 @@ impl<'a, U: crate::buffer::Unit> core::iter::Iterator for PayloadIterator<'a, U>
         }
     }
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
-        todo!()
+        match U::UNIT_ID {
+            crate::buffer::UNIT_ID_U8 => {
+                todo!()
+            }
+            crate::buffer::UNIT_ID_U32 => {
+                todo!()
+            }
+            _ => unreachable!(),
+        }
     }
     fn count(self) -> usize
     where
         Self: Sized,
     {
-        todo!()
+        match U::UNIT_ID {
+            crate::buffer::UNIT_ID_U8 => {
+                todo!()
+            }
+            crate::buffer::UNIT_ID_U32 => {
+                todo!()
+            }
+            _ => unreachable!(),
+        }
     }
     fn size_hint(&self) -> (usize, Option<usize>) {
-        todo!()
+        match U::UNIT_ID {
+            crate::buffer::UNIT_ID_U8 => {
+                todo!()
+            }
+            crate::buffer::UNIT_ID_U32 => {
+                todo!()
+            }
+            _ => unreachable!(),
+        }
     }
 }
 
 impl<B: crate::buffer::Buffer> crate::traits::Sysex<B> for Sysex7<B> {
     type Byte = numeric_types::u7;
-    type PayloadIterator<'a> = PayloadIterator<'a, B::Unit> where B::Unit: 'a;
+    type PayloadIterator<'a> = PayloadIterator<'a, B::Unit>
+    where B::Unit: 'a;
 
     fn payload<'a>(&self) -> Self::PayloadIterator<'a>
     where
