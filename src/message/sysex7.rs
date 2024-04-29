@@ -125,34 +125,6 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for Consistent
     }
 }
 
-impl<B: crate::buffer::Buffer> crate::traits::Size<B> for Sysex7<B> {
-    fn size(&self) -> usize {
-        match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
-            crate::buffer::UNIT_ID_U8 => {
-                self.0
-                    .specialise_u8()
-                    .iter()
-                    .position(|b| *b == 0xF7)
-                    .expect("Message is in an invalid state. No end byte.")
-                    + 1
-            }
-            crate::buffer::UNIT_ID_U32 => {
-                self.0
-                    .specialise_u32()
-                    .chunks_exact(2)
-                    .position(|p| {
-                        let status: u8 = p[0].nibble(2).into();
-                        status == 0x0 || status == 0x3
-                    })
-                    .expect("Message is in an invalid state. Couldn't find end packet.")
-                    * 2
-                    + 2
-            }
-            _ => unreachable!(),
-        }
-    }
-}
-
 struct ConsistentStatuses;
 
 impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for ConsistentStatuses {
@@ -208,6 +180,34 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for ValidPacke
     }
     fn default() -> Self::Type {
         ()
+    }
+}
+
+impl<B: crate::buffer::Buffer> crate::traits::Size<B> for Sysex7<B> {
+    fn size(&self) -> usize {
+        match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
+            crate::buffer::UNIT_ID_U8 => {
+                self.0
+                    .specialise_u8()
+                    .iter()
+                    .position(|b| *b == 0xF7)
+                    .expect("Message is in an invalid state. No end byte.")
+                    + 1
+            }
+            crate::buffer::UNIT_ID_U32 => {
+                self.0
+                    .specialise_u32()
+                    .chunks_exact(2)
+                    .position(|p| {
+                        let status: u8 = p[0].nibble(2).into();
+                        status == 0x0 || status == 0x3
+                    })
+                    .expect("Message is in an invalid state. Couldn't find end packet.")
+                    * 2
+                    + 2
+            }
+            _ => unreachable!(),
+        }
     }
 }
 
