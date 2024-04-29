@@ -118,7 +118,7 @@ pub fn try_set_sysex_data<
     sysex: &mut S,
     data: D,
 ) -> core::result::Result<(), crate::error::BufferOverflow> {
-    match try_set_sysex_data_impl(sysex, data, |s, sz| s.try_resize(sz)) {
+    match detail::try_set_sysex_data(sysex, data, |s, sz| s.try_resize(sz)) {
         Err(e) => {
             // if the write failed we reset the message
             // back to zero data
@@ -137,80 +137,82 @@ pub fn set_sysex_data<
     sysex: &mut S,
     data: D,
 ) {
-    try_set_sysex_data_impl(sysex, data, |s, sz| {
+    detail::try_set_sysex_data(sysex, data, |s, sz| {
         s.resize(sz);
         Ok(())
     })
     .expect("Resizable buffers should not fail here")
 }
 
-fn try_set_sysex_data_impl<
-    B: crate::buffer::Buffer + crate::buffer::BufferMut,
-    S: SysexInternal<B>,
-    D: core::iter::Iterator<Item = <S as crate::traits::Sysex<B>>::Byte>,
-    R: Fn(&mut S, usize) -> core::result::Result<(), crate::error::BufferOverflow>,
->(
-    sysex: &mut S,
-    mut data: D,
-    resize: R,
-) -> core::result::Result<(), crate::error::BufferOverflow> {
-    let mut running_data_size_estimate: Option<usize> = None;
-    let mut written = 0;
-    let mut shift_for_overflow_distance = 1;
-    'main: loop {
-        let mut size = match running_data_size_estimate.as_mut() {
-            None => {
-                // make an initial estimate
-                let init_size = match data.size_hint() {
-                    (_, Some(upper)) => upper,
-                    // not the optimal case - could lead to additional copying
-                    (lower, None) => lower,
-                };
-                running_data_size_estimate = Some(init_size);
-                init_size
-            }
-            Some(v) => {
-                // we underestimated.
-                // resize to make more space
-                *v += shift_for_overflow_distance;
-                shift_for_overflow_distance *= 2;
-                *v
-            }
-        };
-
-        let mut should_exit = false;
-        if let Err(e) = resize(sysex, size) {
-            size = sysex.payload_size();
-            if size <= written {
-                return Err(e);
-            } else {
-                should_exit = true;
-            }
-        }
-
-        for _ in written..size {
-            match data.next() {
-                Some(v) => {
-                    sysex.write_datum(v, written);
-                    written += 1;
-                }
+mod detail {
+    pub fn try_set_sysex_data<
+        B: crate::buffer::Buffer + crate::buffer::BufferMut,
+        S: crate::traits::SysexInternal<B>,
+        D: core::iter::Iterator<Item = <S as crate::traits::Sysex<B>>::Byte>,
+        R: Fn(&mut S, usize) -> core::result::Result<(), crate::error::BufferOverflow>,
+    >(
+        sysex: &mut S,
+        mut data: D,
+        resize: R,
+    ) -> core::result::Result<(), crate::error::BufferOverflow> {
+        let mut running_data_size_estimate: Option<usize> = None;
+        let mut written = 0;
+        let mut additional_size_for_overflow = 1;
+        'main: loop {
+            let mut size = match running_data_size_estimate.as_mut() {
                 None => {
-                    break 'main;
+                    // make an initial estimate
+                    let init_size = match data.size_hint() {
+                        (_, Some(upper)) => upper,
+                        // not the optimal case - could lead to additional copying
+                        (lower, None) => lower,
+                    };
+                    running_data_size_estimate = Some(init_size);
+                    init_size
                 }
+                Some(v) => {
+                    // we underestimated.
+                    // resize to make more space
+                    *v += additional_size_for_overflow;
+                    additional_size_for_overflow *= 2;
+                    *v
+                }
+            };
+
+            let mut should_exit = false;
+            if let Err(e) = resize(sysex, size) {
+                size = sysex.payload_size();
+                if size <= written {
+                    return Err(e);
+                } else {
+                    should_exit = true;
+                }
+            }
+
+            for _ in written..size {
+                match data.next() {
+                    Some(v) => {
+                        sysex.write_datum(v, written);
+                        written += 1;
+                    }
+                    None => {
+                        break 'main;
+                    }
+                }
+            }
+
+            if should_exit {
+                break;
             }
         }
 
-        if should_exit {
-            break;
+        if let Some(estimate) = running_data_size_estimate {
+            if written < estimate {
+                // we shrink the buffer back down to the correct size
+                resize(sysex, written)?;
+            }
         }
-    }
 
-    if let Some(estimate) = running_data_size_estimate {
-        if written < estimate {
-            // we shrink the buffer back down to the correct size
-            resize(sysex, written)?;
-        }
+        Ok(())
     }
-
-    Ok(())
 }

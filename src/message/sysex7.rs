@@ -1,8 +1,8 @@
 use crate::{
     message::{common_properties, helpers as message_helpers},
     numeric_types::{self, u7},
+    traits::{Sysex, SysexInternal},
     util::BitOps,
-    Sysex,
 };
 
 pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x3;
@@ -73,18 +73,17 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for Sysex7Byte
     type Type = ();
     fn read(buffer: &B) -> crate::result::Result<Self::Type> {
         match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
-            crate::buffer::UNIT_ID_U8 => {
-                let last = buffer.buffer().len() - 1;
-                if buffer.specialise_u8()[last] != END_BYTE {
-                    Err(crate::error::Error::InvalidData(ERR_NO_END_BYTE))
-                } else {
-                    Ok(())
-                }
-            }
+            crate::buffer::UNIT_ID_U8 => buffer
+                .specialise_u8()
+                .iter()
+                .position(|b| *b == 0xF7)
+                .map(|_| ())
+                .ok_or(crate::error::Error::InvalidData(ERR_NO_END_BYTE)),
             crate::buffer::UNIT_ID_U32 => Ok(()),
             _ => unreachable!(),
         }
     }
+
     fn write(buffer: &mut B, _: Self::Type) -> crate::result::Result<()>
     where
         B: crate::buffer::BufferMut,
@@ -99,6 +98,7 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for Sysex7Byte
             _ => unreachable!(),
         }
     }
+
     fn default() -> Self::Type {
         ()
     }
@@ -211,6 +211,16 @@ impl<B: crate::buffer::Buffer> crate::traits::Size<B> for Sysex7<B> {
     }
 }
 
+fn next_bytes(index: &mut usize, data: &[u8]) -> Option<u7> {
+    if *index == data.len() {
+        None
+    } else {
+        let ret = Some(u7::new(data[*index]));
+        *index += 1;
+        ret
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct PayloadIterator<'a, U: crate::buffer::Unit> {
     data: &'a [U],
@@ -223,9 +233,10 @@ impl<'a, U: crate::buffer::Unit> core::iter::Iterator for PayloadIterator<'a, U>
     type Item = numeric_types::u7;
     fn next(&mut self) -> Option<Self::Item> {
         match U::UNIT_ID {
-            crate::buffer::UNIT_ID_U8 => {
-                todo!()
-            }
+            crate::buffer::UNIT_ID_U8 => next_bytes(
+                &mut self.payload_index,
+                <U as crate::buffer::UnitPrivate>::specialise_buffer_u8(self.data),
+            ),
             crate::buffer::UNIT_ID_U32 => {
                 todo!()
             }
@@ -259,9 +270,7 @@ impl<'a, U: crate::buffer::Unit> core::iter::Iterator for PayloadIterator<'a, U>
     }
     fn size_hint(&self) -> (usize, Option<usize>) {
         match U::UNIT_ID {
-            crate::buffer::UNIT_ID_U8 => {
-                todo!()
-            }
+            crate::buffer::UNIT_ID_U8 => (self.len(), Some(self.len())),
             crate::buffer::UNIT_ID_U32 => {
                 todo!()
             }
@@ -274,20 +283,40 @@ impl<'a, U: crate::buffer::Unit> core::iter::FusedIterator for PayloadIterator<'
 
 impl<'a, U: crate::buffer::Unit> core::iter::ExactSizeIterator for PayloadIterator<'a, U> {
     fn len(&self) -> usize {
-        todo!()
+        match U::UNIT_ID {
+            crate::buffer::UNIT_ID_U8 => self.data[self.payload_index..].len(),
+            crate::buffer::UNIT_ID_U32 => {
+                todo!()
+            }
+            _ => unreachable!(),
+        }
     }
 }
 
-impl<B: crate::buffer::Buffer> crate::traits::Sysex<B> for Sysex7<B> {
+impl<B: crate::buffer::Buffer> Sysex<B> for Sysex7<B> {
     type Byte = numeric_types::u7;
     type PayloadIterator<'a> = PayloadIterator<'a, B::Unit>
-    where B::Unit: 'a;
+    where
+        B::Unit: 'a,
+        Self: 'a;
 
-    fn payload<'a>(&self) -> Self::PayloadIterator<'a>
+    fn payload<'a>(&'a self) -> Self::PayloadIterator<'a>
     where
         B::Unit: 'a,
     {
-        todo!()
+        match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
+            crate::buffer::UNIT_ID_U8 => PayloadIterator {
+                data: &self.0.buffer()[1..self.size() - 1],
+                payload_index: 0,
+                packet_index: 0,
+            },
+            crate::buffer::UNIT_ID_U32 => PayloadIterator {
+                data: &self.0.buffer()[..self.size()],
+                payload_index: 0,
+                packet_index: 0,
+            },
+            _ => unreachable!(),
+        }
     }
 
     fn set_payload<D>(&mut self, data: D)
@@ -310,7 +339,7 @@ impl<B: crate::buffer::Buffer> crate::traits::Sysex<B> for Sysex7<B> {
     }
 }
 
-impl<B: crate::buffer::Buffer> crate::traits::SysexInternal<B> for Sysex7<B> {
+impl<B: crate::buffer::Buffer> SysexInternal<B> for Sysex7<B> {
     fn resize(&mut self, payload_size: usize)
     where
         B: crate::buffer::BufferMut + crate::buffer::BufferResize,
@@ -337,10 +366,15 @@ impl<B: crate::buffer::Buffer> crate::traits::SysexInternal<B> for Sysex7<B> {
     {
         match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
             crate::buffer::UNIT_ID_U8 => {
+                let old_payload_size = self.payload_size();
                 let mut buffer_sz = payload_size + 2;
                 let resize_result = self.0.try_resize(buffer_sz);
                 if resize_result.is_err() {
-                    buffer_sz = self.0.buffer().len() - 2;
+                    buffer_sz = self.0.buffer().len();
+                }
+                if buffer_sz > old_payload_size {
+                    // erase old end bit
+                    self.0.specialise_u8_mut()[old_payload_size + 1] = 0;
                 }
                 self.0.specialise_u8_mut()[buffer_sz - 1] = END_BYTE;
                 resize_result
@@ -368,9 +402,7 @@ impl<B: crate::buffer::Buffer> crate::traits::SysexInternal<B> for Sysex7<B> {
     }
 
     fn payload_size(&self) -> usize {
-        // todo: restore when payload is implemented
-        // self.payload().len()
-        self.0.buffer().len() - 2
+        self.payload().len()
     }
 }
 
@@ -397,6 +429,14 @@ mod tests {
         assert_eq!(
             Sysex7::try_from(&[0xF0_u8, 0x0_u8, 0x1_u8, 0x2_u8, 0xF7_u8][..]),
             Ok(Sysex7(&[0xF0, 0x0, 0x1, 0x2, 0xF7][..])),
+        )
+    }
+
+    #[test]
+    fn try_from_oversized_bytes() {
+        assert_eq!(
+            Sysex7::try_from(&[0xF0_u8, 0x0_u8, 0x1_u8, 0x2_u8, 0xF7, 0x0][..]),
+            Ok(Sysex7(&[0xF0, 0x0, 0x1, 0x2, 0xF7, 0x0][..])),
         )
     }
 
@@ -629,6 +669,28 @@ mod tests {
                 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
                 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x30, 0x31, 0xF7,
             ])
+        );
+    }
+
+    #[test]
+    fn payload_bytes() {
+        assert_eq!(
+            std::vec![
+                0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D,
+                0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B,
+                0x1C, 0x1D,
+            ],
+            Sysex7::try_from(
+                &[
+                    0xF0_u8, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A,
+                    0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                    0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0xF7,
+                ][..]
+            )
+            .unwrap()
+            .payload()
+            .map(u8::from)
+            .collect::<std::vec::Vec<u8>>()
         );
     }
 }
