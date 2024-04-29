@@ -1,6 +1,6 @@
 use crate::{
     message::{common_properties, helpers as message_helpers},
-    numeric_types,
+    numeric_types::{self, u7},
     util::BitOps,
 };
 
@@ -210,20 +210,60 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for ValidPacke
     }
 }
 
-pub struct PayloadIterator<B: crate::buffer::Buffer>(B);
+#[derive(Debug, Clone)]
+struct BytesPayloadIterator<'a, U: crate::buffer::Unit>(
+    core::iter::Cloned<core::slice::Iter<'a, u8>>,
+    core::marker::PhantomData<U>,
+);
 
-impl<B: crate::buffer::Buffer> core::iter::Iterator for PayloadIterator<B> {
+#[derive(Debug, Clone)]
+pub struct UmpPayloadIterator<'a, U: crate::buffer::Unit> {
+    data: &'a [u32],
+    message_index: usize,
+    payload_index: usize,
+    _unit: core::marker::PhantomData<U>,
+}
+
+union PayloadIteratorPrivate<'a, U: crate::buffer::Unit> {
+    bytes: core::mem::ManuallyDrop<BytesPayloadIterator<'a, U>>,
+    ump: core::mem::ManuallyDrop<UmpPayloadIterator<'a, U>>,
+}
+
+pub struct PayloadIterator<'a, U: crate::buffer::Unit>(PayloadIteratorPrivate<'a, U>);
+
+impl<'a, U: crate::buffer::Unit> core::iter::Iterator for PayloadIterator<'a, U> {
     type Item = numeric_types::u7;
     fn next(&mut self) -> Option<Self::Item> {
+        match U::UNIT_ID {
+            crate::buffer::UNIT_ID_U8 => unsafe { (*self.0.bytes).0.next().map(u7::new) },
+            crate::buffer::UNIT_ID_U32 => {
+                todo!()
+            }
+            _ => unreachable!(),
+        }
+    }
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        todo!()
+    }
+    fn count(self) -> usize
+    where
+        Self: Sized,
+    {
+        todo!()
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
         todo!()
     }
 }
 
 impl<B: crate::buffer::Buffer> crate::traits::Sysex<B> for Sysex7<B> {
     type Byte = numeric_types::u7;
-    type PayloadIterator = PayloadIterator<B>;
+    type PayloadIterator<'a> = PayloadIterator<'a, B::Unit> where B::Unit: 'a;
 
-    fn payload(&self) -> Self::PayloadIterator {
+    fn payload<'a>(&self) -> Self::PayloadIterator<'a>
+    where
+        B::Unit: 'a,
+    {
         todo!()
     }
 

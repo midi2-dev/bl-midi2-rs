@@ -1,7 +1,7 @@
 use crate::error::BufferOverflow;
 
 #[allow(private_bounds)]
-pub trait Unit: UnitPrivate {
+pub trait Unit: Copy + UnitPrivate {
     fn zero() -> Self;
 }
 

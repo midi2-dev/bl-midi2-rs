@@ -129,9 +129,13 @@ where
 
 pub trait Sysex<B: crate::buffer::Buffer> {
     type Byte;
-    type PayloadIterator: core::iter::Iterator<Item = Self::Byte>;
+    type PayloadIterator<'a>: core::iter::Iterator<Item = Self::Byte>
+    where
+        B::Unit: 'a;
 
-    fn payload(&self) -> Self::PayloadIterator;
+    fn payload<'a>(&self) -> Self::PayloadIterator<'a>
+    where
+        B::Unit: 'a;
     fn set_payload<D>(&mut self, data: D)
     where
         D: core::iter::Iterator<Item = Self::Byte>,
