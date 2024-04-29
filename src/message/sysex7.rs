@@ -553,7 +553,7 @@ mod tests {
     }
 
     #[test]
-    fn set_payload_sysex() {
+    fn set_payload_bytes() {
         let mut message = Sysex7::<std::vec::Vec<u8>>::new();
         message.set_payload((0u8..20u8).map(u7::new));
         assert_eq!(
