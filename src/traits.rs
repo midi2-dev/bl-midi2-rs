@@ -182,3 +182,10 @@ pub(crate) trait MinSize<B: Buffer> {
 pub(crate) trait Size<B: Buffer> {
     fn size(&self) -> usize;
 }
+
+pub(crate) trait BufferAccess<B: Buffer> {
+    fn buffer_access(&self) -> &B;
+    fn buffer_access_mut(&mut self) -> &mut B
+    where
+        B: BufferMut;
+}

@@ -158,6 +158,7 @@ fn imports() -> TokenStream {
         use crate::util::property::Property as PropertyGenMessage;
         use crate::traits::Size as SizeGenMessage;
         use crate::traits::Data as DataGenMessage;
+        use crate::traits::BufferAccess as BufferAccessGenMessage;
     }
 }
 
@@ -211,7 +212,7 @@ fn property_getter(property: &Property, public: bool) -> TokenStream {
     };
     quote! {
         #pub_token fn #ident(&self) -> #ty {
-            <#meta_type as crate::util::property::Property<B>>::read(&self.0).unwrap()
+            <#meta_type as crate::util::property::Property<B>>::read(self.buffer_access()).unwrap()
         }
     }
 }
@@ -230,7 +231,7 @@ fn property_setter(property: &Property, public: bool) -> TokenStream {
     };
     quote! {
         #pub_token fn #ident(&mut self, value: #ty) where B: crate::buffer::BufferMut {
-            <#meta_type as crate::util::property::Property<B>>::write(&mut self.0, value).unwrap();
+            <#meta_type as crate::util::property::Property<B>>::write(self.buffer_access_mut(), value).unwrap();
         }
     }
 }
@@ -266,11 +267,7 @@ fn message_new_arr_impl(
     }
 }
 
-fn secondary_new_arr_impl(
-    root_ident: &syn::Ident,
-    args: &GenerateMessageArgs,
-    properties: &Vec<Property>,
-) -> TokenStream {
+fn secondary_new_arr_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
     let arr_type = arr_type_bytes();
     let mut set_defaults = TokenStream::new();
     for property in properties {
@@ -335,12 +332,29 @@ fn min_size_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenSt
     }
 }
 
+fn buffer_access_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream {
+    let constraint = generic_buffer_constraint(args);
+    quote! {
+        impl<B: #constraint> crate::traits::BufferAccess<B> for #root_ident<B> {
+            fn buffer_access(&self) -> &B {
+                &self.0
+            }
+            fn buffer_access_mut(&mut self) -> &mut B
+            where
+                B: crate::buffer::BufferMut
+            {
+                &mut self.0
+            }
+        }
+    }
+}
+
 fn data_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream {
     let constraint = generic_buffer_constraint(args);
     quote! {
         impl<B: #constraint> crate::traits::Data<B> for #root_ident<B> {
             fn data(&self) -> &[B::Unit] {
-                &self.0.buffer()[..self.size()]
+                &self.buffer_access().buffer()[..self.size()]
             }
         }
     }
@@ -468,7 +482,7 @@ fn clone_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStrea
     quote! {
         impl<B: #constraint + core::clone::Clone> core::clone::Clone for #root_ident<B> {
             fn clone(&self) -> Self {
-                Self(self.0.clone())
+                Self(self.buffer_access().clone())
             }
         }
     }
@@ -633,6 +647,7 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     let message_impl = message_impl(root_ident, &args, &properties);
     let data_impl = data_impl(root_ident, &args);
     let min_size_impl = min_size_impl(root_ident, &args);
+    let buffer_access_impl = buffer_access_impl(root_ident, &args);
     let try_from_slice_impl = try_from_slice_impl(root_ident, &args, &properties);
     let rebuffer_from_impl = rebuffer_from_impl(root_ident, &args);
     let try_rebuffer_from_impl = try_rebuffer_from_impl(root_ident, &args);
@@ -648,6 +663,7 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
         #message_impl
         #data_impl
         #min_size_impl
+        #buffer_access_impl
         #try_from_slice_impl
         #rebuffer_from_impl
         #try_rebuffer_from_impl
@@ -659,7 +675,7 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     if args.fixed_size {
         tokens.extend(message_new_arr_impl(root_ident, &args, &properties));
         if let Representation::UmpOrBytes = args.representation() {
-            tokens.extend(secondary_new_arr_impl(root_ident, &args, &properties));
+            tokens.extend(secondary_new_arr_impl(root_ident, &properties));
         }
     }
     if args.fixed_size {
