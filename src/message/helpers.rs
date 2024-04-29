@@ -9,10 +9,16 @@ pub fn group_from_packet(p: &[u32]) -> crate::numeric_types::u4 {
 pub const ERR_INCONSISTENT_GROUPS: &str = "Inconsistent groups across packets";
 
 #[cfg(any(feature = "sysex7", feature = "sysex8"))]
-pub fn sysex_group_consistent_groups(buffer: &[u32], stride: usize) -> crate::result::Result<()> {
+pub fn sysex_group_consistent_groups(
+    buffer: &[u32],
+    stride: usize,
+    ump_type: crate::numeric_types::u4,
+) -> crate::result::Result<()> {
+    use crate::util::BitOps;
     use group_from_packet as gfp;
     if buffer
         .chunks_exact(stride)
+        .take_while(|chunk| chunk[0].nibble(0) == ump_type)
         .all(|chunk| gfp(chunk) == gfp(buffer))
     {
         Ok(())
@@ -64,6 +70,7 @@ pub const ERR_SYSEX_EXPECTED_CONTINUE: &str =
     "The packet statuses between first and last should be Continue";
 pub const ERR_SYSEX_EXPECTED_END: &str =
     "The last packet of a multi-packet sysex message should have status End";
+pub const ERR_EMPTY_MESSAGE: &str = "The message buffer is empty";
 
 // assumes that buffer contains valid messages
 #[cfg(any(feature = "sysex7", feature = "sysex8"))]
@@ -79,11 +86,19 @@ pub fn validate_sysex_group_statuses<
     is_continue: IsContinue,
     is_end: IsEnd,
     stride: usize,
+    ump_type: crate::numeric_types::u4,
 ) -> crate::result::Result<()> {
     use crate::{error::Error, util::BitOps};
 
-    let mut iter = buffer.chunks(stride).peekable();
-    let first_status = iter.next().unwrap()[0].nibble(2);
+    let mut iter = buffer
+        .chunks(stride)
+        .take_while(|chunk| chunk[0].nibble(0) == ump_type)
+        .peekable();
+
+    let Some(first_packet) = iter.next() else {
+        return Err(Error::InvalidData(ERR_EMPTY_MESSAGE));
+    };
+    let first_status = first_packet[0].nibble(2);
 
     if iter.peek().is_none() {
         if is_complete(first_status) {

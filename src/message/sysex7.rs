@@ -110,7 +110,11 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for Consistent
     type Type = ();
     fn read(buffer: &B) -> crate::result::Result<Self::Type> {
         if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U32 {
-            message_helpers::sysex_group_consistent_groups(buffer.specialise_u32(), 2)?;
+            message_helpers::sysex_group_consistent_groups(
+                buffer.specialise_u32(),
+                2,
+                crate::numeric_types::u4::new(UMP_MESSAGE_TYPE),
+            )?;
         }
         Ok(())
     }
@@ -138,6 +142,7 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for Consistent
                 |s| s == numeric_types::u4::new(0x2),
                 |s| s == numeric_types::u4::new(0x3),
                 2,
+                crate::numeric_types::u4::new(UMP_MESSAGE_TYPE),
             )?;
         }
         Ok(())
@@ -489,6 +494,36 @@ mod tests {
                     0x0809_0A0B_u32,
                     0x3433_0C0D_u32,
                     0x0E00_0000_u32,
+                ][..]
+            ))
+        );
+    }
+
+    #[test]
+    fn try_from_oversized_ump() {
+        assert_eq!(
+            Sysex7::try_from(
+                &[
+                    0x3416_0001_u32,
+                    0x0203_0405_u32,
+                    0x3426_0607_u32,
+                    0x0809_0A0B_u32,
+                    0x3433_0C0D_u32,
+                    0x0E00_0000_u32,
+                    0x0000_0000_u32,
+                    0x0000_0000_u32,
+                ][..]
+            ),
+            Ok(Sysex7(
+                &[
+                    0x3416_0001_u32,
+                    0x0203_0405_u32,
+                    0x3426_0607_u32,
+                    0x0809_0A0B_u32,
+                    0x3433_0C0D_u32,
+                    0x0E00_0000_u32,
+                    0x0000_0000_u32,
+                    0x0000_0000_u32,
                 ][..]
             ))
         );
