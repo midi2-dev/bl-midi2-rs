@@ -2,6 +2,7 @@ use crate::{
     message::{common_properties, helpers as message_helpers},
     numeric_types::{self, u7},
     util::BitOps,
+    Sysex,
 };
 
 pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x3;
@@ -269,6 +270,14 @@ impl<'a, U: crate::buffer::Unit> core::iter::Iterator for PayloadIterator<'a, U>
     }
 }
 
+impl<'a, U: crate::buffer::Unit> core::iter::FusedIterator for PayloadIterator<'a, U> {}
+
+impl<'a, U: crate::buffer::Unit> core::iter::ExactSizeIterator for PayloadIterator<'a, U> {
+    fn len(&self) -> usize {
+        todo!()
+    }
+}
+
 impl<B: crate::buffer::Buffer> crate::traits::Sysex<B> for Sysex7<B> {
     type Byte = numeric_types::u7;
     type PayloadIterator<'a> = PayloadIterator<'a, B::Unit>
@@ -356,7 +365,7 @@ impl<B: crate::buffer::Buffer> crate::traits::SysexInternal<B> for Sysex7<B> {
     }
 
     fn payload_size(&self) -> usize {
-        self.size() - 2
+        self.payload().len()
     }
 }
 
