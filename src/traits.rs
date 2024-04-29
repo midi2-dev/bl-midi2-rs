@@ -183,6 +183,10 @@ pub(crate) trait Size<B: Buffer> {
     fn size(&self) -> usize;
 }
 
+// Note: not to be used lightly.
+// Each use of this is a break of the incapsulation
+// of the message type. It's here primarily to allow
+// CI messages super powers of their backing sysex7 messages.
 pub(crate) trait BufferAccess<B: Buffer> {
     fn buffer_access(&self) -> &B;
     fn buffer_access_mut(&mut self) -> &mut B
