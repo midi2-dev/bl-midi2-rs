@@ -158,7 +158,7 @@ fn try_set_sysex_data_impl<
     let mut written = 0;
     let mut shift_for_overflow_distance = 1;
     'main: loop {
-        let size = match running_data_size_estimate.as_mut() {
+        let mut size = match running_data_size_estimate.as_mut() {
             None => {
                 // make an initial estimate
                 let init_size = match data.size_hint() {
@@ -178,7 +178,15 @@ fn try_set_sysex_data_impl<
             }
         };
 
-        resize(sysex, size)?;
+        let mut should_exit = false;
+        if let Err(e) = resize(sysex, size) {
+            size = sysex.payload_size();
+            if size <= written {
+                return Err(e);
+            } else {
+                should_exit = true;
+            }
+        }
 
         for _ in written..size {
             match data.next() {
@@ -190,6 +198,10 @@ fn try_set_sysex_data_impl<
                     break 'main;
                 }
             }
+        }
+
+        if should_exit {
+            break;
         }
     }
 
