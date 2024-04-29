@@ -352,7 +352,12 @@ impl<B: crate::buffer::Buffer> SysexInternal<B> for Sysex7<B> {
         match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
             crate::buffer::UNIT_ID_U8 => {
                 let buffer_sz = payload_size + 2;
+                let old_payload_size = self.payload_size();
                 self.0.resize(buffer_sz);
+                if payload_size > old_payload_size {
+                    // erase old end bit
+                    self.0.specialise_u8_mut()[old_payload_size + 1] = 0;
+                }
                 self.0.specialise_u8_mut()[buffer_sz - 1] = END_BYTE;
             }
             crate::buffer::UNIT_ID_U32 => {
@@ -446,6 +451,16 @@ mod tests {
     }
 
     #[test]
+    fn data_oversized_bytes() {
+        assert_eq!(
+            Sysex7::try_from(&[0xF0_u8, 0x0_u8, 0x1_u8, 0x2_u8, 0xF7, 0x0][..])
+                .unwrap()
+                .data(),
+            &[0xF0, 0x0, 0x1, 0x2, 0xF7],
+        );
+    }
+
+    #[test]
     fn try_from_bytes_with_no_end_byte() {
         assert_eq!(
             Sysex7::try_from(&[0xF0_u8, 0x0_u8, 0x1_u8, 0x2_u8][..]),
@@ -526,6 +541,34 @@ mod tests {
                     0x0000_0000_u32,
                 ][..]
             ))
+        );
+    }
+
+    #[test]
+    fn data_oversized_ump() {
+        assert_eq!(
+            Sysex7::try_from(
+                &[
+                    0x3416_0001_u32,
+                    0x0203_0405_u32,
+                    0x3426_0607_u32,
+                    0x0809_0A0B_u32,
+                    0x3433_0C0D_u32,
+                    0x0E00_0000_u32,
+                    0x0000_0000_u32,
+                    0x0000_0000_u32,
+                ][..]
+            )
+            .unwrap()
+            .data(),
+            &[
+                0x3416_0001,
+                0x0203_0405,
+                0x3426_0607,
+                0x0809_0A0B,
+                0x3433_0C0D,
+                0x0E00_0000,
+            ],
         );
     }
 
