@@ -110,12 +110,20 @@ use midi2::prelude::*;
 let mut message = sysex7::Sysex7::<[u8; 22]>::try_new()
     .expect("Buffer is large enough");
 
+// only fallible methods are available
+assert_eq!(message.try_set_payload((0u8..20u8).map(u7::new)), Ok(()));
 assert_eq!(
-    message.try_set_payload((0u8..20u8).map(u7::new)),
-    Ok(()),
+    message.data(), 
+    &[
+        0xF0, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C,
+        0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0xF7,
+    ],
 );
+
+// setting payloads larger than the available size will fail
 assert_eq!(
-    message.try_set_payload((0u8..30u8).map(u7::new)), 
+    message.try_set_payload((0u8..30u8).map(u7::new)),
     Err(midi2::BufferOverflow),
 );
+assert_eq!(message.data(), &[0xF0, 0xF7]);
 ```
