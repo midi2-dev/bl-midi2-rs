@@ -232,29 +232,25 @@ impl<B: crate::buffer::Buffer> crate::traits::Size<B> for Sysex7<B> {
 ///
 /// Payload bytes are contiguous in the message buffer.
 ///
-/// Custom implementations of
-/// [len](PayloadIterator::len),
-/// [count](PayloadIterator::count),
-/// [nth](PayloadIterator::nth) and
-/// [size_hint](PayloadIterator::size_hint)
-/// have complexity O(1).
+/// Custom implementation of
+/// [nth](PayloadIterator::nth)
+/// has complexity O(1).
 ///
 /// # When U = [u32]
 ///
 /// Payload bytes are distributed non-contiguously across the message packets.
 ///
-/// For this reason the custom implementations of
-/// [len](PayloadIterator::len),
-/// [count](PayloadIterator::count),
-/// [nth](PayloadIterator::nth) and
-/// [size_hint](PayloadIterator::size_hint)
-/// have complexity O(n), where n is the size of the message buffer.
+/// For this reason the custom implementation of
+/// [nth](PayloadIterator::nth)
+/// has complexity O(n), where n is the size of the message buffer.
 #[derive(Debug, Clone)]
 pub struct PayloadIterator<'a, U: crate::buffer::Unit> {
     data: &'a [U],
     payload_index: usize,
     // unused in bytes mode
     packet_index: usize,
+    // unused in bytes mode
+    size_cache: usize,
 }
 
 impl<'a, U: crate::buffer::Unit> core::iter::Iterator for PayloadIterator<'a, U> {
@@ -308,9 +304,11 @@ impl<'a, U: crate::buffer::Unit> core::iter::Iterator for PayloadIterator<'a, U>
                         let remaining = Self::packet_size(packets.next()?.1) - self.payload_index;
                         if n < remaining {
                             self.payload_index += n;
+                            self.size_cache -= n;
                             return self.next();
                         } else {
                             n -= remaining;
+                            self.size_cache -= remaining;
                         }
                     }
 
@@ -323,9 +321,11 @@ impl<'a, U: crate::buffer::Unit> core::iter::Iterator for PayloadIterator<'a, U>
                             // we found the requested packet
                             self.packet_index += packet_index;
                             self.payload_index = n;
+                            self.size_cache -= n;
                             break;
                         }
                         n -= size;
+                        self.size_cache -= size;
                     }
 
                     self.next()
@@ -336,6 +336,7 @@ impl<'a, U: crate::buffer::Unit> core::iter::Iterator for PayloadIterator<'a, U>
                     // if we failed it means we ran out of data
                     // so we set the iterator into finished state
                     self.packet_index = self.data.len() / 2;
+                    self.size_cache = 0;
                 }
                 ret
             }
@@ -343,11 +344,6 @@ impl<'a, U: crate::buffer::Unit> core::iter::Iterator for PayloadIterator<'a, U>
         }
     }
 
-    /// # Complexity
-    ///
-    /// O(1) when U: [crate::buffer::Bytes].
-    ///
-    /// O(n) when U: [crate::buffer::Ump], where n is the size of the buffer.
     fn count(self) -> usize
     where
         Self: Sized,
@@ -355,13 +351,8 @@ impl<'a, U: crate::buffer::Unit> core::iter::Iterator for PayloadIterator<'a, U>
         self.len()
     }
 
-    /// # Complexity
-    ///
-    /// O(1) when U: [crate::buffer::Bytes].
-    ///
-    /// O(n) when U: [crate::buffer::Ump], where n is the size of the buffer.
     fn size_hint(&self) -> (usize, Option<usize>) {
-        (self.len(), Some(self.len()))
+        (self.size_cache, Some(self.size_cache))
     }
 }
 
@@ -382,6 +373,7 @@ impl<'a, U: crate::buffer::Unit> PayloadIterator<'a, U> {
 
     fn advance_ump(&mut self) {
         self.payload_index += 1;
+        self.size_cache -= 1;
 
         let current_packet_size =
             Self::packet_size(&self.data_ump()[self.packet_index * 2..self.packet_index * 2 + 2]);
@@ -400,21 +392,10 @@ impl<'a, U: crate::buffer::Unit> PayloadIterator<'a, U> {
 impl<'a, U: crate::buffer::Unit> core::iter::FusedIterator for PayloadIterator<'a, U> {}
 
 impl<'a, U: crate::buffer::Unit> core::iter::ExactSizeIterator for PayloadIterator<'a, U> {
-    /// # Complexity
-    ///
-    /// O(1) when U: [crate::buffer::Bytes].
-    ///
-    /// O(n) when U: [crate::buffer::Ump], where n is the size of the buffer.
     fn len(&self) -> usize {
         match U::UNIT_ID {
             crate::buffer::UNIT_ID_U8 => self.data[self.payload_index..].len(),
-            crate::buffer::UNIT_ID_U32 => {
-                self.data_ump()[self.packet_index * 2..]
-                    .chunks_exact(2)
-                    .map(|packet| Self::packet_size(packet))
-                    .sum::<usize>() // total of all the size bytes across packets
-                    - self.payload_index // minus offset into current packet
-            }
+            crate::buffer::UNIT_ID_U32 => self.size_cache,
             _ => unreachable!(),
         }
     }
@@ -436,12 +417,22 @@ impl<B: crate::buffer::Buffer> Sysex<B> for Sysex7<B> {
                 data: &self.0.buffer()[1..self.size() - 1],
                 payload_index: 0,
                 packet_index: 0,
+                size_cache: 0,
             },
-            crate::buffer::UNIT_ID_U32 => PayloadIterator {
-                data: &self.0.buffer()[..self.size()],
-                payload_index: 0,
-                packet_index: 0,
-            },
+            crate::buffer::UNIT_ID_U32 => {
+                let data = &self.0.buffer()[..self.size()];
+                let size_cache =
+                    <B::Unit as crate::buffer::UnitPrivate>::specialise_buffer_u32(data)
+                        .chunks_exact(2)
+                        .map(|packet| PayloadIterator::<B::Unit>::packet_size(packet))
+                        .sum::<usize>();
+                PayloadIterator {
+                    data,
+                    payload_index: 0,
+                    packet_index: 0,
+                    size_cache,
+                }
+            }
             _ => unreachable!(),
         }
     }
@@ -530,6 +521,7 @@ impl<B: crate::buffer::Buffer> SysexInternal<B> for Sysex7<B> {
             }
             crate::buffer::UNIT_ID_U32 => {
                 // data is written into the buffer contiguously
+                // meaning only the last packet may have a size < 6
                 let buffer_index = 2 * (payload_index / 6);
                 let byte_index = payload_index % 6;
                 self.0.specialise_u32_mut()[buffer_index + (byte_index + 2) / 4]
@@ -1204,10 +1196,58 @@ mod tests {
         ];
         let message = Sysex7::try_from(&buffer[..]).unwrap();
         let mut payload = message.payload();
+        assert_eq!(payload.len(), 30);
         assert_eq!(payload.nth(0), Some(u7::new(0x0)));
+        assert_eq!(payload.len(), 29);
         assert_eq!(payload.nth(4), Some(u7::new(0x5)));
+        assert_eq!(payload.len(), 24);
         assert_eq!(payload.nth(12), Some(u7::new(0x12)));
+        assert_eq!(payload.len(), 11);
         assert_eq!(payload.nth(10), Some(u7::new(0x1D)));
+        assert_eq!(payload.len(), 0);
         assert_eq!(payload.nth(0), None);
+        assert_eq!(payload.len(), 0);
+    }
+
+    #[test]
+    fn payload_ump_nth_non_contiguous_oversized() {
+        let buffer = [
+            0x3010_0000_u32,
+            0x0000_0000,
+            0x3021_0000,
+            0x0000_0000,
+            0x3022_0102,
+            0x0000_0000,
+            0x3023_0304,
+            0x0500_0000,
+            0x3024_0607,
+            0x0809_0000,
+            0x3025_0A0B,
+            0x0C0D_0E00,
+            0x3026_0F10,
+            0x1112_1314,
+            0x3025_1516,
+            0x1718_1900,
+            0x3034_1A1B,
+            0x1C1D_0000,
+            0x0000_0000,
+            0x0000_0000,
+            0x0000_0000,
+            0x0000_0000,
+            0x0000_0000,
+        ];
+        let message = Sysex7::try_from(&buffer[..]).unwrap();
+        let mut payload = message.payload();
+        assert_eq!(payload.len(), 30);
+        assert_eq!(payload.nth(0), Some(u7::new(0x0)));
+        assert_eq!(payload.len(), 29);
+        assert_eq!(payload.nth(4), Some(u7::new(0x5)));
+        assert_eq!(payload.len(), 24);
+        assert_eq!(payload.nth(12), Some(u7::new(0x12)));
+        assert_eq!(payload.len(), 11);
+        assert_eq!(payload.nth(10), Some(u7::new(0x1D)));
+        assert_eq!(payload.len(), 0);
+        assert_eq!(payload.nth(0), None);
+        assert_eq!(payload.len(), 0);
     }
 }
