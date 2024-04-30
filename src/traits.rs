@@ -150,6 +150,9 @@ pub trait Sysex<B: crate::buffer::Buffer> {
         B: crate::buffer::BufferMut + crate::buffer::BufferTryResize;
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SysexTryResizeError(pub usize);
+
 pub(crate) trait SysexInternal<B: crate::buffer::Buffer>: Sysex<B> {
     fn payload_size(&self) -> usize;
 
@@ -162,10 +165,7 @@ pub(crate) trait SysexInternal<B: crate::buffer::Buffer>: Sysex<B> {
         B: crate::buffer::BufferMut + crate::buffer::BufferResize;
 
     // fallible version of the above
-    fn try_resize(
-        &mut self,
-        payload_size: usize,
-    ) -> core::result::Result<(), crate::error::BufferOverflow>
+    fn try_resize(&mut self, payload_size: usize) -> core::result::Result<(), SysexTryResizeError>
     where
         B: crate::buffer::BufferMut + crate::buffer::BufferTryResize;
 

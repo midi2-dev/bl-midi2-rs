@@ -463,7 +463,7 @@ impl<B: crate::buffer::Buffer> SysexInternal<B> for Sysex7<B> {
     fn try_resize(
         &mut self,
         payload_size: usize,
-    ) -> core::result::Result<(), crate::error::BufferOverflow>
+    ) -> core::result::Result<(), crate::traits::SysexTryResizeError>
     where
         B: crate::buffer::BufferMut + crate::buffer::BufferTryResize,
     {
@@ -471,19 +471,16 @@ impl<B: crate::buffer::Buffer> SysexInternal<B> for Sysex7<B> {
             crate::buffer::UNIT_ID_U8 => {
                 let old_payload_size = self.payload_size();
                 let mut buffer_sz = payload_size + 2;
-                let resize_result = self.0.try_resize(buffer_sz);
-                if resize_result.is_err() {
-                    // couldn't fulfil the request so
-                    // we'll max out the available space
-                    // instead
+                let result = self.0.try_resize(buffer_sz).map_err(|_| {
                     buffer_sz = self.0.buffer().len();
-                }
+                    crate::traits::SysexTryResizeError(buffer_sz.saturating_sub(2))
+                });
                 if buffer_sz > old_payload_size {
                     // erase old end bit
                     self.0.specialise_u8_mut()[old_payload_size + 1] = 0;
                 }
                 self.0.specialise_u8_mut()[buffer_sz - 1] = END_BYTE;
-                resize_result
+                result
             }
             crate::buffer::UNIT_ID_U32 => {
                 try_resize_ump(self, payload_size, |s, sz| s.0.try_resize(sz))
@@ -522,15 +519,16 @@ fn try_resize_ump<
     ResizeBuffer: Fn(&mut Sysex7<B>, usize) -> Result<(), crate::error::BufferOverflow>,
 >(
     sysex: &mut Sysex7<B>,
-    payload_size: usize,
+    mut payload_size: usize,
     try_resize_buffer: ResizeBuffer,
-) -> Result<(), crate::error::BufferOverflow> {
+) -> Result<(), crate::traits::SysexTryResizeError> {
     use numeric_types::u4;
 
     let mut buffer_size = buffer_size_from_payload_size_ump(payload_size);
     let resize_result = try_resize_buffer(sysex, buffer_size);
     if let Err(_) = resize_result {
         buffer_size = sysex.0.buffer().len();
+        payload_size = buffer_size * 6 / 2;
     }
 
     let mut iter = sysex
@@ -587,7 +585,7 @@ fn try_resize_ump<
         }
     }
 
-    resize_result
+    resize_result.map_err(|_| crate::traits::SysexTryResizeError(payload_size))
 }
 
 fn buffer_size_from_payload_size_ump(payload_size: usize) -> usize {
@@ -1107,6 +1105,28 @@ mod tests {
                 0xF0, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C,
                 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0xF7,
             ])
+        );
+    }
+
+    #[test]
+    fn try_set_payload_bytes() {
+        let mut message = Sysex7::<[u8; 22]>::try_new().unwrap();
+        message.try_set_payload((0u8..20u8).map(u7::new)).unwrap();
+        assert_eq!(
+            message,
+            Sysex7([
+                0xF0, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C,
+                0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0xF7,
+            ])
+        );
+    }
+
+    #[test]
+    fn try_set_payload_bytes_fail() {
+        let mut message = Sysex7::<[u8; 22]>::try_new().unwrap();
+        assert_eq!(
+            message.try_set_payload((0u8..30u8).map(u7::new)),
+            Err(crate::error::BufferOverflow),
         );
     }
 

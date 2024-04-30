@@ -1,4 +1,4 @@
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct BufferOverflow;
 
 #[derive(Clone, Debug, PartialEq, Eq)]

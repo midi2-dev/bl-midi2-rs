@@ -1,4 +1,4 @@
-use crate::traits::SysexInternal;
+use crate::traits::{SysexInternal, SysexTryResizeError};
 
 #[cfg(any(feature = "sysex7", feature = "sysex8"))]
 pub fn group_from_packet(p: &[u32]) -> crate::numeric_types::u4 {
@@ -137,7 +137,7 @@ pub fn try_set_sysex_data<
         Err(e) => {
             // if the write failed we reset the message
             // back to zero data
-            sysex.try_resize(0)?;
+            sysex.try_resize(0).map_err(|_| Default::default())?;
             Err(e)
         }
         Ok(()) => Ok(()),
@@ -160,51 +160,36 @@ pub fn set_sysex_data<
 }
 
 mod detail {
+    use super::*;
+
     pub fn try_set_sysex_data<
         B: crate::buffer::Buffer + crate::buffer::BufferMut,
         S: crate::traits::SysexInternal<B>,
         D: core::iter::Iterator<Item = <S as crate::traits::Sysex<B>>::Byte>,
-        R: Fn(&mut S, usize) -> core::result::Result<(), crate::error::BufferOverflow>,
+        R: Fn(&mut S, usize) -> core::result::Result<(), SysexTryResizeError>,
     >(
         sysex: &mut S,
-        mut data: D,
+        data: D,
         resize: R,
     ) -> core::result::Result<(), crate::error::BufferOverflow> {
-        let mut running_data_size_estimate: Option<usize> = None;
+        // get an initial estimate for the size of the data
+        let mut running_data_size_estimate = match data.size_hint() {
+            (_, Some(upper)) => upper,
+            // not the optimal case - could lead to additional copying
+            (lower, None) => lower,
+        };
         let mut written = 0;
         let mut additional_size_for_overflow = 1;
+        let mut data = data.peekable();
+
+        // initial buffer resize
+        if let Err(SysexTryResizeError(sz)) = resize(sysex, running_data_size_estimate) {
+            // failed. we'll work with what we've got
+            running_data_size_estimate = sz;
+        };
+
         'main: loop {
-            let mut size = match running_data_size_estimate.as_mut() {
-                None => {
-                    // make an initial estimate
-                    let init_size = match data.size_hint() {
-                        (_, Some(upper)) => upper,
-                        // not the optimal case - could lead to additional copying
-                        (lower, None) => lower,
-                    };
-                    running_data_size_estimate = Some(init_size);
-                    init_size
-                }
-                Some(v) => {
-                    // we underestimated.
-                    // resize to make more space
-                    *v += additional_size_for_overflow;
-                    additional_size_for_overflow *= 2;
-                    *v
-                }
-            };
-
-            let mut should_exit = false;
-            if let Err(e) = resize(sysex, size) {
-                size = sysex.payload_size();
-                if size <= written {
-                    return Err(e);
-                } else {
-                    should_exit = true;
-                }
-            }
-
-            for _ in written..size {
+            while written < running_data_size_estimate {
                 match data.next() {
                     Some(v) => {
                         sysex.write_datum(v, written);
@@ -215,17 +200,28 @@ mod detail {
                     }
                 }
             }
+            assert_eq!(written, running_data_size_estimate);
 
-            if should_exit {
-                break;
+            // we underestimated.
+            // resize to make more space
+            running_data_size_estimate += additional_size_for_overflow;
+            additional_size_for_overflow *= 2;
+
+            if data.peek().is_some() {
+                if let Err(SysexTryResizeError(sz)) = resize(sysex, running_data_size_estimate) {
+                    // failed. we'll work with what we've got
+                    running_data_size_estimate = sz;
+                };
+            }
+
+            if written >= running_data_size_estimate {
+                return Err(Default::default());
             }
         }
 
-        if let Some(estimate) = running_data_size_estimate {
-            if written < estimate {
-                // we shrink the buffer back down to the correct size
-                resize(sysex, written)?;
-            }
+        if written < running_data_size_estimate {
+            // we shrink the buffer back down to the correct size
+            resize(sysex, written).map_err(|_| Default::default())?;
         }
 
         Ok(())
