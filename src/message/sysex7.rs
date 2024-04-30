@@ -15,8 +15,6 @@ struct Sysex7 {
     bytes_begin_byte: (),
     #[property(Sysex7BytesEndByte)]
     bytes_end_byte: (),
-    #[property(ConsistentGroups)]
-    consistent_groups: (),
     #[property(ConsistentStatuses)]
     consistent_statuses: (),
     #[property(ValidPacketSizes)]
@@ -104,31 +102,6 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for Sysex7Byte
     }
 }
 
-struct ConsistentGroups;
-
-impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for ConsistentGroups {
-    type Type = ();
-    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
-        if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U32 {
-            message_helpers::sysex_group_consistent_groups(
-                buffer.specialise_u32(),
-                2,
-                crate::numeric_types::u4::new(UMP_MESSAGE_TYPE),
-            )?;
-        }
-        Ok(())
-    }
-    fn write(_: &mut B, _: Self::Type) -> crate::result::Result<()>
-    where
-        B: crate::buffer::BufferMut,
-    {
-        Ok(())
-    }
-    fn default() -> Self::Type {
-        ()
-    }
-}
-
 struct ConsistentStatuses;
 
 impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for ConsistentStatuses {
@@ -194,6 +167,11 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for GroupPrope
     type Type = numeric_types::u4;
     fn read(buffer: &B) -> crate::result::Result<Self::Type> {
         if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U32 {
+            message_helpers::sysex_group_consistent_groups(
+                buffer.specialise_u32(),
+                2,
+                crate::numeric_types::u4::new(UMP_MESSAGE_TYPE),
+            )?;
             Ok(buffer.specialise_u32()[0].nibble(1))
         } else {
             Ok(Default::default())

@@ -375,7 +375,7 @@ fn try_from_slice_impl(
         Representation::Ump => quote! { u32 },
         Representation::Bytes => quote! { u8 },
     };
-    for property in properties.iter().filter(|p| !p.implement_via_trait()) {
+    for property in properties.iter() {
         let meta_type = &property.meta_type;
         validation_steps.extend(quote! {
             <#meta_type as PropertyGenMessage<&[#unit_type]>>::read(&buffer)?;
