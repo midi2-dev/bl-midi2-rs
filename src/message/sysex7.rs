@@ -21,6 +21,8 @@ struct Sysex7 {
     valid_packet_sizes: (),
     #[property(GroupProperty)]
     group: crate::numeric_types::u4,
+    #[property(SysexPayloadPlaceholder)]
+    sysex_payload: (),
 }
 
 const ERR_NO_BEGIN_BYTE: &str = "Sysex messages should begin 0xF0";
@@ -198,6 +200,24 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for GroupPrope
     }
 }
 
+struct SysexPayloadPlaceholder;
+
+impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for SysexPayloadPlaceholder {
+    type Type = ();
+    fn read(_: &B) -> crate::result::Result<Self::Type> {
+        Ok(())
+    }
+    fn write(_: &mut B, _: Self::Type) -> crate::result::Result<()>
+    where
+        B: crate::buffer::BufferMut,
+    {
+        Ok(())
+    }
+    fn default() -> Self::Type {
+        Default::default()
+    }
+}
+
 impl<B: crate::buffer::Buffer> crate::traits::Size<B> for Sysex7<B> {
     fn size(&self) -> usize {
         match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
@@ -224,6 +244,133 @@ impl<B: crate::buffer::Buffer> crate::traits::Size<B> for Sysex7<B> {
             _ => unreachable!(),
         }
     }
+}
+
+impl<
+        A: crate::buffer::Bytes,
+        B: crate::buffer::Ump
+            + crate::buffer::BufferMut
+            + crate::buffer::BufferDefault
+            + crate::buffer::BufferResize,
+    > crate::traits::FromBytes<Sysex7<A>> for Sysex7<B>
+{
+    fn from_bytes(other: Sysex7<A>) -> Self {
+        try_from_other(
+            &other,
+            |s: &mut B, sz| {
+                s.resize(sz);
+                Ok(())
+            },
+            |s, p| {
+                s.set_payload(p);
+                Ok(())
+            },
+        )
+        .unwrap()
+    }
+}
+
+impl<
+        A: crate::buffer::Ump,
+        B: crate::buffer::Bytes
+            + crate::buffer::BufferMut
+            + crate::buffer::BufferDefault
+            + crate::buffer::BufferResize,
+    > crate::traits::FromUmp<Sysex7<A>> for Sysex7<B>
+{
+    fn from_ump(other: Sysex7<A>) -> Self {
+        try_from_other(
+            &other,
+            |s: &mut B, sz| {
+                s.resize(sz);
+                Ok(())
+            },
+            |s, p| {
+                s.set_payload(p);
+                Ok(())
+            },
+        )
+        .unwrap()
+    }
+}
+
+impl<
+        A: crate::buffer::Bytes,
+        B: crate::buffer::Ump
+            + crate::buffer::BufferMut
+            + crate::buffer::BufferDefault
+            + crate::buffer::BufferTryResize,
+    > crate::traits::TryFromBytes<Sysex7<A>> for Sysex7<B>
+{
+    fn try_from_bytes(other: Sysex7<A>) -> Result<Self, crate::error::BufferOverflow> {
+        try_from_other(
+            &other,
+            |s: &mut B, sz| s.try_resize(sz),
+            |s, p| s.try_set_payload(p),
+        )
+    }
+}
+
+impl<
+        A: crate::buffer::Ump,
+        B: crate::buffer::Bytes
+            + crate::buffer::BufferMut
+            + crate::buffer::BufferDefault
+            + crate::buffer::BufferTryResize,
+    > crate::traits::TryFromUmp<Sysex7<A>> for Sysex7<B>
+{
+    fn try_from_ump(other: Sysex7<A>) -> Result<Self, crate::error::BufferOverflow> {
+        try_from_other(
+            &other,
+            |s: &mut B, sz| s.try_resize(sz),
+            |s, p| s.try_set_payload(p),
+        )
+    }
+}
+
+fn try_from_other<
+    A: crate::buffer::Buffer,
+    B: crate::buffer::Buffer + crate::buffer::BufferMut + crate::buffer::BufferDefault,
+    R: Fn(&mut B, usize) -> Result<(), crate::error::BufferOverflow>,
+    S: Fn(&mut Sysex7<B>, PayloadIterator<A::Unit>) -> Result<(), crate::error::BufferOverflow>,
+>(
+    other: &Sysex7<A>,
+    try_resize: R,
+    try_set_payload: S,
+) -> Result<Sysex7<B>, crate::error::BufferOverflow> {
+    let mut buffer = <B as crate::buffer::BufferDefault>::default();
+    try_resize(
+        &mut buffer,
+        <Sysex7<B> as crate::traits::MinSize<B>>::min_size(),
+    )?;
+
+    convert_generated_properties(&other.0, &mut buffer);
+
+    // convert payload
+    let mut ret = Sysex7::<B>(buffer);
+    try_set_payload(&mut ret, other.payload())?;
+
+    Ok(ret)
+}
+
+fn convert_generated_properties<
+    A: crate::buffer::Buffer,
+    B: crate::buffer::Buffer + crate::buffer::BufferMut,
+>(
+    buffer_a: &A,
+    buffer_b: &mut B,
+) {
+    type MessageType = common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>;
+    <MessageType as PropertyGenMessage<B>>::write(buffer_b, ()).unwrap();
+    <Sysex7BytesBeginByte as PropertyGenMessage<B>>::write(buffer_b, ()).unwrap();
+    <Sysex7BytesEndByte as PropertyGenMessage<B>>::write(buffer_b, ()).unwrap();
+    <ConsistentStatuses as PropertyGenMessage<B>>::write(buffer_b, ()).unwrap();
+    <ValidPacketSizes as PropertyGenMessage<B>>::write(buffer_b, ()).unwrap();
+    <GroupProperty as PropertyGenMessage<B>>::write(
+        buffer_b,
+        <GroupProperty as PropertyGenMessage<A>>::read(buffer_a).unwrap(),
+    )
+    .unwrap();
 }
 
 /// An iterator over the payload bytes of a [Sysex7] message.
@@ -626,7 +773,7 @@ mod tests {
     use super::*;
     use crate::{
         numeric_types::*,
-        traits::{Grouped, RebufferInto, Sysex},
+        traits::{FromBytes, FromUmp, Grouped, RebufferInto, Sysex},
     };
     use pretty_assertions::assert_eq;
 
@@ -1249,5 +1396,55 @@ mod tests {
         assert_eq!(payload.len(), 0);
         assert_eq!(payload.nth(0), None);
         assert_eq!(payload.len(), 0);
+    }
+
+    #[test]
+    fn from_bytes() {
+        let buffer = [
+            0xF0_u8, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C,
+            0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A,
+            0x1B, 0x1C, 0x1D, 0xF7,
+        ];
+        let message = Sysex7::try_from(&buffer[..]).unwrap();
+        assert_eq!(
+            Sysex7::<std::vec::Vec<u32>>::from_bytes(message),
+            Sysex7(std::vec![
+                0x3016_0001,
+                0x0203_0405,
+                0x3026_0607,
+                0x0809_0A0B,
+                0x3026_0C0D,
+                0x0E0F_1011,
+                0x3026_1213,
+                0x1415_1617,
+                0x3036_1819,
+                0x1A1B_1C1D,
+            ])
+        );
+    }
+
+    #[test]
+    fn from_ump() {
+        let buffer = [
+            0x3016_0001_u32,
+            0x0203_0405,
+            0x3026_0607,
+            0x0809_0A0B,
+            0x3026_0C0D,
+            0x0E0F_1011,
+            0x3026_1213,
+            0x1415_1617,
+            0x3036_1819,
+            0x1A1B_1C1D,
+        ];
+        let message = Sysex7::try_from(&buffer[..]).unwrap();
+        assert_eq!(
+            Sysex7::<std::vec::Vec<u8>>::from_ump(message),
+            Sysex7(std::vec![
+                0xF0, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C,
+                0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A,
+                0x1B, 0x1C, 0x1D, 0xF7,
+            ])
+        );
     }
 }

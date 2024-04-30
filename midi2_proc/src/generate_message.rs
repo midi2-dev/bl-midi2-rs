@@ -12,13 +12,16 @@ struct Property {
 
 impl Property {
     fn implement_via_trait(&self) -> bool {
-        self.is_group() || self.is_channel()
+        self.is_group() || self.is_channel() || self.is_sysex_payload()
     }
     fn is_group(&self) -> bool {
         self.ident == "group"
     }
     fn is_channel(&self) -> bool {
         self.ident == "channel"
+    }
+    fn is_sysex_payload(&self) -> bool {
+        self.ident == "sysex_payload"
     }
 }
 
@@ -688,10 +691,12 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
         tokens.extend(channeled_impl(root_ident, property));
     }
     if let Representation::UmpOrBytes = args.representation() {
-        tokens.extend(from_bytes_impl(root_ident, &properties));
-        tokens.extend(from_ump_impl(root_ident, &properties));
-        tokens.extend(try_from_bytes_impl(root_ident, &properties));
-        tokens.extend(try_from_ump_impl(root_ident, &properties));
+        if !properties.iter().any(|p| p.is_sysex_payload()) {
+            tokens.extend(from_bytes_impl(root_ident, &properties));
+            tokens.extend(from_ump_impl(root_ident, &properties));
+            tokens.extend(try_from_bytes_impl(root_ident, &properties));
+            tokens.extend(try_from_ump_impl(root_ident, &properties));
+        }
     }
 
     tokens.into()
