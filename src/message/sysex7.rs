@@ -473,6 +473,9 @@ impl<B: crate::buffer::Buffer> SysexInternal<B> for Sysex7<B> {
                 let mut buffer_sz = payload_size + 2;
                 let resize_result = self.0.try_resize(buffer_sz);
                 if resize_result.is_err() {
+                    // couldn't fulfil the request so
+                    // we'll max out the available space
+                    // instead
                     buffer_sz = self.0.buffer().len();
                 }
                 if buffer_sz > old_payload_size {

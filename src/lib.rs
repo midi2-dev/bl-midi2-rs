@@ -1,7 +1,7 @@
 #![no_std]
-#![doc = include_str!("../README.md")]
+// #![doc = include_str!("../README.md")]
 
-#[cfg(test)]
+#[cfg(any(feature = "std", test))]
 extern crate std;
 
 pub mod buffer;
@@ -32,5 +32,5 @@ pub mod numeric_types {
 }
 
 pub mod prelude {
-    // pub use crate::{message::Message, numeric_types::*, traits::*};
+    pub use crate::{message::sysex7, numeric_types::*, traits::*};
 }
