@@ -11,8 +11,6 @@ pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x3;
 struct Sysex7 {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
-    #[property(common_properties::GroupProperty)]
-    group: crate::numeric_types::u4,
     #[property(Sysex7BytesBeginByte)]
     bytes_begin_byte: (),
     #[property(Sysex7BytesEndByte)]
@@ -23,6 +21,8 @@ struct Sysex7 {
     consistent_statuses: (),
     #[property(ValidPacketSizes)]
     valid_packet_sizes: (),
+    #[property(GroupProperty)]
+    group: crate::numeric_types::u4,
 }
 
 const ERR_NO_BEGIN_BYTE: &str = "Sysex messages should begin 0xF0";
@@ -188,6 +188,38 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for ValidPacke
     }
 }
 
+struct GroupProperty;
+
+impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for GroupProperty {
+    type Type = numeric_types::u4;
+    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
+        if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U32 {
+            Ok(buffer.specialise_u32()[0].nibble(1))
+        } else {
+            Ok(Default::default())
+        }
+    }
+    fn write(buffer: &mut B, group: Self::Type) -> crate::result::Result<()>
+    where
+        B: crate::buffer::BufferMut,
+    {
+        if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U32 {
+            const TYPE: numeric_types::u4 = numeric_types::u4::new(UMP_MESSAGE_TYPE);
+            for packet in buffer
+                .specialise_u32_mut()
+                .chunks_exact_mut(2)
+                .take_while(|packet| packet[0].nibble(0) == TYPE)
+            {
+                packet[0].set_nibble(1, group);
+            }
+        }
+        Ok(())
+    }
+    fn default() -> Self::Type {
+        Default::default()
+    }
+}
+
 impl<B: crate::buffer::Buffer> crate::traits::Size<B> for Sysex7<B> {
     fn size(&self) -> usize {
         match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
@@ -240,20 +272,66 @@ impl<'a, U: crate::buffer::Unit> core::iter::Iterator for PayloadIterator<'a, U>
                 }
             }
             crate::buffer::UNIT_ID_U32 => {
-                todo!()
+                if self.finished_ump() {
+                    return None;
+                }
+
+                let ret = Some(self.value_ump());
+                self.advance_ump();
+                ret
             }
             _ => unreachable!(),
         }
     }
 
-    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+    fn nth(&mut self, mut n: usize) -> Option<Self::Item> {
         match U::UNIT_ID {
             crate::buffer::UNIT_ID_U8 => {
                 self.payload_index += n;
                 self.next()
             }
             crate::buffer::UNIT_ID_U32 => {
-                todo!()
+                let mut do_nth = || {
+                    let mut packets = self.data_ump()[self.packet_index * 2..]
+                        .chunks_exact(2)
+                        .enumerate();
+
+                    {
+                        // first we check to see whether the requested byte lies
+                        // within the first packet where we are potentially already offset
+                        let remaining = Self::packet_size(packets.next()?.1) - self.payload_index;
+                        if n < remaining {
+                            self.payload_index += n;
+                            return self.next();
+                        } else {
+                            n -= remaining;
+                        }
+                    }
+
+                    // we then cycle through all the packets until we travelled as far as the
+                    // requested location
+                    loop {
+                        let (packet_index, packet) = packets.next()?;
+                        let size = Self::packet_size(packet);
+                        if n < size {
+                            // we found the requested packet
+                            self.packet_index += packet_index;
+                            self.payload_index = n;
+                            break;
+                        }
+                        n -= size;
+                    }
+
+                    self.next()
+                };
+
+                let ret = do_nth();
+                if let None = ret {
+                    // if we failed it means we ran out of data
+                    // so we set the iterator into finished state
+                    self.packet_index = self.data.len() / 2;
+                }
+                ret
             }
             _ => unreachable!(),
         }
@@ -267,13 +345,39 @@ impl<'a, U: crate::buffer::Unit> core::iter::Iterator for PayloadIterator<'a, U>
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        match U::UNIT_ID {
-            crate::buffer::UNIT_ID_U8 => (self.len(), Some(self.len())),
-            // todo
-            // perhaps an estimate is better for the ump case?
-            crate::buffer::UNIT_ID_U32 => (self.len(), Some(self.len())),
-            _ => unreachable!(),
+        (self.len(), Some(self.len()))
+    }
+}
+
+impl<'a, U: crate::buffer::Unit> PayloadIterator<'a, U> {
+    fn data_ump(&self) -> &'a [u32] {
+        <U as crate::buffer::UnitPrivate>::specialise_buffer_u32(self.data)
+    }
+
+    fn value_ump(&self) -> numeric_types::u7 {
+        let buffer_index = self.packet_index * 2 + (self.payload_index + 2) / 4;
+        let octet_index = (self.payload_index + 2) % 4;
+        self.data_ump()[buffer_index].septet(octet_index)
+    }
+
+    fn finished_ump(&self) -> bool {
+        self.data.len() / 2 == self.packet_index
+    }
+
+    fn advance_ump(&mut self) {
+        self.payload_index += 1;
+
+        let current_packet_size =
+            Self::packet_size(&self.data_ump()[self.packet_index * 2..self.packet_index * 2 + 2]);
+        if self.payload_index == current_packet_size {
+            // end of packet
+            self.packet_index += 1;
+            self.payload_index = 0;
         }
+    }
+
+    fn packet_size(packet: &[u32]) -> usize {
+        u8::from(packet[0].nibble(3)) as usize
     }
 }
 
@@ -284,10 +388,9 @@ impl<'a, U: crate::buffer::Unit> core::iter::ExactSizeIterator for PayloadIterat
         match U::UNIT_ID {
             crate::buffer::UNIT_ID_U8 => self.data[self.payload_index..].len(),
             crate::buffer::UNIT_ID_U32 => {
-                let data = <U as crate::buffer::UnitPrivate>::specialise_buffer_u32(self.data);
-                data[self.packet_index * 2..]
+                self.data_ump()[self.packet_index * 2..]
                     .chunks_exact(2)
-                    .map(|packet| u8::from(packet[0].nibble(3)) as usize)
+                    .map(|packet| Self::packet_size(packet))
                     .sum::<usize>() // total of all the size bytes across packets
                     - self.payload_index // minus offset into current packet
             }
@@ -508,7 +611,10 @@ fn buffer_size_from_payload_size_ump(payload_size: usize) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{numeric_types::*, traits::Sysex};
+    use crate::{
+        numeric_types::*,
+        traits::{Grouped, RebufferInto, Sysex},
+    };
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -600,6 +706,34 @@ mod tests {
                     0x0E00_0000_u32,
                 ][..]
             ))
+        );
+    }
+
+    #[test]
+    fn set_group_ump() {
+        let mut message: Sysex7<std::vec::Vec<u32>> = Sysex7::try_from(
+            &[
+                0x3416_0001_u32,
+                0x0203_0405_u32,
+                0x3426_0607_u32,
+                0x0809_0A0B_u32,
+                0x3433_0C0D_u32,
+                0x0E00_0000_u32,
+            ][..],
+        )
+        .unwrap()
+        .rebuffer_into();
+        message.set_group(u4::new(0x5));
+        assert_eq!(
+            message,
+            Sysex7(std::vec![
+                0x3516_0001_u32,
+                0x0203_0405_u32,
+                0x3526_0607_u32,
+                0x0809_0A0B_u32,
+                0x3533_0C0D_u32,
+                0x0E00_0000_u32,
+            ])
         );
     }
 
@@ -1009,9 +1143,16 @@ mod tests {
         assert_eq!(
             Sysex7::try_from(
                 &[
-                    0xF0_u8, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A,
-                    0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
-                    0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0xF7,
+                    0x3016_0001_u32,
+                    0x0203_0405,
+                    0x3026_0607,
+                    0x0809_0A0B,
+                    0x3026_0C0D,
+                    0x0E0F_1011,
+                    0x3026_1213,
+                    0x1415_1617,
+                    0x3036_1819,
+                    0x1A1B_1C1D,
                 ][..]
             )
             .unwrap()
@@ -1024,5 +1165,28 @@ mod tests {
                 0x1C, 0x1D,
             ],
         );
+    }
+
+    #[test]
+    fn payload_ump_nth() {
+        let buffer = [
+            0x3016_0001_u32,
+            0x0203_0405,
+            0x3026_0607,
+            0x0809_0A0B,
+            0x3026_0C0D,
+            0x0E0F_1011,
+            0x3026_1213,
+            0x1415_1617,
+            0x3036_1819,
+            0x1A1B_1C1D,
+        ];
+        let message = Sysex7::try_from(&buffer[..]).unwrap();
+        let mut payload = message.payload();
+        assert_eq!(payload.nth(0), Some(u7::new(0x0)));
+        assert_eq!(payload.nth(4), Some(u7::new(0x5)));
+        assert_eq!(payload.nth(12), Some(u7::new(0x12)));
+        assert_eq!(payload.nth(10), Some(u7::new(0x1D)));
+        assert_eq!(payload.nth(0), None);
     }
 }

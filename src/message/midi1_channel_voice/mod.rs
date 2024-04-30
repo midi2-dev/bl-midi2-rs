@@ -66,6 +66,9 @@ impl<'a, U: crate::buffer::Unit> core::convert::TryFrom<&'a [U]> for Midi1Channe
 }
 
 fn status<U: crate::buffer::Unit>(buffer: &[U]) -> u8 {
+    // use crate::message::common_properties::ChannelVoiceStatusProperty;
+    // use crate::util::property::Property;
+    // ChannelVoiceStatusProperty::read(buffer).unwrap()
     match <U as crate::buffer::UnitPrivate>::UNIT_ID {
         crate::buffer::UNIT_ID_U8 => {
             <U as crate::buffer::UnitPrivate>::specialise_buffer_u8(buffer)[0].nibble(0)
