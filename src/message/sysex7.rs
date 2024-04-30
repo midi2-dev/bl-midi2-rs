@@ -226,6 +226,29 @@ impl<B: crate::buffer::Buffer> crate::traits::Size<B> for Sysex7<B> {
     }
 }
 
+/// An iterator over the payload bytes of a [Sysex7] message.
+///
+/// # When U = [u8]
+///
+/// Payload bytes are contiguous in the message buffer.
+///
+/// Custom implementations of
+/// [len](PayloadIterator::len),
+/// [count](PayloadIterator::count),
+/// [nth](PayloadIterator::nth) and
+/// [size_hint](PayloadIterator::size_hint)
+/// have complexity O(1).
+///
+/// # When U = [u32]
+///
+/// Payload bytes are distributed non-contiguously across the message packets.
+///
+/// For this reason the custom implementations of
+/// [len](PayloadIterator::len),
+/// [count](PayloadIterator::count),
+/// [nth](PayloadIterator::nth) and
+/// [size_hint](PayloadIterator::size_hint)
+/// have complexity O(n), where n is the size of the message buffer.
 #[derive(Debug, Clone)]
 pub struct PayloadIterator<'a, U: crate::buffer::Unit> {
     data: &'a [U],
@@ -262,6 +285,11 @@ impl<'a, U: crate::buffer::Unit> core::iter::Iterator for PayloadIterator<'a, U>
         }
     }
 
+    /// # Complexity
+    ///
+    /// O(1) when U: [crate::buffer::Bytes].
+    ///
+    /// O(n) when U: [crate::buffer::Ump], where n is the size of the buffer.
     fn nth(&mut self, mut n: usize) -> Option<Self::Item> {
         match U::UNIT_ID {
             crate::buffer::UNIT_ID_U8 => {
@@ -315,6 +343,11 @@ impl<'a, U: crate::buffer::Unit> core::iter::Iterator for PayloadIterator<'a, U>
         }
     }
 
+    /// # Complexity
+    ///
+    /// O(1) when U: [crate::buffer::Bytes].
+    ///
+    /// O(n) when U: [crate::buffer::Ump], where n is the size of the buffer.
     fn count(self) -> usize
     where
         Self: Sized,
@@ -322,6 +355,11 @@ impl<'a, U: crate::buffer::Unit> core::iter::Iterator for PayloadIterator<'a, U>
         self.len()
     }
 
+    /// # Complexity
+    ///
+    /// O(1) when U: [crate::buffer::Bytes].
+    ///
+    /// O(n) when U: [crate::buffer::Ump], where n is the size of the buffer.
     fn size_hint(&self) -> (usize, Option<usize>) {
         (self.len(), Some(self.len()))
     }
@@ -362,6 +400,11 @@ impl<'a, U: crate::buffer::Unit> PayloadIterator<'a, U> {
 impl<'a, U: crate::buffer::Unit> core::iter::FusedIterator for PayloadIterator<'a, U> {}
 
 impl<'a, U: crate::buffer::Unit> core::iter::ExactSizeIterator for PayloadIterator<'a, U> {
+    /// # Complexity
+    ///
+    /// O(1) when U: [crate::buffer::Bytes].
+    ///
+    /// O(n) when U: [crate::buffer::Ump], where n is the size of the buffer.
     fn len(&self) -> usize {
         match U::UNIT_ID {
             crate::buffer::UNIT_ID_U8 => self.data[self.payload_index..].len(),
