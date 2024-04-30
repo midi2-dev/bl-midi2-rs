@@ -87,11 +87,12 @@ fn is_unit_tuple(ty: &syn::Type) -> bool {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 struct GenerateMessageArgs {
     fixed_size: bool,
     min_size_ump: Option<usize>,
     min_size_bytes: Option<usize>,
+    type_doc: Option<syn::LitStr>,
 }
 
 impl GenerateMessageArgs {
@@ -124,6 +125,9 @@ impl syn::parse::Parse for GenerateMessageArgs {
             if ident == "MinSizeBytes" {
                 args.min_size_bytes = Some(parse_fixed_size(input));
             }
+            if ident == "Doc" {
+                args.type_doc = Some(parse_string(input));
+            }
 
             if let Err(_) = input.parse::<syn::Token![,]>() {
                 assert!(input.is_empty());
@@ -153,6 +157,19 @@ fn parse_fixed_size(input: syn::parse::ParseStream) -> usize {
         .expect("Valid base 10 literal size")
 }
 
+fn parse_string(input: syn::parse::ParseStream) -> syn::LitStr {
+    let syn::ExprParen { expr, .. } = input.parse().expect("Expected bracketed expression");
+
+    let syn::Expr::Lit(syn::ExprLit {
+        lit: syn::Lit::Str(str_lit),
+        ..
+    }) = *expr
+    else {
+        panic!("Expected a string literal");
+    };
+    str_lit
+}
+
 fn imports() -> TokenStream {
     quote! {
         use crate::buffer::UnitPrivate as UnitPrivateGenMessage;
@@ -175,8 +192,15 @@ fn generic_buffer_constraint(args: &GenerateMessageArgs) -> TokenStream {
 
 fn message(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream {
     let constraint = generic_buffer_constraint(args);
+    let mut doc = TokenStream::new();
+    if let Some(doc_file) = &args.type_doc {
+        doc.extend(quote! {
+            #[doc = include_str!(#doc_file)]
+        });
+    }
     quote! {
         #[derive(PartialEq, Eq, midi2_proc::Debug)]
+        #doc
         pub struct #root_ident<B: #constraint>(B);
     }
 }

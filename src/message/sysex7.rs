@@ -7,7 +7,7 @@ use crate::{
 
 pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x3;
 
-#[midi2_proc::generate_message(MinSizeUmp(2), MinSizeBytes(2))]
+#[midi2_proc::generate_message(MinSizeUmp(2), MinSizeBytes(2), Doc("sysex7_doc.md"))]
 struct Sysex7 {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
