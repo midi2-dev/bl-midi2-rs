@@ -32,6 +32,9 @@ const ERR_INVALID_PACKET_SIZE: &str = "Size field can not exceed 6";
 const START_BYTE: u8 = 0xF0;
 const END_BYTE: u8 = 0xF7;
 
+// ***********************************************************************
+// properties
+
 struct Sysex7BytesBeginByte;
 
 impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for Sysex7BytesBeginByte {
@@ -218,6 +221,9 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for SysexPaylo
     }
 }
 
+// ***********************************************************************
+// trait impls
+
 impl<B: crate::buffer::Buffer> crate::traits::Size<B> for Sysex7<B> {
     fn size(&self) -> usize {
         match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
@@ -371,181 +377,6 @@ fn convert_generated_properties<
         <GroupProperty as PropertyGenMessage<A>>::read(buffer_a).unwrap(),
     )
     .unwrap();
-}
-
-/// An iterator over the payload bytes of a [Sysex7] message.
-///
-/// # When U = [u8]
-///
-/// Payload bytes are contiguous in the message buffer.
-///
-/// Custom implementation of
-/// [nth](PayloadIterator::nth)
-/// has complexity O(1).
-///
-/// # When U = [u32]
-///
-/// Payload bytes are distributed non-contiguously across the message packets.
-///
-/// For this reason the custom implementation of
-/// [nth](PayloadIterator::nth)
-/// has complexity O(n), where n is the size of the message buffer.
-#[derive(Debug, Clone)]
-pub struct PayloadIterator<'a, U: crate::buffer::Unit> {
-    data: &'a [U],
-    payload_index: usize,
-    // unused in bytes mode
-    packet_index: usize,
-    // unused in bytes mode
-    size_cache: usize,
-}
-
-impl<'a, U: crate::buffer::Unit> core::iter::Iterator for PayloadIterator<'a, U> {
-    type Item = numeric_types::u7;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        match U::UNIT_ID {
-            crate::buffer::UNIT_ID_U8 => {
-                let data = <U as crate::buffer::UnitPrivate>::specialise_buffer_u8(self.data);
-                if self.payload_index >= data.len() {
-                    None
-                } else {
-                    let ret = Some(u7::new(data[self.payload_index]));
-                    self.payload_index += 1;
-                    ret
-                }
-            }
-            crate::buffer::UNIT_ID_U32 => {
-                if self.finished_ump() {
-                    return None;
-                }
-
-                let ret = Some(self.value_ump());
-                self.advance_ump();
-                ret
-            }
-            _ => unreachable!(),
-        }
-    }
-
-    /// # Complexity
-    ///
-    /// O(1) when U: [crate::buffer::Bytes].
-    ///
-    /// O(n) when U: [crate::buffer::Ump], where n is the size of the buffer.
-    fn nth(&mut self, mut n: usize) -> Option<Self::Item> {
-        match U::UNIT_ID {
-            crate::buffer::UNIT_ID_U8 => {
-                self.payload_index += n;
-                self.next()
-            }
-            crate::buffer::UNIT_ID_U32 => {
-                let mut do_nth = || {
-                    let mut packets = self.data_ump()[self.packet_index * 2..]
-                        .chunks_exact(2)
-                        .enumerate();
-
-                    {
-                        // first we check to see whether the requested byte lies
-                        // within the first packet where we are potentially already offset
-                        let remaining = Self::packet_size(packets.next()?.1) - self.payload_index;
-                        if n < remaining {
-                            self.payload_index += n;
-                            self.size_cache -= n;
-                            return self.next();
-                        } else {
-                            n -= remaining;
-                            self.size_cache -= remaining;
-                        }
-                    }
-
-                    // we then cycle through all the packets until we travelled as far as the
-                    // requested location
-                    loop {
-                        let (packet_index, packet) = packets.next()?;
-                        let size = Self::packet_size(packet);
-                        if n < size {
-                            // we found the requested packet
-                            self.packet_index += packet_index;
-                            self.payload_index = n;
-                            self.size_cache -= n;
-                            break;
-                        }
-                        n -= size;
-                        self.size_cache -= size;
-                    }
-
-                    self.next()
-                };
-
-                let ret = do_nth();
-                if let None = ret {
-                    // if we failed it means we ran out of data
-                    // so we set the iterator into finished state
-                    self.packet_index = self.data.len() / 2;
-                    self.size_cache = 0;
-                }
-                ret
-            }
-            _ => unreachable!(),
-        }
-    }
-
-    fn count(self) -> usize
-    where
-        Self: Sized,
-    {
-        self.len()
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        (self.size_cache, Some(self.size_cache))
-    }
-}
-
-impl<'a, U: crate::buffer::Unit> PayloadIterator<'a, U> {
-    fn data_ump(&self) -> &'a [u32] {
-        <U as crate::buffer::UnitPrivate>::specialise_buffer_u32(self.data)
-    }
-
-    fn value_ump(&self) -> numeric_types::u7 {
-        let buffer_index = self.packet_index * 2 + (self.payload_index + 2) / 4;
-        let octet_index = (self.payload_index + 2) % 4;
-        self.data_ump()[buffer_index].septet(octet_index)
-    }
-
-    fn finished_ump(&self) -> bool {
-        self.data.len() / 2 == self.packet_index
-    }
-
-    fn advance_ump(&mut self) {
-        self.payload_index += 1;
-        self.size_cache -= 1;
-
-        let current_packet_size =
-            Self::packet_size(&self.data_ump()[self.packet_index * 2..self.packet_index * 2 + 2]);
-        if self.payload_index == current_packet_size {
-            // end of packet
-            self.packet_index += 1;
-            self.payload_index = 0;
-        }
-    }
-
-    fn packet_size(packet: &[u32]) -> usize {
-        u8::from(packet[0].nibble(3)) as usize
-    }
-}
-
-impl<'a, U: crate::buffer::Unit> core::iter::FusedIterator for PayloadIterator<'a, U> {}
-
-impl<'a, U: crate::buffer::Unit> core::iter::ExactSizeIterator for PayloadIterator<'a, U> {
-    fn len(&self) -> usize {
-        match U::UNIT_ID {
-            crate::buffer::UNIT_ID_U8 => self.data[self.payload_index..].len(),
-            crate::buffer::UNIT_ID_U32 => self.size_cache,
-            _ => unreachable!(),
-        }
-    }
 }
 
 impl<B: crate::buffer::Buffer> Sysex<B> for Sysex7<B> {
@@ -765,6 +596,184 @@ fn buffer_size_from_payload_size_ump(payload_size: usize) -> usize {
         }
     } else {
         2 * (payload_size / 6 + 1)
+    }
+}
+
+// ***********************************************************************
+// payload iterator
+
+/// An iterator over the payload bytes of a [Sysex7] message.
+///
+/// # When U = [u8]
+///
+/// Payload bytes are contiguous in the message buffer.
+///
+/// Custom implementation of
+/// [nth](PayloadIterator::nth)
+/// has complexity O(1).
+///
+/// # When U = [u32]
+///
+/// Payload bytes are distributed non-contiguously across the message packets.
+///
+/// For this reason the custom implementation of
+/// [nth](PayloadIterator::nth)
+/// has complexity O(n), where n is the size of the message buffer.
+#[derive(Debug, Clone)]
+pub struct PayloadIterator<'a, U: crate::buffer::Unit> {
+    data: &'a [U],
+    payload_index: usize,
+    // unused in bytes mode
+    packet_index: usize,
+    // unused in bytes mode
+    size_cache: usize,
+}
+
+impl<'a, U: crate::buffer::Unit> core::iter::Iterator for PayloadIterator<'a, U> {
+    type Item = numeric_types::u7;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match U::UNIT_ID {
+            crate::buffer::UNIT_ID_U8 => {
+                let data = <U as crate::buffer::UnitPrivate>::specialise_buffer_u8(self.data);
+                if self.payload_index >= data.len() {
+                    None
+                } else {
+                    let ret = Some(u7::new(data[self.payload_index]));
+                    self.payload_index += 1;
+                    ret
+                }
+            }
+            crate::buffer::UNIT_ID_U32 => {
+                if self.finished_ump() {
+                    return None;
+                }
+
+                let ret = Some(self.value_ump());
+                self.advance_ump();
+                ret
+            }
+            _ => unreachable!(),
+        }
+    }
+
+    /// # Complexity
+    ///
+    /// O(1) when U: [crate::buffer::Bytes].
+    ///
+    /// O(n) when U: [crate::buffer::Ump], where n is the size of the buffer.
+    fn nth(&mut self, mut n: usize) -> Option<Self::Item> {
+        match U::UNIT_ID {
+            crate::buffer::UNIT_ID_U8 => {
+                self.payload_index += n;
+                self.next()
+            }
+            crate::buffer::UNIT_ID_U32 => {
+                let mut do_nth = || {
+                    let mut packets = self.data_ump()[self.packet_index * 2..]
+                        .chunks_exact(2)
+                        .enumerate();
+
+                    {
+                        // first we check to see whether the requested byte lies
+                        // within the first packet where we are potentially already offset
+                        let remaining = Self::packet_size(packets.next()?.1) - self.payload_index;
+                        if n < remaining {
+                            self.payload_index += n;
+                            self.size_cache -= n;
+                            return self.next();
+                        } else {
+                            n -= remaining;
+                            self.size_cache -= remaining;
+                        }
+                    }
+
+                    // we then cycle through all the packets until we travelled as far as the
+                    // requested location
+                    loop {
+                        let (packet_index, packet) = packets.next()?;
+                        let size = Self::packet_size(packet);
+                        if n < size {
+                            // we found the requested packet
+                            self.packet_index += packet_index;
+                            self.payload_index = n;
+                            self.size_cache -= n;
+                            break;
+                        }
+                        n -= size;
+                        self.size_cache -= size;
+                    }
+
+                    self.next()
+                };
+
+                let ret = do_nth();
+                if let None = ret {
+                    // if we failed it means we ran out of data
+                    // so we set the iterator into finished state
+                    self.packet_index = self.data.len() / 2;
+                    self.size_cache = 0;
+                }
+                ret
+            }
+            _ => unreachable!(),
+        }
+    }
+
+    fn count(self) -> usize
+    where
+        Self: Sized,
+    {
+        self.len()
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.size_cache, Some(self.size_cache))
+    }
+}
+
+impl<'a, U: crate::buffer::Unit> PayloadIterator<'a, U> {
+    fn data_ump(&self) -> &'a [u32] {
+        <U as crate::buffer::UnitPrivate>::specialise_buffer_u32(self.data)
+    }
+
+    fn value_ump(&self) -> numeric_types::u7 {
+        let buffer_index = self.packet_index * 2 + (self.payload_index + 2) / 4;
+        let octet_index = (self.payload_index + 2) % 4;
+        self.data_ump()[buffer_index].septet(octet_index)
+    }
+
+    fn finished_ump(&self) -> bool {
+        self.data.len() / 2 == self.packet_index
+    }
+
+    fn advance_ump(&mut self) {
+        self.payload_index += 1;
+        self.size_cache -= 1;
+
+        let current_packet_size =
+            Self::packet_size(&self.data_ump()[self.packet_index * 2..self.packet_index * 2 + 2]);
+        if self.payload_index == current_packet_size {
+            // end of packet
+            self.packet_index += 1;
+            self.payload_index = 0;
+        }
+    }
+
+    fn packet_size(packet: &[u32]) -> usize {
+        u8::from(packet[0].nibble(3)) as usize
+    }
+}
+
+impl<'a, U: crate::buffer::Unit> core::iter::FusedIterator for PayloadIterator<'a, U> {}
+
+impl<'a, U: crate::buffer::Unit> core::iter::ExactSizeIterator for PayloadIterator<'a, U> {
+    fn len(&self) -> usize {
+        match U::UNIT_ID {
+            crate::buffer::UNIT_ID_U8 => self.data[self.payload_index..].len(),
+            crate::buffer::UNIT_ID_U32 => self.size_cache,
+            _ => unreachable!(),
+        }
     }
 }
 
