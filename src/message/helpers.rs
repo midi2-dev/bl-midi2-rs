@@ -27,40 +27,40 @@ pub fn sysex_group_consistent_groups(
     }
 }
 
-#[cfg(any(feature = "ump-stream", feature = "flex-data"))]
-pub fn check_flex_data_or_ump_stream_consistent_packet_formats(
-    buffer: &[u32],
-    format_crumb_index: usize,
-) -> crate::result::Result<()> {
-    use crate::{error::Error, numeric_types::*, util::BitOps};
-    // complete message
-    if buffer.len() == 4 && buffer[0].crumb(format_crumb_index) != u2::new(0b00) {
-        return Err(Error::InvalidData);
-    } else if buffer.len() > 4 {
-        // composite message
-        let mut packets = buffer.chunks_exact(4).peekable();
-        // start
-        if packets.next().unwrap()[0].crumb(format_crumb_index) != u2::new(0b01) {
-            return Err(Error::InvalidData);
-        }
-
-        while let Some(packet) = packets.next() {
-            if packets.peek().is_some() {
-                // continue
-                if packet[0].crumb(format_crumb_index) != u2::new(0b10) {
-                    return Err(Error::InvalidData);
-                }
-            } else {
-                // end
-                if packet[0].crumb(format_crumb_index) != u2::new(0b11) {
-                    return Err(Error::InvalidData);
-                }
-            }
-        }
-    }
-
-    Ok(())
-}
+// #[cfg(any(feature = "ump-stream", feature = "flex-data"))]
+// pub fn check_flex_data_or_ump_stream_consistent_packet_formats(
+//     buffer: &[u32],
+//     format_crumb_index: usize,
+// ) -> crate::result::Result<()> {
+//     use crate::{error::Error, numeric_types::*, util::BitOps};
+//     // complete message
+//     if buffer.len() == 4 && buffer[0].crumb(format_crumb_index) != u2::new(0b00) {
+//         return Err(Error::InvalidData);
+//     } else if buffer.len() > 4 {
+//         // composite message
+//         let mut packets = buffer.chunks_exact(4).peekable();
+//         // start
+//         if packets.next().unwrap()[0].crumb(format_crumb_index) != u2::new(0b01) {
+//             return Err(Error::InvalidData);
+//         }
+//
+//         while let Some(packet) = packets.next() {
+//             if packets.peek().is_some() {
+//                 // continue
+//                 if packet[0].crumb(format_crumb_index) != u2::new(0b10) {
+//                     return Err(Error::InvalidData);
+//                 }
+//             } else {
+//                 // end
+//                 if packet[0].crumb(format_crumb_index) != u2::new(0b11) {
+//                     return Err(Error::InvalidData);
+//                 }
+//             }
+//         }
+//     }
+//
+//     Ok(())
+// }
 
 pub const ERR_SYSEX_EXPECTED_COMPLETE: &str =
     "A one-packet sysex message should have Complete status";

@@ -96,12 +96,12 @@ impl<
     type Type = T;
     fn read(buffer: &B) -> crate::result::Result<Self::Type> {
         match <B::Unit as UnitPrivate>::UNIT_ID {
-            UNIT_ID_U32 => Ok(<T as schema::UmpSchemaRepr<UmpSchema>>::read(
-                buffer.buffer().specialise_u32(),
-            )),
-            UNIT_ID_U8 => Ok(<T as schema::BytesSchemaRepr<BytesSchema>>::read(
-                buffer.buffer().specialise_u8(),
-            )),
+            UNIT_ID_U32 => {
+                <T as schema::UmpSchemaRepr<UmpSchema>>::read(buffer.buffer().specialise_u32())
+            }
+            UNIT_ID_U8 => {
+                <T as schema::BytesSchemaRepr<BytesSchema>>::read(buffer.buffer().specialise_u8())
+            }
             _ => unreachable!(),
         }
     }
@@ -110,20 +110,14 @@ impl<
         B: crate::buffer::BufferMut,
     {
         match <B::Unit as UnitPrivate>::UNIT_ID {
-            UNIT_ID_U32 => {
-                <T as schema::UmpSchemaRepr<UmpSchema>>::write(
-                    buffer.buffer_mut().specialise_u32_mut(),
-                    v,
-                );
-                Ok(())
-            }
-            UNIT_ID_U8 => {
-                <T as schema::BytesSchemaRepr<BytesSchema>>::write(
-                    buffer.buffer_mut().specialise_u8_mut(),
-                    v,
-                );
-                Ok(())
-            }
+            UNIT_ID_U32 => <T as schema::UmpSchemaRepr<UmpSchema>>::write(
+                buffer.buffer_mut().specialise_u32_mut(),
+                v,
+            ),
+            UNIT_ID_U8 => <T as schema::BytesSchemaRepr<BytesSchema>>::write(
+                buffer.buffer_mut().specialise_u8_mut(),
+                v,
+            ),
             _ => unreachable!(),
         }
     }
@@ -144,9 +138,9 @@ impl<
     fn read(buffer: &B) -> crate::result::Result<Self::Type> {
         match <B::Unit as UnitPrivate>::UNIT_ID {
             UNIT_ID_U32 => Ok(Default::default()),
-            UNIT_ID_U8 => Ok(<T as schema::BytesSchemaRepr<BytesSchema>>::read(
-                buffer.buffer().specialise_u8(),
-            )),
+            UNIT_ID_U8 => {
+                <T as schema::BytesSchemaRepr<BytesSchema>>::read(buffer.buffer().specialise_u8())
+            }
             _ => unreachable!(),
         }
     }
@@ -158,9 +152,10 @@ impl<
             <T as schema::BytesSchemaRepr<BytesSchema>>::write(
                 buffer.buffer_mut().specialise_u8_mut(),
                 v,
-            );
+            )
+        } else {
+            Ok(())
         }
-        Ok(())
     }
     fn default() -> Self::Type {
         Default::default()
@@ -175,9 +170,9 @@ impl<B: Buffer, UmpSchema: schema::UmpSchema, T: Default + schema::UmpSchemaRepr
     type Type = T;
     fn read(buffer: &B) -> crate::result::Result<Self::Type> {
         match <B::Unit as UnitPrivate>::UNIT_ID {
-            UNIT_ID_U32 => Ok(<T as schema::UmpSchemaRepr<UmpSchema>>::read(
-                buffer.buffer().specialise_u32(),
-            )),
+            UNIT_ID_U32 => {
+                <T as schema::UmpSchemaRepr<UmpSchema>>::read(buffer.buffer().specialise_u32())
+            }
             UNIT_ID_U8 => Ok(Default::default()),
             _ => unreachable!(),
         }
