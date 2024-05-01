@@ -32,5 +32,7 @@ pub mod numeric_types {
 }
 
 pub mod prelude {
-    pub use crate::{message::sysex7, numeric_types::*, traits::*};
+    #[cfg(feature = "sysex7")]
+    pub use crate::message::sysex7;
+    pub use crate::{numeric_types::*, traits::*};
 }
