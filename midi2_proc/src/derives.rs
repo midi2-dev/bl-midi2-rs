@@ -37,8 +37,9 @@ pub fn from_bytes(item: TokenStream1) -> TokenStream1 {
     let mut match_arms = TokenStream::new();
     for variant in &input.variants {
         let variant_ident = &variant.ident;
+        let message_type = message_type_from_variant(variant);
         match_arms.extend(quote! {
-            #ident::#variant_ident(m) => #variant_ident::<B>::from_bytes(m).into(),
+            #ident::#variant_ident(m) => #message_type::from_bytes(m).into(),
         });
     }
     quote! {
@@ -66,8 +67,9 @@ pub fn try_from_bytes(item: TokenStream1) -> TokenStream1 {
     let mut match_arms = TokenStream::new();
     for variant in &input.variants {
         let variant_ident = &variant.ident;
+        let message_type = message_type_from_variant(variant);
         match_arms.extend(quote! {
-            #ident::#variant_ident(m) => #variant_ident::<B>::try_from_bytes(m)?.into(),
+            #ident::#variant_ident(m) => #message_type::try_from_bytes(m)?.into(),
         });
     }
     quote! {
@@ -95,8 +97,9 @@ pub fn from_ump(item: TokenStream1) -> TokenStream1 {
     let mut match_arms = TokenStream::new();
     for variant in &input.variants {
         let variant_ident = &variant.ident;
+        let message_type = message_type_from_variant(variant);
         match_arms.extend(quote! {
-            #ident::#variant_ident(m) => #variant_ident::<B>::from_ump(m).into(),
+            #ident::#variant_ident(m) => #message_type::from_ump(m).into(),
         });
     }
     quote! {
@@ -124,8 +127,9 @@ pub fn try_from_ump(item: TokenStream1) -> TokenStream1 {
     let mut match_arms = TokenStream::new();
     for variant in &input.variants {
         let variant_ident = &variant.ident;
+        let message_type = message_type_from_variant(variant);
         match_arms.extend(quote! {
-            #ident::#variant_ident(m) => #variant_ident::<B>::try_from_ump(m)?.into(),
+            #ident::#variant_ident(m) => #message_type::try_from_ump(m)?.into(),
         });
     }
     quote! {
@@ -153,8 +157,9 @@ pub fn rebuffer_from(item: TokenStream1) -> TokenStream1 {
     let mut match_arms = TokenStream::new();
     for variant in &input.variants {
         let variant_ident = &variant.ident;
+        let message_type = message_type_from_variant(variant);
         match_arms.extend(quote! {
-            #ident::#variant_ident(m) => #variant_ident::<B>::rebuffer_from(m).into(),
+            #ident::#variant_ident(m) => #message_type::rebuffer_from(m).into(),
         });
     }
     let generics = common::rebuffer_generics(
@@ -183,8 +188,9 @@ pub fn try_rebuffer_from(item: TokenStream1) -> TokenStream1 {
     let mut match_arms = TokenStream::new();
     for variant in &input.variants {
         let variant_ident = &variant.ident;
+        let message_type = message_type_from_variant(variant);
         match_arms.extend(quote! {
-            #ident::#variant_ident(m) => #variant_ident::<B>::try_rebuffer_from(m)?.into(),
+            #ident::#variant_ident(m) => #message_type::try_rebuffer_from(m)?.into(),
         });
     }
     let generics = common::try_rebuffer_generics(
@@ -205,6 +211,29 @@ pub fn try_rebuffer_from(item: TokenStream1) -> TokenStream1 {
         }
     }
     .into()
+}
+
+fn message_type_from_variant(variant: &syn::Variant) -> TokenStream {
+    let syn::Fields::Unnamed(fields) = &variant.fields else {
+        panic!("Expected enum variant with unnamed fields");
+    };
+    let Some(syn::Field { ty, .. }) = fields.unnamed.last() else {
+        panic!("Expected an unnamed field in the enum variant");
+    };
+    let syn::Type::Path(syn::TypePath { path, .. }) = ty else {
+        panic!("Expected a 'path' type");
+    };
+    let mut path = path.clone();
+    let Some(last_segment) = path.segments.last() else {
+        panic!("Expected type to have an ident");
+    };
+    let syn::PathArguments::AngleBracketed(args) = last_segment.arguments.clone() else {
+        panic!("Expected type have generic args");
+    };
+    path.segments.last_mut().unwrap().arguments = syn::PathArguments::None;
+    quote! {
+        #path:: #args
+    }
 }
 
 pub fn grouped(item: TokenStream1) -> TokenStream1 {

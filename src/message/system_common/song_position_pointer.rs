@@ -1,44 +1,53 @@
-use crate::message::system_common::TYPE_CODE as SYSTEM_COMMON_TYPE_CODE;
+use crate::{
+    message::{
+        common_properties,
+        system_common::{self, UMP_MESSAGE_TYPE},
+    },
+    util::schema,
+};
 
-const OP_CODE: u32 = 0xF2;
+pub const STATUS: u8 = 0xF2;
 
-#[midi2_proc::generate_message(Grouped)]
+#[midi2_proc::generate_message(FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
 struct SongPositionPointer {
-    ump_type: Property<
-        NumericalConstant<SYSTEM_COMMON_TYPE_CODE>,
-        UmpSchema<0xF000_0000, 0x0, 0x0, 0x0>,
-        (),
-    >,
-    status: Property<
-        NumericalConstant<OP_CODE>,
-        UmpSchema<0x00FF_0000, 0x0, 0x0, 0x0>,
-        BytesSchema<0xFF, 0x0, 0x0>,
-    >,
-    position: Property<u14, UmpSchema<0x0000_7F7F, 0x0, 0x0, 0x0>, BytesSchema<0x0, 0x7F, 0x7F>>,
+    #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
+    ump_type: (),
+    #[property(system_common::SystemCommonStatus<{STATUS}>)]
+    status: (),
+    #[property(common_properties::GroupProperty)]
+    group: crate::numeric_types::u4,
+    #[property(common_properties::HybridSchemaProperty<
+        crate::numeric_types::u14,
+        schema::Bytes<0x0, 0x7F, 0x7F>,
+        schema::Ump<0x0000_7F7F, 0x0, 0x0, 0x0>,
+    >)]
+    position: crate::numeric_types::u14,
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{numeric_types::*, traits::Grouped};
     use pretty_assertions::assert_eq;
 
     #[test]
-    fn builder() {
-        assert_eq!(
-            SongPositionPointerMessage::builder()
-                .group(u4::new(0xA))
-                .position(u14::new(0x367D))
-                .build(),
-            Ok(SongPositionPointerMessage::Owned(SongPositionPointerOwned(
-                [0x1AF2_7D6C, 0x0, 0x0, 0x0]
-            ))),
-        );
+    fn setters() {
+        let mut message = SongPositionPointer::new_arr();
+        message.set_group(u4::new(0xA));
+        message.set_position(u14::new(0x367D));
+        assert_eq!(message, SongPositionPointer([0x1AF2_7D6C, 0x0, 0x0, 0x0]),);
+    }
+    #[test]
+    fn setters_bytes() {
+        let mut message = SongPositionPointer::new_arr_bytes();
+        message.set_position(u14::new(0x367D));
+        assert_eq!(message, SongPositionPointer([0xF2, 0x7D, 0x6C]),);
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            SongPositionPointerMessage::from_data(&[0x1AF2_7D6C, 0x0, 0x0, 0x0])
+            SongPositionPointer::try_from(&[0x1AF2_7D6C_u32][..])
                 .unwrap()
                 .group(),
             u4::new(0xA),
@@ -48,7 +57,17 @@ mod tests {
     #[test]
     fn position() {
         assert_eq!(
-            SongPositionPointerMessage::from_data(&[0x1AF2_7D6C, 0x0, 0x0, 0x0])
+            SongPositionPointer::try_from(&[0x1AF2_7D6C_u32][..])
+                .unwrap()
+                .position(),
+            u14::new(0x367D),
+        );
+    }
+
+    #[test]
+    fn position_bytes() {
+        assert_eq!(
+            SongPositionPointer::try_from(&[0xF2_u8, 0x7D, 0x6C][..])
                 .unwrap()
                 .position(),
             u14::new(0x367D),
