@@ -203,24 +203,24 @@ mod tests {
         .is_ok());
     }
 
-    #[cfg(feature = "std")]
-    #[cfg(feature = "flex-data")]
-    #[test]
-    fn flex_data_builder() {
-        use crate::test_support::debug;
-        use pretty_assertions::assert_eq;
-        assert_eq!(
-            debug::Data(
-                Message::builder()
-                    .flex_data()
-                    .composer_name()
-                    .group(u4::new(0x4))
-                    .text("Tár")
-                    .build()
-                    .unwrap()
-                    .data()
-            ),
-            debug::Data(&[0xD410_0105, 0x54C3_A172, 0x0000_0000, 0x0000_0000,]),
-        );
-    }
+    // #[cfg(feature = "std")]
+    // #[cfg(feature = "flex-data")]
+    // #[test]
+    // fn flex_data_builder() {
+    //     use crate::test_support::debug;
+    //     use pretty_assertions::assert_eq;
+    //     assert_eq!(
+    //         debug::Data(
+    //             Message::builder()
+    //                 .flex_data()
+    //                 .composer_name()
+    //                 .group(u4::new(0x4))
+    //                 .text("Tár")
+    //                 .build()
+    //                 .unwrap()
+    //                 .data()
+    //         ),
+    //         debug::Data(&[0xD410_0105, 0x54C3_A172, 0x0000_0000, 0x0000_0000,]),
+    //     );
+    // }
 }

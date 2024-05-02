@@ -181,22 +181,22 @@ impl<const STATUS: u8, B: Ump> Property<B> for StatusProperty<STATUS> {
     }
 }
 
-pub struct BankProperty<const STATUS: u8>;
+pub struct BankProperty<const BANK: u8>;
 
-impl<const STATUS: u8, B: Ump> Property<B> for BankProperty<STATUS> {
+impl<const BANK: u8, B: Ump> Property<B> for BankProperty<BANK> {
     type Type = ();
     fn read(buffer: &B) -> crate::result::Result<Self::Type> {
-        if buffer.buffer()[0].octet(3) == STATUS {
+        if buffer.buffer()[0].octet(2) == BANK {
             Ok(())
         } else {
-            Err(crate::Error::InvalidData("Incorrect message status"))
+            Err(crate::Error::InvalidData("Incorrect message bank"))
         }
     }
     fn write(buffer: &mut B, _v: Self::Type) -> crate::result::Result<()>
     where
         B: BufferMut,
     {
-        buffer.buffer_mut()[0].set_octet(3, STATUS);
+        buffer.buffer_mut()[0].set_octet(2, BANK);
         Ok(())
     }
     fn default() -> Self::Type {
@@ -227,6 +227,41 @@ impl<const FORMAT: u8, B: Ump> Property<B> for FormatProperty<FORMAT> {
     }
 }
 
+struct OptionalChannelProperty;
+
+impl<B: Ump> Property<B> for OptionalChannelProperty {
+    type Type = Option<crate::numeric_types::u4>;
+    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
+        use crate::numeric_types::u2;
+        Ok(if buffer.buffer()[0].crumb(5) == u2::new(0x0) {
+            Some(buffer.buffer()[0].nibble(3))
+        } else {
+            None
+        })
+    }
+    fn write(buffer: &mut B, v: Self::Type) -> crate::result::Result<()>
+    where
+        B: crate::buffer::BufferMut,
+    {
+        use crate::numeric_types::u2;
+        use crate::numeric_types::u4;
+        let data = buffer.buffer_mut();
+        match v {
+            Some(channel) => {
+                data[0].set_crumb(5, u2::new(0x0));
+                data[0].set_nibble(3, channel);
+            }
+            None => {
+                data[0].set_crumb(5, u2::new(0x1));
+                data[0].set_nibble(3, u4::new(0x0));
+            }
+        }
+        Ok(())
+    }
+    fn default() -> Self::Type {
+        Default::default()
+    }
+}
 // fn bank_from_buffer<B: Ump>(buffer: &B) -> u8 {
 //     buffer.buffer()[0].octet(2)
 // }

@@ -15,12 +15,16 @@ const STATUS: u8 = 0x6;
 struct SetChordName {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
+    #[property(common_properties::GroupProperty)]
+    group: crate::numeric_types::u4,
+    #[property(flex_data::OptionalChannelProperty)]
+    optional_channel: Option<crate::numeric_types::u4>,
     #[property(flex_data::FormatProperty<{flex_data::COMPLETE_FORMAT}>)]
     format: (),
     #[property(flex_data::BankProperty<{flex_data::SETUP_AND_PERFORMANCE_BANK}>)]
     bank: (),
     #[property(flex_data::StatusProperty<{STATUS}>)]
-    bank: (),
+    status: (),
     #[property(common_properties::UmpSchemaProperty<
         SharpsFlats,
         schema::Ump<0x0, 0xF000_0000, 0x0, 0x0>,
@@ -43,7 +47,7 @@ struct SetChordName {
     chord_alteration1: Option<Alteration>,
     #[property(common_properties::UmpSchemaProperty<
         Option<Alteration>,
-        schema::Ump<0x0, 0x0000_FF00, 0x0, 0x0>,
+        schema::Ump<0x0, 0x0000_00FF, 0x0, 0x0>,
     >)]
     chord_alteration2: Option<Alteration>,
     #[property(common_properties::UmpSchemaProperty<
@@ -328,166 +332,162 @@ fn alteration_into_octet(alteration: Option<Alteration>) -> u8 {
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     use pretty_assertions::assert_eq;
-//
-//     #[test]
-//     fn builder() {
-//         assert_eq!(
-//             SetChordNameMessage::builder()
-//                 .group(u4::new(0x7))
-//                 .channel(Some(u4::new(0xB)))
-//                 .tonic_sharps_flats(SharpsFlats::Flat)
-//                 .tonic(Tonic::G)
-//                 .chord_type(ChordType::Major7th)
-//                 .chord_alteration1(Some(Alteration::Raise(u4::new(0x5))))
-//                 .chord_alteration2(Some(Alteration::Add(u4::new(0x9))))
-//                 .chord_alteration3(Some(Alteration::Lower(u4::new(0xB))))
-//                 .chord_alteration4(None)
-//                 .bass_sharps_flats(SharpsFlats::Sharp)
-//                 .bass_note(Tonic::A)
-//                 .bass_chord_type(ChordType::Minor9th)
-//                 .bass_alteration1(None)
-//                 .bass_alteration2(Some(Alteration::Subtract(u4::new(0x0))))
-//                 .build(),
-//             Ok(SetChordNameMessage::Owned(SetChordNameOwned([
-//                 0xD70B_0006,
-//                 0xF703_3519,
-//                 0x4B00_0000,
-//                 0x110A_0020,
-//             ]))),
-//         );
-//     }
-//
-//     #[test]
-//     fn channel() {
-//         assert_eq!(
-//             SetChordNameMessage::from_data(&[0xD70B_0006, 0xF703_3519, 0x4B00_0000, 0x110A_0020,])
-//                 .unwrap()
-//                 .channel(),
-//             Some(u4::new(0xB))
-//         );
-//     }
-//
-//     #[test]
-//     fn tonic_sharps_flats() {
-//         assert_eq!(
-//             SetChordNameMessage::from_data(&[0xD70B_0006, 0xF703_3519, 0x4B00_0000, 0x110A_0020,])
-//                 .unwrap()
-//                 .tonic_sharps_flats(),
-//             SharpsFlats::Flat,
-//         );
-//     }
-//
-//     #[test]
-//     fn tonic() {
-//         assert_eq!(
-//             SetChordNameMessage::from_data(&[0xD70B_0006, 0xF703_3519, 0x4B00_0000, 0x110A_0020,])
-//                 .unwrap()
-//                 .tonic(),
-//             Tonic::G,
-//         );
-//     }
-//
-//     #[test]
-//     fn chord_type() {
-//         assert_eq!(
-//             SetChordNameMessage::from_data(&[0xD70B_0006, 0xF703_3519, 0x4B00_0000, 0x110A_0020,])
-//                 .unwrap()
-//                 .chord_type(),
-//             ChordType::Major7th,
-//         );
-//     }
-//
-//     #[test]
-//     fn chord_alteration1() {
-//         assert_eq!(
-//             SetChordNameMessage::from_data(&[0xD70B_0006, 0xF703_3519, 0x4B00_0000, 0x110A_0020,])
-//                 .unwrap()
-//                 .chord_alteration1(),
-//             Some(Alteration::Raise(u4::new(0x5))),
-//         );
-//     }
-//
-//     #[test]
-//     fn chord_alteration2() {
-//         assert_eq!(
-//             SetChordNameMessage::from_data(&[0xD70B_0006, 0xF703_3519, 0x4B00_0000, 0x110A_0020,])
-//                 .unwrap()
-//                 .chord_alteration2(),
-//             Some(Alteration::Add(u4::new(0x9))),
-//         );
-//     }
-//
-//     #[test]
-//     fn chord_alteration3() {
-//         assert_eq!(
-//             SetChordNameMessage::from_data(&[0xD70B_0006, 0xF703_3519, 0x4B00_0000, 0x110A_0020,])
-//                 .unwrap()
-//                 .chord_alteration3(),
-//             Some(Alteration::Lower(u4::new(0xB))),
-//         );
-//     }
-//
-//     #[test]
-//     fn chord_alteration4() {
-//         assert_eq!(
-//             SetChordNameMessage::from_data(&[0xD70B_0006, 0xF703_3519, 0x4B00_0000, 0x110A_0020,])
-//                 .unwrap()
-//                 .chord_alteration4(),
-//             None,
-//         );
-//     }
-//
-//     #[test]
-//     fn bass_sharps_flats() {
-//         assert_eq!(
-//             SetChordNameMessage::from_data(&[0xD70B_0006, 0xF703_3519, 0x4B00_0000, 0x110A_0020,])
-//                 .unwrap()
-//                 .bass_sharps_flats(),
-//             SharpsFlats::Sharp,
-//         );
-//     }
-//
-//     #[test]
-//     fn bass_note() {
-//         assert_eq!(
-//             SetChordNameMessage::from_data(&[0xD70B_0006, 0xF703_3519, 0x4B00_0000, 0x110A_0020,])
-//                 .unwrap()
-//                 .bass_note(),
-//             Tonic::A,
-//         );
-//     }
-//
-//     #[test]
-//     fn bass_chord_type() {
-//         assert_eq!(
-//             SetChordNameMessage::from_data(&[0xD70B_0006, 0xF703_3519, 0x4B00_0000, 0x110A_0020,])
-//                 .unwrap()
-//                 .bass_chord_type(),
-//             ChordType::Minor9th,
-//         );
-//     }
-//
-//     #[test]
-//     fn bass_alteration1() {
-//         assert_eq!(
-//             SetChordNameMessage::from_data(&[0xD70B_0006, 0xF703_3519, 0x4B00_0000, 0x110A_0020,])
-//                 .unwrap()
-//                 .bass_alteration1(),
-//             None,
-//         );
-//     }
-//
-//     #[test]
-//     fn bass_alteration2() {
-//         assert_eq!(
-//             SetChordNameMessage::from_data(&[0xD70B_0006, 0xF703_3519, 0x4B00_0000, 0x110A_0020,])
-//                 .unwrap()
-//                 .bass_alteration2(),
-//             Some(Alteration::Subtract(u4::new(0x0))),
-//         );
-//     }
-// }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{message::flex_data::tonic, traits::Grouped};
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn setters() {
+        let mut message = SetChordName::new_arr();
+        message.set_group(u4::new(0x7));
+        message.set_optional_channel(Some(u4::new(0xB)));
+        message.set_tonic_sharps_flats(SharpsFlats::Flat);
+        message.set_tonic(tonic::Tonic::G);
+        message.set_chord_type(ChordType::Major7th);
+        message.set_chord_alteration1(Some(Alteration::Raise(u4::new(0x5))));
+        message.set_chord_alteration2(Some(Alteration::Add(u4::new(0x9))));
+        message.set_chord_alteration3(Some(Alteration::Lower(u4::new(0xB))));
+        message.set_chord_alteration4(None);
+        message.set_bass_sharps_flats(SharpsFlats::Sharp);
+        message.set_bass_note(tonic::Tonic::A);
+        message.set_bass_chord_type(ChordType::Minor9th);
+        message.set_bass_alteration1(None);
+        message.set_bass_alteration2(Some(Alteration::Subtract(u4::new(0x0))));
+        assert_eq!(
+            message,
+            SetChordName([0xD70B_0006, 0xF703_3519, 0x4B00_0000, 0x110A_0020,]),
+        );
+    }
+
+    #[test]
+    fn channel() {
+        assert_eq!(
+            SetChordName::try_from(&[0xD70B_0006, 0xF703_3519, 0x4B00_0000, 0x110A_0020,][..])
+                .unwrap()
+                .optional_channel(),
+            Some(u4::new(0xB))
+        );
+    }
+
+    #[test]
+    fn tonic_sharps_flats() {
+        assert_eq!(
+            SetChordName::try_from(&[0xD70B_0006, 0xF703_3519, 0x4B00_0000, 0x110A_0020,][..])
+                .unwrap()
+                .tonic_sharps_flats(),
+            SharpsFlats::Flat,
+        );
+    }
+
+    #[test]
+    fn tonic() {
+        assert_eq!(
+            SetChordName::try_from(&[0xD70B_0006, 0xF703_3519, 0x4B00_0000, 0x110A_0020,][..])
+                .unwrap()
+                .tonic(),
+            tonic::Tonic::G,
+        );
+    }
+
+    #[test]
+    fn chord_type() {
+        assert_eq!(
+            SetChordName::try_from(&[0xD70B_0006, 0xF703_3519, 0x4B00_0000, 0x110A_0020,][..])
+                .unwrap()
+                .chord_type(),
+            ChordType::Major7th,
+        );
+    }
+
+    #[test]
+    fn chord_alteration1() {
+        assert_eq!(
+            SetChordName::try_from(&[0xD70B_0006, 0xF703_3519, 0x4B00_0000, 0x110A_0020,][..])
+                .unwrap()
+                .chord_alteration1(),
+            Some(Alteration::Raise(u4::new(0x5))),
+        );
+    }
+
+    #[test]
+    fn chord_alteration2() {
+        assert_eq!(
+            SetChordName::try_from(&[0xD70B_0006, 0xF703_3519, 0x4B00_0000, 0x110A_0020,][..])
+                .unwrap()
+                .chord_alteration2(),
+            Some(Alteration::Add(u4::new(0x9))),
+        );
+    }
+
+    #[test]
+    fn chord_alteration3() {
+        assert_eq!(
+            SetChordName::try_from(&[0xD70B_0006, 0xF703_3519, 0x4B00_0000, 0x110A_0020,][..])
+                .unwrap()
+                .chord_alteration3(),
+            Some(Alteration::Lower(u4::new(0xB))),
+        );
+    }
+
+    #[test]
+    fn chord_alteration4() {
+        assert_eq!(
+            SetChordName::try_from(&[0xD70B_0006, 0xF703_3519, 0x4B00_0000, 0x110A_0020,][..])
+                .unwrap()
+                .chord_alteration4(),
+            None,
+        );
+    }
+
+    #[test]
+    fn bass_sharps_flats() {
+        assert_eq!(
+            SetChordName::try_from(&[0xD70B_0006, 0xF703_3519, 0x4B00_0000, 0x110A_0020,][..])
+                .unwrap()
+                .bass_sharps_flats(),
+            SharpsFlats::Sharp,
+        );
+    }
+
+    #[test]
+    fn bass_note() {
+        assert_eq!(
+            SetChordName::try_from(&[0xD70B_0006, 0xF703_3519, 0x4B00_0000, 0x110A_0020,][..])
+                .unwrap()
+                .bass_note(),
+            tonic::Tonic::A,
+        );
+    }
+
+    #[test]
+    fn bass_chord_type() {
+        assert_eq!(
+            SetChordName::try_from(&[0xD70B_0006, 0xF703_3519, 0x4B00_0000, 0x110A_0020,][..])
+                .unwrap()
+                .bass_chord_type(),
+            ChordType::Minor9th,
+        );
+    }
+
+    #[test]
+    fn bass_alteration1() {
+        assert_eq!(
+            SetChordName::try_from(&[0xD70B_0006, 0xF703_3519, 0x4B00_0000, 0x110A_0020,][..])
+                .unwrap()
+                .bass_alteration1(),
+            None,
+        );
+    }
+
+    #[test]
+    fn bass_alteration2() {
+        assert_eq!(
+            SetChordName::try_from(&[0xD70B_0006, 0xF703_3519, 0x4B00_0000, 0x110A_0020,][..])
+                .unwrap()
+                .bass_alteration2(),
+            Some(Alteration::Subtract(u4::new(0x0))),
+        );
+    }
+}
