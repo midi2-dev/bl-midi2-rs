@@ -8,6 +8,8 @@ struct Property {
     meta_type: TokenStream,
     ty: syn::Type,
     constant: bool,
+    #[allow(dead_code)]
+    readonly: bool,
 }
 
 impl Property {
@@ -31,7 +33,6 @@ impl Property {
     }
 }
 
-#[allow(dead_code)]
 fn has_attr(field: &syn::Field, id: &str) -> bool {
     field.attrs.iter().any(|attr| {
         let syn::Meta::Path(path) = &attr.meta else {
@@ -82,6 +83,7 @@ fn properties(input: &syn::ItemStruct) -> Vec<Property> {
             ty: field.ty.clone(),
             meta_type: meta_type(field),
             constant: is_unit_tuple(&field.ty),
+            readonly: has_attr(field, "readonly"),
         })
         .collect()
 }

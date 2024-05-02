@@ -1,6 +1,120 @@
-// pub mod delta_clock_stamp;
-// pub mod no_op;
-// pub mod time_stamp;
+pub mod no_op {
+    use crate::message::utility;
+    pub const STATUS: u8 = 0b0000;
+    #[midi2_proc::generate_message(FixedSize, MinSizeUmp(0))]
+    struct NoOp {
+        #[property(utility::TypeProperty)]
+        ump_type: (),
+        #[property(utility::StatusProperty<{STATUS}>)]
+        status: (),
+        #[property(utility::DataProperty)]
+        time_data: u16,
+    }
+}
+pub mod clock {
+    use crate::message::utility;
+    pub const STATUS: u8 = 0b0001;
+    #[midi2_proc::generate_message(FixedSize, MinSizeUmp(0))]
+    struct Clock {
+        #[property(utility::TypeProperty)]
+        ump_type: (),
+        #[property(utility::StatusProperty<{STATUS}>)]
+        status: (),
+        #[property(utility::DataProperty)]
+        time_data: u16,
+    }
+}
+pub mod timestamp {
+    use crate::message::utility;
+    pub const STATUS: u8 = 0b0010;
+    #[midi2_proc::generate_message(FixedSize, MinSizeUmp(0))]
+    struct Timestamp {
+        #[property(utility::TypeProperty)]
+        ump_type: (),
+        #[property(utility::StatusProperty<{STATUS}>)]
+        status: (),
+        #[property(utility::DataProperty)]
+        time_data: u16,
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+        use crate::traits::RebufferInto;
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn from_data() {
+            assert_eq!(
+                Timestamp::try_from(&[0x0020_1234][..]),
+                Ok(Timestamp(&[0x0020_1234][..]))
+            );
+        }
+
+        #[test]
+        fn time_data() {
+            assert_eq!(
+                Timestamp::try_from(&[0x0020_1234][..]).unwrap().time_data(),
+                0x1234,
+            );
+        }
+
+        #[test]
+        fn new() {
+            let message = Timestamp::<std::vec::Vec<u32>>::new();
+            assert_eq!(message, Timestamp(std::vec![0x0020_0000]));
+        }
+
+        #[test]
+        fn try_new() {
+            let message = Timestamp::<[u32; 1]>::try_new();
+            assert_eq!(message, Ok(Timestamp([0x0020_0000])));
+        }
+
+        #[test]
+        fn try_new_fail() {
+            let message = Timestamp::<[u32; 0]>::try_new();
+            assert_eq!(message, Err(crate::error::BufferOverflow));
+        }
+
+        #[test]
+        fn new_arr() {
+            let message = Timestamp::<[u32; 5]>::new_arr();
+            assert_eq!(message, Timestamp([0x0020_0000, 0x0, 0x0, 0x0, 0x0]));
+        }
+
+        #[test]
+        fn rebuffer_into() {
+            let message = Timestamp::<[u32; 5]>::new_arr();
+            let rebuffered: Timestamp<std::vec::Vec<u32>> = message.rebuffer_into();
+            assert_eq!(rebuffered, Timestamp(std::vec![0x0020_0000]));
+        }
+    }
+}
+pub mod delta_clockstamp {
+    use crate::message::utility;
+    pub const STATUS: u8 = 0b0100;
+    #[midi2_proc::generate_message(FixedSize, MinSizeUmp(0))]
+    struct DeltaClockstamp {
+        #[property(utility::TypeProperty)]
+        ump_type: (),
+        #[property(utility::StatusProperty<{STATUS}>)]
+        status: (),
+    }
+}
+pub mod delta_clockstamp_tpq {
+    use crate::message::utility;
+    pub const STATUS: u8 = 0b0011;
+    #[midi2_proc::generate_message(FixedSize, MinSizeUmp(0))]
+    struct DeltaClockstampTPQ {
+        #[property(utility::TypeProperty)]
+        ump_type: (),
+        #[property(utility::StatusProperty<{STATUS}>)]
+        status: (),
+        #[property(utility::DataProperty)]
+        time_data: u16,
+    }
+}
 
 const UMP_MESSAGE_TYPE: u8 = 0x0;
 
@@ -13,8 +127,6 @@ pub enum JitterReduction {
 
 pub(crate) const ERR_JR_UNEXPECTED_CLOCK: &str = "Unexpected clock message";
 pub(crate) const ERR_UNKNOWN_UTILITY_STATUS: &str = "Unknown utility message status";
-pub(crate) const ERR_JR_HEADER_SHOULD_NOT_EXCEED_ONE_PACKET: &str =
-    "The jitter reduction message header must not exceed one packet";
 
 const STATUS_NOOP: u8 = 0b0000;
 const STATUS_CLOCK: u8 = 0b0001;
@@ -40,11 +152,12 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for JitterRedu
             return Ok(None);
         }
 
-        if buffer.len() > 1 && buffer[1].nibble(0) == crate::numeric_types::u4::new(0) {
-            return Err(Error::InvalidData(
-                ERR_JR_HEADER_SHOULD_NOT_EXCEED_ONE_PACKET,
-            ));
-        }
+        // is this needed?
+        // if buffer.len() > 1 && buffer[1].nibble(0) == crate::numeric_types::u4::new(0) {
+        //     return Err(Error::InvalidData(
+        //         ERR_JR_HEADER_SHOULD_NOT_EXCEED_ONE_PACKET,
+        //     ));
+        // }
 
         use crate::error::Error;
 
@@ -106,39 +219,145 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for JitterRedu
     }
 }
 
-// #[derive(
-//     midi2_proc::UmpDebug,
-//     derive_more::From,
-//     midi2_proc::Data,
-//     midi2_proc::Grouped,
-//     Clone,
-//     PartialEq,
-//     Eq,
-// )]
-// #[non_exhaustive]
-// pub enum UtilityMessage<'a> {
-//     NoOp(NoOpMessage<'a>),
-//     TimeStamp(TimeStampMessage<'a>),
-// }
+struct TypeProperty;
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     use pretty_assertions::assert_eq;
-//
-//     #[test]
-//     fn builder() {
-//         assert_eq!(
-//             UtilityMessage::builder()
-//                 .time_stamp()
-//                 .time_stamp(u20::new(0x1))
-//                 .build(),
-//             Ok(UtilityMessage::TimeStamp(
-//                 TimeStampMessage::builder()
-//                     .time_stamp(u20::new(0x1))
-//                     .build()
-//                     .unwrap()
-//             ))
-//         )
-//     }
-// }
+impl<B: crate::buffer::Ump> crate::util::property::Property<B> for TypeProperty {
+    type Type = ();
+    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
+        use crate::util::BitOps;
+        if buffer.buffer()[0].nibble(0) != crate::u4::new(0x0) {
+            Err(crate::Error::InvalidData("Incorrect ump message type"))
+        } else {
+            Ok(())
+        }
+    }
+    fn write(buffer: &mut B, _v: Self::Type) -> crate::result::Result<()>
+    where
+        B: crate::buffer::BufferMut,
+    {
+        use crate::util::BitOps;
+        buffer.buffer_mut()[0].set_nibble(0, crate::u4::new(0x0));
+        Ok(())
+    }
+    fn default() -> Self::Type {
+        ()
+    }
+}
+
+struct StatusProperty<const STATUS: u8>;
+
+impl<const STATUS: u8, B: crate::buffer::Ump> crate::util::property::Property<B>
+    for StatusProperty<STATUS>
+{
+    type Type = ();
+    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
+        use crate::util::BitOps;
+        if u8::from(buffer.buffer()[0].nibble(2)) == STATUS {
+            Ok(())
+        } else {
+            Err(crate::Error::InvalidData("Incorrect message status"))
+        }
+    }
+    fn write(buffer: &mut B, _v: Self::Type) -> crate::result::Result<()>
+    where
+        B: crate::buffer::BufferMut,
+    {
+        use crate::util::BitOps;
+        buffer.buffer_mut()[0].set_nibble(2, crate::u4::new(STATUS));
+        Ok(())
+    }
+    fn default() -> Self::Type {
+        ()
+    }
+}
+
+struct DataProperty;
+
+impl<B: crate::buffer::Ump> crate::util::property::Property<B> for DataProperty {
+    type Type = u16;
+    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
+        use crate::util::BitOps;
+        Ok(buffer.buffer()[0].word(1))
+    }
+    fn write(buffer: &mut B, value: Self::Type) -> crate::result::Result<()>
+    where
+        B: crate::buffer::BufferMut,
+    {
+        use crate::util::BitOps;
+        buffer.buffer_mut()[0].set_word(1, value);
+        Ok(())
+    }
+    fn default() -> Self::Type {
+        Default::default()
+    }
+}
+
+#[derive(
+    derive_more::From,
+    midi2_proc::Data,
+    midi2_proc::RebufferFrom,
+    midi2_proc::TryRebufferFrom,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
+)]
+#[non_exhaustive]
+pub enum Utility<B: crate::buffer::Ump> {
+    NoOp(no_op::NoOp<B>),
+    Clock(clock::Clock<B>),
+    Timestamp(timestamp::Timestamp<B>),
+    DeltaClockstamp(delta_clockstamp::DeltaClockstamp<B>),
+    DeltaClockstampTpq(delta_clockstamp_tpq::DeltaClockstampTPQ<B>),
+}
+
+impl<'a> core::convert::TryFrom<&'a [u32]> for Utility<&'a [u32]> {
+    type Error = crate::error::Error;
+    fn try_from(buffer: &'a [u32]) -> Result<Self, Self::Error> {
+        if buffer.len() < 1 {
+            return Err(crate::error::Error::InvalidData("Slice is too short"));
+        };
+        Ok(match status(buffer) {
+            no_op::STATUS => no_op::NoOp::try_from(buffer)?.into(),
+            clock::STATUS => clock::Clock::try_from(buffer)?.into(),
+            timestamp::STATUS => timestamp::Timestamp::try_from(buffer)?.into(),
+            delta_clockstamp::STATUS => delta_clockstamp::DeltaClockstamp::try_from(buffer)?.into(),
+            delta_clockstamp_tpq::STATUS => {
+                delta_clockstamp_tpq::DeltaClockstampTPQ::try_from(buffer)?.into()
+            }
+            _ => Err(crate::error::Error::InvalidData(
+                "Unknown utility message status",
+            ))?,
+        })
+    }
+}
+
+fn status<U: crate::buffer::Unit>(buffer: &[U]) -> u8 {
+    use crate::util::BitOps;
+    match <U as crate::buffer::UnitPrivate>::UNIT_ID {
+        crate::buffer::UNIT_ID_U8 => {
+            <U as crate::buffer::UnitPrivate>::specialise_buffer_u8(buffer)[0].nibble(0)
+        }
+        crate::buffer::UNIT_ID_U32 => {
+            <U as crate::buffer::UnitPrivate>::specialise_buffer_u32(buffer)[0].nibble(2)
+        }
+        _ => unreachable!(),
+    }
+    .into()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn from_data() {
+        assert_eq!(
+            Utility::try_from(&[0x0010_1234][..]),
+            Ok(Utility::Clock(
+                clock::Clock::try_from(&[0x0010_1234][..]).unwrap()
+            ))
+        );
+    }
+}

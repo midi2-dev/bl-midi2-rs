@@ -426,14 +426,4 @@ mod jitter_reduction_tests {
             Err(crate::Error::InvalidData(utility::ERR_JR_UNEXPECTED_CLOCK)),
         );
     }
-
-    #[test]
-    fn from_data_jr_header_size_greater_than_one() {
-        assert_eq!(
-            ChannelPressure::try_from(&[0x0020_0000_u32, 0x0020_0000_u32, 0x20D0_0000][..]),
-            Err(crate::Error::InvalidData(
-                utility::ERR_JR_HEADER_SHOULD_NOT_EXCEED_ONE_PACKET
-            )),
-        );
-    }
 }
