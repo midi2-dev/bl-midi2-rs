@@ -172,12 +172,13 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for GroupPrope
     type Type = numeric_types::u4;
     fn read(buffer: &B) -> crate::result::Result<Self::Type> {
         if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U32 {
+            use crate::buffer::UmpPrivate;
             message_helpers::sysex_group_consistent_groups(
                 buffer.specialise_u32(),
                 2,
                 crate::numeric_types::u4::new(UMP_MESSAGE_TYPE),
             )?;
-            Ok(buffer.specialise_u32()[0].nibble(1))
+            Ok(buffer.specialise_u32().message()[0].nibble(1))
         } else {
             Ok(Default::default())
         }
@@ -187,9 +188,11 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for GroupPrope
         B: crate::buffer::BufferMut,
     {
         if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U32 {
+            use crate::buffer::UmpPrivateMut;
             const TYPE: numeric_types::u4 = numeric_types::u4::new(UMP_MESSAGE_TYPE);
             for packet in buffer
                 .specialise_u32_mut()
+                .message_mut()
                 .chunks_exact_mut(2)
                 .take_while(|packet| packet[0].nibble(0) == TYPE)
             {
@@ -236,8 +239,11 @@ impl<B: crate::buffer::Buffer> crate::traits::Size<B> for Sysex7<B> {
                     + 1
             }
             crate::buffer::UNIT_ID_U32 => {
+                use crate::buffer::UmpPrivate;
+                let jr_offset = self.0.specialise_u32().jitter_reduction().len();
                 self.0
                     .specialise_u32()
+                    .message()
                     .chunks_exact(2)
                     .position(|p| {
                         let status: u8 = p[0].nibble(2).into();
@@ -246,6 +252,7 @@ impl<B: crate::buffer::Buffer> crate::traits::Size<B> for Sysex7<B> {
                     .expect("Message is in an invalid state. Couldn't find end packet.")
                     * 2
                     + 2
+                    + jr_offset
             }
             _ => unreachable!(),
         }
@@ -844,7 +851,7 @@ mod tests {
     #[test]
     fn new_ump() {
         let message = Sysex7::<std::vec::Vec<u32>>::new();
-        assert_eq!(message, Sysex7(std::vec![0x3000_0000, 0x0000_0000,]));
+        assert_eq!(message, Sysex7(std::vec![0x0, 0x3000_0000, 0x0000_0000,]));
     }
 
     #[test]
@@ -897,6 +904,7 @@ mod tests {
         assert_eq!(
             message,
             Sysex7(std::vec![
+                0x0, // jitter reduction
                 0x3516_0001_u32,
                 0x0203_0405_u32,
                 0x3526_0607_u32,

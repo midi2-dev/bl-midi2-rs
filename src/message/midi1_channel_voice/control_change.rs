@@ -45,7 +45,7 @@ mod tests {
         message.set_channel(u4::new(0x7));
         message.set_control(u7::new(0x36));
         message.set_control_data(u7::new(0x37));
-        assert_eq!(message, ControlChange([0x2AB7_3637, 0x0, 0x0, 0x0]));
+        assert_eq!(message, ControlChange([0x0, 0x2AB7_3637, 0x0, 0x0, 0x0]));
     }
 
     #[test]

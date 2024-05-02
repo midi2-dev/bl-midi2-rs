@@ -62,7 +62,7 @@ mod tests {
         message.set_channel(u4::new(0xA));
         message.set_note(u7::new(0x68));
         message.set_velocity(u7::new(0x1B));
-        assert_eq!(message, NoteOff([0x218A_681B, 0x0, 0x0, 0x0]));
+        assert_eq!(message, NoteOff([0x0, 0x218A_681B, 0x0, 0x0, 0x0]));
     }
 
     #[test]

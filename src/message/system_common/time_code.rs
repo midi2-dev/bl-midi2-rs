@@ -35,7 +35,7 @@ mod tests {
         let mut message = TimeCode::new_arr();
         message.set_group(u4::new(0x5));
         message.set_time_code(u7::new(0x5F));
-        assert_eq!(message, TimeCode([0x15F1_5F00, 0x0, 0x0, 0x0]),);
+        assert_eq!(message, TimeCode([0x0, 0x15F1_5F00, 0x0, 0x0, 0x0]),);
     }
 
     #[test]

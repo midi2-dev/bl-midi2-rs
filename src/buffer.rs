@@ -226,3 +226,71 @@ impl<B: Buffer> SpecialiseU8<B> for B {
         }
     }
 }
+
+pub(crate) trait UmpPrivate {
+    fn message(&self) -> &[u32];
+    fn jitter_reduction(&self) -> &[u32];
+}
+
+pub(crate) trait UmpPrivateMut: UmpPrivate {
+    fn message_mut(&mut self) -> &mut [u32];
+    fn jitter_reduction_mut(&mut self) -> &mut [u32];
+}
+
+impl UmpPrivate for &[u32] {
+    fn message(&self) -> &[u32] {
+        &self[self.jitter_reduction().len()..]
+    }
+    fn jitter_reduction(&self) -> &[u32] {
+        match self.len() {
+            0 => self,
+            _ => {
+                use crate::util::BitOps;
+                match u8::from(self[0].nibble(0)) {
+                    0x0 => &self[0..1],
+                    _ => &self[0..0],
+                }
+            }
+        }
+    }
+}
+
+impl UmpPrivate for &mut [u32] {
+    fn message(&self) -> &[u32] {
+        &self[self.jitter_reduction().len()..]
+    }
+    fn jitter_reduction(&self) -> &[u32] {
+        match self.len() {
+            0 => self,
+            _ => {
+                use crate::util::BitOps;
+                match u8::from(self[0].nibble(0)) {
+                    0x0 => &self[0..1],
+                    _ => &self[0..0],
+                }
+            }
+        }
+    }
+}
+
+impl UmpPrivateMut for &mut [u32] {
+    fn message_mut(&mut self) -> &mut [u32] {
+        let begin = self.jitter_reduction().len();
+        &mut self[begin..]
+    }
+    fn jitter_reduction_mut(&mut self) -> &mut [u32] {
+        match self.len() {
+            0 => self,
+            _ => {
+                use crate::util::BitOps;
+                match u8::from(self[0].nibble(0)) {
+                    0x0 => &mut self[0..1],
+                    _ => &mut self[0..0],
+                }
+            }
+        }
+    }
+}
+
+// Do we want to make this into an optional cargo feature?
+pub(crate) const OFFSET_FOR_JITTER_REDUCTION: usize = 1;

@@ -1,6 +1,7 @@
 use crate::{
     buffer::{
-        Buffer, BufferMut, SpecialiseU32, SpecialiseU8, UnitPrivate, UNIT_ID_U32, UNIT_ID_U8,
+        Buffer, BufferMut, SpecialiseU32, SpecialiseU8, UmpPrivate, UmpPrivateMut, UnitPrivate,
+        UNIT_ID_U32, UNIT_ID_U8,
     },
     numeric_types::*,
     util::{property::Property, schema, BitOps},
@@ -12,7 +13,7 @@ impl<const TYPE: u8, B: Buffer> Property<B> for UmpMessageTypeProperty<TYPE> {
     type Type = ();
     fn read(buffer: &B) -> crate::result::Result<Self::Type> {
         if <B::Unit as UnitPrivate>::UNIT_ID == UNIT_ID_U32 {
-            let b = buffer.buffer().specialise_u32()[0];
+            let b = buffer.buffer().specialise_u32().message()[0];
             if b.nibble(0) != crate::u4::new(TYPE) {
                 return Err(crate::Error::InvalidData("Incorrect ump message type"));
             }
@@ -24,7 +25,8 @@ impl<const TYPE: u8, B: Buffer> Property<B> for UmpMessageTypeProperty<TYPE> {
         B: BufferMut,
     {
         if <B::Unit as UnitPrivate>::UNIT_ID == UNIT_ID_U32 {
-            buffer.buffer_mut().specialise_u32_mut()[0].set_nibble(0, crate::u4::new(TYPE));
+            buffer.buffer_mut().specialise_u32_mut().message_mut()[0]
+                .set_nibble(0, crate::u4::new(TYPE));
         }
         Ok(())
     }
@@ -40,7 +42,7 @@ impl<const STATUS: u8, B: Buffer> Property<B> for ChannelVoiceStatusProperty<STA
     fn read(buffer: &B) -> crate::result::Result<Self::Type> {
         let status = match <B::Unit as UnitPrivate>::UNIT_ID {
             UNIT_ID_U32 => {
-                let b = buffer.buffer().specialise_u32()[0];
+                let b = buffer.buffer().specialise_u32().message()[0];
                 b.nibble(2)
             }
             UNIT_ID_U8 => {
@@ -61,7 +63,8 @@ impl<const STATUS: u8, B: Buffer> Property<B> for ChannelVoiceStatusProperty<STA
     {
         match <B::Unit as UnitPrivate>::UNIT_ID {
             UNIT_ID_U32 => {
-                buffer.buffer_mut().specialise_u32_mut()[0].set_nibble(2, crate::u4::new(STATUS));
+                buffer.buffer_mut().specialise_u32_mut().message_mut()[0]
+                    .set_nibble(2, crate::u4::new(STATUS));
             }
             UNIT_ID_U8 => {
                 buffer.buffer_mut().specialise_u8_mut()[0].set_nibble(0, crate::u4::new(STATUS));
@@ -96,9 +99,9 @@ impl<
     type Type = T;
     fn read(buffer: &B) -> crate::result::Result<Self::Type> {
         match <B::Unit as UnitPrivate>::UNIT_ID {
-            UNIT_ID_U32 => {
-                <T as schema::UmpSchemaRepr<UmpSchema>>::read(buffer.buffer().specialise_u32())
-            }
+            UNIT_ID_U32 => <T as schema::UmpSchemaRepr<UmpSchema>>::read(
+                buffer.buffer().specialise_u32().message(),
+            ),
             UNIT_ID_U8 => {
                 <T as schema::BytesSchemaRepr<BytesSchema>>::read(buffer.buffer().specialise_u8())
             }
@@ -111,7 +114,7 @@ impl<
     {
         match <B::Unit as UnitPrivate>::UNIT_ID {
             UNIT_ID_U32 => <T as schema::UmpSchemaRepr<UmpSchema>>::write(
-                buffer.buffer_mut().specialise_u32_mut(),
+                buffer.buffer_mut().specialise_u32_mut().message_mut(),
                 v,
             ),
             UNIT_ID_U8 => <T as schema::BytesSchemaRepr<BytesSchema>>::write(
@@ -170,9 +173,9 @@ impl<B: Buffer, UmpSchema: schema::UmpSchema, T: Default + schema::UmpSchemaRepr
     type Type = T;
     fn read(buffer: &B) -> crate::result::Result<Self::Type> {
         match <B::Unit as UnitPrivate>::UNIT_ID {
-            UNIT_ID_U32 => {
-                <T as schema::UmpSchemaRepr<UmpSchema>>::read(buffer.buffer().specialise_u32())
-            }
+            UNIT_ID_U32 => <T as schema::UmpSchemaRepr<UmpSchema>>::read(
+                buffer.buffer().specialise_u32().message(),
+            ),
             UNIT_ID_U8 => Ok(Default::default()),
             _ => unreachable!(),
         }
@@ -183,11 +186,12 @@ impl<B: Buffer, UmpSchema: schema::UmpSchema, T: Default + schema::UmpSchemaRepr
     {
         if <B::Unit as UnitPrivate>::UNIT_ID == UNIT_ID_U32 {
             <T as schema::UmpSchemaRepr<UmpSchema>>::write(
-                buffer.buffer_mut().specialise_u32_mut(),
+                buffer.buffer_mut().specialise_u32_mut().message_mut(),
                 v,
-            );
+            )
+        } else {
+            Ok(())
         }
-        Ok(())
     }
     fn default() -> Self::Type {
         Default::default()

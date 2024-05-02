@@ -35,7 +35,7 @@ mod tests {
         let mut message = SongSelect::new_arr();
         message.set_group(u4::new(0xA));
         message.set_song(u7::new(0x4F));
-        assert_eq!(message, SongSelect([0x1AF3_4F00, 0x0, 0x0, 0x0]),);
+        assert_eq!(message, SongSelect([0x0, 0x1AF3_4F00, 0x0, 0x0, 0x0]),);
     }
 
     #[test]

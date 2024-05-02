@@ -192,9 +192,9 @@ impl<const STATUS: u8, B: crate::buffer::Buffer> crate::util::property::Property
     {
         match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
             crate::buffer::UNIT_ID_U32 => {
-                use crate::buffer::SpecialiseU32;
+                use crate::buffer::{SpecialiseU32, UmpPrivateMut};
                 use crate::util::BitOps;
-                buffer.buffer_mut().specialise_u32_mut()[0].set_octet(1, STATUS);
+                buffer.buffer_mut().specialise_u32_mut().message_mut()[0].set_octet(1, STATUS);
             }
             crate::buffer::UNIT_ID_U8 => {
                 use crate::buffer::SpecialiseU8;
@@ -212,8 +212,9 @@ impl<const STATUS: u8, B: crate::buffer::Buffer> crate::util::property::Property
 fn status<U: crate::buffer::Unit>(buffer: &[U]) -> u8 {
     match <U as crate::buffer::UnitPrivate>::UNIT_ID {
         crate::buffer::UNIT_ID_U32 => {
+            use crate::buffer::UmpPrivate;
             use crate::util::BitOps;
-            <U as crate::buffer::UnitPrivate>::specialise_buffer_u32(buffer)[0].octet(1)
+            <U as crate::buffer::UnitPrivate>::specialise_buffer_u32(buffer).message()[0].octet(1)
         }
         crate::buffer::UNIT_ID_U8 => {
             <U as crate::buffer::UnitPrivate>::specialise_buffer_u8(buffer)[0]

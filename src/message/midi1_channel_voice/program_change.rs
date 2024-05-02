@@ -38,6 +38,6 @@ mod tests {
         message.set_group(u4::new(0x4));
         message.set_channel(u4::new(0x7));
         message.set_program(u7::new(0x63));
-        assert_eq!(message, ProgramChange([0x24C7_6300, 0x0, 0x0, 0x0]));
+        assert_eq!(message, ProgramChange([0x0, 0x24C7_6300, 0x0, 0x0, 0x0]));
     }
 }

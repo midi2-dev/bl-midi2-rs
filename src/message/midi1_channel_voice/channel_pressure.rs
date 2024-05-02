@@ -40,7 +40,7 @@ mod tests {
         message.set_group(u4::new(0xF));
         message.set_channel(u4::new(0x6));
         message.set_pressure(u7::new(0x09));
-        assert_eq!(message, ChannelPressure([0x2FD6_0900, 0x0, 0x0, 0x0]));
+        assert_eq!(message, ChannelPressure([0x0, 0x2FD6_0900, 0x0, 0x0, 0x0]));
     }
 
     #[test]
@@ -151,7 +151,7 @@ mod tests {
         let borrowed = ChannelPressure::try_from(&buffer[..]).unwrap();
         assert_eq!(
             ChannelPressure::<std::vec::Vec<u32>>::from_bytes(borrowed),
-            ChannelPressure(std::vec![0x20D6_0900_u32]),
+            ChannelPressure(std::vec![0x0, 0x20D6_0900_u32]),
         );
     }
 
@@ -170,8 +170,8 @@ mod tests {
         let buffer = [0xD6_u8, 0x09_u8];
         let borrowed = ChannelPressure::try_from(&buffer[..]).unwrap();
         assert_eq!(
-            ChannelPressure::<[u32; 1]>::try_from_bytes(borrowed),
-            Ok(ChannelPressure([0x20D6_0900_u32])),
+            ChannelPressure::<[u32; 2]>::try_from_bytes(borrowed),
+            Ok(ChannelPressure([0x0, 0x20D6_0900_u32])),
         );
     }
 
@@ -197,15 +197,15 @@ mod tests {
     fn new_with_custom_buffer_bytes() {
         assert_eq!(
             ChannelPressure::<std::vec::Vec<u8>>::new(),
-            ChannelPressure::new_arr_bytes().rebuffer_into(),
+            ChannelPressure(std::vec![0xD0, 0x0])
         )
     }
 
     #[test]
     fn try_new_with_custom_buffer() {
         assert_eq!(
-            ChannelPressure::<[u32; 2]>::try_new(),
-            Ok(ChannelPressure([0x20D0_0000, 0x0]))
+            ChannelPressure::<[u32; 3]>::try_new(),
+            Ok(ChannelPressure([0x0, 0x20D0_0000, 0x0]))
         )
     }
 
@@ -246,7 +246,7 @@ mod rebuffer_tests {
         let borrowed = ChannelPressure::try_from(&buffer[..]).unwrap();
         assert_eq!(
             ChannelPressure::<std::vec::Vec<u32>>::rebuffer_from(borrowed),
-            ChannelPressure(std::vec![0x2FD6_0900_u32]),
+            ChannelPressure(std::vec![0x0, 0x2FD6_0900_u32]),
         );
     }
 
@@ -265,8 +265,8 @@ mod rebuffer_tests {
         let buffer = [0x2FD6_0900_u32];
         let borrowed = ChannelPressure::try_from(&buffer[..]).unwrap();
         assert_eq!(
-            ChannelPressure::<[u32; 1]>::try_rebuffer_from(borrowed),
-            Ok(ChannelPressure([0x2FD6_0900_u32])),
+            ChannelPressure::<[u32; 2]>::try_rebuffer_from(borrowed),
+            Ok(ChannelPressure([0x0, 0x2FD6_0900_u32])),
         );
     }
 
@@ -305,7 +305,7 @@ mod rebuffer_tests {
         let buffer = [0x2FD6_0900_u32];
         let borrowed = ChannelPressure::try_from(&buffer[..]).unwrap();
         let owned: ChannelPressure<std::vec::Vec<u32>> = borrowed.rebuffer_into();
-        assert_eq!(owned, ChannelPressure(std::vec![0x2FD6_0900_u32]),);
+        assert_eq!(owned, ChannelPressure(std::vec![0x0, 0x2FD6_0900_u32]),);
     }
 
     #[test]
@@ -320,9 +320,9 @@ mod rebuffer_tests {
     fn try_rebuffer_into() {
         let buffer = [0x2FD6_0900_u32];
         let borrowed = ChannelPressure::try_from(&buffer[..]).unwrap();
-        let owned: core::result::Result<ChannelPressure<[u32; 1]>, crate::error::BufferOverflow> =
+        let owned: core::result::Result<ChannelPressure<[u32; 2]>, crate::error::BufferOverflow> =
             borrowed.try_rebuffer_into();
-        assert_eq!(owned, Ok(ChannelPressure([0x2FD6_0900_u32])));
+        assert_eq!(owned, Ok(ChannelPressure([0x0, 0x2FD6_0900_u32])));
     }
 
     #[test]

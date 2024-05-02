@@ -45,7 +45,7 @@ mod tests {
         message.set_channel(u4::new(0x3));
         message.set_note(u7::new(0x7F));
         message.set_pressure(u7::new(0x5C));
-        assert_eq!(message, KeyPressure([0x2AA3_7F5C, 0x0, 0x0, 0x0]));
+        assert_eq!(message, KeyPressure([0x0, 0x2AA3_7F5C, 0x0, 0x0, 0x0]));
     }
 
     #[test]

@@ -35,7 +35,10 @@ mod tests {
         let mut message = SongPositionPointer::new_arr();
         message.set_group(u4::new(0xA));
         message.set_position(u14::new(0x367D));
-        assert_eq!(message, SongPositionPointer([0x1AF2_7D6C, 0x0, 0x0, 0x0]),);
+        assert_eq!(
+            message,
+            SongPositionPointer([0x0, 0x1AF2_7D6C, 0x0, 0x0, 0x0]),
+        );
     }
     #[test]
     fn setters_bytes() {

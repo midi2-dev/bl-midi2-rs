@@ -143,7 +143,7 @@ mod test {
     fn try_from_bytes() {
         let buffer = [0xD6_u8, 0x09_u8];
         let borrowed = Midi1ChannelVoice::try_from(&buffer[..]).unwrap();
-        let owned = Midi1ChannelVoice::<[u32; 4]>::try_from_bytes(borrowed).unwrap();
+        let owned = Midi1ChannelVoice::<[u32; 5]>::try_from_bytes(borrowed).unwrap();
         assert_eq!(owned.data(), &[0x20D6_0900]);
     }
 

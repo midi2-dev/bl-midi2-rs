@@ -318,7 +318,7 @@ fn secondary_new_arr_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -
 }
 
 fn arr_type_ump() -> TokenStream {
-    quote! { [u32; 4] }
+    quote! { [u32; 5] }
 }
 
 fn arr_type_bytes() -> TokenStream {
@@ -330,7 +330,20 @@ fn size_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream
     quote! {
         impl<B: #constraint> crate::traits::Size<B> for #root_ident<B> {
             fn size(&self) -> usize {
-                <Self as crate::traits::MinSize<B>>::min_size()
+                match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
+                    crate::buffer::UNIT_ID_U32 => {
+                        // account for jitter reduction header
+                        use crate::buffer::UmpPrivate;
+                        <Self as crate::traits::MinSize<B>>::min_size()
+                            + self.buffer_access().specialise_u32().jitter_reduction().len()
+                    }
+                    crate::buffer::UNIT_ID_U8 => {
+                        // simple case
+                        // no jitter reduction logic here
+                        <Self as crate::traits::MinSize<B>>::min_size()
+                    }
+                    _ => unreachable!(),
+                }
             }
         }
     }
@@ -381,7 +394,20 @@ fn data_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream
     quote! {
         impl<B: #constraint> crate::traits::Data<B> for #root_ident<B> {
             fn data(&self) -> &[B::Unit] {
-                &self.buffer_access().buffer()[..self.size()]
+                match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
+                    crate::buffer::UNIT_ID_U32 => {
+                        // account for jitter reduction header
+                        use crate::buffer::UmpPrivate;
+                        let jr_offset = self.buffer_access().specialise_u32().jitter_reduction().len();
+                        &self.buffer_access().buffer()[jr_offset..self.size()]
+                    }
+                    crate::buffer::UNIT_ID_U8 => {
+                        // simple case
+                        // no jitter reduction logic here
+                        &self.buffer_access().buffer()[..self.size()]
+                    }
+                    _ => unreachable!(),
+                }
             }
         }
     }
@@ -429,9 +455,34 @@ fn rebuffer_from_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> To
         {
             fn rebuffer_from(other: #root_ident<A>) -> Self {
                 let mut buffer = <B as crate::buffer::BufferDefault>::default();
-                let message_size = other.data().len();
-                buffer.resize(message_size);
-                buffer.buffer_mut()[..message_size].copy_from_slice(other.data());
+                match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
+                    crate::buffer::UNIT_ID_U32 => {
+                        // account for jitter reduction header
+                        use crate::buffer::UmpPrivate;
+                        let message_size = other.data().len();
+                        let jr_offset: usize = match other.data()
+                            .specialise_u32()
+                            .jitter_reduction()
+                            .len() {
+                            0 => {
+                                // other message had no jitter reduction header
+                                // -> we add it in on our side
+                                1
+                            },
+                            _ => 0,
+                        };
+                        buffer.resize(message_size + jr_offset);
+                        buffer.buffer_mut()[jr_offset..(message_size + jr_offset)].copy_from_slice(other.data());
+                    }
+                    crate::buffer::UNIT_ID_U8 => {
+                        // simple case
+                        // no jitter reduction logic here
+                        let message_size = other.data().len();
+                        buffer.resize(message_size);
+                        buffer.buffer_mut()[..message_size].copy_from_slice(other.data());
+                    }
+                    _ => unreachable!(),
+                }
                 #root_ident(buffer)
             }
         }
@@ -445,9 +496,34 @@ fn try_rebuffer_from_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -
         {
             fn try_rebuffer_from(other: #root_ident<A>) -> core::result::Result<Self, crate::error::BufferOverflow> {
                 let mut buffer = <B as crate::buffer::BufferDefault>::default();
-                let message_size = other.data().len();
-                buffer.try_resize(message_size)?;
-                buffer.buffer_mut()[..message_size].copy_from_slice(other.data());
+                match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
+                    crate::buffer::UNIT_ID_U32 => {
+                        // account for jitter reduction header
+                        use crate::buffer::UmpPrivate;
+                        let message_size = other.data().len();
+                        let jr_offset: usize = match other.data()
+                            .specialise_u32()
+                            .jitter_reduction()
+                            .len() {
+                            0 => {
+                                // other message had no jitter reduction header
+                                // -> we add it in on our side
+                                1
+                            },
+                            _ => 0,
+                        };
+                        buffer.try_resize(message_size + jr_offset)?;
+                        buffer.buffer_mut()[jr_offset..(message_size + jr_offset)].copy_from_slice(other.data());
+                    }
+                    crate::buffer::UNIT_ID_U8 => {
+                        // simple case
+                        // no jitter reduction logic here
+                        let message_size = other.data().len();
+                        buffer.try_resize(message_size)?;
+                        buffer.buffer_mut()[..message_size].copy_from_slice(other.data());
+                    }
+                    _ => unreachable!(),
+                }
                 Ok(#root_ident(buffer))
             }
         }
@@ -471,7 +547,13 @@ fn new_impl(
             pub fn new() -> #root_ident<B>
             {
                 let mut buffer = <B as crate::buffer::BufferDefault>::default();
-                buffer.resize(<Self as crate::traits::MinSize<B>>::min_size());
+                let jr_offset = match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
+                    // account for jitter reduction header
+                    crate::buffer::UNIT_ID_U32 => 1,
+                    crate::buffer::UNIT_ID_U8 => 0,
+                    _ => unreachable!(),
+                };
+                buffer.resize(<Self as crate::traits::MinSize<B>>::min_size() + jr_offset);
                 #initialise_properties
                 #root_ident::<B>(buffer)
             }
@@ -496,7 +578,13 @@ fn try_new_impl(
             pub fn try_new() -> core::result::Result<#root_ident<B>, crate::error::BufferOverflow>
             {
                 let mut buffer = <B as crate::buffer::BufferDefault>::default();
-                buffer.try_resize(<Self as crate::traits::MinSize<B>>::min_size())?;
+                let jr_offset = match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
+                    // account for jitter reduction header
+                    crate::buffer::UNIT_ID_U32 => 1,
+                    crate::buffer::UNIT_ID_U8 => 0,
+                    _ => unreachable!(),
+                };
+                buffer.try_resize(<Self as crate::traits::MinSize<B>>::min_size() + jr_offset)?;
                 #initialise_properties
                 Ok(#root_ident::<B>(buffer))
             }
@@ -564,7 +652,10 @@ fn from_bytes_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> Token
         {
             fn from_bytes(other: #root_ident<A>) -> Self {
                 let mut buffer = <B as crate::buffer::BufferDefault>::default();
-                buffer.resize(<#root_ident<B> as crate::traits::MinSize<B>>::min_size());
+                buffer.resize(
+                    <#root_ident<B> as crate::traits::MinSize<B>>::min_size()
+                    + crate::buffer::OFFSET_FOR_JITTER_REDUCTION
+                );
                 #convert_properties
                 Self(buffer)
             }
@@ -585,7 +676,10 @@ fn try_from_bytes_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> T
         {
             fn try_from_bytes(other: #root_ident<A>) -> core::result::Result<Self, crate::error::BufferOverflow> {
                 let mut buffer = <B as crate::buffer::BufferDefault>::default();
-                buffer.try_resize(<#root_ident<B> as crate::traits::MinSize<B>>::min_size())?;
+                buffer.try_resize(
+                    <#root_ident<B> as crate::traits::MinSize<B>>::min_size()
+                    + crate::buffer::OFFSET_FOR_JITTER_REDUCTION
+                )?;
                 #convert_properties
                 Ok(Self(buffer))
             }
