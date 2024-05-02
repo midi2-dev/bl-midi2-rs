@@ -13,6 +13,8 @@ const STATUS: u8 = 0x6;
 
 #[midi2_proc::generate_message(FixedSize, MinSizeUmp(4))]
 struct SetChordName {
+    #[property(crate::message::utility::JitterReductionProperty)]
+    jitter_reduction: Option<crate::message::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
     #[property(common_properties::GroupProperty)]
@@ -102,20 +104,24 @@ pub enum SharpsFlats {
 
 impl schema::UmpSchemaRepr<schema::Ump<0x0, 0x0, 0x0, 0xF000_0000>> for SharpsFlats {
     fn read(buffer: &[u32]) -> Result<Self> {
-        SharpsFlats::from_nibble(buffer[3].nibble(0))
+        use crate::buffer::UmpPrivate;
+        SharpsFlats::from_nibble(buffer.message()[3].nibble(0))
     }
-    fn write(buffer: &mut [u32], value: Self) -> Result<()> {
-        buffer[3].set_nibble(0, value.into_nibble());
+    fn write(mut buffer: &mut [u32], value: Self) -> Result<()> {
+        use crate::buffer::UmpPrivateMut;
+        buffer.message_mut()[3].set_nibble(0, value.into_nibble());
         Ok(())
     }
 }
 
 impl schema::UmpSchemaRepr<schema::Ump<0x0, 0xF000_0000, 0x0, 0x0>> for SharpsFlats {
     fn read(buffer: &[u32]) -> Result<Self> {
-        SharpsFlats::from_nibble(buffer[1].nibble(0))
+        use crate::buffer::UmpPrivate;
+        SharpsFlats::from_nibble(buffer.message()[1].nibble(0))
     }
-    fn write(buffer: &mut [u32], value: Self) -> Result<()> {
-        buffer[1].set_nibble(0, value.into_nibble());
+    fn write(mut buffer: &mut [u32], value: Self) -> Result<()> {
+        use crate::buffer::UmpPrivateMut;
+        buffer.message_mut()[1].set_nibble(0, value.into_nibble());
         Ok(())
     }
 }
@@ -186,20 +192,24 @@ pub enum ChordType {
 
 impl schema::UmpSchemaRepr<schema::Ump<0x0, 0x00FF_0000, 0x0, 0x0>> for ChordType {
     fn read(buffer: &[u32]) -> Result<Self> {
-        ChordType::from_octet(buffer[1].octet(1))
+        use crate::buffer::UmpPrivate;
+        ChordType::from_octet(buffer.message()[1].octet(1))
     }
-    fn write(buffer: &mut [u32], value: Self) -> Result<()> {
-        buffer[1].set_octet(1, value.into_octet());
+    fn write(mut buffer: &mut [u32], value: Self) -> Result<()> {
+        use crate::buffer::UmpPrivateMut;
+        buffer.message_mut()[1].set_octet(1, value.into_octet());
         Ok(())
     }
 }
 
 impl schema::UmpSchemaRepr<schema::Ump<0x0, 0x0, 0x0, 0x00FF_0000>> for ChordType {
     fn read(buffer: &[u32]) -> Result<Self> {
-        ChordType::from_octet(buffer[3].octet(1))
+        use crate::buffer::UmpPrivate;
+        ChordType::from_octet(buffer.message()[3].octet(1))
     }
-    fn write(buffer: &mut [u32], value: Self) -> Result<()> {
-        buffer[3].set_octet(1, value.into_octet());
+    fn write(mut buffer: &mut [u32], value: Self) -> Result<()> {
+        use crate::buffer::UmpPrivateMut;
+        buffer.message_mut()[3].set_octet(1, value.into_octet());
         Ok(())
     }
 }
@@ -292,10 +302,13 @@ macro_rules! alteration_property_impl {
     ($ump1:expr,$ump2:expr,$ump3:expr,$ump4:expr,$buffer_index:expr,$octet_index:expr) => {
         impl schema::UmpSchemaRepr<schema::Ump<$ump1, $ump2, $ump3, $ump4>> for Option<Alteration> {
             fn read(buffer: &[u32]) -> Result<Self> {
-                alteration_from_octet(buffer[$buffer_index].octet($octet_index))
+                use crate::buffer::UmpPrivate;
+                alteration_from_octet(buffer.message()[$buffer_index].octet($octet_index))
             }
-            fn write(buffer: &mut [u32], value: Self) -> Result<()> {
-                buffer[$buffer_index].set_octet($octet_index, alteration_into_octet(value));
+            fn write(mut buffer: &mut [u32], value: Self) -> Result<()> {
+                use crate::buffer::UmpPrivateMut;
+                buffer.message_mut()[$buffer_index]
+                    .set_octet($octet_index, alteration_into_octet(value));
                 Ok(())
             }
         }
@@ -357,7 +370,7 @@ mod tests {
         message.set_bass_alteration2(Some(Alteration::Subtract(u4::new(0x0))));
         assert_eq!(
             message,
-            SetChordName([0xD70B_0006, 0xF703_3519, 0x4B00_0000, 0x110A_0020,]),
+            SetChordName([0x0, 0xD70B_0006, 0xF703_3519, 0x4B00_0000, 0x110A_0020,]),
         );
     }
 

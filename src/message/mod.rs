@@ -15,7 +15,6 @@ pub mod system_common;
 pub mod system_exclusive_8bit;
 #[cfg(feature = "ump-stream")]
 pub mod ump_stream;
-#[cfg(feature = "utility")]
 pub mod utility;
 
 // #[derive(midi2_proc::UmpDebug, derive_more::From, midi2_proc::Data, Clone, PartialEq, Eq)]

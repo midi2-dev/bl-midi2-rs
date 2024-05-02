@@ -7,6 +7,8 @@ pub(crate) const STATUS: u8 = 0b1100;
 
 #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
 struct ProgramChange {
+    #[property(crate::message::utility::JitterReductionProperty)]
+    jitter_reduction: Option<crate::message::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
     #[property(common_properties::ChannelVoiceStatusProperty<STATUS>)]

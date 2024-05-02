@@ -12,7 +12,10 @@ struct Property {
 
 impl Property {
     fn implement_via_trait(&self) -> bool {
-        self.is_group() || self.is_channel() || self.is_sysex_payload()
+        self.is_group()
+            || self.is_channel()
+            || self.is_sysex_payload()
+            || self.is_jitter_reduction()
     }
     fn is_group(&self) -> bool {
         self.ident == "group"
@@ -22,6 +25,9 @@ impl Property {
     }
     fn is_sysex_payload(&self) -> bool {
         self.ident == "sysex_payload"
+    }
+    fn is_jitter_reduction(&self) -> bool {
+        self.ident == "jitter_reduction"
     }
 }
 
@@ -396,9 +402,21 @@ fn data_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream
             fn data(&self) -> &[B::Unit] {
                 match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
                     crate::buffer::UNIT_ID_U32 => {
-                        // account for jitter reduction header
                         use crate::buffer::UmpPrivate;
-                        let jr_offset = self.buffer_access().specialise_u32().jitter_reduction().len();
+                        use crate::util::BitOps;
+
+                        // account for jitter reduction header
+                        let buffer = self.buffer_access().specialise_u32();
+                        let jr_slice = buffer.jitter_reduction();
+                        let jr_offset = match jr_slice.len() {
+                            0 => 0,
+                            _ => {
+                                match u8::from(jr_slice[0].nibble(2)) {
+                                    0 => 1,
+                                    _ => 0,
+                                }
+                            }
+                        };
                         &self.buffer_access().buffer()[jr_offset..self.size()]
                     }
                     crate::buffer::UNIT_ID_U8 => {
@@ -628,6 +646,17 @@ fn grouped_impl(root_ident: &syn::Ident, property: &Property) -> TokenStream {
     }
 }
 
+fn jitter_reduction_impl(root_ident: &syn::Ident, property: &Property) -> TokenStream {
+    let setter = property_setter(property, false);
+    let getter = property_getter(property, false);
+    quote! {
+        impl<B: crate::buffer::Ump> crate::traits::JitterReduced<B> for #root_ident<B> {
+            #getter
+            #setter
+        }
+    }
+}
+
 fn channeled_impl(root_ident: &syn::Ident, property: &Property) -> TokenStream {
     let setter = property_setter(property, false);
     let getter = property_getter(property, false);
@@ -801,6 +830,9 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     }
     if args.fixed_size {
         tokens.extend(size_impl(root_ident, &args))
+    }
+    if let Some(property) = properties.iter().find(|p| p.is_jitter_reduction()) {
+        tokens.extend(jitter_reduction_impl(root_ident, property));
     }
     if let Some(property) = properties.iter().find(|p| p.is_group()) {
         tokens.extend(grouped_impl(root_ident, property));
