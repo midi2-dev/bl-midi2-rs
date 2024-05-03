@@ -40,11 +40,10 @@ pub mod unknown_metadata_text_event {
         #[writeonly]
         #[resize]
         text: &str,
-        // #[property(text::TextReadBytesProperty)]
-        // #[readonly]
-        // #[borrowed]
-        // #[skip_validation]
-        // text_bytes: text::TextBytesIterator,
+        #[property(text::TextReadBytesProperty)]
+        #[readonly]
+        #[borrowed]
+        text_bytes: text::TextBytesIterator,
     }
 
     impl<B: crate::buffer::Ump> crate::traits::Size<B> for UnknownMetadataTextEvent<B> {
@@ -57,6 +56,13 @@ pub mod unknown_metadata_text_event {
     mod tests {
         use super::*;
         use pretty_assertions::assert_eq;
+
+        #[test]
+        fn text_bytes() {
+            let mut message = UnknownMetadataTextEvent::<std::vec::Vec<u32>>::new();
+            message.set_text("Gimme some signal!");
+            let _ = message.text_bytes();
+        }
 
         #[test]
         fn new() {
@@ -108,31 +114,31 @@ pub mod unknown_metadata_text_event {
             )
         }
 
-        // #[test]
-        // fn read_text_bytes() {
-        //     assert_eq!(
-        //         UnknownMetadataTextEvent::try_from(
-        //             &[
-        //                 0x0000_0000,
-        //                 0xD050_0100,
-        //                 0x4769_6D6D,
-        //                 0x6520_736F,
-        //                 0x6D65_2073,
-        //                 0xD0D0_0100,
-        //                 0x6967_6E61,
-        //                 0x6C21_0000,
-        //                 0x0000_0000,
-        //             ][..]
-        //         )
-        //         .unwrap()
-        //         .text_bytes()
-        //         .collect::<std::vec::Vec<u8>>(),
-        //         std::vec![
-        //             0x47, 0x69, 0x6D, 0x6D, 0x65, 0x20, 0x73, 0x6F, 0x6D, 0x65, 0x20, 0x73, 0x69,
-        //             0x67, 0x6E, 0x61, 0x6C, 0x21,
-        //         ]
-        //     )
-        // }
+        #[test]
+        fn read_text_bytes() {
+            assert_eq!(
+                UnknownMetadataTextEvent::try_from(
+                    &[
+                        0x0000_0000,
+                        0xD050_0100,
+                        0x4769_6D6D,
+                        0x6520_736F,
+                        0x6D65_2073,
+                        0xD0D0_0100,
+                        0x6967_6E61,
+                        0x6C21_0000,
+                        0x0000_0000,
+                    ][..]
+                )
+                .unwrap()
+                .text_bytes()
+                .collect::<std::vec::Vec<u8>>(),
+                std::vec![
+                    0x47, 0x69, 0x6D, 0x6D, 0x65, 0x20, 0x73, 0x6F, 0x6D, 0x65, 0x20, 0x73, 0x69,
+                    0x67, 0x6E, 0x61, 0x6C, 0x21,
+                ]
+            )
+        }
     }
 }
 

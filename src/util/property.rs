@@ -8,8 +8,10 @@ pub trait ReadProperty<B: crate::buffer::Buffer>: Property<B> {
     fn validate(buffer: &B) -> crate::result::Result<()>;
 }
 
-pub trait ReadBorrowedProperty<B: crate::buffer::Buffer>: Property<B> {
-    fn read(buffer: &B) -> Self::Type;
+pub trait ReadBorrowedProperty<'a, B: crate::buffer::Buffer>: Property<B> {
+    fn read(buffer: &'a B) -> Self::Type;
+    // validate that the data in the buffer represents a valid instance of the property
+    fn validate(buffer: &B) -> crate::result::Result<()>;
 }
 
 pub trait WriteProperty<B: crate::buffer::Buffer + crate::buffer::BufferMut>: Property<B> {

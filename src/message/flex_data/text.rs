@@ -1,7 +1,7 @@
 use crate::{
     buffer::{BufferMut, Ump},
     message::{common_properties, flex_data},
-    util::property::{Property, ReadProperty, ResizeProperty, WriteProperty},
+    util::property::{Property, ReadBorrowedProperty, ReadProperty, ResizeProperty, WriteProperty},
 };
 
 pub struct TextWriteStrProperty<'a>(core::marker::PhantomData<&'a u8>);
@@ -124,9 +124,9 @@ fn grow_buffer(mut buffer: &mut [u32], size: usize) {
 }
 
 pub struct TextBytesIterator<'a> {
-    buffer: &'a [u32],
-    packet_index: usize,
-    byte_index: usize,
+    pub buffer: &'a [u32],
+    pub packet_index: usize,
+    pub byte_index: usize,
 }
 
 impl<'a> core::iter::Iterator for TextBytesIterator<'a> {
@@ -142,35 +142,18 @@ impl<'a, B: Ump> Property<B> for TextReadBytesProperty<'a> {
     type Type = TextBytesIterator<'a>;
 }
 
-pub trait ReadBorrowedProperty<B: crate::buffer::Buffer> {
-    type BorrowedType;
-    fn read(buffer: &B) -> Self::BorrowedType;
-    // validate that the data in the buffer represents a valid instance of the property
-    fn validate(buffer: &B) -> crate::result::Result<()>;
+impl<'a, B: 'a + Ump> ReadBorrowedProperty<'a, B> for TextReadBytesProperty<'a> {
+    fn read(buffer: &'a B) -> <Self as Property<B>>::Type {
+        TextBytesIterator {
+            buffer: buffer.buffer(),
+            packet_index: 0,
+            byte_index: 0,
+        }
+    }
+    fn validate(_buffer: &B) -> crate::result::Result<()> {
+        Ok(())
+    }
 }
-
-// impl<'a, B: Ump> ReadProperty<B> for TextReadBytesProperty<'a> {
-//     fn read(buffer: &B) -> <Self as Property<B>>::Type {
-//         TextBytesIterator {
-//             buffer: buffer.buffer(),
-//             packet_index: 0,
-//             byte_index: 0,
-//         }
-//     }
-//     fn validate(buffer: &B) -> crate::result::Result<()> {
-//         todo!()
-//     }
-//     // fn read<'b>(buffer: &'b B) -> Self::BorrowedType<'b> {
-//     //     TextBytesIterator {
-//     //         buffer: buffer.buffer(),
-//     //         packet_index: 0,
-//     //         byte_index: 0,
-//     //     }
-//     // }
-//     // fn validate(_buffer: &B) -> crate::result::Result<()> {
-//     //     Ok(())
-//     // }
-// }
 
 #[cfg(feature = "std")]
 pub struct TextReadStringProperty;
