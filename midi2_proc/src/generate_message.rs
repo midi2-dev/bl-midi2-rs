@@ -5,11 +5,12 @@ use quote::quote;
 
 struct Property {
     ident: syn::Ident,
-    meta_type: TokenStream,
+    meta_type: syn::Type,
     ty: syn::Type,
     constant: bool,
-    #[allow(dead_code)]
     readonly: bool,
+    writeonly: bool,
+    resize: bool,
 }
 
 impl Property {
@@ -18,9 +19,6 @@ impl Property {
             || self.is_channel()
             || self.is_sysex_payload()
             || self.is_jitter_reduction()
-    }
-    fn is_placeholder(&self) -> bool {
-        self.is_sysex_payload()
     }
     fn is_group(&self) -> bool {
         self.ident == "group"
@@ -48,7 +46,7 @@ fn has_attr(field: &syn::Field, id: &str) -> bool {
     })
 }
 
-fn meta_type(field: &syn::Field) -> TokenStream {
+fn meta_type(field: &syn::Field) -> syn::Type {
     field
         .attrs
         .iter()
@@ -66,7 +64,10 @@ fn meta_type(field: &syn::Field) -> TokenStream {
                 .iter()
                 .any(|&segment| segment.ident.to_string() == "property")
         })
-        .map(|list| list.tokens.clone())
+        .map(|list| {
+            list.parse_args::<syn::Type>()
+                .expect("Arguments to property attribute should be a valid type")
+        })
         .expect("fields must be annotated with the property attribute")
 }
 
@@ -87,6 +88,8 @@ fn properties(input: &syn::ItemStruct) -> Vec<Property> {
             meta_type: meta_type(field),
             constant: is_unit_tuple(&field.ty),
             readonly: has_attr(field, "readonly"),
+            writeonly: has_attr(field, "writeonly"),
+            resize: has_attr(field, "resize"),
         })
         .collect()
 }
@@ -227,8 +230,12 @@ fn message_impl(
         .iter()
         .filter(|p| !p.constant && !p.implement_via_trait())
     {
-        methods.extend(property_getter(property, true));
-        methods.extend(property_setter(property, true));
+        if !property.writeonly {
+            methods.extend(property_getter(property, true));
+        }
+        if !property.readonly {
+            methods.extend(property_setter(property, true));
+        }
     }
 
     quote! {
@@ -266,9 +273,29 @@ fn property_setter(property: &Property, public: bool) -> TokenStream {
     } else {
         TokenStream::new()
     };
-    quote! {
-        #pub_token fn #ident(&mut self, value: #ty) where B: crate::buffer::BufferMut {
-            <#meta_type as crate::util::property::WriteProperty<B>>::write(self.buffer_access_mut(), value);
+    if property.resize {
+        let fallible_ident = syn::Ident::new(
+            format!("try_{}", ident.to_string()).as_str(),
+            proc_macro2::Span::call_site(),
+        );
+        quote! {
+            #pub_token fn #ident(&mut self, value: #ty) where B: crate::buffer::BufferMut + crate::buffer::BufferResize {
+                <#meta_type as crate::util::property::ResizeProperty<B>>::resize(self.buffer_access_mut(), &value);
+                <#meta_type as crate::util::property::WriteProperty<B>>::write(self.buffer_access_mut(), value);
+            }
+
+            #pub_token fn #fallible_ident(&mut self, value: #ty) -> core::result::Result<(), crate::error::BufferOverflow>
+            where B: crate::buffer::BufferMut + crate::buffer::BufferTryResize {
+                <#meta_type as crate::util::property::ResizeProperty<B>>::try_resize(self.buffer_access_mut(), &value)?;
+                <#meta_type as crate::util::property::WriteProperty<B>>::write(self.buffer_access_mut(), value);
+                Ok(())
+            }
+        }
+    } else {
+        quote! {
+            #pub_token fn #ident(&mut self, value: #ty) where B: crate::buffer::BufferMut {
+                <#meta_type as crate::util::property::WriteProperty<B>>::write(self.buffer_access_mut(), value);
+            }
         }
     }
 }
@@ -432,7 +459,7 @@ fn try_from_slice_impl(
         Representation::Ump => quote! { u32 },
         Representation::Bytes => quote! { u8 },
     };
-    for property in properties.iter().filter(|p| !p.is_placeholder()) {
+    for property in properties.iter().filter(|p| !p.writeonly) {
         let meta_type = &property.meta_type;
         validation_steps.extend(quote! {
             <#meta_type as crate::util::property::ReadProperty<&[#unit_type]>>::validate(&buffer)?;
@@ -612,7 +639,7 @@ fn initialise_property_statements(
     buffer_type: TokenStream,
 ) -> TokenStream {
     let mut initialise_properties = TokenStream::new();
-    for property in properties.iter().filter(|p| !p.is_placeholder()) {
+    for property in properties.iter().filter(|p| !p.readonly) {
         let meta_type = &property.meta_type;
         initialise_properties.extend(quote! {
             <#meta_type as crate::util::property::WriteProperty<#buffer_type>>::write(
@@ -707,7 +734,7 @@ fn try_from_bytes_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> T
 
 fn convert_properties(properties: &Vec<Property>) -> TokenStream {
     let mut convert_properties = TokenStream::new();
-    for property in properties {
+    for property in properties.iter().filter(|p| !p.readonly && !p.writeonly) {
         let meta_type = &property.meta_type;
         convert_properties.extend(quote! {
             <#meta_type as crate::util::property::WriteProperty<B>>::write(

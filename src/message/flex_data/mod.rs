@@ -7,7 +7,7 @@ use crate::{
 };
 
 // pub mod flex_data_group;
-// mod text;
+mod text;
 
 pub mod set_chord_name;
 pub mod set_key_signature;
@@ -15,6 +15,126 @@ pub mod set_metronome;
 pub mod set_tempo;
 pub mod set_time_signature;
 pub mod tonic;
+
+pub mod unknown_metadata_text_event {
+    use super::*;
+    use crate::message::common_properties;
+
+    const STATUS: u8 = 0x00;
+
+    #[midi2_proc::generate_message(MinSizeUmp(4))]
+    struct UnknownMetadataTextEvent {
+        #[property(crate::message::utility::JitterReductionProperty)]
+        jitter_reduction: Option<crate::message::utility::JitterReduction>,
+        #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
+        ump_type: (),
+        #[property(common_properties::GroupProperty)]
+        group: crate::numeric_types::u4,
+        #[property(OptionalChannelProperty)]
+        optional_channel: Option<crate::numeric_types::u4>,
+        #[property(BankProperty<{METADATA_TEXT_BANK}>)]
+        bank: (),
+        #[property(StatusProperty<{STATUS}>)]
+        status: (),
+        #[property(text::TextWriteStrProperty)]
+        #[writeonly]
+        #[resize]
+        text: &str,
+        // #[property(text::TextReadBytesProperty)]
+        // #[readonly]
+        // #[borrowed]
+        // #[skip_validation]
+        // text_bytes: text::TextBytesIterator,
+    }
+
+    impl<B: crate::buffer::Ump> crate::traits::Size<B> for UnknownMetadataTextEvent<B> {
+        fn size(&self) -> usize {
+            flex_data_dyn_size(&self.0)
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn new() {
+            assert_eq!(
+                UnknownMetadataTextEvent::<std::vec::Vec<u32>>::new(),
+                UnknownMetadataTextEvent(std::vec![0x0, 0xD010_0100, 0x0, 0x0, 0x0]),
+            )
+        }
+
+        #[test]
+        fn set_text() {
+            let mut message = UnknownMetadataTextEvent::<std::vec::Vec<u32>>::new();
+            message.set_text("Gimme some signal!");
+            assert_eq!(
+                message,
+                UnknownMetadataTextEvent(std::vec![
+                    0x0000_0000,
+                    0xD050_0100,
+                    0x4769_6D6D,
+                    0x6520_736F,
+                    0x6D65_2073,
+                    0xD0D0_0100,
+                    0x6967_6E61,
+                    0x6C21_0000,
+                    0x0000_0000,
+                ])
+            )
+        }
+
+        #[test]
+        fn try_set_text() {
+            let mut message = UnknownMetadataTextEvent::<[u32; 9]>::try_new().unwrap();
+            message
+                .try_set_text("Gimme some signal!")
+                .expect("Shouldn't fail");
+            assert_eq!(
+                message,
+                UnknownMetadataTextEvent([
+                    0x0000_0000,
+                    0xD050_0100,
+                    0x4769_6D6D,
+                    0x6520_736F,
+                    0x6D65_2073,
+                    0xD0D0_0100,
+                    0x6967_6E61,
+                    0x6C21_0000,
+                    0x0000_0000,
+                ])
+            )
+        }
+
+        // #[test]
+        // fn read_text_bytes() {
+        //     assert_eq!(
+        //         UnknownMetadataTextEvent::try_from(
+        //             &[
+        //                 0x0000_0000,
+        //                 0xD050_0100,
+        //                 0x4769_6D6D,
+        //                 0x6520_736F,
+        //                 0x6D65_2073,
+        //                 0xD0D0_0100,
+        //                 0x6967_6E61,
+        //                 0x6C21_0000,
+        //                 0x0000_0000,
+        //             ][..]
+        //         )
+        //         .unwrap()
+        //         .text_bytes()
+        //         .collect::<std::vec::Vec<u8>>(),
+        //         std::vec![
+        //             0x47, 0x69, 0x6D, 0x6D, 0x65, 0x20, 0x73, 0x6F, 0x6D, 0x65, 0x20, 0x73, 0x69,
+        //             0x67, 0x6E, 0x61, 0x6C, 0x21,
+        //         ]
+        //     )
+        // }
+    }
+}
 
 const UMP_MESSAGE_TYPE: u8 = 0xD;
 const COMPLETE_FORMAT: u8 = 0x0;
@@ -169,7 +289,7 @@ impl<const STATUS: u8, B: Ump> Property<B> for StatusProperty<STATUS> {
 }
 
 impl<const STATUS: u8, B: Ump> ReadProperty<B> for StatusProperty<STATUS> {
-    fn read(buffer: &B) -> Self::Type {
+    fn read(_buffer: &B) -> Self::Type {
         ()
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
@@ -187,7 +307,7 @@ impl<const STATUS: u8, B: Ump + BufferMut> WriteProperty<B> for StatusProperty<S
         use crate::buffer::UmpPrivateMut;
         buffer.buffer_mut().message_mut()[0].set_octet(3, STATUS);
     }
-    fn validate(v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -202,7 +322,7 @@ impl<const BANK: u8, B: Ump> Property<B> for BankProperty<BANK> {
 }
 
 impl<const BANK: u8, B: Ump> ReadProperty<B> for BankProperty<BANK> {
-    fn read(buffer: &B) -> Self::Type {
+    fn read(_buffer: &B) -> Self::Type {
         ()
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
@@ -220,7 +340,7 @@ impl<const BANK: u8, B: Ump + BufferMut> WriteProperty<B> for BankProperty<BANK>
         use crate::buffer::UmpPrivateMut;
         buffer.buffer_mut().message_mut()[0].set_octet(2, BANK);
     }
-    fn validate(v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -235,7 +355,7 @@ impl<const FORMAT: u8, B: Ump> Property<B> for FormatProperty<FORMAT> {
 }
 
 impl<const FORMAT: u8, B: Ump> ReadProperty<B> for FormatProperty<FORMAT> {
-    fn read(buffer: &B) -> Self::Type {
+    fn read(_buffer: &B) -> Self::Type {
         ()
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
@@ -253,7 +373,7 @@ impl<const FORMAT: u8, B: Ump + BufferMut> WriteProperty<B> for FormatProperty<F
         use crate::buffer::UmpPrivateMut;
         buffer.buffer_mut().message_mut()[0].set_crumb(4, crate::numeric_types::u2::new(FORMAT));
     }
-    fn validate(v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -277,7 +397,7 @@ impl<B: Ump> ReadProperty<B> for OptionalChannelProperty {
             None
         }
     }
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(_buffer: &B) -> crate::result::Result<()> {
         Ok(())
     }
 }
@@ -285,27 +405,30 @@ impl<B: Ump> ReadProperty<B> for OptionalChannelProperty {
 impl<B: Ump + BufferMut> WriteProperty<B> for OptionalChannelProperty {
     fn write(buffer: &mut B, v: Self::Type) {
         use crate::buffer::UmpPrivateMut;
-        use crate::numeric_types::u2;
-        use crate::numeric_types::u4;
 
         let mut buffer_slice = buffer.buffer_mut();
         let data = buffer_slice.message_mut();
-        match v {
-            Some(channel) => {
-                data[0].set_crumb(5, u2::new(0x0));
-                data[0].set_nibble(3, channel);
-            }
-            None => {
-                data[0].set_crumb(5, u2::new(0x1));
-                data[0].set_nibble(3, u4::new(0x0));
-            }
-        }
+        optional_channel_to_slice(data, v);
     }
-    fn validate(v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
         Ok(())
     }
     fn default() -> Self::Type {
         Default::default()
+    }
+}
+
+fn optional_channel_to_slice(data: &mut [u32], channel: Option<crate::numeric_types::u4>) {
+    use crate::numeric_types::{u2, u4};
+    match channel {
+        Some(channel) => {
+            data[0].set_crumb(5, u2::new(0x0));
+            data[0].set_nibble(3, channel);
+        }
+        None => {
+            data[0].set_crumb(5, u2::new(0x1));
+            data[0].set_nibble(3, u4::new(0x0));
+        }
     }
 }
 
@@ -316,7 +439,7 @@ impl<B: Ump> Property<B> for NoChannelProperty {
 }
 
 impl<B: Ump> ReadProperty<B> for NoChannelProperty {
-    fn read(buffer: &B) -> Self::Type {
+    fn read(_buffer: &B) -> Self::Type {
         ()
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
@@ -343,7 +466,7 @@ impl<B: Ump + BufferMut> WriteProperty<B> for NoChannelProperty {
         data[0].set_crumb(5, u2::new(0x1));
         data[0].set_nibble(3, u4::new(0x0));
     }
-    fn validate(v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -351,13 +474,38 @@ impl<B: Ump + BufferMut> WriteProperty<B> for NoChannelProperty {
     }
 }
 
-// fn bank_from_buffer<B: Ump>(buffer: &B) -> u8 {
-//     buffer.buffer()[0].octet(2)
-// }
-//
-// fn bank_to_buffer<B: Ump + BufferMut>(buffer: &B, u8) {
-//     buffer.buffer_mut()[0].set_octet(2)
-// }
+fn flex_data_dyn_size<B: crate::buffer::Ump>(buffer: &B) -> usize {
+    use crate::buffer::UmpPrivate;
+    let jr_offset = buffer.buffer().jitter_reduction().len();
+    buffer
+        .buffer()
+        .message()
+        .chunks_exact(4)
+        .position(|p| {
+            let status: u8 = p[0].nibble(2).into();
+            status == COMPLETE_FORMAT || status == END_FORMAT
+        })
+        .expect("Message is in an invalid state. Couldn't find end packet.")
+        * 4
+        + 4
+        + jr_offset
+}
+
+fn bank_from_buffer(buffer: &[u32]) -> u8 {
+    buffer[0].octet(2)
+}
+
+fn status_from_buffer(buffer: &[u32]) -> u8 {
+    buffer[0].octet(3)
+}
+
+fn bank_to_buffer(buffer: &mut [u32], bank: u8) {
+    buffer[0].set_octet(2, bank);
+}
+
+fn status_to_buffer(buffer: &mut [u32], status: u8) {
+    buffer[0].set_octet(3, status);
+}
 
 // pub fn channel_from_buffer(buffer: &[u32]) -> Option<u4> {
 //     <Ump as Property<Option<u4>, UmpSchema<0x003F_0000, 0x0, 0x0, 0x0>, ()>>::get(buffer)

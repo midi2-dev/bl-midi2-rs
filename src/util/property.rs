@@ -8,6 +8,10 @@ pub trait ReadProperty<B: crate::buffer::Buffer>: Property<B> {
     fn validate(buffer: &B) -> crate::result::Result<()>;
 }
 
+pub trait ReadBorrowedProperty<B: crate::buffer::Buffer>: Property<B> {
+    fn read(buffer: &B) -> Self::Type;
+}
+
 pub trait WriteProperty<B: crate::buffer::Buffer + crate::buffer::BufferMut>: Property<B> {
     fn write(buffer: &mut B, v: Self::Type);
     // validate that the value represents a valid instance of the property.
@@ -22,10 +26,10 @@ pub trait WriteProperty<B: crate::buffer::Buffer + crate::buffer::BufferMut>: Pr
 pub trait ResizeProperty<B: crate::buffer::Buffer + crate::buffer::BufferMut>:
     WriteProperty<B>
 {
-    fn resize(buffer: &mut B, size: usize)
+    fn resize(buffer: &mut B, value: &Self::Type)
     where
         B: crate::buffer::BufferResize;
-    fn try_resize(buffer: &mut B, size: usize) -> Result<(), crate::error::BufferOverflow>
+    fn try_resize(buffer: &mut B, value: &Self::Type) -> Result<(), crate::error::BufferOverflow>
     where
         B: crate::buffer::BufferTryResize;
 }

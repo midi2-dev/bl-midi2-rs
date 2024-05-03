@@ -22,6 +22,8 @@ struct Sysex7 {
     #[property(GroupProperty)]
     group: crate::numeric_types::u4,
     #[property(SysexPayloadPlaceholder)]
+    #[readonly]
+    #[writeonly]
     sysex_payload: (),
 }
 
