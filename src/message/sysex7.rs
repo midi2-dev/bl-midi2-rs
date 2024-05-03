@@ -55,7 +55,7 @@ impl<B: crate::buffer::Buffer> crate::util::property::ReadProperty<B> for Sysex7
             _ => unreachable!(),
         }
     }
-    fn read(buffer: &B) -> Self::Type {
+    fn read(_buffer: &B) -> Self::Type {
         ()
     }
 }
@@ -68,7 +68,7 @@ impl<B: crate::buffer::Buffer + crate::buffer::BufferMut> crate::util::property:
             buffer.specialise_u8_mut()[0] = START_BYTE;
         }
     }
-    fn validate(v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -83,7 +83,7 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for Sysex7Byte
 }
 
 impl<B: crate::buffer::Buffer> crate::util::property::ReadProperty<B> for Sysex7BytesEndByte {
-    fn read(buffer: &B) -> Self::Type {
+    fn read(_buffer: &B) -> Self::Type {
         ()
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
@@ -109,7 +109,7 @@ impl<B: crate::buffer::Buffer + crate::buffer::BufferMut> crate::util::property:
             buffer.specialise_u8_mut()[last] = END_BYTE;
         }
     }
-    fn validate(v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -123,7 +123,7 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for Consistent
 }
 
 impl<B: crate::buffer::Buffer> crate::util::property::ReadProperty<B> for ConsistentStatuses {
-    fn read(buffer: &B) -> Self::Type {
+    fn read(_buffer: &B) -> Self::Type {
         ()
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
@@ -161,7 +161,7 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for ValidPacke
 }
 
 impl<B: crate::buffer::Buffer> crate::util::property::ReadProperty<B> for ValidPacketSizes {
-    fn read(buffer: &B) -> Self::Type {
+    fn read(_buffer: &B) -> Self::Type {
         ()
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
@@ -201,8 +201,12 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for GroupPrope
 
 impl<B: crate::buffer::Buffer> crate::util::property::ReadProperty<B> for GroupProperty {
     fn read(buffer: &B) -> Self::Type {
-        use crate::buffer::UmpPrivate;
-        buffer.specialise_u32().message()[0].nibble(1)
+        if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U32 {
+            use crate::buffer::UmpPrivate;
+            buffer.specialise_u32().message()[0].nibble(1)
+        } else {
+            Default::default()
+        }
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
         if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U32 {
@@ -235,7 +239,7 @@ impl<B: crate::buffer::Buffer + crate::buffer::BufferMut> crate::util::property:
             }
         }
     }
-    fn validate(v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
         Ok(())
     }
     fn default() -> Self::Type {

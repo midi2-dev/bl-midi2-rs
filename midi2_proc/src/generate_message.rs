@@ -283,7 +283,7 @@ fn message_new_arr_impl(
         Representation::Ump => arr_type_ump(),
         Representation::UmpOrBytes => arr_type_ump(),
     };
-    let set_defaults = initialise_property_statements(properties);
+    let set_defaults = initialise_property_statements(properties, arr_type.clone());
     quote! {
         impl #root_ident<#arr_type> {
             pub fn new_arr() -> Self {
@@ -297,7 +297,7 @@ fn message_new_arr_impl(
 
 fn secondary_new_arr_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
     let arr_type = arr_type_bytes();
-    let set_defaults = initialise_property_statements(properties);
+    let set_defaults = initialise_property_statements(properties, arr_type.clone());
     quote! {
         impl #root_ident<#arr_type> {
             pub fn new_arr_bytes() -> Self {
@@ -540,7 +540,7 @@ fn new_impl(
     properties: &Vec<Property>,
 ) -> TokenStream {
     let constraint = generic_buffer_constraint(args);
-    let initialise_properties = initialise_property_statements(properties);
+    let initialise_properties = initialise_property_statements(properties, quote! {B});
     quote! {
         impl<B: #constraint
                     + crate::buffer::BufferMut
@@ -571,7 +571,7 @@ fn try_new_impl(
     properties: &Vec<Property>,
 ) -> TokenStream {
     let constraint = generic_buffer_constraint(args);
-    let initialise_properties = initialise_property_statements(properties);
+    let initialise_properties = initialise_property_statements(properties, quote! {B});
     quote! {
         impl<B: #constraint
                     + crate::buffer::BufferMut
@@ -607,14 +607,17 @@ fn clone_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStrea
     }
 }
 
-fn initialise_property_statements(properties: &Vec<Property>) -> TokenStream {
+fn initialise_property_statements(
+    properties: &Vec<Property>,
+    buffer_type: TokenStream,
+) -> TokenStream {
     let mut initialise_properties = TokenStream::new();
     for property in properties.iter().filter(|p| !p.is_placeholder()) {
         let meta_type = &property.meta_type;
         initialise_properties.extend(quote! {
-            <#meta_type as crate::util::property::WriteProperty<B>>::write(
+            <#meta_type as crate::util::property::WriteProperty<#buffer_type>>::write(
                 &mut buffer,
-                <#meta_type as crate::util::property::WriteProperty<B>>::default(),
+                <#meta_type as crate::util::property::WriteProperty<#buffer_type>>::default(),
             );
         });
     }

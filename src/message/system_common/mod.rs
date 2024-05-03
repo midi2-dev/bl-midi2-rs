@@ -193,17 +193,27 @@ impl<const STATUS: u8, B: crate::buffer::Buffer> crate::util::property::Property
     for SystemCommonStatus<STATUS>
 {
     type Type = ();
-    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
+}
+
+impl<const STATUS: u8, B: crate::buffer::Buffer> crate::util::property::ReadProperty<B>
+    for SystemCommonStatus<STATUS>
+{
+    fn read(_buffer: &B) -> Self::Type {
+        ()
+    }
+    fn validate(buffer: &B) -> crate::result::Result<()> {
         if status(buffer.buffer()) != STATUS {
             Err(crate::Error::InvalidData("Incorrect status field"))
         } else {
             Ok(())
         }
     }
-    fn write(buffer: &mut B, _: Self::Type) -> crate::result::Result<()>
-    where
-        B: crate::buffer::BufferMut,
-    {
+}
+
+impl<const STATUS: u8, B: crate::buffer::Buffer + crate::buffer::BufferMut>
+    crate::util::property::WriteProperty<B> for SystemCommonStatus<STATUS>
+{
+    fn write(buffer: &mut B, _: Self::Type) {
         match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
             crate::buffer::UNIT_ID_U32 => {
                 use crate::buffer::{SpecialiseU32, UmpPrivateMut};
@@ -216,6 +226,8 @@ impl<const STATUS: u8, B: crate::buffer::Buffer> crate::util::property::Property
             }
             _ => unreachable!(),
         }
+    }
+    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
         Ok(())
     }
     fn default() -> Self::Type {

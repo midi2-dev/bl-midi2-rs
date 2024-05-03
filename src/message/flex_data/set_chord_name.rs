@@ -219,7 +219,7 @@ impl<B: crate::buffer::Ump> crate::util::property::ReadProperty<B>
 impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::util::property::WriteProperty<B>
     for ChordTypeProperty<schema::Ump<0x0, 0x00FF_0000, 0x0, 0x0>>
 {
-    fn validate(v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
         Ok(())
     }
     fn write(buffer: &mut B, v: Self::Type) {
@@ -248,7 +248,7 @@ impl<B: crate::buffer::Ump> crate::util::property::ReadProperty<B>
 impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::util::property::WriteProperty<B>
     for ChordTypeProperty<schema::Ump<0x0, 0x0, 0x0, 0x00FF_0000>>
 {
-    fn validate(v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
         Ok(())
     }
     fn write(buffer: &mut B, v: Self::Type) {
@@ -375,7 +375,7 @@ macro_rules! alteration_property_impl {
             crate::util::property::WriteProperty<B>
             for AlterationProperty<schema::Ump<$ump1, $ump2, $ump3, $ump4>>
         {
-            fn validate(v: &Self::Type) -> crate::result::Result<()> {
+            fn validate(_v: &Self::Type) -> crate::result::Result<()> {
                 Ok(())
             }
             fn write(buffer: &mut B, v: Self::Type) {

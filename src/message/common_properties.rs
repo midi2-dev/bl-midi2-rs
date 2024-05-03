@@ -17,7 +17,7 @@ impl<const TYPE: u8, B: Buffer> Property<B> for UmpMessageTypeProperty<TYPE> {
 }
 
 impl<const TYPE: u8, B: Buffer> ReadProperty<B> for UmpMessageTypeProperty<TYPE> {
-    fn read(buffer: &B) -> Self::Type {
+    fn read(_buffer: &B) -> Self::Type {
         ()
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
@@ -40,7 +40,7 @@ impl<const TYPE: u8, B: Buffer + crate::buffer::BufferMut> WriteProperty<B>
                 .set_nibble(0, crate::u4::new(TYPE));
         }
     }
-    fn validate(value: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_value: &Self::Type) -> crate::result::Result<()> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -55,7 +55,7 @@ impl<const STATUS: u8, B: Buffer> Property<B> for ChannelVoiceStatusProperty<STA
 }
 
 impl<const STATUS: u8, B: Buffer> ReadProperty<B> for ChannelVoiceStatusProperty<STATUS> {
-    fn read(buffer: &B) -> Self::Type {
+    fn read(_buffer: &B) -> Self::Type {
         ()
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
@@ -93,7 +93,7 @@ impl<const STATUS: u8, B: Buffer + crate::buffer::BufferMut> WriteProperty<B>
             _ => unreachable!(),
         }
     }
-    fn validate(value: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_value: &Self::Type) -> crate::result::Result<()> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -140,7 +140,7 @@ impl<
             _ => unreachable!(),
         }
     }
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(_buffer: &B) -> crate::result::Result<()> {
         Ok(())
     }
 }
@@ -152,7 +152,7 @@ impl<
         T: Default + schema::UmpSchemaRepr<UmpSchema> + schema::BytesSchemaRepr<BytesSchema>,
     > WriteProperty<B> for HybridSchemaProperty<T, BytesSchema, UmpSchema>
 {
-    fn validate(v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
         Ok(())
     }
     fn write(buffer: &mut B, v: Self::Type) {
@@ -199,7 +199,7 @@ impl<
             _ => unreachable!(),
         }
     }
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(_buffer: &B) -> crate::result::Result<()> {
         Ok(())
     }
 }
@@ -218,7 +218,7 @@ impl<
             )
         }
     }
-    fn validate(v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -246,7 +246,7 @@ impl<B: Buffer, UmpSchema: schema::UmpSchema, T: Default + schema::UmpSchemaRepr
             _ => unreachable!(),
         }
     }
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(_buffer: &B) -> crate::result::Result<()> {
         Ok(())
     }
 }
@@ -265,7 +265,7 @@ impl<
             )
         }
     }
-    fn validate(v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
         Ok(())
     }
     fn default() -> Self::Type {

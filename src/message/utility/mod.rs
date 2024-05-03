@@ -205,10 +205,14 @@ impl<B: crate::buffer::Buffer + crate::buffer::BufferMut> crate::util::property:
     for JitterReductionProperty
 {
     fn write(buffer: &mut B, jr: Self::Type) {
-        use crate::buffer::{SpecialiseU32, UmpPrivateMut};
+        use crate::buffer::{SpecialiseU32, UmpPrivateMut, UnitPrivate, UNIT_ID_U32};
         use crate::numeric_types::u4;
         use crate::util::BitOps;
         use JitterReduction::*;
+
+        if <B::Unit as UnitPrivate>::UNIT_ID != UNIT_ID_U32 {
+            return;
+        }
 
         let mut buffer = buffer.specialise_u32_mut();
         let jr_slice = buffer.jitter_reduction_mut();

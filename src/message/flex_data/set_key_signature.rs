@@ -64,7 +64,7 @@ impl<B: crate::buffer::Ump> crate::util::property::ReadProperty<B> for SharpsFla
             _ => unreachable!(),
         }
     }
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(_buffer: &B) -> crate::result::Result<()> {
         Ok(())
     }
 }
