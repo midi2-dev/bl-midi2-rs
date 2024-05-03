@@ -4,14 +4,23 @@ use crate::{
         UNIT_ID_U32, UNIT_ID_U8,
     },
     numeric_types::*,
-    util::{property::Property, schema, BitOps},
+    util::{
+        property::{Property, ReadProperty, WriteProperty},
+        schema, BitOps,
+    },
 };
 
 pub struct UmpMessageTypeProperty<const TYPE: u8>;
 
 impl<const TYPE: u8, B: Buffer> Property<B> for UmpMessageTypeProperty<TYPE> {
     type Type = ();
-    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
+}
+
+impl<const TYPE: u8, B: Buffer> ReadProperty<B> for UmpMessageTypeProperty<TYPE> {
+    fn read(buffer: &B) -> Self::Type {
+        ()
+    }
+    fn validate(buffer: &B) -> crate::result::Result<()> {
         if <B::Unit as UnitPrivate>::UNIT_ID == UNIT_ID_U32 {
             let b = buffer.buffer().specialise_u32().message()[0];
             if b.nibble(0) != crate::u4::new(TYPE) {
@@ -20,14 +29,18 @@ impl<const TYPE: u8, B: Buffer> Property<B> for UmpMessageTypeProperty<TYPE> {
         }
         Ok(())
     }
-    fn write(buffer: &mut B, _v: Self::Type) -> crate::result::Result<()>
-    where
-        B: BufferMut,
-    {
+}
+
+impl<const TYPE: u8, B: Buffer + crate::buffer::BufferMut> WriteProperty<B>
+    for UmpMessageTypeProperty<TYPE>
+{
+    fn write(buffer: &mut B, _v: Self::Type) {
         if <B::Unit as UnitPrivate>::UNIT_ID == UNIT_ID_U32 {
             buffer.buffer_mut().specialise_u32_mut().message_mut()[0]
                 .set_nibble(0, crate::u4::new(TYPE));
         }
+    }
+    fn validate(value: &Self::Type) -> crate::result::Result<()> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -39,7 +52,13 @@ pub struct ChannelVoiceStatusProperty<const STATUS: u8>;
 
 impl<const STATUS: u8, B: Buffer> Property<B> for ChannelVoiceStatusProperty<STATUS> {
     type Type = ();
-    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
+}
+
+impl<const STATUS: u8, B: Buffer> ReadProperty<B> for ChannelVoiceStatusProperty<STATUS> {
+    fn read(buffer: &B) -> Self::Type {
+        ()
+    }
+    fn validate(buffer: &B) -> crate::result::Result<()> {
         let status = match <B::Unit as UnitPrivate>::UNIT_ID {
             UNIT_ID_U32 => {
                 let b = buffer.buffer().specialise_u32().message()[0];
@@ -57,10 +76,12 @@ impl<const STATUS: u8, B: Buffer> Property<B> for ChannelVoiceStatusProperty<STA
             Err(crate::Error::InvalidData("Incorrect message status"))
         }
     }
-    fn write(buffer: &mut B, _v: Self::Type) -> crate::result::Result<()>
-    where
-        B: BufferMut,
-    {
+}
+
+impl<const STATUS: u8, B: Buffer + crate::buffer::BufferMut> WriteProperty<B>
+    for ChannelVoiceStatusProperty<STATUS>
+{
+    fn write(buffer: &mut B, _v: Self::Type) {
         match <B::Unit as UnitPrivate>::UNIT_ID {
             UNIT_ID_U32 => {
                 buffer.buffer_mut().specialise_u32_mut().message_mut()[0]
@@ -71,6 +92,8 @@ impl<const STATUS: u8, B: Buffer> Property<B> for ChannelVoiceStatusProperty<STA
             }
             _ => unreachable!(),
         }
+    }
+    fn validate(value: &Self::Type) -> crate::result::Result<()> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -97,7 +120,16 @@ impl<
     > Property<B> for HybridSchemaProperty<T, BytesSchema, UmpSchema>
 {
     type Type = T;
-    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
+}
+
+impl<
+        B: Buffer,
+        BytesSchema: schema::BytesSchema,
+        UmpSchema: schema::UmpSchema,
+        T: Default + schema::UmpSchemaRepr<UmpSchema> + schema::BytesSchemaRepr<BytesSchema>,
+    > ReadProperty<B> for HybridSchemaProperty<T, BytesSchema, UmpSchema>
+{
+    fn read(buffer: &B) -> Self::Type {
         match <B::Unit as UnitPrivate>::UNIT_ID {
             UNIT_ID_U32 => <T as schema::UmpSchemaRepr<UmpSchema>>::read(
                 buffer.buffer().specialise_u32().message(),
@@ -108,10 +140,22 @@ impl<
             _ => unreachable!(),
         }
     }
-    fn write(buffer: &mut B, v: Self::Type) -> crate::result::Result<()>
-    where
-        B: crate::buffer::BufferMut,
-    {
+    fn validate(buffer: &B) -> crate::result::Result<()> {
+        Ok(())
+    }
+}
+
+impl<
+        B: Buffer + BufferMut,
+        BytesSchema: schema::BytesSchema,
+        UmpSchema: schema::UmpSchema,
+        T: Default + schema::UmpSchemaRepr<UmpSchema> + schema::BytesSchemaRepr<BytesSchema>,
+    > WriteProperty<B> for HybridSchemaProperty<T, BytesSchema, UmpSchema>
+{
+    fn validate(v: &Self::Type) -> crate::result::Result<()> {
+        Ok(())
+    }
+    fn write(buffer: &mut B, v: Self::Type) {
         match <B::Unit as UnitPrivate>::UNIT_ID {
             UNIT_ID_U32 => <T as schema::UmpSchemaRepr<UmpSchema>>::write(
                 buffer.buffer_mut().specialise_u32_mut().message_mut(),
@@ -138,7 +182,15 @@ impl<
     > Property<B> for BytesSchemaProperty<T, BytesSchema>
 {
     type Type = T;
-    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
+}
+
+impl<
+        B: Buffer,
+        BytesSchema: schema::BytesSchema,
+        T: Default + schema::BytesSchemaRepr<BytesSchema>,
+    > ReadProperty<B> for BytesSchemaProperty<T, BytesSchema>
+{
+    fn read(buffer: &B) -> Self::Type {
         match <B::Unit as UnitPrivate>::UNIT_ID {
             UNIT_ID_U32 => Ok(Default::default()),
             UNIT_ID_U8 => {
@@ -147,18 +199,27 @@ impl<
             _ => unreachable!(),
         }
     }
-    fn write(buffer: &mut B, v: Self::Type) -> crate::result::Result<()>
-    where
-        B: crate::buffer::BufferMut,
-    {
+    fn validate(buffer: &B) -> crate::result::Result<()> {
+        Ok(())
+    }
+}
+
+impl<
+        B: Buffer + BufferMut,
+        BytesSchema: schema::BytesSchema,
+        T: Default + schema::BytesSchemaRepr<BytesSchema>,
+    > WriteProperty<B> for BytesSchemaProperty<T, BytesSchema>
+{
+    fn write(buffer: &mut B, v: Self::Type) {
         if <B::Unit as UnitPrivate>::UNIT_ID == UNIT_ID_U8 {
             <T as schema::BytesSchemaRepr<BytesSchema>>::write(
                 buffer.buffer_mut().specialise_u8_mut(),
                 v,
             )
-        } else {
-            Ok(())
         }
+    }
+    fn validate(v: &Self::Type) -> crate::result::Result<()> {
+        Ok(())
     }
     fn default() -> Self::Type {
         Default::default()
@@ -171,7 +232,12 @@ impl<B: Buffer, UmpSchema: schema::UmpSchema, T: Default + schema::UmpSchemaRepr
     Property<B> for UmpSchemaProperty<T, UmpSchema>
 {
     type Type = T;
-    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
+}
+
+impl<B: Buffer, UmpSchema: schema::UmpSchema, T: Default + schema::UmpSchemaRepr<UmpSchema>>
+    ReadProperty<B> for UmpSchemaProperty<T, UmpSchema>
+{
+    fn read(buffer: &B) -> Self::Type {
         match <B::Unit as UnitPrivate>::UNIT_ID {
             UNIT_ID_U32 => <T as schema::UmpSchemaRepr<UmpSchema>>::read(
                 buffer.buffer().specialise_u32().message(),
@@ -180,18 +246,27 @@ impl<B: Buffer, UmpSchema: schema::UmpSchema, T: Default + schema::UmpSchemaRepr
             _ => unreachable!(),
         }
     }
-    fn write(buffer: &mut B, v: Self::Type) -> crate::result::Result<()>
-    where
-        B: crate::buffer::BufferMut,
-    {
+    fn validate(buffer: &B) -> crate::result::Result<()> {
+        Ok(())
+    }
+}
+
+impl<
+        B: Buffer + BufferMut,
+        UmpSchema: schema::UmpSchema,
+        T: Default + schema::UmpSchemaRepr<UmpSchema>,
+    > WriteProperty<B> for UmpSchemaProperty<T, UmpSchema>
+{
+    fn write(buffer: &mut B, v: Self::Type) {
         if <B::Unit as UnitPrivate>::UNIT_ID == UNIT_ID_U32 {
             <T as schema::UmpSchemaRepr<UmpSchema>>::write(
                 buffer.buffer_mut().specialise_u32_mut().message_mut(),
                 v,
             )
-        } else {
-            Ok(())
         }
+    }
+    fn validate(v: &Self::Type) -> crate::result::Result<()> {
+        Ok(())
     }
     fn default() -> Self::Type {
         Default::default()

@@ -1,59 +1,7 @@
-#[cfg(feature = "std")]
-use crate::IntoOwned;
-use crate::{
-    buffer::Ump,
-    message::helpers as message_helpers,
-    numeric_types::*,
-    traits::{Data, FromData, Grouped},
-    util::{
-        schema::{Property, UmpSchema},
-        BitOps,
-    },
-    Error, Result,
-};
-
-#[derive(midi2_proc::UmpDebug, Clone, PartialEq, Eq)]
-pub struct FlexDataGroupBorrowed<'a>(&'a [u32]);
-
-#[derive(midi2_proc::UmpDebug, Clone, PartialEq, Eq)]
-#[cfg(feature = "std")]
-pub struct FlexDataGroupOwned(std::vec::Vec<u32>);
-
-pub struct FlexDataGroupBorrowedBuilder<'a> {
-    pub buffer: &'a mut [u32],
-    size: usize,
-    error: Result<()>,
-}
-
-#[cfg(feature = "std")]
-pub struct FlexDataGroupBuilder {
-    pub buffer: std::vec::Vec<u32>,
-}
-
 pub struct PayloadIterator<'a> {
     data: &'a [u32],
     message_index: usize,
     payload_index: usize,
-}
-
-pub trait FlexDataGroup<'a, 'b>: Data {
-    fn status(&'a self) -> u8;
-    fn bank(&'a self) -> u8;
-    fn channel(&'a self) -> Option<u4>;
-    fn payload(&'a self) -> PayloadIterator<'b>;
-}
-
-impl<'a> Data for FlexDataGroupBorrowed<'a> {
-    fn data(&self) -> &[u32] {
-        self.0
-    }
-}
-
-#[cfg(feature = "std")]
-impl Data for FlexDataGroupOwned {
-    fn data(&self) -> &[u32] {
-        &self.0
-    }
 }
 
 impl<'a> FromData<'a> for FlexDataGroupBorrowed<'a> {

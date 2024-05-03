@@ -39,7 +39,10 @@ struct Sysex7BytesBeginByte;
 
 impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for Sysex7BytesBeginByte {
     type Type = ();
-    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
+}
+
+impl<B: crate::buffer::Buffer> crate::util::property::ReadProperty<B> for Sysex7BytesBeginByte {
+    fn validate(buffer: &B) -> crate::result::Result<()> {
         match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
             crate::buffer::UNIT_ID_U8 => {
                 if buffer.specialise_u8()[0] != START_BYTE {
@@ -52,18 +55,21 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for Sysex7Byte
             _ => unreachable!(),
         }
     }
-    fn write(buffer: &mut B, _: Self::Type) -> crate::result::Result<()>
-    where
-        B: crate::buffer::BufferMut,
-    {
-        match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
-            crate::buffer::UNIT_ID_U8 => {
-                buffer.specialise_u8_mut()[0] = START_BYTE;
-                Ok(())
-            }
-            crate::buffer::UNIT_ID_U32 => Ok(()),
-            _ => unreachable!(),
+    fn read(buffer: &B) -> Self::Type {
+        ()
+    }
+}
+
+impl<B: crate::buffer::Buffer + crate::buffer::BufferMut> crate::util::property::WriteProperty<B>
+    for Sysex7BytesBeginByte
+{
+    fn write(buffer: &mut B, _: Self::Type) {
+        if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U8 {
+            buffer.specialise_u8_mut()[0] = START_BYTE;
         }
+    }
+    fn validate(v: &Self::Type) -> crate::result::Result<()> {
+        Ok(())
     }
     fn default() -> Self::Type {
         ()
@@ -74,7 +80,13 @@ struct Sysex7BytesEndByte;
 
 impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for Sysex7BytesEndByte {
     type Type = ();
-    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
+}
+
+impl<B: crate::buffer::Buffer> crate::util::property::ReadProperty<B> for Sysex7BytesEndByte {
+    fn read(buffer: &B) -> Self::Type {
+        ()
+    }
+    fn validate(buffer: &B) -> crate::result::Result<()> {
         match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
             crate::buffer::UNIT_ID_U8 => buffer
                 .specialise_u8()
@@ -86,32 +98,35 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for Sysex7Byte
             _ => unreachable!(),
         }
     }
+}
 
-    fn write(buffer: &mut B, _: Self::Type) -> crate::result::Result<()>
-    where
-        B: crate::buffer::BufferMut,
-    {
-        match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
-            crate::buffer::UNIT_ID_U8 => {
-                let last = buffer.buffer().len() - 1;
-                buffer.specialise_u8_mut()[last] = END_BYTE;
-                Ok(())
-            }
-            crate::buffer::UNIT_ID_U32 => Ok(()),
-            _ => unreachable!(),
+impl<B: crate::buffer::Buffer + crate::buffer::BufferMut> crate::util::property::WriteProperty<B>
+    for Sysex7BytesEndByte
+{
+    fn write(buffer: &mut B, _: Self::Type) {
+        if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U8 {
+            let last = buffer.buffer().len() - 1;
+            buffer.specialise_u8_mut()[last] = END_BYTE;
         }
     }
-
+    fn validate(v: &Self::Type) -> crate::result::Result<()> {
+        Ok(())
+    }
     fn default() -> Self::Type {
         ()
     }
 }
-
 struct ConsistentStatuses;
 
 impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for ConsistentStatuses {
     type Type = ();
-    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
+}
+
+impl<B: crate::buffer::Buffer> crate::util::property::ReadProperty<B> for ConsistentStatuses {
+    fn read(buffer: &B) -> Self::Type {
+        ()
+    }
+    fn validate(buffer: &B) -> crate::result::Result<()> {
         if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U32 {
             message_helpers::validate_sysex_group_statuses(
                 buffer.specialise_u32(),
@@ -125,10 +140,13 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for Consistent
         }
         Ok(())
     }
-    fn write(_: &mut B, _: Self::Type) -> crate::result::Result<()>
-    where
-        B: crate::buffer::BufferMut,
-    {
+}
+
+impl<B: crate::buffer::Buffer + crate::buffer::BufferMut> crate::util::property::WriteProperty<B>
+    for ConsistentStatuses
+{
+    fn write(_: &mut B, _: Self::Type) {}
+    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -140,7 +158,13 @@ struct ValidPacketSizes;
 
 impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for ValidPacketSizes {
     type Type = ();
-    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
+}
+
+impl<B: crate::buffer::Buffer> crate::util::property::ReadProperty<B> for ValidPacketSizes {
+    fn read(buffer: &B) -> Self::Type {
+        ()
+    }
+    fn validate(buffer: &B) -> crate::result::Result<()> {
         if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U32 {
             if buffer
                 .specialise_u32()
@@ -155,10 +179,13 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for ValidPacke
             Ok(())
         }
     }
-    fn write(_: &mut B, _: Self::Type) -> crate::result::Result<()>
-    where
-        B: crate::buffer::BufferMut,
-    {
+}
+
+impl<B: crate::buffer::Buffer + crate::buffer::BufferMut> crate::util::property::WriteProperty<B>
+    for ValidPacketSizes
+{
+    fn write(_buffer: &mut B, _v: Self::Type) {}
+    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -170,23 +197,31 @@ struct GroupProperty;
 
 impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for GroupProperty {
     type Type = numeric_types::u4;
-    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
+}
+
+impl<B: crate::buffer::Buffer> crate::util::property::ReadProperty<B> for GroupProperty {
+    fn read(buffer: &B) -> Self::Type {
+        use crate::buffer::UmpPrivate;
+        buffer.specialise_u32().message()[0].nibble(1)
+    }
+    fn validate(buffer: &B) -> crate::result::Result<()> {
         if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U32 {
             use crate::buffer::UmpPrivate;
             message_helpers::sysex_group_consistent_groups(
-                buffer.specialise_u32(),
+                buffer.specialise_u32().message(),
                 2,
                 crate::numeric_types::u4::new(UMP_MESSAGE_TYPE),
-            )?;
-            Ok(buffer.specialise_u32().message()[0].nibble(1))
+            )
         } else {
             Ok(Default::default())
         }
     }
-    fn write(buffer: &mut B, group: Self::Type) -> crate::result::Result<()>
-    where
-        B: crate::buffer::BufferMut,
-    {
+}
+
+impl<B: crate::buffer::Buffer + crate::buffer::BufferMut> crate::util::property::WriteProperty<B>
+    for GroupProperty
+{
+    fn write(buffer: &mut B, group: Self::Type) {
         if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U32 {
             use crate::buffer::UmpPrivateMut;
             const TYPE: numeric_types::u4 = numeric_types::u4::new(UMP_MESSAGE_TYPE);
@@ -199,6 +234,8 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for GroupPrope
                 packet[0].set_nibble(1, group);
             }
         }
+    }
+    fn validate(v: &Self::Type) -> crate::result::Result<()> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -210,18 +247,6 @@ struct SysexPayloadPlaceholder;
 
 impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for SysexPayloadPlaceholder {
     type Type = ();
-    fn read(_: &B) -> crate::result::Result<Self::Type> {
-        Ok(())
-    }
-    fn write(_: &mut B, _: Self::Type) -> crate::result::Result<()>
-    where
-        B: crate::buffer::BufferMut,
-    {
-        Ok(())
-    }
-    fn default() -> Self::Type {
-        Default::default()
-    }
 }
 
 // ***********************************************************************
@@ -374,16 +399,15 @@ fn convert_generated_properties<
     buffer_b: &mut B,
 ) {
     type MessageType = common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>;
-    <MessageType as PropertyGenMessage<B>>::write(buffer_b, ()).unwrap();
-    <Sysex7BytesBeginByte as PropertyGenMessage<B>>::write(buffer_b, ()).unwrap();
-    <Sysex7BytesEndByte as PropertyGenMessage<B>>::write(buffer_b, ()).unwrap();
-    <ConsistentStatuses as PropertyGenMessage<B>>::write(buffer_b, ()).unwrap();
-    <ValidPacketSizes as PropertyGenMessage<B>>::write(buffer_b, ()).unwrap();
-    <GroupProperty as PropertyGenMessage<B>>::write(
+    <MessageType as crate::util::property::WriteProperty<B>>::write(buffer_b, ());
+    <Sysex7BytesBeginByte as crate::util::property::WriteProperty<B>>::write(buffer_b, ());
+    <Sysex7BytesEndByte as crate::util::property::WriteProperty<B>>::write(buffer_b, ());
+    <ConsistentStatuses as crate::util::property::WriteProperty<B>>::write(buffer_b, ());
+    <ValidPacketSizes as crate::util::property::WriteProperty<B>>::write(buffer_b, ());
+    <GroupProperty as crate::util::property::WriteProperty<B>>::write(
         buffer_b,
-        <GroupProperty as PropertyGenMessage<A>>::read(buffer_a).unwrap(),
-    )
-    .unwrap();
+        <GroupProperty as crate::util::property::ReadProperty<A>>::read(buffer_a),
+    );
 }
 
 impl<B: crate::buffer::Buffer> Sysex<B> for Sysex7<B> {

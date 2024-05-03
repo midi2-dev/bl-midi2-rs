@@ -4,13 +4,13 @@ use crate::{
 };
 
 // pub mod flex_data_group;
+// mod text;
 
 pub mod set_chord_name;
 pub mod set_key_signature;
 pub mod set_metronome;
 pub mod set_tempo;
 pub mod set_time_signature;
-// pub mod text;
 pub mod tonic;
 
 const UMP_MESSAGE_TYPE: u8 = 0xD;

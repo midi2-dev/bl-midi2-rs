@@ -138,18 +138,45 @@ pub struct JitterReductionProperty;
 
 impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for JitterReductionProperty {
     type Type = Option<JitterReduction>;
-    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
+}
+
+impl<B: crate::buffer::Buffer> crate::util::property::ReadProperty<B> for JitterReductionProperty {
+    fn read(buffer: &B) -> Self::Type {
         use crate::buffer::{SpecialiseU32, UmpPrivate, UnitPrivate, UNIT_ID_U32};
         use crate::util::BitOps;
 
         if <B::Unit as UnitPrivate>::UNIT_ID != UNIT_ID_U32 {
-            return Ok(None);
+            return None;
         }
 
         let buffer = buffer.specialise_u32();
         let jr_slice = buffer.jitter_reduction();
         if jr_slice.is_empty() {
-            return Ok(None);
+            return None;
+        }
+
+        match u8::from(jr_slice[0].nibble(2)) {
+            STATUS_TIMESTAMP => Some(JitterReduction::Timestamp(jr_slice[0].word(1))),
+            STATUS_DELTA_CLOCKSTAMP_TPQ => {
+                Some(JitterReduction::DeltaClockstampTPQ(jr_slice[0].word(1)))
+            }
+            STATUS_DELTA_CLOCKSTAMP => Some(JitterReduction::DeltaClockstamp(jr_slice[0].word(1))),
+            STATUS_NOOP => None,
+            _ => panic!("Packet in a bad state"),
+        }
+    }
+    fn validate(buffer: &B) -> crate::result::Result<()> {
+        use crate::buffer::{SpecialiseU32, UmpPrivate, UnitPrivate, UNIT_ID_U32};
+        use crate::util::BitOps;
+
+        if <B::Unit as UnitPrivate>::UNIT_ID != UNIT_ID_U32 {
+            return Ok(());
+        }
+
+        let buffer = buffer.specialise_u32();
+        let jr_slice = buffer.jitter_reduction();
+        if jr_slice.is_empty() {
+            return Ok(());
         }
 
         // is this needed?
@@ -163,30 +190,22 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for JitterRedu
 
         match u8::from(jr_slice[0].nibble(2)) {
             STATUS_CLOCK => return Err(Error::InvalidData(ERR_JR_UNEXPECTED_CLOCK)),
-            STATUS_TIMESTAMP => return Ok(Some(JitterReduction::Timestamp(jr_slice[0].word(1)))),
-            STATUS_DELTA_CLOCKSTAMP_TPQ => {
-                return Ok(Some(JitterReduction::DeltaClockstampTPQ(
-                    jr_slice[0].word(1),
-                )))
-            }
-            STATUS_DELTA_CLOCKSTAMP => {
-                return Ok(Some(JitterReduction::DeltaClockstamp(jr_slice[0].word(1))))
-            }
+            STATUS_TIMESTAMP => return Ok(()),
+            STATUS_DELTA_CLOCKSTAMP_TPQ => return Ok(()),
+            STATUS_DELTA_CLOCKSTAMP => return Ok(()),
             STATUS_NOOP => {
-                return Ok(None);
+                return Ok(());
             }
             _ => return Err(Error::InvalidData(ERR_UNKNOWN_UTILITY_STATUS)),
         }
     }
-    fn write(buffer: &mut B, jr: Self::Type) -> crate::result::Result<()>
-    where
-        B: crate::buffer::BufferMut,
-    {
-        if <B::Unit as UnitPrivate>::UNIT_ID != UNIT_ID_U32 {
-            return Ok(());
-        }
+}
 
-        use crate::buffer::{SpecialiseU32, UmpPrivateMut, UnitPrivate, UNIT_ID_U32};
+impl<B: crate::buffer::Buffer + crate::buffer::BufferMut> crate::util::property::WriteProperty<B>
+    for JitterReductionProperty
+{
+    fn write(buffer: &mut B, jr: Self::Type) {
+        use crate::buffer::{SpecialiseU32, UmpPrivateMut};
         use crate::numeric_types::u4;
         use crate::util::BitOps;
         use JitterReduction::*;
@@ -211,7 +230,8 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for JitterRedu
                 jr_slice[0] = 0x0;
             }
         }
-
+    }
+    fn validate(_: &Self::Type) -> crate::result::Result<()> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -223,7 +243,13 @@ struct TypeProperty;
 
 impl<B: crate::buffer::Ump> crate::util::property::Property<B> for TypeProperty {
     type Type = ();
-    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
+}
+
+impl<B: crate::buffer::Ump> crate::util::property::ReadProperty<B> for TypeProperty {
+    fn read(buffer: &B) -> Self::Type {
+        ()
+    }
+    fn validate(buffer: &B) -> crate::result::Result<()> {
         use crate::util::BitOps;
         if buffer.buffer()[0].nibble(0) != crate::u4::new(0x0) {
             Err(crate::Error::InvalidData("Incorrect ump message type"))
@@ -231,26 +257,37 @@ impl<B: crate::buffer::Ump> crate::util::property::Property<B> for TypeProperty 
             Ok(())
         }
     }
-    fn write(buffer: &mut B, _v: Self::Type) -> crate::result::Result<()>
-    where
-        B: crate::buffer::BufferMut,
-    {
+}
+
+impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::util::property::WriteProperty<B>
+    for TypeProperty
+{
+    fn write(buffer: &mut B, _v: Self::Type) {
         use crate::util::BitOps;
         buffer.buffer_mut()[0].set_nibble(0, crate::u4::new(0x0));
+    }
+    fn validate(v: &Self::Type) -> crate::result::Result<()> {
         Ok(())
     }
     fn default() -> Self::Type {
         ()
     }
 }
-
 struct StatusProperty<const STATUS: u8>;
 
 impl<const STATUS: u8, B: crate::buffer::Ump> crate::util::property::Property<B>
     for StatusProperty<STATUS>
 {
     type Type = ();
-    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
+}
+
+impl<const STATUS: u8, B: crate::buffer::Ump> crate::util::property::ReadProperty<B>
+    for StatusProperty<STATUS>
+{
+    fn read(buffer: &B) -> Self::Type {
+        ()
+    }
+    fn validate(buffer: &B) -> crate::result::Result<()> {
         use crate::util::BitOps;
         if u8::from(buffer.buffer()[0].nibble(2)) == STATUS {
             Ok(())
@@ -258,12 +295,16 @@ impl<const STATUS: u8, B: crate::buffer::Ump> crate::util::property::Property<B>
             Err(crate::Error::InvalidData("Incorrect message status"))
         }
     }
-    fn write(buffer: &mut B, _v: Self::Type) -> crate::result::Result<()>
-    where
-        B: crate::buffer::BufferMut,
-    {
+}
+
+impl<const STATUS: u8, B: crate::buffer::Ump + crate::buffer::BufferMut>
+    crate::util::property::WriteProperty<B> for StatusProperty<STATUS>
+{
+    fn write(buffer: &mut B, _v: Self::Type) {
         use crate::util::BitOps;
         buffer.buffer_mut()[0].set_nibble(2, crate::u4::new(STATUS));
+    }
+    fn validate(v: &Self::Type) -> crate::result::Result<()> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -275,16 +316,26 @@ struct DataProperty;
 
 impl<B: crate::buffer::Ump> crate::util::property::Property<B> for DataProperty {
     type Type = u16;
-    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
+}
+
+impl<B: crate::buffer::Ump> crate::util::property::ReadProperty<B> for DataProperty {
+    fn read(buffer: &B) -> Self::Type {
         use crate::util::BitOps;
-        Ok(buffer.buffer()[0].word(1))
+        buffer.buffer()[0].word(1)
     }
-    fn write(buffer: &mut B, value: Self::Type) -> crate::result::Result<()>
-    where
-        B: crate::buffer::BufferMut,
-    {
+    fn validate(buffer: &B) -> crate::result::Result<()> {
+        Ok(())
+    }
+}
+
+impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::util::property::WriteProperty<B>
+    for DataProperty
+{
+    fn write(buffer: &mut B, value: Self::Type) {
         use crate::util::BitOps;
         buffer.buffer_mut()[0].set_word(1, value);
+    }
+    fn validate(v: &Self::Type) -> crate::result::Result<()> {
         Ok(())
     }
     fn default() -> Self::Type {
