@@ -1,15 +1,47 @@
+#[cfg(feature = "std")]
+use crate::IntoOwned;
+use crate::{
+    buffer::Ump,
+    message::helpers as message_helpers,
+    numeric_types::*,
+    traits::{Data, FromData, Grouped},
+    util::{
+        schema::{Property, UmpSchema},
+        BitOps,
+    },
+    Error, Result,
+};
+
+#[derive(midi2_proc::UmpDebug, Clone, PartialEq, Eq)]
+pub struct FlexDataGroupBorrowed<'a>(&'a [u32]);
+
+#[derive(midi2_proc::UmpDebug, Clone, PartialEq, Eq)]
+#[cfg(feature = "std")]
+pub struct FlexDataGroupOwned(std::vec::Vec<u32>);
+
+pub struct FlexDataGroupBorrowedBuilder<'a> {
+    pub buffer: &'a mut [u32],
+    size: usize,
+    error: Result<()>,
+}
+
+#[cfg(feature = "std")]
+pub struct FlexDataGroupBuilder {
+    pub buffer: std::vec::Vec<u32>,
+}
+
 pub struct PayloadIterator<'a> {
     data: &'a [u32],
     message_index: usize,
     payload_index: usize,
 }
 
-// pub trait FlexDataGroup<'a, 'b>: Data {
-//     fn status(&'a self) -> u8;
-//     fn bank(&'a self) -> u8;
-//     fn channel(&'a self) -> Option<u4>;
-//     fn payload(&'a self) -> PayloadIterator<'b>;
-// }
+pub trait FlexDataGroup<'a, 'b>: Data {
+    fn status(&'a self) -> u8;
+    fn bank(&'a self) -> u8;
+    fn channel(&'a self) -> Option<u4>;
+    fn payload(&'a self) -> PayloadIterator<'b>;
+}
 
 impl<'a> Data for FlexDataGroupBorrowed<'a> {
     fn data(&self) -> &[u32] {
@@ -24,57 +56,57 @@ impl Data for FlexDataGroupOwned {
     }
 }
 
-// impl<'a> FromData<'a> for FlexDataGroupBorrowed<'a> {
-//     type Target = Self;
-//     fn from_data_unchecked(buffer: &'a [u32]) -> Self::Target {
-//         FlexDataGroupBorrowed(buffer)
-//     }
-//     fn validate_data(buffer: &'a [u32]) -> Result<()> {
-//         // whole number of packets
-//         if buffer.len() % 4 != 0 && !buffer.is_empty() {
-//             return Err(Error::InvalidData);
-//         }
-//
-//         // type code correct
-//         if !buffer
-//             .chunks_exact(4)
-//             .all(|packet| packet[0].nibble(0) == u4::new(0xD))
-//         {
-//             return Err(Error::InvalidData);
-//         }
-//
-//         // consistent bank
-//         let bank = super::bank_from_buffer(buffer);
-//         if !buffer
-//             .chunks_exact(4)
-//             .all(|packet| super::bank_from_buffer(packet) == bank)
-//         {
-//             return Err(Error::InvalidData);
-//         }
-//
-//         // consistent status
-//         let status = super::status_from_buffer(buffer);
-//         if !buffer
-//             .chunks_exact(4)
-//             .all(|packet| super::status_from_buffer(packet) == status)
-//         {
-//             return Err(Error::InvalidData);
-//         }
-//
-//         // consistent channel
-//         let channel = super::channel_from_buffer(buffer);
-//         if !buffer
-//             .chunks_exact(4)
-//             .all(|packet| super::channel_from_buffer(packet) == channel)
-//         {
-//             return Err(Error::InvalidData);
-//         }
-//
-//         message_helpers::check_flex_data_or_ump_stream_consistent_packet_formats(buffer, 4)?;
-//
-//         Ok(())
-//     }
-// }
+impl<'a> FromData<'a> for FlexDataGroupBorrowed<'a> {
+    type Target = Self;
+    fn from_data_unchecked(buffer: &'a [u32]) -> Self::Target {
+        FlexDataGroupBorrowed(buffer)
+    }
+    fn validate_data(buffer: &'a [u32]) -> Result<()> {
+        // whole number of packets
+        if buffer.len() % 4 != 0 && !buffer.is_empty() {
+            return Err(Error::InvalidData);
+        }
+
+        // type code correct
+        if !buffer
+            .chunks_exact(4)
+            .all(|packet| packet[0].nibble(0) == u4::new(0xD))
+        {
+            return Err(Error::InvalidData);
+        }
+
+        // consistent bank
+        let bank = super::bank_from_buffer(buffer);
+        if !buffer
+            .chunks_exact(4)
+            .all(|packet| super::bank_from_buffer(packet) == bank)
+        {
+            return Err(Error::InvalidData);
+        }
+
+        // consistent status
+        let status = super::status_from_buffer(buffer);
+        if !buffer
+            .chunks_exact(4)
+            .all(|packet| super::status_from_buffer(packet) == status)
+        {
+            return Err(Error::InvalidData);
+        }
+
+        // consistent channel
+        let channel = super::channel_from_buffer(buffer);
+        if !buffer
+            .chunks_exact(4)
+            .all(|packet| super::channel_from_buffer(packet) == channel)
+        {
+            return Err(Error::InvalidData);
+        }
+
+        message_helpers::check_flex_data_or_ump_stream_consistent_packet_formats(buffer, 4)?;
+
+        Ok(())
+    }
+}
 
 #[cfg(feature = "std")]
 impl<'a> IntoOwned for FlexDataGroupBorrowed<'a> {

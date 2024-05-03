@@ -192,16 +192,15 @@ struct SystemCommonStatus<const STATUS: u8>;
 impl<const STATUS: u8, B: crate::buffer::Buffer> crate::util::property::Property<B>
     for SystemCommonStatus<STATUS>
 {
-    type Read = ();
-    type Write = Self::Read;
-    fn read(buffer: &B) -> crate::result::Result<Self::Read> {
+    type Type = ();
+    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
         if status(buffer.buffer()) != STATUS {
             Err(crate::Error::InvalidData("Incorrect status field"))
         } else {
             Ok(())
         }
     }
-    fn write(buffer: &mut B, _: Self::Write) -> crate::result::Result<()>
+    fn write(buffer: &mut B, _: Self::Type) -> crate::result::Result<()>
     where
         B: crate::buffer::BufferMut,
     {
@@ -219,7 +218,7 @@ impl<const STATUS: u8, B: crate::buffer::Buffer> crate::util::property::Property
         }
         Ok(())
     }
-    fn default() -> Self::Write {
+    fn default() -> Self::Type {
         Default::default()
     }
 }

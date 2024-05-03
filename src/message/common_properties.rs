@@ -10,9 +10,8 @@ use crate::{
 pub struct UmpMessageTypeProperty<const TYPE: u8>;
 
 impl<const TYPE: u8, B: Buffer> Property<B> for UmpMessageTypeProperty<TYPE> {
-    type Read = ();
-    type Write = Self::Read;
-    fn read(buffer: &B) -> crate::result::Result<Self::Read> {
+    type Type = ();
+    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
         if <B::Unit as UnitPrivate>::UNIT_ID == UNIT_ID_U32 {
             let b = buffer.buffer().specialise_u32().message()[0];
             if b.nibble(0) != crate::u4::new(TYPE) {
@@ -21,7 +20,7 @@ impl<const TYPE: u8, B: Buffer> Property<B> for UmpMessageTypeProperty<TYPE> {
         }
         Ok(())
     }
-    fn write(buffer: &mut B, _v: Self::Write) -> crate::result::Result<()>
+    fn write(buffer: &mut B, _v: Self::Type) -> crate::result::Result<()>
     where
         B: BufferMut,
     {
@@ -31,7 +30,7 @@ impl<const TYPE: u8, B: Buffer> Property<B> for UmpMessageTypeProperty<TYPE> {
         }
         Ok(())
     }
-    fn default() -> Self::Write {
+    fn default() -> Self::Type {
         ()
     }
 }
@@ -39,9 +38,8 @@ impl<const TYPE: u8, B: Buffer> Property<B> for UmpMessageTypeProperty<TYPE> {
 pub struct ChannelVoiceStatusProperty<const STATUS: u8>;
 
 impl<const STATUS: u8, B: Buffer> Property<B> for ChannelVoiceStatusProperty<STATUS> {
-    type Read = ();
-    type Write = Self::Read;
-    fn read(buffer: &B) -> crate::result::Result<Self::Read> {
+    type Type = ();
+    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
         let status = match <B::Unit as UnitPrivate>::UNIT_ID {
             UNIT_ID_U32 => {
                 let b = buffer.buffer().specialise_u32().message()[0];
@@ -59,7 +57,7 @@ impl<const STATUS: u8, B: Buffer> Property<B> for ChannelVoiceStatusProperty<STA
             Err(crate::Error::InvalidData("Incorrect message status"))
         }
     }
-    fn write(buffer: &mut B, _v: Self::Write) -> crate::result::Result<()>
+    fn write(buffer: &mut B, _v: Self::Type) -> crate::result::Result<()>
     where
         B: BufferMut,
     {
@@ -75,7 +73,7 @@ impl<const STATUS: u8, B: Buffer> Property<B> for ChannelVoiceStatusProperty<STA
         }
         Ok(())
     }
-    fn default() -> Self::Write {
+    fn default() -> Self::Type {
         ()
     }
 }
@@ -98,9 +96,8 @@ impl<
         T: Default + schema::UmpSchemaRepr<UmpSchema> + schema::BytesSchemaRepr<BytesSchema>,
     > Property<B> for HybridSchemaProperty<T, BytesSchema, UmpSchema>
 {
-    type Read = T;
-    type Write = Self::Read;
-    fn read(buffer: &B) -> crate::result::Result<Self::Read> {
+    type Type = T;
+    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
         match <B::Unit as UnitPrivate>::UNIT_ID {
             UNIT_ID_U32 => <T as schema::UmpSchemaRepr<UmpSchema>>::read(
                 buffer.buffer().specialise_u32().message(),
@@ -111,7 +108,7 @@ impl<
             _ => unreachable!(),
         }
     }
-    fn write(buffer: &mut B, v: Self::Write) -> crate::result::Result<()>
+    fn write(buffer: &mut B, v: Self::Type) -> crate::result::Result<()>
     where
         B: crate::buffer::BufferMut,
     {
@@ -127,7 +124,7 @@ impl<
             _ => unreachable!(),
         }
     }
-    fn default() -> Self::Write {
+    fn default() -> Self::Type {
         Default::default()
     }
 }
@@ -140,9 +137,8 @@ impl<
         T: Default + schema::BytesSchemaRepr<BytesSchema>,
     > Property<B> for BytesSchemaProperty<T, BytesSchema>
 {
-    type Read = T;
-    type Write = Self::Read;
-    fn read(buffer: &B) -> crate::result::Result<Self::Read> {
+    type Type = T;
+    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
         match <B::Unit as UnitPrivate>::UNIT_ID {
             UNIT_ID_U32 => Ok(Default::default()),
             UNIT_ID_U8 => {
@@ -151,7 +147,7 @@ impl<
             _ => unreachable!(),
         }
     }
-    fn write(buffer: &mut B, v: Self::Write) -> crate::result::Result<()>
+    fn write(buffer: &mut B, v: Self::Type) -> crate::result::Result<()>
     where
         B: crate::buffer::BufferMut,
     {
@@ -164,7 +160,7 @@ impl<
             Ok(())
         }
     }
-    fn default() -> Self::Write {
+    fn default() -> Self::Type {
         Default::default()
     }
 }
@@ -174,9 +170,8 @@ pub struct UmpSchemaProperty<T, B: schema::UmpSchema>(core::marker::PhantomData<
 impl<B: Buffer, UmpSchema: schema::UmpSchema, T: Default + schema::UmpSchemaRepr<UmpSchema>>
     Property<B> for UmpSchemaProperty<T, UmpSchema>
 {
-    type Read = T;
-    type Write = Self::Read;
-    fn read(buffer: &B) -> crate::result::Result<Self::Read> {
+    type Type = T;
+    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
         match <B::Unit as UnitPrivate>::UNIT_ID {
             UNIT_ID_U32 => <T as schema::UmpSchemaRepr<UmpSchema>>::read(
                 buffer.buffer().specialise_u32().message(),
@@ -185,7 +180,7 @@ impl<B: Buffer, UmpSchema: schema::UmpSchema, T: Default + schema::UmpSchemaRepr
             _ => unreachable!(),
         }
     }
-    fn write(buffer: &mut B, v: Self::Write) -> crate::result::Result<()>
+    fn write(buffer: &mut B, v: Self::Type) -> crate::result::Result<()>
     where
         B: crate::buffer::BufferMut,
     {
@@ -198,7 +193,7 @@ impl<B: Buffer, UmpSchema: schema::UmpSchema, T: Default + schema::UmpSchemaRepr
             Ok(())
         }
     }
-    fn default() -> Self::Write {
+    fn default() -> Self::Type {
         Default::default()
     }
 }

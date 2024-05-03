@@ -162,9 +162,8 @@ pub trait FlexData<B: crate::buffer::Ump>: crate::traits::Data<B> {
 pub struct StatusProperty<const STATUS: u8>;
 
 impl<const STATUS: u8, B: Ump> Property<B> for StatusProperty<STATUS> {
-    type Read = ();
-    type Write = Self::Read;
-    fn read(buffer: &B) -> crate::result::Result<Self::Read> {
+    type Type = ();
+    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
         use crate::buffer::UmpPrivate;
         if buffer.buffer().message()[0].octet(3) == STATUS {
             Ok(())
@@ -172,7 +171,7 @@ impl<const STATUS: u8, B: Ump> Property<B> for StatusProperty<STATUS> {
             Err(crate::Error::InvalidData("Incorrect message status"))
         }
     }
-    fn write(buffer: &mut B, _v: Self::Write) -> crate::result::Result<()>
+    fn write(buffer: &mut B, _v: Self::Type) -> crate::result::Result<()>
     where
         B: BufferMut,
     {
@@ -180,7 +179,7 @@ impl<const STATUS: u8, B: Ump> Property<B> for StatusProperty<STATUS> {
         buffer.buffer_mut().message_mut()[0].set_octet(3, STATUS);
         Ok(())
     }
-    fn default() -> Self::Write {
+    fn default() -> Self::Type {
         ()
     }
 }
@@ -188,9 +187,8 @@ impl<const STATUS: u8, B: Ump> Property<B> for StatusProperty<STATUS> {
 pub struct BankProperty<const BANK: u8>;
 
 impl<const BANK: u8, B: Ump> Property<B> for BankProperty<BANK> {
-    type Read = ();
-    type Write = Self::Read;
-    fn read(buffer: &B) -> crate::result::Result<Self::Read> {
+    type Type = ();
+    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
         use crate::buffer::UmpPrivate;
         if buffer.buffer().message()[0].octet(2) == BANK {
             Ok(())
@@ -198,7 +196,7 @@ impl<const BANK: u8, B: Ump> Property<B> for BankProperty<BANK> {
             Err(crate::Error::InvalidData("Incorrect message bank"))
         }
     }
-    fn write(buffer: &mut B, _v: Self::Write) -> crate::result::Result<()>
+    fn write(buffer: &mut B, _v: Self::Type) -> crate::result::Result<()>
     where
         B: BufferMut,
     {
@@ -206,7 +204,7 @@ impl<const BANK: u8, B: Ump> Property<B> for BankProperty<BANK> {
         buffer.buffer_mut().message_mut()[0].set_octet(2, BANK);
         Ok(())
     }
-    fn default() -> Self::Write {
+    fn default() -> Self::Type {
         ()
     }
 }
@@ -214,9 +212,8 @@ impl<const BANK: u8, B: Ump> Property<B> for BankProperty<BANK> {
 struct FormatProperty<const FORMAT: u8>;
 
 impl<const FORMAT: u8, B: Ump> Property<B> for FormatProperty<FORMAT> {
-    type Read = ();
-    type Write = Self::Read;
-    fn read(buffer: &B) -> crate::result::Result<Self::Read> {
+    type Type = ();
+    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
         use crate::buffer::UmpPrivate;
         if FORMAT == buffer.buffer().message()[0].crumb(4).into() {
             Ok(())
@@ -224,7 +221,7 @@ impl<const FORMAT: u8, B: Ump> Property<B> for FormatProperty<FORMAT> {
             Err(crate::Error::InvalidData("Incorrect message format"))
         }
     }
-    fn write(buffer: &mut B, _v: Self::Write) -> crate::result::Result<()>
+    fn write(buffer: &mut B, _v: Self::Type) -> crate::result::Result<()>
     where
         B: BufferMut,
     {
@@ -232,7 +229,7 @@ impl<const FORMAT: u8, B: Ump> Property<B> for FormatProperty<FORMAT> {
         buffer.buffer_mut().message_mut()[0].set_crumb(4, crate::numeric_types::u2::new(FORMAT));
         Ok(())
     }
-    fn default() -> Self::Write {
+    fn default() -> Self::Type {
         ()
     }
 }
@@ -240,9 +237,8 @@ impl<const FORMAT: u8, B: Ump> Property<B> for FormatProperty<FORMAT> {
 struct OptionalChannelProperty;
 
 impl<B: Ump> Property<B> for OptionalChannelProperty {
-    type Read = Option<crate::numeric_types::u4>;
-    type Write = Self::Read;
-    fn read(buffer: &B) -> crate::result::Result<Self::Read> {
+    type Type = Option<crate::numeric_types::u4>;
+    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
         use crate::buffer::UmpPrivate;
         use crate::numeric_types::u2;
         Ok(if buffer.buffer().message()[0].crumb(5) == u2::new(0x0) {
@@ -251,7 +247,7 @@ impl<B: Ump> Property<B> for OptionalChannelProperty {
             None
         })
     }
-    fn write(buffer: &mut B, v: Self::Write) -> crate::result::Result<()>
+    fn write(buffer: &mut B, v: Self::Type) -> crate::result::Result<()>
     where
         B: crate::buffer::BufferMut,
     {
@@ -273,7 +269,7 @@ impl<B: Ump> Property<B> for OptionalChannelProperty {
         }
         Ok(())
     }
-    fn default() -> Self::Write {
+    fn default() -> Self::Type {
         Default::default()
     }
 }
@@ -281,9 +277,8 @@ impl<B: Ump> Property<B> for OptionalChannelProperty {
 struct NoChannelProperty;
 
 impl<B: Ump> Property<B> for NoChannelProperty {
-    type Read = ();
-    type Write = Self::Read;
-    fn read(buffer: &B) -> crate::result::Result<Self::Read> {
+    type Type = ();
+    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
         use crate::buffer::UmpPrivate;
         use crate::numeric_types::u2;
         if buffer.buffer().message()[0].crumb(5) != u2::new(0x0) {
@@ -294,7 +289,7 @@ impl<B: Ump> Property<B> for NoChannelProperty {
             ))
         }
     }
-    fn write(buffer: &mut B, _: Self::Write) -> crate::result::Result<()>
+    fn write(buffer: &mut B, _: Self::Type) -> crate::result::Result<()>
     where
         B: crate::buffer::BufferMut,
     {
@@ -308,7 +303,7 @@ impl<B: Ump> Property<B> for NoChannelProperty {
         data[0].set_nibble(3, u4::new(0x0));
         Ok(())
     }
-    fn default() -> Self::Write {
+    fn default() -> Self::Type {
         Default::default()
     }
 }
