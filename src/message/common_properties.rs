@@ -192,7 +192,7 @@ impl<
 {
     fn read(buffer: &B) -> Self::Type {
         match <B::Unit as UnitPrivate>::UNIT_ID {
-            UNIT_ID_U32 => Ok(Default::default()),
+            UNIT_ID_U32 => Default::default(),
             UNIT_ID_U8 => {
                 <T as schema::BytesSchemaRepr<BytesSchema>>::read(buffer.buffer().specialise_u8())
             }
@@ -242,7 +242,7 @@ impl<B: Buffer, UmpSchema: schema::UmpSchema, T: Default + schema::UmpSchemaRepr
             UNIT_ID_U32 => <T as schema::UmpSchemaRepr<UmpSchema>>::read(
                 buffer.buffer().specialise_u32().message(),
             ),
-            UNIT_ID_U8 => Ok(Default::default()),
+            UNIT_ID_U8 => Default::default(),
             _ => unreachable!(),
         }
     }

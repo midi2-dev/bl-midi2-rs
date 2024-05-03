@@ -27,65 +27,29 @@ struct SetChordName {
     bank: (),
     #[property(flex_data::StatusProperty<{STATUS}>)]
     status: (),
-    #[property(common_properties::UmpSchemaProperty<
-        SharpsFlats,
-        schema::Ump<0x0, 0xF000_0000, 0x0, 0x0>,
-    >)]
+    #[property(SharpsFlatsProperty<schema::Ump<0x0, 0xF000_0000, 0x0, 0x0>>)]
     tonic_sharps_flats: SharpsFlats,
-    #[property(common_properties::UmpSchemaProperty<
-        flex_data::tonic::Tonic,
-        schema::Ump<0x0, 0x0F00_0000, 0x0, 0x0>,
-    >)]
+    #[property(flex_data::tonic::TonicProperty<schema::Ump<0x0, 0x0F00_0000, 0x0, 0x0>>)]
     tonic: flex_data::tonic::Tonic,
-    #[property(common_properties::UmpSchemaProperty<
-        ChordType,
-        schema::Ump<0x0, 0x00FF_0000, 0x0, 0x0>,
-    >)]
+    #[property(ChordTypeProperty<schema::Ump<0x0, 0x00FF_0000, 0x0, 0x0>>)]
     chord_type: ChordType,
-    #[property(common_properties::UmpSchemaProperty<
-        Option<Alteration>,
-        schema::Ump<0x0, 0x0000_FF00, 0x0, 0x0>,
-    >)]
+    #[property(AlterationProperty<schema::Ump<0x0, 0x0000_FF00, 0x0, 0x0>>)]
     chord_alteration1: Option<Alteration>,
-    #[property(common_properties::UmpSchemaProperty<
-        Option<Alteration>,
-        schema::Ump<0x0, 0x0000_00FF, 0x0, 0x0>,
-    >)]
+    #[property(AlterationProperty<schema::Ump<0x0, 0x0000_00FF, 0x0, 0x0>>)]
     chord_alteration2: Option<Alteration>,
-    #[property(common_properties::UmpSchemaProperty<
-        Option<Alteration>,
-        schema::Ump<0x0, 0x0, 0xFF00_0000, 0x0>,
-    >)]
+    #[property(AlterationProperty<schema::Ump<0x0, 0x0, 0xFF00_0000, 0x0>>)]
     chord_alteration3: Option<Alteration>,
-    #[property(common_properties::UmpSchemaProperty<
-        Option<Alteration>,
-        schema::Ump<0x0, 0x0, 0x00FF_0000, 0x0>,
-    >)]
+    #[property(AlterationProperty<schema::Ump<0x0, 0x0, 0x00FF_0000, 0x0>>)]
     chord_alteration4: Option<Alteration>,
-    #[property(common_properties::UmpSchemaProperty<
-        SharpsFlats,
-        schema::Ump<0x0, 0x0, 0x0, 0xF000_0000>,
-    >)]
+    #[property(SharpsFlatsProperty<schema::Ump<0x0, 0x0, 0x0, 0xF000_0000>>)]
     bass_sharps_flats: SharpsFlats,
-    #[property(common_properties::UmpSchemaProperty<
-        flex_data::tonic::Tonic,
-        schema::Ump<0x0, 0x0, 0x0, 0x0F00_0000>,
-    >)]
+    #[property(flex_data::tonic::TonicProperty<schema::Ump<0x0, 0x0, 0x0, 0x0F00_0000>>)]
     bass_note: flex_data::tonic::Tonic,
-    #[property(common_properties::UmpSchemaProperty<
-        ChordType,
-        schema::Ump<0x0, 0x0, 0x0, 0x00FF_0000>,
-    >)]
+    #[property(ChordTypeProperty<schema::Ump<0x0, 0x0, 0x0, 0x00FF_0000>>)]
     bass_chord_type: ChordType,
-    #[property(common_properties::UmpSchemaProperty<
-        Option<Alteration>,
-        schema::Ump<0x0, 0x0, 0x0, 0x0000_FF00>,
-    >)]
+    #[property(AlterationProperty<schema::Ump<0x0, 0x0, 0x0, 0x0000_FF00>>)]
     bass_alteration1: Option<Alteration>,
-    #[property(common_properties::UmpSchemaProperty<
-        Option<Alteration>,
-        schema::Ump<0x0, 0x0, 0x0, 0x0000_00FF>,
-    >)]
+    #[property(AlterationProperty<schema::Ump<0x0, 0x0, 0x0, 0x0000_00FF>>)]
     bass_alteration2: Option<Alteration>,
 }
 
@@ -100,27 +64,69 @@ pub enum SharpsFlats {
     DoubleFlat,
 }
 
-impl schema::UmpSchemaRepr<schema::Ump<0x0, 0x0, 0x0, 0xF000_0000>> for SharpsFlats {
-    fn read(buffer: &[u32]) -> Result<Self> {
+struct SharpsFlatsProperty<S: schema::UmpSchema>(S);
+
+impl<B: crate::buffer::Ump, S: schema::UmpSchema> crate::util::property::Property<B>
+    for SharpsFlatsProperty<S>
+{
+    type Type = SharpsFlats;
+}
+
+impl<B: crate::buffer::Ump> crate::util::property::ReadProperty<B>
+    for SharpsFlatsProperty<schema::Ump<0x0, 0x0, 0x0, 0xF000_0000>>
+{
+    fn read(buffer: &B) -> Self::Type {
         use crate::buffer::UmpPrivate;
-        SharpsFlats::from_nibble(buffer.message()[3].nibble(0))
+        SharpsFlats::from_nibble(buffer.buffer().message()[3].nibble(0)).unwrap()
     }
-    fn write(mut buffer: &mut [u32], value: Self) -> Result<()> {
-        use crate::buffer::UmpPrivateMut;
-        buffer.message_mut()[3].set_nibble(0, value.into_nibble());
+    fn validate(buffer: &B) -> crate::result::Result<()> {
+        use crate::buffer::UmpPrivate;
+        SharpsFlats::from_nibble(buffer.buffer().message()[3].nibble(0))?;
         Ok(())
     }
 }
 
-impl schema::UmpSchemaRepr<schema::Ump<0x0, 0xF000_0000, 0x0, 0x0>> for SharpsFlats {
-    fn read(buffer: &[u32]) -> Result<Self> {
-        use crate::buffer::UmpPrivate;
-        SharpsFlats::from_nibble(buffer.message()[1].nibble(0))
-    }
-    fn write(mut buffer: &mut [u32], value: Self) -> Result<()> {
+impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::util::property::WriteProperty<B>
+    for SharpsFlatsProperty<schema::Ump<0x0, 0x0, 0x0, 0xF000_0000>>
+{
+    fn write(buffer: &mut B, v: Self::Type) {
         use crate::buffer::UmpPrivateMut;
-        buffer.message_mut()[1].set_nibble(0, value.into_nibble());
+        buffer.buffer_mut().message_mut()[3].set_nibble(0, v.into_nibble());
+    }
+    fn validate(_: &Self::Type) -> crate::result::Result<()> {
         Ok(())
+    }
+    fn default() -> Self::Type {
+        Default::default()
+    }
+}
+
+impl<B: crate::buffer::Ump> crate::util::property::ReadProperty<B>
+    for SharpsFlatsProperty<schema::Ump<0x0, 0xF000_0000, 0x0, 0x0>>
+{
+    fn read(buffer: &B) -> Self::Type {
+        use crate::buffer::UmpPrivate;
+        SharpsFlats::from_nibble(buffer.buffer().message()[1].nibble(0)).unwrap()
+    }
+    fn validate(buffer: &B) -> crate::result::Result<()> {
+        use crate::buffer::UmpPrivate;
+        SharpsFlats::from_nibble(buffer.buffer().message()[1].nibble(0))?;
+        Ok(())
+    }
+}
+
+impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::util::property::WriteProperty<B>
+    for SharpsFlatsProperty<schema::Ump<0x0, 0xF000_0000, 0x0, 0x0>>
+{
+    fn write(buffer: &mut B, v: Self::Type) {
+        use crate::buffer::UmpPrivateMut;
+        buffer.buffer_mut().message_mut()[1].set_nibble(0, v.into_nibble());
+    }
+    fn validate(_: &Self::Type) -> crate::result::Result<()> {
+        Ok(())
+    }
+    fn default() -> Self::Type {
+        Default::default()
     }
 }
 
@@ -188,27 +194,69 @@ pub enum ChordType {
     Suspended4th,
 }
 
-impl schema::UmpSchemaRepr<schema::Ump<0x0, 0x00FF_0000, 0x0, 0x0>> for ChordType {
-    fn read(buffer: &[u32]) -> Result<Self> {
+struct ChordTypeProperty<S: schema::UmpSchema>(S);
+
+impl<B: crate::buffer::Ump, S: schema::UmpSchema> crate::util::property::Property<B>
+    for ChordTypeProperty<S>
+{
+    type Type = ChordType;
+}
+
+impl<B: crate::buffer::Ump> crate::util::property::ReadProperty<B>
+    for ChordTypeProperty<schema::Ump<0x0, 0x00FF_0000, 0x0, 0x0>>
+{
+    fn validate(buffer: &B) -> crate::result::Result<()> {
         use crate::buffer::UmpPrivate;
-        ChordType::from_octet(buffer.message()[1].octet(1))
-    }
-    fn write(mut buffer: &mut [u32], value: Self) -> Result<()> {
-        use crate::buffer::UmpPrivateMut;
-        buffer.message_mut()[1].set_octet(1, value.into_octet());
+        ChordType::from_octet(buffer.buffer().message()[1].octet(1))?;
         Ok(())
+    }
+    fn read(buffer: &B) -> Self::Type {
+        use crate::buffer::UmpPrivate;
+        ChordType::from_octet(buffer.buffer().message()[1].octet(1)).unwrap()
     }
 }
 
-impl schema::UmpSchemaRepr<schema::Ump<0x0, 0x0, 0x0, 0x00FF_0000>> for ChordType {
-    fn read(buffer: &[u32]) -> Result<Self> {
-        use crate::buffer::UmpPrivate;
-        ChordType::from_octet(buffer.message()[3].octet(1))
-    }
-    fn write(mut buffer: &mut [u32], value: Self) -> Result<()> {
-        use crate::buffer::UmpPrivateMut;
-        buffer.message_mut()[3].set_octet(1, value.into_octet());
+impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::util::property::WriteProperty<B>
+    for ChordTypeProperty<schema::Ump<0x0, 0x00FF_0000, 0x0, 0x0>>
+{
+    fn validate(v: &Self::Type) -> crate::result::Result<()> {
         Ok(())
+    }
+    fn write(buffer: &mut B, v: Self::Type) {
+        use crate::buffer::UmpPrivateMut;
+        buffer.buffer_mut().message_mut()[1].set_octet(1, v.into_octet());
+    }
+    fn default() -> Self::Type {
+        Default::default()
+    }
+}
+
+impl<B: crate::buffer::Ump> crate::util::property::ReadProperty<B>
+    for ChordTypeProperty<schema::Ump<0x0, 0x0, 0x0, 0x00FF_0000>>
+{
+    fn validate(buffer: &B) -> crate::result::Result<()> {
+        use crate::buffer::UmpPrivate;
+        ChordType::from_octet(buffer.buffer().message()[3].octet(1))?;
+        Ok(())
+    }
+    fn read(buffer: &B) -> Self::Type {
+        use crate::buffer::UmpPrivate;
+        ChordType::from_octet(buffer.buffer().message()[3].octet(1)).unwrap()
+    }
+}
+
+impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::util::property::WriteProperty<B>
+    for ChordTypeProperty<schema::Ump<0x0, 0x0, 0x0, 0x00FF_0000>>
+{
+    fn validate(v: &Self::Type) -> crate::result::Result<()> {
+        Ok(())
+    }
+    fn write(buffer: &mut B, v: Self::Type) {
+        use crate::buffer::UmpPrivateMut;
+        buffer.buffer_mut().message_mut()[3].set_octet(1, v.into_octet());
+    }
+    fn default() -> Self::Type {
+        Default::default()
     }
 }
 
@@ -296,18 +344,47 @@ pub enum Alteration {
     Lower(u4),
 }
 
+struct AlterationProperty<S: schema::UmpSchema>(S);
+
+impl<B: crate::buffer::Ump, S: schema::UmpSchema> crate::util::property::Property<B>
+    for AlterationProperty<S>
+{
+    type Type = Option<Alteration>;
+}
+
 macro_rules! alteration_property_impl {
     ($ump1:expr,$ump2:expr,$ump3:expr,$ump4:expr,$buffer_index:expr,$octet_index:expr) => {
-        impl schema::UmpSchemaRepr<schema::Ump<$ump1, $ump2, $ump3, $ump4>> for Option<Alteration> {
-            fn read(buffer: &[u32]) -> Result<Self> {
+        impl<B: crate::buffer::Ump> crate::util::property::ReadProperty<B>
+            for AlterationProperty<schema::Ump<$ump1, $ump2, $ump3, $ump4>>
+        {
+            fn validate(buffer: &B) -> crate::result::Result<()> {
                 use crate::buffer::UmpPrivate;
-                alteration_from_octet(buffer.message()[$buffer_index].octet($octet_index))
-            }
-            fn write(mut buffer: &mut [u32], value: Self) -> Result<()> {
-                use crate::buffer::UmpPrivateMut;
-                buffer.message_mut()[$buffer_index]
-                    .set_octet($octet_index, alteration_into_octet(value));
+                alteration_from_octet(
+                    buffer.buffer().message()[$buffer_index].octet($octet_index),
+                )?;
                 Ok(())
+            }
+            fn read(buffer: &B) -> Self::Type {
+                use crate::buffer::UmpPrivate;
+                alteration_from_octet(buffer.buffer().message()[$buffer_index].octet($octet_index))
+                    .unwrap()
+            }
+        }
+
+        impl<B: crate::buffer::Ump + crate::buffer::BufferMut>
+            crate::util::property::WriteProperty<B>
+            for AlterationProperty<schema::Ump<$ump1, $ump2, $ump3, $ump4>>
+        {
+            fn validate(v: &Self::Type) -> crate::result::Result<()> {
+                Ok(())
+            }
+            fn write(buffer: &mut B, v: Self::Type) {
+                use crate::buffer::UmpPrivateMut;
+                buffer.buffer_mut().message_mut()[$buffer_index]
+                    .set_octet($octet_index, alteration_into_octet(v));
+            }
+            fn default() -> Self::Type {
+                Default::default()
             }
         }
     };

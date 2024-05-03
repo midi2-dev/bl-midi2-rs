@@ -25,10 +25,7 @@ struct SetKeySignature {
     bank: (),
     #[property(flex_data::StatusProperty<{STATUS}>)]
     status: (),
-    #[property(common_properties::UmpSchemaProperty<
-        flex_data::tonic::Tonic,
-        schema::Ump<0x0, 0x0F00_0000, 0x0, 0x0>,
-    >)]
+    #[property(flex_data::tonic::TonicProperty<schema::Ump<0x0, 0x0F00_0000, 0x0, 0x0>>)]
     tonic: flex_data::tonic::Tonic,
     #[property(SharpsFlatsProperty)]
     sharps_flats: SharpsFlats,
@@ -54,20 +51,28 @@ struct SharpsFlatsProperty;
 
 impl<B: crate::buffer::Ump> crate::util::property::Property<B> for SharpsFlatsProperty {
     type Type = SharpsFlats;
-    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
+}
+
+impl<B: crate::buffer::Ump> crate::util::property::ReadProperty<B> for SharpsFlatsProperty {
+    fn read(buffer: &B) -> Self::Type {
         use crate::buffer::UmpPrivate;
         use SharpsFlats::*;
-        Ok(match u8::from(buffer.buffer().message()[1].nibble(0)) {
+        match u8::from(buffer.buffer().message()[1].nibble(0)) {
             v @ 0x0..=0x7 => Sharps(u3::new(v)),
             v @ 0x9..=0xF => Flats(u3::new(!(v - 1) & 0b0111)),
             0x8 => NonStandard,
             _ => unreachable!(),
-        })
+        }
     }
-    fn write(buffer: &mut B, v: Self::Type) -> crate::result::Result<()>
-    where
-        B: crate::buffer::BufferMut,
-    {
+    fn validate(buffer: &B) -> crate::result::Result<()> {
+        Ok(())
+    }
+}
+
+impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::util::property::WriteProperty<B>
+    for SharpsFlatsProperty
+{
+    fn write(buffer: &mut B, v: Self::Type) {
         use crate::buffer::UmpPrivateMut;
         buffer.buffer_mut().message_mut()[1].set_nibble(
             0,
@@ -77,6 +82,8 @@ impl<B: crate::buffer::Ump> crate::util::property::Property<B> for SharpsFlatsPr
                 SharpsFlats::NonStandard => u4::new(0x8),
             },
         );
+    }
+    fn validate(_: &Self::Type) -> crate::result::Result<()> {
         Ok(())
     }
     fn default() -> Self::Type {

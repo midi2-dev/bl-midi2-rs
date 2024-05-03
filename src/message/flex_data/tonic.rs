@@ -17,37 +17,66 @@ pub enum Tonic {
     NonStandard,
 }
 
-// impl Property<Tonic, UmpSchema<0x0, 0x0F00_0000, 0x0, 0x0>, ()> for Ump {
-//     fn get(data: &[<Ump as Buffer>::Data]) -> Tonic {
-//         Tonic::from_nibble(data[1].nibble(1)).unwrap()
-//     }
-//     fn write(data: &mut [<Ump as Buffer>::Data], v: Tonic) {
-//     }
-//     fn validate(data: &[<Self as Buffer>::Data]) -> Result<()> {
-//         Tonic::from_nibble(data[1].nibble(1))?;
-//         Ok(())
-//     }
-// }
+pub struct TonicProperty<S: schema::UmpSchema>(S);
 
-impl schema::UmpSchemaRepr<schema::Ump<0x0, 0x0F00_0000, 0x0, 0x0>> for Tonic {
-    fn write(buffer: &mut [u32], value: Self) -> Result<()> {
-        buffer[1].set_nibble(1, value.into_nibble());
+impl<S: schema::UmpSchema, B: crate::buffer::Ump> crate::util::property::Property<B>
+    for TonicProperty<S>
+{
+    type Type = Tonic;
+}
+
+impl<B: crate::buffer::Ump> crate::util::property::ReadProperty<B>
+    for TonicProperty<schema::Ump<0x0, 0x0F00_0000, 0x0, 0x0>>
+{
+    fn validate(buffer: &B) -> crate::result::Result<()> {
+        Tonic::from_nibble(buffer.buffer()[1].nibble(1))?;
         Ok(())
     }
-    fn read(buffer: &[u32]) -> Result<Self> {
-        Ok(Tonic::from_nibble(buffer[1].nibble(1))?)
+    fn read(buffer: &B) -> Self::Type {
+        Tonic::from_nibble(buffer.buffer()[1].nibble(1)).unwrap()
     }
 }
 
-impl schema::UmpSchemaRepr<schema::Ump<0x0, 0x0, 0x0, 0x0F00_0000>> for Tonic {
-    fn write(buffer: &mut [u32], value: Self) -> Result<()> {
-        buffer[3].set_nibble(1, value.into_nibble());
+impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::util::property::WriteProperty<B>
+    for TonicProperty<schema::Ump<0x0, 0x0F00_0000, 0x0, 0x0>>
+{
+    fn validate(_: &Tonic) -> crate::result::Result<()> {
         Ok(())
     }
-    fn read(buffer: &[u32]) -> Result<Self> {
-        Ok(Tonic::from_nibble(buffer[3].nibble(1))?)
+    fn default() -> Self::Type {
+        Default::default()
+    }
+    fn write(buffer: &mut B, v: Self::Type) {
+        buffer.buffer_mut()[1].set_nibble(1, v.into_nibble());
     }
 }
+
+impl<B: crate::buffer::Ump> crate::util::property::ReadProperty<B>
+    for TonicProperty<schema::Ump<0x0, 0x0, 0x0, 0x0F00_0000>>
+{
+    fn validate(buffer: &B) -> crate::result::Result<()> {
+        Tonic::from_nibble(buffer.buffer()[3].nibble(1))?;
+        Ok(())
+    }
+    fn read(buffer: &B) -> Self::Type {
+        Tonic::from_nibble(buffer.buffer()[3].nibble(1)).unwrap()
+    }
+}
+
+impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::util::property::WriteProperty<B>
+    for TonicProperty<schema::Ump<0x0, 0x0, 0x0, 0x0F00_0000>>
+{
+    fn validate(_: &Tonic) -> crate::result::Result<()> {
+        Ok(())
+    }
+    fn default() -> Self::Type {
+        Default::default()
+    }
+    fn write(buffer: &mut B, v: Self::Type) {
+        buffer.buffer_mut()[3].set_nibble(1, v.into_nibble());
+    }
+}
+
 impl core::default::Default for Tonic {
     /// Default value is [Tonic::C]
     fn default() -> Self {
