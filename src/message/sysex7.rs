@@ -38,8 +38,9 @@ const END_BYTE: u8 = 0xF7;
 struct Sysex7BytesBeginByte;
 
 impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for Sysex7BytesBeginByte {
-    type Type = ();
-    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
+    type Read = ();
+    type Write = Self::Read;
+    fn read(buffer: &B) -> crate::result::Result<Self::Read> {
         match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
             crate::buffer::UNIT_ID_U8 => {
                 if buffer.specialise_u8()[0] != START_BYTE {
@@ -52,7 +53,7 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for Sysex7Byte
             _ => unreachable!(),
         }
     }
-    fn write(buffer: &mut B, _: Self::Type) -> crate::result::Result<()>
+    fn write(buffer: &mut B, _: Self::Write) -> crate::result::Result<()>
     where
         B: crate::buffer::BufferMut,
     {
@@ -65,7 +66,7 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for Sysex7Byte
             _ => unreachable!(),
         }
     }
-    fn default() -> Self::Type {
+    fn default() -> Self::Write {
         ()
     }
 }
@@ -73,8 +74,9 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for Sysex7Byte
 struct Sysex7BytesEndByte;
 
 impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for Sysex7BytesEndByte {
-    type Type = ();
-    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
+    type Read = ();
+    type Write = Self::Read;
+    fn read(buffer: &B) -> crate::result::Result<Self::Read> {
         match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
             crate::buffer::UNIT_ID_U8 => buffer
                 .specialise_u8()
@@ -87,7 +89,7 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for Sysex7Byte
         }
     }
 
-    fn write(buffer: &mut B, _: Self::Type) -> crate::result::Result<()>
+    fn write(buffer: &mut B, _: Self::Write) -> crate::result::Result<()>
     where
         B: crate::buffer::BufferMut,
     {
@@ -102,7 +104,7 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for Sysex7Byte
         }
     }
 
-    fn default() -> Self::Type {
+    fn default() -> Self::Write {
         ()
     }
 }
@@ -110,8 +112,9 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for Sysex7Byte
 struct ConsistentStatuses;
 
 impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for ConsistentStatuses {
-    type Type = ();
-    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
+    type Read = ();
+    type Write = Self::Read;
+    fn read(buffer: &B) -> crate::result::Result<Self::Read> {
         if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U32 {
             message_helpers::validate_sysex_group_statuses(
                 buffer.specialise_u32(),
@@ -125,13 +128,13 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for Consistent
         }
         Ok(())
     }
-    fn write(_: &mut B, _: Self::Type) -> crate::result::Result<()>
+    fn write(_: &mut B, _: Self::Write) -> crate::result::Result<()>
     where
         B: crate::buffer::BufferMut,
     {
         Ok(())
     }
-    fn default() -> Self::Type {
+    fn default() -> Self::Write {
         ()
     }
 }
@@ -139,8 +142,9 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for Consistent
 struct ValidPacketSizes;
 
 impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for ValidPacketSizes {
-    type Type = ();
-    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
+    type Read = ();
+    type Write = Self::Read;
+    fn read(buffer: &B) -> crate::result::Result<Self::Read> {
         if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U32 {
             if buffer
                 .specialise_u32()
@@ -155,13 +159,13 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for ValidPacke
             Ok(())
         }
     }
-    fn write(_: &mut B, _: Self::Type) -> crate::result::Result<()>
+    fn write(_: &mut B, _: Self::Write) -> crate::result::Result<()>
     where
         B: crate::buffer::BufferMut,
     {
         Ok(())
     }
-    fn default() -> Self::Type {
+    fn default() -> Self::Write {
         ()
     }
 }
@@ -169,8 +173,9 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for ValidPacke
 struct GroupProperty;
 
 impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for GroupProperty {
-    type Type = numeric_types::u4;
-    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
+    type Read = numeric_types::u4;
+    type Write = Self::Read;
+    fn read(buffer: &B) -> crate::result::Result<Self::Read> {
         if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U32 {
             use crate::buffer::UmpPrivate;
             message_helpers::sysex_group_consistent_groups(
@@ -183,7 +188,7 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for GroupPrope
             Ok(Default::default())
         }
     }
-    fn write(buffer: &mut B, group: Self::Type) -> crate::result::Result<()>
+    fn write(buffer: &mut B, group: Self::Write) -> crate::result::Result<()>
     where
         B: crate::buffer::BufferMut,
     {
@@ -201,7 +206,7 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for GroupPrope
         }
         Ok(())
     }
-    fn default() -> Self::Type {
+    fn default() -> Self::Write {
         Default::default()
     }
 }
@@ -209,17 +214,18 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for GroupPrope
 struct SysexPayloadPlaceholder;
 
 impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for SysexPayloadPlaceholder {
-    type Type = ();
-    fn read(_: &B) -> crate::result::Result<Self::Type> {
+    type Read = ();
+    type Write = Self::Read;
+    fn read(_: &B) -> crate::result::Result<Self::Read> {
         Ok(())
     }
-    fn write(_: &mut B, _: Self::Type) -> crate::result::Result<()>
+    fn write(_: &mut B, _: Self::Write) -> crate::result::Result<()>
     where
         B: crate::buffer::BufferMut,
     {
         Ok(())
     }
-    fn default() -> Self::Type {
+    fn default() -> Self::Write {
         Default::default()
     }
 }

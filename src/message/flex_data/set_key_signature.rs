@@ -53,8 +53,9 @@ impl core::default::Default for SharpsFlats {
 struct SharpsFlatsProperty;
 
 impl<B: crate::buffer::Ump> crate::util::property::Property<B> for SharpsFlatsProperty {
-    type Type = SharpsFlats;
-    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
+    type Read = SharpsFlats;
+    type Write = Self::Read;
+    fn read(buffer: &B) -> crate::result::Result<Self::Read> {
         use crate::buffer::UmpPrivate;
         use SharpsFlats::*;
         Ok(match u8::from(buffer.buffer().message()[1].nibble(0)) {
@@ -64,7 +65,7 @@ impl<B: crate::buffer::Ump> crate::util::property::Property<B> for SharpsFlatsPr
             _ => unreachable!(),
         })
     }
-    fn write(buffer: &mut B, v: Self::Type) -> crate::result::Result<()>
+    fn write(buffer: &mut B, v: Self::Write) -> crate::result::Result<()>
     where
         B: crate::buffer::BufferMut,
     {
@@ -79,7 +80,7 @@ impl<B: crate::buffer::Ump> crate::util::property::Property<B> for SharpsFlatsPr
         );
         Ok(())
     }
-    fn default() -> Self::Type {
+    fn default() -> Self::Write {
         Default::default()
     }
 }

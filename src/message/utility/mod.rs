@@ -137,8 +137,9 @@ const STATUS_DELTA_CLOCKSTAMP: u8 = 0b0100;
 pub struct JitterReductionProperty;
 
 impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for JitterReductionProperty {
-    type Type = Option<JitterReduction>;
-    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
+    type Read = Option<JitterReduction>;
+    type Write = Self::Read;
+    fn read(buffer: &B) -> crate::result::Result<Self::Read> {
         use crate::buffer::{SpecialiseU32, UmpPrivate, UnitPrivate, UNIT_ID_U32};
         use crate::util::BitOps;
 
@@ -178,7 +179,7 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for JitterRedu
             _ => return Err(Error::InvalidData(ERR_UNKNOWN_UTILITY_STATUS)),
         }
     }
-    fn write(buffer: &mut B, jr: Self::Type) -> crate::result::Result<()>
+    fn write(buffer: &mut B, jr: Self::Write) -> crate::result::Result<()>
     where
         B: crate::buffer::BufferMut,
     {
@@ -214,7 +215,7 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for JitterRedu
 
         Ok(())
     }
-    fn default() -> Self::Type {
+    fn default() -> Self::Write {
         None
     }
 }
@@ -222,8 +223,9 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for JitterRedu
 struct TypeProperty;
 
 impl<B: crate::buffer::Ump> crate::util::property::Property<B> for TypeProperty {
-    type Type = ();
-    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
+    type Read = ();
+    type Write = Self::Read;
+    fn read(buffer: &B) -> crate::result::Result<Self::Read> {
         use crate::util::BitOps;
         if buffer.buffer()[0].nibble(0) != crate::u4::new(0x0) {
             Err(crate::Error::InvalidData("Incorrect ump message type"))
@@ -231,7 +233,7 @@ impl<B: crate::buffer::Ump> crate::util::property::Property<B> for TypeProperty 
             Ok(())
         }
     }
-    fn write(buffer: &mut B, _v: Self::Type) -> crate::result::Result<()>
+    fn write(buffer: &mut B, _v: Self::Write) -> crate::result::Result<()>
     where
         B: crate::buffer::BufferMut,
     {
@@ -239,7 +241,7 @@ impl<B: crate::buffer::Ump> crate::util::property::Property<B> for TypeProperty 
         buffer.buffer_mut()[0].set_nibble(0, crate::u4::new(0x0));
         Ok(())
     }
-    fn default() -> Self::Type {
+    fn default() -> Self::Write {
         ()
     }
 }
@@ -249,8 +251,9 @@ struct StatusProperty<const STATUS: u8>;
 impl<const STATUS: u8, B: crate::buffer::Ump> crate::util::property::Property<B>
     for StatusProperty<STATUS>
 {
-    type Type = ();
-    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
+    type Read = ();
+    type Write = Self::Read;
+    fn read(buffer: &B) -> crate::result::Result<Self::Read> {
         use crate::util::BitOps;
         if u8::from(buffer.buffer()[0].nibble(2)) == STATUS {
             Ok(())
@@ -258,7 +261,7 @@ impl<const STATUS: u8, B: crate::buffer::Ump> crate::util::property::Property<B>
             Err(crate::Error::InvalidData("Incorrect message status"))
         }
     }
-    fn write(buffer: &mut B, _v: Self::Type) -> crate::result::Result<()>
+    fn write(buffer: &mut B, _v: Self::Write) -> crate::result::Result<()>
     where
         B: crate::buffer::BufferMut,
     {
@@ -266,7 +269,7 @@ impl<const STATUS: u8, B: crate::buffer::Ump> crate::util::property::Property<B>
         buffer.buffer_mut()[0].set_nibble(2, crate::u4::new(STATUS));
         Ok(())
     }
-    fn default() -> Self::Type {
+    fn default() -> Self::Write {
         ()
     }
 }
@@ -274,12 +277,13 @@ impl<const STATUS: u8, B: crate::buffer::Ump> crate::util::property::Property<B>
 struct DataProperty;
 
 impl<B: crate::buffer::Ump> crate::util::property::Property<B> for DataProperty {
-    type Type = u16;
-    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
+    type Read = u16;
+    type Write = Self::Read;
+    fn read(buffer: &B) -> crate::result::Result<Self::Read> {
         use crate::util::BitOps;
         Ok(buffer.buffer()[0].word(1))
     }
-    fn write(buffer: &mut B, value: Self::Type) -> crate::result::Result<()>
+    fn write(buffer: &mut B, value: Self::Write) -> crate::result::Result<()>
     where
         B: crate::buffer::BufferMut,
     {
@@ -287,7 +291,7 @@ impl<B: crate::buffer::Ump> crate::util::property::Property<B> for DataProperty 
         buffer.buffer_mut()[0].set_word(1, value);
         Ok(())
     }
-    fn default() -> Self::Type {
+    fn default() -> Self::Write {
         Default::default()
     }
 }
