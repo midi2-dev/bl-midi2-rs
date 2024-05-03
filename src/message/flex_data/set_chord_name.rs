@@ -89,9 +89,7 @@ struct SetChordName {
     bass_alteration2: Option<Alteration>,
 }
 
-// impl<'a> FlexData for SetChordNameMessage<'a> {}
-// impl<'a> FlexData for SetChordNameBorrowed<'a> {}
-// impl FlexData for SetChordNameOwned {}
+impl<B: crate::buffer::Ump> flex_data::FlexData<B> for SetChordName<B> {}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SharpsFlats {

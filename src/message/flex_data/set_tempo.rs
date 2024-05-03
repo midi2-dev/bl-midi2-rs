@@ -31,9 +31,7 @@ struct SetTempo {
     number_of_10_nanosecond_units_per_quarter_note: u32,
 }
 
-// impl<'a> FlexData for SetTempoMessage<'a> {}
-// impl<'a> FlexData for SetTempoBorrowed<'a> {}
-// impl FlexData for SetTempoOwned {}
+impl<B: crate::buffer::Ump> flex_data::FlexData<B> for SetTempo<B> {}
 
 #[cfg(test)]
 mod tests {

@@ -143,20 +143,21 @@ pub enum Bank {
     PerformanceText,
 }
 
-// pub trait FlexData: Data {
-//     fn bank(&self) -> Bank {
-//         use Bank::*;
-//         match (self.data()[0] & 0x0000_FF00) >> 8 {
-//             0x0 => SetupAndPerformance,
-//             0x1 => MetadataText,
-//             0x2 => PerformanceText,
-//             _ => panic!(),
-//         }
-//     }
-//     fn status(&self) -> u8 {
-//         self.data()[0].octet(3)
-//     }
-// }
+pub trait FlexData<B: crate::buffer::Ump>: crate::traits::Data<B> {
+    fn bank(&self) -> Bank {
+        use crate::buffer::UmpPrivate;
+        use Bank::*;
+        match (self.data().message()[0] & 0x0000_FF00) >> 8 {
+            0x0 => SetupAndPerformance,
+            0x1 => MetadataText,
+            0x2 => PerformanceText,
+            _ => panic!(),
+        }
+    }
+    fn status(&self) -> u8 {
+        self.data()[0].octet(3)
+    }
+}
 
 pub struct StatusProperty<const STATUS: u8>;
 

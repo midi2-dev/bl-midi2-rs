@@ -41,14 +41,12 @@ struct SetTimeSignature {
     number_of_32nd_notes: u8,
 }
 
-// impl<'a> FlexData for SetTimeSignatureMessage<'a> {}
-// impl<'a> FlexData for SetTimeSignatureBorrowed<'a> {}
-// impl FlexData for SetTimeSignatureOwned {}
+impl<B: crate::buffer::Ump> flex_data::FlexData<B> for SetTimeSignature<B> {}
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{numeric_types::u4, traits::Grouped};
+    use crate::{message::flex_data::FlexData, numeric_types::u4, traits::Grouped};
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -91,6 +89,26 @@ mod tests {
                 .unwrap()
                 .number_of_32nd_notes(),
             0x7E,
+        );
+    }
+
+    #[test]
+    fn bank() {
+        assert_eq!(
+            SetTimeSignature::try_from(&[0xDA10_0001, 0xCD90_7E00,][..])
+                .unwrap()
+                .bank(),
+            flex_data::Bank::SetupAndPerformance,
+        );
+    }
+
+    #[test]
+    fn status() {
+        assert_eq!(
+            SetTimeSignature::try_from(&[0xDA10_0001, 0xCD90_7E00,][..])
+                .unwrap()
+                .status(),
+            STATUS,
         );
     }
 }
