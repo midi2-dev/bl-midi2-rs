@@ -348,12 +348,16 @@ fn alteration_into_octet(alteration: Option<Alteration>) -> u8 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{message::flex_data::tonic, traits::Grouped};
+    use crate::{
+        message::{flex_data::tonic, utility::JitterReduction},
+        traits::{Grouped, JitterReduced},
+    };
     use pretty_assertions::assert_eq;
 
     #[test]
     fn setters() {
         let mut message = SetChordName::new_arr();
+        message.set_jitter_reduction(Some(JitterReduction::Timestamp(0x1234)));
         message.set_group(u4::new(0x7));
         message.set_optional_channel(Some(u4::new(0xB)));
         message.set_tonic_sharps_flats(SharpsFlats::Flat);
@@ -370,7 +374,13 @@ mod tests {
         message.set_bass_alteration2(Some(Alteration::Subtract(u4::new(0x0))));
         assert_eq!(
             message,
-            SetChordName([0x0, 0xD70B_0006, 0xF703_3519, 0x4B00_0000, 0x110A_0020,]),
+            SetChordName([
+                0x0020_1234,
+                0xD70B_0006,
+                0xF703_3519,
+                0x4B00_0000,
+                0x110A_0020,
+            ]),
         );
     }
 
@@ -501,6 +511,34 @@ mod tests {
                 .unwrap()
                 .bass_alteration2(),
             Some(Alteration::Subtract(u4::new(0x0))),
+        );
+    }
+
+    #[test]
+    fn no_jitter_reduction() {
+        assert_eq!(
+            SetChordName::try_from(&[0xD70B_0006, 0xF703_3519, 0x4B00_0000, 0x110A_0020,][..])
+                .unwrap()
+                .jitter_reduction(),
+            None,
+        );
+    }
+
+    #[test]
+    fn jitter_reduction() {
+        assert_eq!(
+            SetChordName::try_from(
+                &[
+                    0x0020_1234,
+                    0xD70B_0006,
+                    0xF703_3519,
+                    0x4B00_0000,
+                    0x110A_0020,
+                ][..]
+            )
+            .unwrap()
+            .jitter_reduction(),
+            Some(JitterReduction::Timestamp(0x1234)),
         );
     }
 }
