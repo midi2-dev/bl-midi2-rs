@@ -6,10 +6,10 @@ use crate::{
 // pub mod flex_data_group;
 
 pub mod set_chord_name;
-// pub mod set_key_signature;
-// pub mod set_metronome;
-// pub mod set_tempo;
-// pub mod set_time_signature;
+pub mod set_key_signature;
+pub mod set_metronome;
+pub mod set_tempo;
+pub mod set_time_signature;
 // pub mod text;
 pub mod tonic;
 
@@ -272,6 +272,41 @@ impl<B: Ump> Property<B> for OptionalChannelProperty {
         Default::default()
     }
 }
+
+struct NoChannelProperty;
+
+impl<B: Ump> Property<B> for NoChannelProperty {
+    type Type = ();
+    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
+        use crate::buffer::UmpPrivate;
+        use crate::numeric_types::u2;
+        if buffer.buffer().message()[0].crumb(5) != u2::new(0x0) {
+            Ok(())
+        } else {
+            Err(crate::Error::InvalidData(
+                "Address field should be non zero.",
+            ))
+        }
+    }
+    fn write(buffer: &mut B, _: Self::Type) -> crate::result::Result<()>
+    where
+        B: crate::buffer::BufferMut,
+    {
+        use crate::buffer::UmpPrivateMut;
+        use crate::numeric_types::u2;
+        use crate::numeric_types::u4;
+
+        let mut buffer_slice = buffer.buffer_mut();
+        let data = buffer_slice.message_mut();
+        data[0].set_crumb(5, u2::new(0x1));
+        data[0].set_nibble(3, u4::new(0x0));
+        Ok(())
+    }
+    fn default() -> Self::Type {
+        Default::default()
+    }
+}
+
 // fn bank_from_buffer<B: Ump>(buffer: &B) -> u8 {
 //     buffer.buffer()[0].octet(2)
 // }

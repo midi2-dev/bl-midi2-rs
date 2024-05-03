@@ -1,63 +1,91 @@
-use crate::message::flex_data::{
-    FlexData, SETUP_AND_PERFORMANCE_BANK, TYPE_CODE as FLEX_DATA_TYPE,
+use crate::{
+    message::{
+        common_properties,
+        flex_data::{self, UMP_MESSAGE_TYPE},
+    },
+    util::schema,
 };
 
-const STATUS: u32 = 0x2;
+const STATUS: u8 = 0x2;
 
-#[midi2_proc::generate_message(Grouped)]
+#[midi2_proc::generate_message(FixedSize, MinSizeUmp(3))]
 struct SetMetronome {
-    ump_type:
-        Property<NumericalConstant<FLEX_DATA_TYPE>, UmpSchema<0xF000_0000, 0x0, 0x0, 0x0>, ()>,
-    format: Property<NumericalConstant<0x0>, UmpSchema<0x00C0_0000, 0x0, 0x0, 0x0>, ()>,
-    address: Property<NumericalConstant<0x1>, UmpSchema<0x0030_0000, 0x0, 0x0, 0x0>, ()>,
-    bank: Property<
-        NumericalConstant<SETUP_AND_PERFORMANCE_BANK>,
-        UmpSchema<0x0000_FF00, 0x0, 0x0, 0x0>,
-        (),
-    >,
-    status: Property<NumericalConstant<STATUS>, UmpSchema<0x0000_00FF, 0x0, 0x0, 0x0>, ()>,
-    number_of_clocks_per_primary_click: Property<u8, UmpSchema<0x0, 0xFF00_0000, 0x0, 0x0>, ()>,
-    bar_accent1: Property<u8, UmpSchema<0x0, 0x00FF_0000, 0x0, 0x0>, ()>,
-    bar_accent2: Property<u8, UmpSchema<0x0, 0x0000_FF00, 0x0, 0x0>, ()>,
-    bar_accent3: Property<u8, UmpSchema<0x0, 0x0000_00FF, 0x0, 0x0>, ()>,
-    number_of_subdivision_clicks1: Property<u8, UmpSchema<0x0, 0x0, 0xFF00_0000, 0x0>, ()>,
-    number_of_subdivision_clicks2: Property<u8, UmpSchema<0x0, 0x0, 0x00FF_0000, 0x0>, ()>,
+    #[property(crate::message::utility::JitterReductionProperty)]
+    jitter_reduction: Option<crate::message::utility::JitterReduction>,
+    #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
+    ump_type: (),
+    #[property(common_properties::GroupProperty)]
+    group: crate::numeric_types::u4,
+    #[property(flex_data::FormatProperty<{flex_data::COMPLETE_FORMAT}>)]
+    format: (),
+    #[property(flex_data::BankProperty<{flex_data::SETUP_AND_PERFORMANCE_BANK}>)]
+    bank: (),
+    #[property(flex_data::StatusProperty<{STATUS}>)]
+    status: (),
+    #[property(flex_data::NoChannelProperty)]
+    no_channel: (),
+    #[property(common_properties::UmpSchemaProperty<
+        u8,
+        schema::Ump<0x0, 0xFF00_0000, 0x0, 0x0>,
+    >)]
+    number_of_clocks_per_primary_click: u8,
+    #[property(common_properties::UmpSchemaProperty<
+        u8,
+        schema::Ump<0x0, 0x00FF_0000, 0x0, 0x0>,
+    >)]
+    bar_accent1: u8,
+    #[property(common_properties::UmpSchemaProperty<
+        u8,
+        schema::Ump<0x0, 0x0000_FF00, 0x0, 0x0>,
+    >)]
+    bar_accent2: u8,
+    #[property(common_properties::UmpSchemaProperty<
+        u8,
+        schema::Ump<0x0, 0x0000_00FF, 0x0, 0x0>,
+    >)]
+    bar_accent3: u8,
+    #[property(common_properties::UmpSchemaProperty<
+        u8,
+        schema::Ump<0x0, 0x0, 0xFF00_0000, 0x0>,
+    >)]
+    number_of_subdivision_clicks1: u8,
+    #[property(common_properties::UmpSchemaProperty<
+        u8,
+        schema::Ump<0x0, 0x0, 0x00FF_0000, 0x0>,
+    >)]
+    number_of_subdivision_clicks2: u8,
 }
 
-impl<'a> FlexData for SetMetronomeMessage<'a> {}
-impl<'a> FlexData for SetMetronomeBorrowed<'a> {}
-impl FlexData for SetMetronomeOwned {}
+// impl<'a> FlexData for SetMetronomeMessage<'a> {}
+// impl<'a> FlexData for SetMetronomeBorrowed<'a> {}
+// impl FlexData for SetMetronomeOwned {}
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{numeric_types::u4, traits::Grouped};
     use pretty_assertions::assert_eq;
 
     #[test]
-    fn builder() {
+    fn setters() {
+        let mut message = SetMetronome::new_arr();
+        message.set_group(u4::new(0x1));
+        message.set_number_of_clocks_per_primary_click(0x9B);
+        message.set_bar_accent1(0x4A);
+        message.set_bar_accent2(0xFE);
+        message.set_bar_accent3(0x56);
+        message.set_number_of_subdivision_clicks1(0xB8);
+        message.set_number_of_subdivision_clicks2(0x1B);
         assert_eq!(
-            SetMetronomeMessage::builder()
-                .group(u4::new(0x1))
-                .number_of_clocks_per_primary_click(0x9B)
-                .bar_accent1(0x4A)
-                .bar_accent2(0xFE)
-                .bar_accent3(0x56)
-                .number_of_subdivision_clicks1(0xB8)
-                .number_of_subdivision_clicks2(0x1B)
-                .build(),
-            Ok(SetMetronomeMessage::Owned(SetMetronomeOwned([
-                0xD110_0002,
-                0x9B4A_FE56,
-                0xB81B_0000,
-                0x0,
-            ]))),
+            message,
+            SetMetronome([0x0, 0xD110_0002, 0x9B4A_FE56, 0xB81B_0000, 0x0,]),
         );
     }
 
     #[test]
     fn number_of_clocks_per_primary_click() {
         assert_eq!(
-            SetMetronomeMessage::from_data(&[0xD110_0002, 0x9B4A_FE56, 0xB81B_0000])
+            SetMetronome::try_from(&[0xD110_0002, 0x9B4A_FE56, 0xB81B_0000][..])
                 .unwrap()
                 .number_of_clocks_per_primary_click(),
             0x9B,
@@ -67,7 +95,7 @@ mod tests {
     #[test]
     fn bar_accent1() {
         assert_eq!(
-            SetMetronomeMessage::from_data(&[0xD110_0002, 0x9B4A_FE56, 0xB81B_0000])
+            SetMetronome::try_from(&[0xD110_0002, 0x9B4A_FE56, 0xB81B_0000][..])
                 .unwrap()
                 .bar_accent1(),
             0x4A,
@@ -77,7 +105,7 @@ mod tests {
     #[test]
     fn bar_accent2() {
         assert_eq!(
-            SetMetronomeMessage::from_data(&[0xD110_0002, 0x9B4A_FE56, 0xB81B_0000])
+            SetMetronome::try_from(&[0xD110_0002, 0x9B4A_FE56, 0xB81B_0000][..])
                 .unwrap()
                 .bar_accent2(),
             0xFE,
@@ -87,7 +115,7 @@ mod tests {
     #[test]
     fn bar_accent3() {
         assert_eq!(
-            SetMetronomeMessage::from_data(&[0xD110_0002, 0x9B4A_FE56, 0xB81B_0000])
+            SetMetronome::try_from(&[0xD110_0002, 0x9B4A_FE56, 0xB81B_0000][..])
                 .unwrap()
                 .bar_accent3(),
             0x56,
@@ -97,7 +125,7 @@ mod tests {
     #[test]
     fn number_of_subdivision_clicks1() {
         assert_eq!(
-            SetMetronomeMessage::from_data(&[0xD110_0002, 0x9B4A_FE56, 0xB81B_0000])
+            SetMetronome::try_from(&[0xD110_0002, 0x9B4A_FE56, 0xB81B_0000][..])
                 .unwrap()
                 .number_of_subdivision_clicks1(),
             0xB8,
@@ -107,7 +135,7 @@ mod tests {
     #[test]
     fn number_of_subdivision_clicks2() {
         assert_eq!(
-            SetMetronomeMessage::from_data(&[0xD110_0002, 0x9B4A_FE56, 0xB81B_0000])
+            SetMetronome::try_from(&[0xD110_0002, 0x9B4A_FE56, 0xB81B_0000][..])
                 .unwrap()
                 .number_of_subdivision_clicks2(),
             0x1B,

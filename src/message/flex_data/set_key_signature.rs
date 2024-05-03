@@ -1,31 +1,43 @@
 use crate::{
-    message::flex_data::{
-        tonic::Tonic, FlexData, SETUP_AND_PERFORMANCE_BANK, TYPE_CODE as FLEX_DATA_TYPE,
+    message::{
+        common_properties,
+        flex_data::{self, UMP_MESSAGE_TYPE},
     },
-    util::Truncate,
+    numeric_types::{u3, u4},
+    util::{schema, BitOps},
 };
 
-const STATUS: u32 = 0x5;
+const STATUS: u8 = 0x5;
 
-#[midi2_proc::generate_message(Grouped)]
+#[midi2_proc::generate_message(FixedSize, MinSizeUmp(2))]
 struct SetKeySignature {
-    ump_type:
-        Property<NumericalConstant<FLEX_DATA_TYPE>, UmpSchema<0xF000_0000, 0x0, 0x0, 0x0>, ()>,
-    format: Property<NumericalConstant<0x0>, UmpSchema<0x00C0_0000, 0x0, 0x0, 0x0>, ()>,
-    bank: Property<
-        NumericalConstant<SETUP_AND_PERFORMANCE_BANK>,
-        UmpSchema<0x0000_FF00, 0x0, 0x0, 0x0>,
-        (),
-    >,
-    status: Property<NumericalConstant<STATUS>, UmpSchema<0x0000_00FF, 0x0, 0x0, 0x0>, ()>,
-    channel: Property<Option<u4>, UmpSchema<0x003F_0000, 0x0, 0x0, 0x0>, ()>,
-    sharps_flats: Property<SharpsFlats, UmpSchema<0x0, 0xF000_0000, 0x0, 0x0>, ()>,
-    tonic: Property<Tonic, UmpSchema<0x0, 0x0F00_0000, 0x0, 0x0>, ()>,
+    #[property(crate::message::utility::JitterReductionProperty)]
+    jitter_reduction: Option<crate::message::utility::JitterReduction>,
+    #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
+    ump_type: (),
+    #[property(common_properties::GroupProperty)]
+    group: crate::numeric_types::u4,
+    #[property(flex_data::OptionalChannelProperty)]
+    optional_channel: Option<crate::numeric_types::u4>,
+    #[property(flex_data::FormatProperty<{flex_data::COMPLETE_FORMAT}>)]
+    format: (),
+    #[property(flex_data::BankProperty<{flex_data::SETUP_AND_PERFORMANCE_BANK}>)]
+    bank: (),
+    #[property(flex_data::StatusProperty<{STATUS}>)]
+    status: (),
+    #[property(common_properties::UmpSchemaProperty<
+        flex_data::tonic::Tonic,
+        schema::Ump<0x0, 0x0F00_0000, 0x0, 0x0>,
+    >)]
+    tonic: flex_data::tonic::Tonic,
+    #[property(SharpsFlatsProperty)]
+    sharps_flats: SharpsFlats,
 }
 
-impl<'a> FlexData for SetKeySignatureMessage<'a> {}
-impl<'a> FlexData for SetKeySignatureBorrowed<'a> {}
-impl FlexData for SetKeySignatureOwned {}
+// impl<'a> FlexData for SetKeySignatureMessage<'a> {}
+// impl<'a> FlexData for SetKeySignatureBorrowed<'a> {}
+// impl FlexData for SetKeySignatureOwned {}
+//
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SharpsFlats {
@@ -41,118 +53,109 @@ impl core::default::Default for SharpsFlats {
     }
 }
 
-impl Property<SharpsFlats, UmpSchema<0x0, 0xF000_0000, 0x0, 0x0>, ()> for Ump {
-    fn get(data: &[<Ump as Buffer>::Data]) -> SharpsFlats {
+struct SharpsFlatsProperty;
+
+impl<B: crate::buffer::Ump> crate::util::property::Property<B> for SharpsFlatsProperty {
+    type Type = SharpsFlats;
+    fn read(buffer: &B) -> crate::result::Result<Self::Type> {
+        use crate::buffer::UmpPrivate;
         use SharpsFlats::*;
-        match u8::from(data[1].nibble(0)) {
-            v @ 0x0..=0x7 => Sharps(v.truncate()),
-            // bug in the ux::u4 Not operator means we must go via u8 here
-            v @ 0x9..=0xF => Flats((!(v - 1)).truncate()),
+        Ok(match u8::from(buffer.buffer().message()[1].nibble(0)) {
+            v @ 0x0..=0x7 => Sharps(u3::new(v)),
+            v @ 0x9..=0xF => Flats(u3::new(!(v - 1) & 0b0111)),
             0x8 => NonStandard,
-            _ => panic!(),
-        }
+            _ => unreachable!(),
+        })
     }
-    fn write(data: &mut [<Ump as Buffer>::Data], v: SharpsFlats) {
-        data[1].set_nibble(
+    fn write(buffer: &mut B, v: Self::Type) -> crate::result::Result<()>
+    where
+        B: crate::buffer::BufferMut,
+    {
+        use crate::buffer::UmpPrivateMut;
+        buffer.buffer_mut().message_mut()[1].set_nibble(
             0,
             match v {
                 SharpsFlats::Sharps(v) => u4::from(v),
-                // bug in the ux::u4 Not operator means we must go via u8 here
                 SharpsFlats::Flats(v) => u4::new((!u8::from(v) & 0b0000_1111) + 1),
                 SharpsFlats::NonStandard => u4::new(0x8),
             },
         );
+        Ok(())
+    }
+    fn default() -> Self::Type {
+        Default::default()
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::traits::Grouped;
     use pretty_assertions::assert_eq;
 
     #[test]
-    fn builder() {
+    fn setters() {
+        let mut message = SetKeySignature::new_arr();
+        message.set_group(u4::new(0x4));
+        message.set_tonic(flex_data::tonic::Tonic::D);
+        message.set_sharps_flats(SharpsFlats::Sharps(u3::new(5)));
         assert_eq!(
-            SetKeySignatureMessage::builder()
-                .group(u4::new(0x4))
-                .tonic(Tonic::D)
-                .sharps_flats(SharpsFlats::Sharps(u3::new(5)))
-                .build(),
-            Ok(SetKeySignatureMessage::Owned(SetKeySignatureOwned([
-                0xD410_0005,
-                0x5400_0000,
-                0x0,
-                0x0,
-            ]))),
+            message,
+            SetKeySignature([0x0, 0xD410_0005, 0x5400_0000, 0x0, 0x0,]),
         );
     }
 
     #[test]
-    fn builder_flats() {
+    fn set_flats() {
+        let mut message = SetKeySignature::new_arr();
+        message.set_group(u4::new(0x4));
+        message.set_tonic(flex_data::tonic::Tonic::D);
+        message.set_sharps_flats(SharpsFlats::Flats(u3::new(5)));
         assert_eq!(
-            SetKeySignatureMessage::builder()
-                .group(u4::new(0x4))
-                .tonic(Tonic::D)
-                .sharps_flats(SharpsFlats::Flats(u3::new(5)))
-                .build(),
-            Ok(SetKeySignatureMessage::Owned(SetKeySignatureOwned([
-                0xD410_0005,
-                0xB400_0000,
-                0x0,
-                0x0,
-            ]))),
+            message,
+            SetKeySignature([0x0, 0xD410_0005, 0xB400_0000, 0x0, 0x0,]),
         );
     }
 
     #[test]
     fn builder_non_standard() {
+        let mut message = SetKeySignature::new_arr();
+        message.set_group(u4::new(0x4));
+        message.set_tonic(flex_data::tonic::Tonic::NonStandard);
+        message.set_sharps_flats(SharpsFlats::NonStandard);
         assert_eq!(
-            SetKeySignatureMessage::builder()
-                .group(u4::new(0x4))
-                .tonic(Tonic::NonStandard)
-                .sharps_flats(SharpsFlats::NonStandard)
-                .build(),
-            Ok(SetKeySignatureMessage::Owned(SetKeySignatureOwned([
-                0xD410_0005,
-                0x8000_0000,
-                0x0,
-                0x0,
-            ]))),
+            message,
+            SetKeySignature([0x0, 0xD410_0005, 0x8000_0000, 0x0, 0x0,]),
         );
     }
 
     #[test]
     fn builder_channel() {
+        let mut message = SetKeySignature::new_arr();
+        message.set_group(u4::new(0x4));
+        message.set_tonic(flex_data::tonic::Tonic::NonStandard);
+        message.set_sharps_flats(SharpsFlats::NonStandard);
+        message.set_optional_channel(Some(u4::new(0xD)));
         assert_eq!(
-            SetKeySignatureMessage::builder()
-                .group(u4::new(0x4))
-                .channel(Some(u4::new(0xD)))
-                .tonic(Tonic::NonStandard)
-                .sharps_flats(SharpsFlats::NonStandard)
-                .build(),
-            Ok(SetKeySignatureMessage::Owned(SetKeySignatureOwned([
-                0xD40D_0005,
-                0x8000_0000,
-                0x0,
-                0x0,
-            ]))),
+            message,
+            SetKeySignature([0x0, 0xD40D_0005, 0x8000_0000, 0x0, 0x0,]),
         );
     }
 
     #[test]
     fn tonic() {
         assert_eq!(
-            SetKeySignatureMessage::from_data(&[0xD410_0005, 0x5400_0000])
+            SetKeySignature::try_from(&[0xD410_0005, 0x5400_0000][..])
                 .unwrap()
                 .tonic(),
-            Tonic::D,
+            flex_data::tonic::Tonic::D,
         );
     }
 
     #[test]
     fn sharps_flats() {
         assert_eq!(
-            SetKeySignatureMessage::from_data(&[0xD410_0005, 0x5400_0000])
+            SetKeySignature::try_from(&[0xD410_0005, 0x5400_0000][..])
                 .unwrap()
                 .sharps_flats(),
             SharpsFlats::Sharps(u3::new(5)),
@@ -162,7 +165,7 @@ mod tests {
     #[test]
     fn sharps_flats_with_flats() {
         assert_eq!(
-            SetKeySignatureMessage::from_data(&[0xD410_0005, 0xB400_0000])
+            SetKeySignature::try_from(&[0xD410_0005, 0xB400_0000][..])
                 .unwrap()
                 .sharps_flats(),
             SharpsFlats::Flats(u3::new(5)),
@@ -172,7 +175,7 @@ mod tests {
     #[test]
     fn sharps_flats_non_standard() {
         assert_eq!(
-            SetKeySignatureMessage::from_data(&[0xD410_0005, 0x8000_0000])
+            SetKeySignature::try_from(&[0xD410_0005, 0x8000_0000][..])
                 .unwrap()
                 .sharps_flats(),
             SharpsFlats::NonStandard,
@@ -182,9 +185,9 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            SetKeySignatureMessage::from_data(&[0xD40D_0005, 0x8000_0000])
+            SetKeySignature::try_from(&[0xD40D_0005, 0x8000_0000][..])
                 .unwrap()
-                .channel(),
+                .optional_channel(),
             Some(u4::new(0xD)),
         );
     }
@@ -192,9 +195,9 @@ mod tests {
     #[test]
     fn no_channel() {
         assert_eq!(
-            SetKeySignatureMessage::from_data(&[0xD410_0005, 0x8000_0000])
+            SetKeySignature::try_from(&[0xD410_0005, 0x8000_0000][..])
                 .unwrap()
-                .channel(),
+                .optional_channel(),
             None,
         );
     }

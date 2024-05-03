@@ -1,79 +1,64 @@
-use crate::message::flex_data::{
-    FlexData, SETUP_AND_PERFORMANCE_BANK, TYPE_CODE as FLEX_DATA_TYPE,
+use crate::{
+    message::{
+        common_properties,
+        flex_data::{self, UMP_MESSAGE_TYPE},
+    },
+    util::schema,
 };
 
-const STATUS: u32 = 0x0;
+const STATUS: u8 = 0x0;
 
-#[midi2_proc::generate_message(Grouped)]
+#[midi2_proc::generate_message(FixedSize, MinSizeUmp(2))]
 struct SetTempo {
-    ump_type:
-        Property<NumericalConstant<FLEX_DATA_TYPE>, UmpSchema<0xF000_0000, 0x0, 0x0, 0x0>, ()>,
-    format: Property<NumericalConstant<0x0>, UmpSchema<0x00C0_0000, 0x0, 0x0, 0x0>, ()>,
-    address: Property<NumericalConstant<0x1>, UmpSchema<0x0030_0000, 0x0, 0x0, 0x0>, ()>,
-    bank: Property<
-        NumericalConstant<SETUP_AND_PERFORMANCE_BANK>,
-        UmpSchema<0x0000_FF00, 0x0, 0x0, 0x0>,
-        (),
-    >,
-    status: Property<NumericalConstant<STATUS>, UmpSchema<0x0000_00FF, 0x0, 0x0, 0x0>, ()>,
-    number_of_10_nanosecond_units_per_quarter_note:
-        Property<u32, UmpSchema<0x0, 0xFFFF_FFFF, 0x0, 0x0>, ()>,
+    #[property(crate::message::utility::JitterReductionProperty)]
+    jitter_reduction: Option<crate::message::utility::JitterReduction>,
+    #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
+    ump_type: (),
+    #[property(common_properties::GroupProperty)]
+    group: crate::numeric_types::u4,
+    #[property(flex_data::FormatProperty<{flex_data::COMPLETE_FORMAT}>)]
+    format: (),
+    #[property(flex_data::BankProperty<{flex_data::SETUP_AND_PERFORMANCE_BANK}>)]
+    bank: (),
+    #[property(flex_data::StatusProperty<{STATUS}>)]
+    status: (),
+    #[property(flex_data::NoChannelProperty)]
+    no_channel: (),
+    #[property(common_properties::UmpSchemaProperty<
+        u32,
+        schema::Ump<0x0, 0xFFFF_FFFF, 0x0, 0x0>,
+    >)]
+    number_of_10_nanosecond_units_per_quarter_note: u32,
 }
 
-impl<'a> FlexData for SetTempoMessage<'a> {}
-impl<'a> FlexData for SetTempoBorrowed<'a> {}
-impl FlexData for SetTempoOwned {}
+// impl<'a> FlexData for SetTempoMessage<'a> {}
+// impl<'a> FlexData for SetTempoBorrowed<'a> {}
+// impl FlexData for SetTempoOwned {}
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::message::flex_data::Bank;
+    use crate::{numeric_types::u4, traits::Grouped};
     use pretty_assertions::assert_eq;
 
     #[test]
     fn builder() {
+        let mut message = SetTempo::new_arr();
+        message.set_group(u4::new(0x7));
+        message.set_number_of_10_nanosecond_units_per_quarter_note(0xF751FE05);
         assert_eq!(
-            SetTempoMessage::builder()
-                .group(u4::new(0x7))
-                .number_of_10_nanosecond_units_per_quarter_note(0xF751FE05)
-                .build(),
-            Ok(SetTempoMessage::Owned(SetTempoOwned([
-                0xD710_0000,
-                0xF751_FE05,
-                0x0,
-                0x0,
-            ]))),
+            message,
+            SetTempo([0x0, 0xD710_0000, 0xF751_FE05, 0x0, 0x0,]),
         );
     }
 
     #[test]
     fn number_of_10_nanosecond_units_per_quarter_note() {
         assert_eq!(
-            SetTempoMessage::from_data(&[0xD710_0000, 0xF751_FE05,])
+            SetTempo::try_from(&[0xD710_0000, 0xF751_FE05,][..])
                 .unwrap()
                 .number_of_10_nanosecond_units_per_quarter_note(),
             0xF751FE05,
-        );
-    }
-
-    #[test]
-    fn bank() {
-        assert_eq!(
-            SetTempoMessage::from_data(&[0xD710_0000, 0xF751_FE05,])
-                .unwrap()
-                .bank(),
-            Bank::SetupAndPerformance,
-        );
-    }
-
-    #[test]
-    fn status() {
-        assert_eq!(
-            STATUS,
-            SetTempoMessage::from_data(&[0xD710_0000, 0xF751_FE05,])
-                .unwrap()
-                .status()
-                .into(),
         );
     }
 }
