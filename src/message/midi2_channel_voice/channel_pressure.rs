@@ -1,16 +1,29 @@
-const OP_CODE: u32 = 0b1101;
-const MIDI2_CHANNEL_VOICE_TYPE: u32 = 0x4;
+use crate::{
+    message::{common_properties, midi2_channel_voice::UMP_MESSAGE_TYPE},
+    numeric_types::{u4, u7},
+    util::schema,
+};
 
-#[midi2_proc::generate_message(Grouped, Channeled)]
+pub(crate) const STATUS: u8 = 0b1101;
+
+#[midi2_proc::generate_message(FixedSize, MinSizeUmp(2))]
 struct ChannelPressure {
-    ump_type: Property<
-        NumericalConstant<MIDI2_CHANNEL_VOICE_TYPE>,
-        UmpSchema<0xF000_0000, 0x0, 0x0, 0x0>,
-        (),
-    >,
-    status: Property<NumericalConstant<OP_CODE>, UmpSchema<0x00F0_0000, 0x0, 0x0, 0x0>, ()>,
-    channel: Property<u4, UmpSchema<0x000F_0000, 0x0, 0x0, 0x0>, ()>,
-    channel_pressure_data: Property<u32, UmpSchema<0x0000_0000, 0xFFFF_FFFF, 0x0, 0x0>, ()>,
+    #[property(crate::message::utility::JitterReductionProperty)]
+    jitter_reduction: Option<crate::message::utility::JitterReduction>,
+    #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
+    ump_type: (),
+    #[property(common_properties::ChannelVoiceStatusProperty<STATUS>)]
+    status: (),
+    #[property(common_properties::UmpSchemaProperty<u4, schema::Ump<0x000F_0000, 0x0, 0x0, 0x0>>)]
+    channel: u4,
+    #[property(common_properties::GroupProperty)]
+    group: u4,
+    #[property(common_properties::UmpSchemaProperty<u7, schema::Ump<0x0000_7F00, 0x0, 0x0, 0x0>>)]
+    bank: u7,
+    #[property(common_properties::UmpSchemaProperty<u7, schema::Ump<0x0000_007F, 0x0, 0x0, 0x0>>)]
+    index: u7,
+    #[property(common_properties::UmpSchemaProperty<u32, schema::Ump<0x0000_0000, 0xFFFF_FFFF, 0x0, 0x0>>)]
+    channel_pressure_data: u32,
 }
 
 #[cfg(test)]
@@ -19,46 +32,24 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     #[test]
-    fn builder() {
-        assert_eq!(
-            ChannelPressureMessage::builder()
-                .group(u4::new(0xE))
-                .channel(u4::new(0xD))
-                .channel_pressure_data(0xDE0DE0F2)
-                .build(),
-            Ok(ChannelPressureMessage::Owned(ChannelPressureOwned([
-                0x4EDD_0000,
-                0xDE0D_E0F2,
-                0x0,
-                0x0
-            ]))),
-        );
-    }
+    fn setter() {
+        use crate::traits::{Channeled, Grouped};
 
-    #[test]
-    fn group() {
-        assert_eq!(
-            ChannelPressureMessage::from_data(&[0x4EDD_0000, 0xDE0D_E0F2, 0x0, 0x0])
-                .unwrap()
-                .group(),
-            u4::new(0xE),
-        );
-    }
+        let mut message = ChannelPressure::new_arr();
+        message.set_group(u4::new(0xE));
+        message.set_channel(u4::new(0xD));
+        message.set_channel_pressure_data(0xDE0DE0F2);
 
-    #[test]
-    fn channel() {
         assert_eq!(
-            ChannelPressureMessage::from_data(&[0x4EDD_0000, 0xDE0D_E0F2, 0x0, 0x0])
-                .unwrap()
-                .channel(),
-            u4::new(0xD),
+            message,
+            ChannelPressure([0x0, 0x4EDD_0000, 0xDE0D_E0F2, 0x0, 0x0]),
         );
     }
 
     #[test]
     fn channel_pressure_data() {
         assert_eq!(
-            ChannelPressureMessage::from_data(&[0x4EDD_0000, 0xDE0D_E0F2, 0x0, 0x0])
+            ChannelPressure::try_from(&[0x4EDD_0000, 0xDE0D_E0F2][..])
                 .unwrap()
                 .channel_pressure_data(),
             0xDE0DE0F2,

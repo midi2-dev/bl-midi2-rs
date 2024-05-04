@@ -60,7 +60,7 @@ pub fn write_attribute(bytes: &mut [u32], attr: Option<Attribute>) -> &mut [u32]
     &mut bytes[..2]
 }
 
-struct AttributeProperty;
+pub struct AttributeProperty;
 
 impl<B: crate::buffer::Ump> property::Property<B> for AttributeProperty {
     type Type = Option<Attribute>;
@@ -68,10 +68,12 @@ impl<B: crate::buffer::Ump> property::Property<B> for AttributeProperty {
 
 impl<'a, B: crate::buffer::Ump> property::ReadProperty<'a, B> for AttributeProperty {
     fn read(buffer: &'a B) -> Self::Type {
-        from_ump(buffer.buffer())
+        use crate::buffer::UmpPrivate;
+        from_ump(buffer.buffer().message())
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
-        validate_ump(buffer.buffer())
+        use crate::buffer::UmpPrivate;
+        validate_ump(buffer.buffer().message())
     }
 }
 
@@ -82,7 +84,8 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> property::WriteProperty<B
         Ok(())
     }
     fn write(buffer: &mut B, v: Self::Type) {
-        write_attribute(buffer.buffer_mut(), v);
+        use crate::buffer::UmpPrivateMut;
+        write_attribute(buffer.buffer_mut().message_mut(), v);
     }
     fn default() -> Self::Type {
         Default::default()
