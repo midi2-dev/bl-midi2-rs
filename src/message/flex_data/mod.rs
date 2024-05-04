@@ -6,7 +6,6 @@ use crate::{
     },
 };
 
-// pub mod flex_data_group;
 mod text;
 
 pub mod set_chord_name;
@@ -16,6 +15,720 @@ pub mod set_tempo;
 pub mod set_time_signature;
 pub mod tonic;
 pub mod unknown_metadata_text;
+pub mod project_name {
+    use crate::message::{common_properties, flex_data};
+
+    const BANK: u8 = super::METADATA_TEXT_BANK;
+    const STATUS: u8 = 0x1;
+
+    #[midi2_proc::generate_message(MinSizeUmp(4))]
+    struct ProjectName {
+        #[property(crate::message::utility::JitterReductionProperty)]
+        jitter_reduction: Option<crate::message::utility::JitterReduction>,
+        #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
+        ump_type: (),
+        #[property(flex_data::GroupProperty)]
+        group: crate::numeric_types::u4,
+        #[property(flex_data::OptionalChannelProperty)]
+        optional_channel: Option<crate::numeric_types::u4>,
+        #[property(flex_data::BankProperty<BANK>)]
+        bank: (),
+        #[property(flex_data::StatusProperty<{STATUS}>)]
+        status: (),
+        #[property(flex_data::ConsistentFormatsProperty)]
+        #[readonly]
+        consisten_formats: (),
+        #[property(flex_data::text::TextWriteStrProperty)]
+        #[writeonly]
+        #[resize]
+        text: &str,
+        #[property(flex_data::text::TextReadBytesProperty)]
+        #[readonly]
+        text_bytes: flex_data::text::TextBytesIterator,
+        #[property(flex_data::text::TextReadStringProperty)]
+        #[readonly]
+        #[std]
+        text: std::string::String,
+    }
+
+    impl<B: crate::buffer::Ump> crate::traits::Size<B> for ProjectName<B> {
+        fn size(&self) -> usize {
+            flex_data::flex_data_dyn_size(&self.0)
+        }
+    }
+}
+pub mod composition_name {
+    use crate::message::{common_properties, flex_data};
+
+    const BANK: u8 = super::METADATA_TEXT_BANK;
+    const STATUS: u8 = 0x2;
+
+    #[midi2_proc::generate_message(MinSizeUmp(4))]
+    struct CompositionName {
+        #[property(crate::message::utility::JitterReductionProperty)]
+        jitter_reduction: Option<crate::message::utility::JitterReduction>,
+        #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
+        ump_type: (),
+        #[property(flex_data::GroupProperty)]
+        group: crate::numeric_types::u4,
+        #[property(flex_data::OptionalChannelProperty)]
+        optional_channel: Option<crate::numeric_types::u4>,
+        #[property(flex_data::BankProperty<BANK>)]
+        bank: (),
+        #[property(flex_data::StatusProperty<{STATUS}>)]
+        status: (),
+        #[property(flex_data::ConsistentFormatsProperty)]
+        #[readonly]
+        consisten_formats: (),
+        #[property(flex_data::text::TextWriteStrProperty)]
+        #[writeonly]
+        #[resize]
+        text: &str,
+        #[property(flex_data::text::TextReadBytesProperty)]
+        #[readonly]
+        text_bytes: flex_data::text::TextBytesIterator,
+        #[property(flex_data::text::TextReadStringProperty)]
+        #[readonly]
+        #[std]
+        text: std::string::String,
+    }
+
+    impl<B: crate::buffer::Ump> crate::traits::Size<B> for CompositionName<B> {
+        fn size(&self) -> usize {
+            flex_data::flex_data_dyn_size(&self.0)
+        }
+    }
+}
+pub mod midi_clip_name {
+    use crate::message::{common_properties, flex_data};
+
+    const BANK: u8 = super::METADATA_TEXT_BANK;
+    const STATUS: u8 = 0x3;
+
+    #[midi2_proc::generate_message(MinSizeUmp(4))]
+    struct MidiClipName {
+        #[property(crate::message::utility::JitterReductionProperty)]
+        jitter_reduction: Option<crate::message::utility::JitterReduction>,
+        #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
+        ump_type: (),
+        #[property(flex_data::GroupProperty)]
+        group: crate::numeric_types::u4,
+        #[property(flex_data::OptionalChannelProperty)]
+        optional_channel: Option<crate::numeric_types::u4>,
+        #[property(flex_data::BankProperty<BANK>)]
+        bank: (),
+        #[property(flex_data::StatusProperty<{STATUS}>)]
+        status: (),
+        #[property(flex_data::ConsistentFormatsProperty)]
+        #[readonly]
+        consisten_formats: (),
+        #[property(flex_data::text::TextWriteStrProperty)]
+        #[writeonly]
+        #[resize]
+        text: &str,
+        #[property(flex_data::text::TextReadBytesProperty)]
+        #[readonly]
+        text_bytes: flex_data::text::TextBytesIterator,
+        #[property(flex_data::text::TextReadStringProperty)]
+        #[readonly]
+        #[std]
+        text: std::string::String,
+    }
+
+    impl<B: crate::buffer::Ump> crate::traits::Size<B> for MidiClipName<B> {
+        fn size(&self) -> usize {
+            flex_data::flex_data_dyn_size(&self.0)
+        }
+    }
+}
+pub mod copyright_notice {
+    use crate::message::{common_properties, flex_data};
+
+    const BANK: u8 = super::METADATA_TEXT_BANK;
+    const STATUS: u8 = 0x4;
+
+    #[midi2_proc::generate_message(MinSizeUmp(4))]
+    struct CopyrightNotice {
+        #[property(crate::message::utility::JitterReductionProperty)]
+        jitter_reduction: Option<crate::message::utility::JitterReduction>,
+        #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
+        ump_type: (),
+        #[property(flex_data::GroupProperty)]
+        group: crate::numeric_types::u4,
+        #[property(flex_data::OptionalChannelProperty)]
+        optional_channel: Option<crate::numeric_types::u4>,
+        #[property(flex_data::BankProperty<BANK>)]
+        bank: (),
+        #[property(flex_data::StatusProperty<{STATUS}>)]
+        status: (),
+        #[property(flex_data::ConsistentFormatsProperty)]
+        #[readonly]
+        consisten_formats: (),
+        #[property(flex_data::text::TextWriteStrProperty)]
+        #[writeonly]
+        #[resize]
+        text: &str,
+        #[property(flex_data::text::TextReadBytesProperty)]
+        #[readonly]
+        text_bytes: flex_data::text::TextBytesIterator,
+        #[property(flex_data::text::TextReadStringProperty)]
+        #[readonly]
+        #[std]
+        text: std::string::String,
+    }
+
+    impl<B: crate::buffer::Ump> crate::traits::Size<B> for CopyrightNotice<B> {
+        fn size(&self) -> usize {
+            flex_data::flex_data_dyn_size(&self.0)
+        }
+    }
+}
+pub mod composer_name {
+    use crate::message::{common_properties, flex_data};
+
+    const BANK: u8 = super::METADATA_TEXT_BANK;
+    const STATUS: u8 = 0x5;
+
+    #[midi2_proc::generate_message(MinSizeUmp(4))]
+    struct ComposerName {
+        #[property(crate::message::utility::JitterReductionProperty)]
+        jitter_reduction: Option<crate::message::utility::JitterReduction>,
+        #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
+        ump_type: (),
+        #[property(flex_data::GroupProperty)]
+        group: crate::numeric_types::u4,
+        #[property(flex_data::OptionalChannelProperty)]
+        optional_channel: Option<crate::numeric_types::u4>,
+        #[property(flex_data::BankProperty<BANK>)]
+        bank: (),
+        #[property(flex_data::StatusProperty<{STATUS}>)]
+        status: (),
+        #[property(flex_data::ConsistentFormatsProperty)]
+        #[readonly]
+        consisten_formats: (),
+        #[property(flex_data::text::TextWriteStrProperty)]
+        #[writeonly]
+        #[resize]
+        text: &str,
+        #[property(flex_data::text::TextReadBytesProperty)]
+        #[readonly]
+        text_bytes: flex_data::text::TextBytesIterator,
+        #[property(flex_data::text::TextReadStringProperty)]
+        #[readonly]
+        #[std]
+        text: std::string::String,
+    }
+
+    impl<B: crate::buffer::Ump> crate::traits::Size<B> for ComposerName<B> {
+        fn size(&self) -> usize {
+            flex_data::flex_data_dyn_size(&self.0)
+        }
+    }
+}
+pub mod lyricist_name {
+    use crate::message::{common_properties, flex_data};
+
+    const BANK: u8 = super::METADATA_TEXT_BANK;
+    const STATUS: u8 = 0x6;
+
+    #[midi2_proc::generate_message(MinSizeUmp(4))]
+    struct LyricistName {
+        #[property(crate::message::utility::JitterReductionProperty)]
+        jitter_reduction: Option<crate::message::utility::JitterReduction>,
+        #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
+        ump_type: (),
+        #[property(flex_data::GroupProperty)]
+        group: crate::numeric_types::u4,
+        #[property(flex_data::OptionalChannelProperty)]
+        optional_channel: Option<crate::numeric_types::u4>,
+        #[property(flex_data::BankProperty<BANK>)]
+        bank: (),
+        #[property(flex_data::StatusProperty<{STATUS}>)]
+        status: (),
+        #[property(flex_data::ConsistentFormatsProperty)]
+        #[readonly]
+        consisten_formats: (),
+        #[property(flex_data::text::TextWriteStrProperty)]
+        #[writeonly]
+        #[resize]
+        text: &str,
+        #[property(flex_data::text::TextReadBytesProperty)]
+        #[readonly]
+        text_bytes: flex_data::text::TextBytesIterator,
+        #[property(flex_data::text::TextReadStringProperty)]
+        #[readonly]
+        #[std]
+        text: std::string::String,
+    }
+
+    impl<B: crate::buffer::Ump> crate::traits::Size<B> for LyricistName<B> {
+        fn size(&self) -> usize {
+            flex_data::flex_data_dyn_size(&self.0)
+        }
+    }
+}
+pub mod arranger_name {
+    use crate::message::{common_properties, flex_data};
+
+    const BANK: u8 = super::METADATA_TEXT_BANK;
+    const STATUS: u8 = 0x7;
+
+    #[midi2_proc::generate_message(MinSizeUmp(4))]
+    struct ArrangerName {
+        #[property(crate::message::utility::JitterReductionProperty)]
+        jitter_reduction: Option<crate::message::utility::JitterReduction>,
+        #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
+        ump_type: (),
+        #[property(flex_data::GroupProperty)]
+        group: crate::numeric_types::u4,
+        #[property(flex_data::OptionalChannelProperty)]
+        optional_channel: Option<crate::numeric_types::u4>,
+        #[property(flex_data::BankProperty<BANK>)]
+        bank: (),
+        #[property(flex_data::StatusProperty<{STATUS}>)]
+        status: (),
+        #[property(flex_data::ConsistentFormatsProperty)]
+        #[readonly]
+        consisten_formats: (),
+        #[property(flex_data::text::TextWriteStrProperty)]
+        #[writeonly]
+        #[resize]
+        text: &str,
+        #[property(flex_data::text::TextReadBytesProperty)]
+        #[readonly]
+        text_bytes: flex_data::text::TextBytesIterator,
+        #[property(flex_data::text::TextReadStringProperty)]
+        #[readonly]
+        #[std]
+        text: std::string::String,
+    }
+
+    impl<B: crate::buffer::Ump> crate::traits::Size<B> for ArrangerName<B> {
+        fn size(&self) -> usize {
+            flex_data::flex_data_dyn_size(&self.0)
+        }
+    }
+}
+pub mod publisher_name {
+    use crate::message::{common_properties, flex_data};
+
+    const BANK: u8 = super::METADATA_TEXT_BANK;
+    const STATUS: u8 = 0x8;
+
+    #[midi2_proc::generate_message(MinSizeUmp(4))]
+    struct PublisherName {
+        #[property(crate::message::utility::JitterReductionProperty)]
+        jitter_reduction: Option<crate::message::utility::JitterReduction>,
+        #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
+        ump_type: (),
+        #[property(flex_data::GroupProperty)]
+        group: crate::numeric_types::u4,
+        #[property(flex_data::OptionalChannelProperty)]
+        optional_channel: Option<crate::numeric_types::u4>,
+        #[property(flex_data::BankProperty<BANK>)]
+        bank: (),
+        #[property(flex_data::StatusProperty<{STATUS}>)]
+        status: (),
+        #[property(flex_data::ConsistentFormatsProperty)]
+        #[readonly]
+        consisten_formats: (),
+        #[property(flex_data::text::TextWriteStrProperty)]
+        #[writeonly]
+        #[resize]
+        text: &str,
+        #[property(flex_data::text::TextReadBytesProperty)]
+        #[readonly]
+        text_bytes: flex_data::text::TextBytesIterator,
+        #[property(flex_data::text::TextReadStringProperty)]
+        #[readonly]
+        #[std]
+        text: std::string::String,
+    }
+
+    impl<B: crate::buffer::Ump> crate::traits::Size<B> for PublisherName<B> {
+        fn size(&self) -> usize {
+            flex_data::flex_data_dyn_size(&self.0)
+        }
+    }
+}
+pub mod primary_performer_name {
+    use crate::message::{common_properties, flex_data};
+
+    const BANK: u8 = super::METADATA_TEXT_BANK;
+    const STATUS: u8 = 0x9;
+
+    #[midi2_proc::generate_message(MinSizeUmp(4))]
+    struct PrimaryPerformerName {
+        #[property(crate::message::utility::JitterReductionProperty)]
+        jitter_reduction: Option<crate::message::utility::JitterReduction>,
+        #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
+        ump_type: (),
+        #[property(flex_data::GroupProperty)]
+        group: crate::numeric_types::u4,
+        #[property(flex_data::OptionalChannelProperty)]
+        optional_channel: Option<crate::numeric_types::u4>,
+        #[property(flex_data::BankProperty<BANK>)]
+        bank: (),
+        #[property(flex_data::StatusProperty<{STATUS}>)]
+        status: (),
+        #[property(flex_data::ConsistentFormatsProperty)]
+        #[readonly]
+        consisten_formats: (),
+        #[property(flex_data::text::TextWriteStrProperty)]
+        #[writeonly]
+        #[resize]
+        text: &str,
+        #[property(flex_data::text::TextReadBytesProperty)]
+        #[readonly]
+        text_bytes: flex_data::text::TextBytesIterator,
+        #[property(flex_data::text::TextReadStringProperty)]
+        #[readonly]
+        #[std]
+        text: std::string::String,
+    }
+
+    impl<B: crate::buffer::Ump> crate::traits::Size<B> for PrimaryPerformerName<B> {
+        fn size(&self) -> usize {
+            flex_data::flex_data_dyn_size(&self.0)
+        }
+    }
+}
+pub mod accompanying_performer_name {
+    use crate::message::{common_properties, flex_data};
+
+    const BANK: u8 = super::METADATA_TEXT_BANK;
+    const STATUS: u8 = 0xA;
+
+    #[midi2_proc::generate_message(MinSizeUmp(4))]
+    struct AccompanyingPerformerName {
+        #[property(crate::message::utility::JitterReductionProperty)]
+        jitter_reduction: Option<crate::message::utility::JitterReduction>,
+        #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
+        ump_type: (),
+        #[property(flex_data::GroupProperty)]
+        group: crate::numeric_types::u4,
+        #[property(flex_data::OptionalChannelProperty)]
+        optional_channel: Option<crate::numeric_types::u4>,
+        #[property(flex_data::BankProperty<BANK>)]
+        bank: (),
+        #[property(flex_data::StatusProperty<{STATUS}>)]
+        status: (),
+        #[property(flex_data::ConsistentFormatsProperty)]
+        #[readonly]
+        consisten_formats: (),
+        #[property(flex_data::text::TextWriteStrProperty)]
+        #[writeonly]
+        #[resize]
+        text: &str,
+        #[property(flex_data::text::TextReadBytesProperty)]
+        #[readonly]
+        text_bytes: flex_data::text::TextBytesIterator,
+        #[property(flex_data::text::TextReadStringProperty)]
+        #[readonly]
+        #[std]
+        text: std::string::String,
+    }
+
+    impl<B: crate::buffer::Ump> crate::traits::Size<B> for AccompanyingPerformerName<B> {
+        fn size(&self) -> usize {
+            flex_data::flex_data_dyn_size(&self.0)
+        }
+    }
+}
+pub mod recording_date {
+    use crate::message::{common_properties, flex_data};
+
+    const BANK: u8 = super::METADATA_TEXT_BANK;
+    const STATUS: u8 = 0xB;
+
+    #[midi2_proc::generate_message(MinSizeUmp(4))]
+    struct RecordingDate {
+        #[property(crate::message::utility::JitterReductionProperty)]
+        jitter_reduction: Option<crate::message::utility::JitterReduction>,
+        #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
+        ump_type: (),
+        #[property(flex_data::GroupProperty)]
+        group: crate::numeric_types::u4,
+        #[property(flex_data::OptionalChannelProperty)]
+        optional_channel: Option<crate::numeric_types::u4>,
+        #[property(flex_data::BankProperty<BANK>)]
+        bank: (),
+        #[property(flex_data::StatusProperty<{STATUS}>)]
+        status: (),
+        #[property(flex_data::ConsistentFormatsProperty)]
+        #[readonly]
+        consisten_formats: (),
+        #[property(flex_data::text::TextWriteStrProperty)]
+        #[writeonly]
+        #[resize]
+        text: &str,
+        #[property(flex_data::text::TextReadBytesProperty)]
+        #[readonly]
+        text_bytes: flex_data::text::TextBytesIterator,
+        #[property(flex_data::text::TextReadStringProperty)]
+        #[readonly]
+        #[std]
+        text: std::string::String,
+    }
+
+    impl<B: crate::buffer::Ump> crate::traits::Size<B> for RecordingDate<B> {
+        fn size(&self) -> usize {
+            flex_data::flex_data_dyn_size(&self.0)
+        }
+    }
+}
+pub mod recording_location {
+    use crate::message::{common_properties, flex_data};
+
+    const BANK: u8 = super::METADATA_TEXT_BANK;
+    const STATUS: u8 = 0xC;
+
+    #[midi2_proc::generate_message(MinSizeUmp(4))]
+    struct RecordingLocation {
+        #[property(crate::message::utility::JitterReductionProperty)]
+        jitter_reduction: Option<crate::message::utility::JitterReduction>,
+        #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
+        ump_type: (),
+        #[property(flex_data::GroupProperty)]
+        group: crate::numeric_types::u4,
+        #[property(flex_data::OptionalChannelProperty)]
+        optional_channel: Option<crate::numeric_types::u4>,
+        #[property(flex_data::BankProperty<BANK>)]
+        bank: (),
+        #[property(flex_data::StatusProperty<{STATUS}>)]
+        status: (),
+        #[property(flex_data::ConsistentFormatsProperty)]
+        #[readonly]
+        consisten_formats: (),
+        #[property(flex_data::text::TextWriteStrProperty)]
+        #[writeonly]
+        #[resize]
+        text: &str,
+        #[property(flex_data::text::TextReadBytesProperty)]
+        #[readonly]
+        text_bytes: flex_data::text::TextBytesIterator,
+        #[property(flex_data::text::TextReadStringProperty)]
+        #[readonly]
+        #[std]
+        text: std::string::String,
+    }
+
+    impl<B: crate::buffer::Ump> crate::traits::Size<B> for RecordingLocation<B> {
+        fn size(&self) -> usize {
+            flex_data::flex_data_dyn_size(&self.0)
+        }
+    }
+}
+pub mod unknown_performance_text {
+    use crate::message::{common_properties, flex_data};
+
+    const BANK: u8 = super::PERFORMANCE_TEXT_BANK;
+    const STATUS: u8 = 0x0;
+
+    #[midi2_proc::generate_message(MinSizeUmp(4))]
+    struct UnknownPerformanceText {
+        #[property(crate::message::utility::JitterReductionProperty)]
+        jitter_reduction: Option<crate::message::utility::JitterReduction>,
+        #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
+        ump_type: (),
+        #[property(flex_data::GroupProperty)]
+        group: crate::numeric_types::u4,
+        #[property(flex_data::OptionalChannelProperty)]
+        optional_channel: Option<crate::numeric_types::u4>,
+        #[property(flex_data::BankProperty<BANK>)]
+        bank: (),
+        #[property(flex_data::StatusProperty<{STATUS}>)]
+        status: (),
+        #[property(flex_data::ConsistentFormatsProperty)]
+        #[readonly]
+        consisten_formats: (),
+        #[property(flex_data::text::TextWriteStrProperty)]
+        #[writeonly]
+        #[resize]
+        text: &str,
+        #[property(flex_data::text::TextReadBytesProperty)]
+        #[readonly]
+        text_bytes: flex_data::text::TextBytesIterator,
+        #[property(flex_data::text::TextReadStringProperty)]
+        #[readonly]
+        #[std]
+        text: std::string::String,
+    }
+
+    impl<B: crate::buffer::Ump> crate::traits::Size<B> for UnknownPerformanceText<B> {
+        fn size(&self) -> usize {
+            flex_data::flex_data_dyn_size(&self.0)
+        }
+    }
+}
+pub mod lyrics {
+    use crate::message::{common_properties, flex_data};
+
+    const BANK: u8 = super::PERFORMANCE_TEXT_BANK;
+    const STATUS: u8 = 0x1;
+
+    #[midi2_proc::generate_message(MinSizeUmp(4))]
+    struct Lyrics {
+        #[property(crate::message::utility::JitterReductionProperty)]
+        jitter_reduction: Option<crate::message::utility::JitterReduction>,
+        #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
+        ump_type: (),
+        #[property(flex_data::GroupProperty)]
+        group: crate::numeric_types::u4,
+        #[property(flex_data::OptionalChannelProperty)]
+        optional_channel: Option<crate::numeric_types::u4>,
+        #[property(flex_data::BankProperty<BANK>)]
+        bank: (),
+        #[property(flex_data::StatusProperty<{STATUS}>)]
+        status: (),
+        #[property(flex_data::ConsistentFormatsProperty)]
+        #[readonly]
+        consisten_formats: (),
+        #[property(flex_data::text::TextWriteStrProperty)]
+        #[writeonly]
+        #[resize]
+        text: &str,
+        #[property(flex_data::text::TextReadBytesProperty)]
+        #[readonly]
+        text_bytes: flex_data::text::TextBytesIterator,
+        #[property(flex_data::text::TextReadStringProperty)]
+        #[readonly]
+        #[std]
+        text: std::string::String,
+    }
+
+    impl<B: crate::buffer::Ump> crate::traits::Size<B> for Lyrics<B> {
+        fn size(&self) -> usize {
+            flex_data::flex_data_dyn_size(&self.0)
+        }
+    }
+}
+pub mod lyrics_language {
+    use crate::message::{common_properties, flex_data};
+
+    const BANK: u8 = super::PERFORMANCE_TEXT_BANK;
+    const STATUS: u8 = 0x2;
+
+    #[midi2_proc::generate_message(MinSizeUmp(4))]
+    struct LyricsLanguage {
+        #[property(crate::message::utility::JitterReductionProperty)]
+        jitter_reduction: Option<crate::message::utility::JitterReduction>,
+        #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
+        ump_type: (),
+        #[property(flex_data::GroupProperty)]
+        group: crate::numeric_types::u4,
+        #[property(flex_data::OptionalChannelProperty)]
+        optional_channel: Option<crate::numeric_types::u4>,
+        #[property(flex_data::BankProperty<BANK>)]
+        bank: (),
+        #[property(flex_data::StatusProperty<{STATUS}>)]
+        status: (),
+        #[property(flex_data::ConsistentFormatsProperty)]
+        #[readonly]
+        consisten_formats: (),
+        #[property(flex_data::text::TextWriteStrProperty)]
+        #[writeonly]
+        #[resize]
+        text: &str,
+        #[property(flex_data::text::TextReadBytesProperty)]
+        #[readonly]
+        text_bytes: flex_data::text::TextBytesIterator,
+        #[property(flex_data::text::TextReadStringProperty)]
+        #[readonly]
+        #[std]
+        text: std::string::String,
+    }
+
+    impl<B: crate::buffer::Ump> crate::traits::Size<B> for LyricsLanguage<B> {
+        fn size(&self) -> usize {
+            flex_data::flex_data_dyn_size(&self.0)
+        }
+    }
+}
+pub mod ruby {
+    use crate::message::{common_properties, flex_data};
+
+    const BANK: u8 = super::PERFORMANCE_TEXT_BANK;
+    const STATUS: u8 = 0x3;
+
+    #[midi2_proc::generate_message(MinSizeUmp(4))]
+    struct Ruby {
+        #[property(crate::message::utility::JitterReductionProperty)]
+        jitter_reduction: Option<crate::message::utility::JitterReduction>,
+        #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
+        ump_type: (),
+        #[property(flex_data::GroupProperty)]
+        group: crate::numeric_types::u4,
+        #[property(flex_data::OptionalChannelProperty)]
+        optional_channel: Option<crate::numeric_types::u4>,
+        #[property(flex_data::BankProperty<BANK>)]
+        bank: (),
+        #[property(flex_data::StatusProperty<{STATUS}>)]
+        status: (),
+        #[property(flex_data::ConsistentFormatsProperty)]
+        #[readonly]
+        consisten_formats: (),
+        #[property(flex_data::text::TextWriteStrProperty)]
+        #[writeonly]
+        #[resize]
+        text: &str,
+        #[property(flex_data::text::TextReadBytesProperty)]
+        #[readonly]
+        text_bytes: flex_data::text::TextBytesIterator,
+        #[property(flex_data::text::TextReadStringProperty)]
+        #[readonly]
+        #[std]
+        text: std::string::String,
+    }
+
+    impl<B: crate::buffer::Ump> crate::traits::Size<B> for Ruby<B> {
+        fn size(&self) -> usize {
+            flex_data::flex_data_dyn_size(&self.0)
+        }
+    }
+}
+pub mod ruby_language {
+    use crate::message::{common_properties, flex_data};
+
+    const BANK: u8 = super::PERFORMANCE_TEXT_BANK;
+    const STATUS: u8 = 0x4;
+
+    #[midi2_proc::generate_message(MinSizeUmp(4))]
+    struct RubyLanguage {
+        #[property(crate::message::utility::JitterReductionProperty)]
+        jitter_reduction: Option<crate::message::utility::JitterReduction>,
+        #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
+        ump_type: (),
+        #[property(flex_data::GroupProperty)]
+        group: crate::numeric_types::u4,
+        #[property(flex_data::OptionalChannelProperty)]
+        optional_channel: Option<crate::numeric_types::u4>,
+        #[property(flex_data::BankProperty<BANK>)]
+        bank: (),
+        #[property(flex_data::StatusProperty<{STATUS}>)]
+        status: (),
+        #[property(flex_data::ConsistentFormatsProperty)]
+        #[readonly]
+        consisten_formats: (),
+        #[property(flex_data::text::TextWriteStrProperty)]
+        #[writeonly]
+        #[resize]
+        text: &str,
+        #[property(flex_data::text::TextReadBytesProperty)]
+        #[readonly]
+        text_bytes: flex_data::text::TextBytesIterator,
+        #[property(flex_data::text::TextReadStringProperty)]
+        #[readonly]
+        #[std]
+        text: std::string::String,
+    }
+
+    impl<B: crate::buffer::Ump> crate::traits::Size<B> for RubyLanguage<B> {
+        fn size(&self) -> usize {
+            flex_data::flex_data_dyn_size(&self.0)
+        }
+    }
+}
 
 const UMP_MESSAGE_TYPE: u8 = 0xD;
 const COMPLETE_FORMAT: u8 = 0x0;
@@ -474,7 +1187,3 @@ fn clear_payload(buffer: &mut [u32]) {
         packet[3] = 0x0;
     }
 }
-
-// pub fn channel_from_buffer(buffer: &[u32]) -> Option<u4> {
-//     <Ump as Property<Option<u4>, UmpSchema<0x003F_0000, 0x0, 0x0, 0x0>, ()>>::get(buffer)
-// }
