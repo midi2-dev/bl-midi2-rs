@@ -56,7 +56,7 @@ struct SetMetronome {
     number_of_subdivision_clicks2: u8,
 }
 
-impl<B: crate::buffer::Ump> flex_data::FlexData<B> for SetMetronome<B> {}
+impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for SetMetronome<B> {}
 
 #[cfg(test)]
 mod tests {

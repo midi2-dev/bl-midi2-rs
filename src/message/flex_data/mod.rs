@@ -56,6 +56,7 @@ pub mod project_name {
             flex_data::flex_data_dyn_size(&self.0)
         }
     }
+    impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for ProjectName<B> {}
 }
 pub mod composition_name {
     use crate::message::{common_properties, flex_data};
@@ -98,6 +99,7 @@ pub mod composition_name {
             flex_data::flex_data_dyn_size(&self.0)
         }
     }
+    impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for CompositionName<B> {}
 }
 pub mod midi_clip_name {
     use crate::message::{common_properties, flex_data};
@@ -140,6 +142,7 @@ pub mod midi_clip_name {
             flex_data::flex_data_dyn_size(&self.0)
         }
     }
+    impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for MidiClipName<B> {}
 }
 pub mod copyright_notice {
     use crate::message::{common_properties, flex_data};
@@ -182,6 +185,7 @@ pub mod copyright_notice {
             flex_data::flex_data_dyn_size(&self.0)
         }
     }
+    impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for CopyrightNotice<B> {}
 }
 pub mod composer_name {
     use crate::message::{common_properties, flex_data};
@@ -224,6 +228,7 @@ pub mod composer_name {
             flex_data::flex_data_dyn_size(&self.0)
         }
     }
+    impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for ComposerName<B> {}
 }
 pub mod lyricist_name {
     use crate::message::{common_properties, flex_data};
@@ -266,6 +271,7 @@ pub mod lyricist_name {
             flex_data::flex_data_dyn_size(&self.0)
         }
     }
+    impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for LyricistName<B> {}
 }
 pub mod arranger_name {
     use crate::message::{common_properties, flex_data};
@@ -308,6 +314,7 @@ pub mod arranger_name {
             flex_data::flex_data_dyn_size(&self.0)
         }
     }
+    impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for ArrangerName<B> {}
 }
 pub mod publisher_name {
     use crate::message::{common_properties, flex_data};
@@ -350,6 +357,7 @@ pub mod publisher_name {
             flex_data::flex_data_dyn_size(&self.0)
         }
     }
+    impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for PublisherName<B> {}
 }
 pub mod primary_performer_name {
     use crate::message::{common_properties, flex_data};
@@ -392,6 +400,7 @@ pub mod primary_performer_name {
             flex_data::flex_data_dyn_size(&self.0)
         }
     }
+    impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for PrimaryPerformerName<B> {}
 }
 pub mod accompanying_performer_name {
     use crate::message::{common_properties, flex_data};
@@ -434,6 +443,7 @@ pub mod accompanying_performer_name {
             flex_data::flex_data_dyn_size(&self.0)
         }
     }
+    impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for AccompanyingPerformerName<B> {}
 }
 pub mod recording_date {
     use crate::message::{common_properties, flex_data};
@@ -476,6 +486,7 @@ pub mod recording_date {
             flex_data::flex_data_dyn_size(&self.0)
         }
     }
+    impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for RecordingDate<B> {}
 }
 pub mod recording_location {
     use crate::message::{common_properties, flex_data};
@@ -518,6 +529,7 @@ pub mod recording_location {
             flex_data::flex_data_dyn_size(&self.0)
         }
     }
+    impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for RecordingLocation<B> {}
 }
 pub mod unknown_performance_text {
     use crate::message::{common_properties, flex_data};
@@ -560,6 +572,7 @@ pub mod unknown_performance_text {
             flex_data::flex_data_dyn_size(&self.0)
         }
     }
+    impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for UnknownPerformanceText<B> {}
 }
 pub mod lyrics {
     use crate::message::{common_properties, flex_data};
@@ -602,6 +615,7 @@ pub mod lyrics {
             flex_data::flex_data_dyn_size(&self.0)
         }
     }
+    impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for Lyrics<B> {}
 }
 pub mod lyrics_language {
     use crate::message::{common_properties, flex_data};
@@ -644,6 +658,7 @@ pub mod lyrics_language {
             flex_data::flex_data_dyn_size(&self.0)
         }
     }
+    impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for LyricsLanguage<B> {}
 }
 pub mod ruby {
     use crate::message::{common_properties, flex_data};
@@ -686,6 +701,7 @@ pub mod ruby {
             flex_data::flex_data_dyn_size(&self.0)
         }
     }
+    impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for Ruby<B> {}
 }
 pub mod ruby_language {
     use crate::message::{common_properties, flex_data};
@@ -728,6 +744,7 @@ pub mod ruby_language {
             flex_data::flex_data_dyn_size(&self.0)
         }
     }
+    impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for RubyLanguage<B> {}
 }
 
 const UMP_MESSAGE_TYPE: u8 = 0xD;
@@ -739,119 +756,93 @@ const SETUP_AND_PERFORMANCE_BANK: u8 = 0x0;
 const METADATA_TEXT_BANK: u8 = 0x1;
 const PERFORMANCE_TEXT_BANK: u8 = 0x2;
 
-// #[derive(midi2_proc::UmpDebug, derive_more::From, midi2_proc::Data, Clone, PartialEq, Eq)]
-// #[non_exhaustive]
-// pub enum FlexDataMessage<'a> {
-//     SetChordName(set_chord_name::SetChordNameMessage<'a>),
-//     SetKeySignature(set_key_signature::SetKeySignatureMessage<'a>),
-//     SetMetronome(set_metronome::SetMetronomeMessage<'a>),
-//     SetTempo(set_tempo::SetTempoMessage<'a>),
-//     SetTimeSignature(set_time_signature::SetTimeSignatureMessage<'a>),
-//     UnknownMetadataText(unknown_metadata_text::UnknownMetadataTextMessage<'a>),
-//     ProjectName(project_name::ProjectNameMessage<'a>),
-//     CompositionName(composition_name::CompositionNameMessage<'a>),
-//     MidiClipName(midi_clip_name::MidiClipNameMessage<'a>),
-//     CopyrightNotice(copyright_notice::CopyrightNoticeMessage<'a>),
-//     ComposerName(composer_name::ComposerNameMessage<'a>),
-//     LyricistName(lyricist_name::LyricistNameMessage<'a>),
-//     ArrangerName(arranger_name::ArrangerNameMessage<'a>),
-//     PublisherName(publisher_name::PublisherNameMessage<'a>),
-//     PrimaryPerformerName(primary_performer_name::PrimaryPerformerNameMessage<'a>),
-//     AccompanyingPerformerName(accompanying_performer_name::AccompanyingPerformerNameMessage<'a>),
-//     RecordingDate(recording_date::RecordingDateMessage<'a>),
-//     RecordingLocation(recording_location::RecordingLocationMessage<'a>),
-//     UnknownPerformanceText(unknown_performance_text::UnknownPerformanceTextMessage<'a>),
-//     Lyrics(lyrics::LyricsMessage<'a>),
-//     LyricsLanguage(lyrics_language::LyricsLanguageMessage<'a>),
-//     Ruby(ruby::RubyMessage<'a>),
-//     RubyLanguage(ruby_language::RubyLanguageMessage<'a>),
-// }
-//
-// const DEVICE_IDENTITY: u32 = 0x2;
-// const END_OF_CLIP: u32 = 0x21;
-// const ENDPOINT_DISCOVERY: u32 = 0x0;
-// const ENDPOINT_INFO: u32 = 0x1;
-// const ENDPOINT_NAME: u32 = 0x3;
-// const FUNCTION_BLOCK_DISCOVERY: u32 = 0x10;
-// const FUNCTION_BLOCK_INFO: u32 = 0x11;
-// const FUNCTION_BLOCK_NAME: u32 = 0x12;
-// const PRODUCT_INSTANCE_ID: u32 = 0x4;
-// const START_OF_CLIP: u32 = 0x20;
-// const STREAM_CONFIGURATION_NOTIFICATION: u32 = 0x06;
-// const STREAM_CONFIGURATION_REQUEST: u32 = 0x05;
+#[derive(
+    derive_more::From,
+    midi2_proc::Data,
+    midi2_proc::Grouped,
+    midi2_proc::RebufferFrom,
+    midi2_proc::TryRebufferFrom,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
+)]
+#[non_exhaustive]
+pub enum FlexData<B: crate::buffer::Ump> {
+    SetChordName(set_chord_name::SetChordName<B>),
+    SetKeySignature(set_key_signature::SetKeySignature<B>),
+    SetMetronome(set_metronome::SetMetronome<B>),
+    SetTempo(set_tempo::SetTempo<B>),
+    SetTimeSignature(set_time_signature::SetTimeSignature<B>),
+    UnknownMetadataText(unknown_metadata_text::UnknownMetadataText<B>),
+    ProjectName(project_name::ProjectName<B>),
+    CompositionName(composition_name::CompositionName<B>),
+    MidiClipName(midi_clip_name::MidiClipName<B>),
+    CopyrightNotice(copyright_notice::CopyrightNotice<B>),
+    ComposerName(composer_name::ComposerName<B>),
+    LyricistName(lyricist_name::LyricistName<B>),
+    ArrangerName(arranger_name::ArrangerName<B>),
+    PublisherName(publisher_name::PublisherName<B>),
+    PrimaryPerformerName(primary_performer_name::PrimaryPerformerName<B>),
+    AccompanyingPerformerName(accompanying_performer_name::AccompanyingPerformerName<B>),
+    RecordingDate(recording_date::RecordingDate<B>),
+    RecordingLocation(recording_location::RecordingLocation<B>),
+    UnknownPerformanceText(unknown_performance_text::UnknownPerformanceText<B>),
+    Lyrics(lyrics::Lyrics<B>),
+    LyricsLanguage(lyrics_language::LyricsLanguage<B>),
+    Ruby(ruby::Ruby<B>),
+    RubyLanguage(ruby_language::RubyLanguage<B>),
+}
 
-// impl<'a> FromData<'a> for FlexDataBorrowed<'a> {
-//     type Target = Self;
-//     fn from_data_unchecked(data: &'a [u32]) -> Self {
-//         use FlexDataBorrowed::*;
-//         match data[0].word(1) {
-//             0x00_00 => SetTempo(set_tempo::SetTempoBorrowed::from_data_unchecked(data)),
-//             0x00_01 => SetTimeSignature(
-//                 set_time_signature::SetTimeSignatureBorrowed::from_data_unchecked(data),
-//             ),
-//             0x00_02 => SetMetronome(set_metronome::SetMetronomeBorrowed::from_data_unchecked(
-//                 data,
-//             )),
-//             0x00_03 => SetKeySignature(
-//                 set_key_signature::SetKeySignatureBorrowed::from_data_unchecked(data),
-//             ),
-//             0x00_04 => SetChordName(set_chord_name::SetChordNameBorrowed::from_data_unchecked(
-//                 data,
-//             )),
-//             0x01_00 => UnknownMetadataText(
-//                 unknown_metadata_text::UnknownMetadataTextBorrowed::from_data_unchecked(data),
-//             ),
-//             0x01_01 => ProjectName(project_name::ProjectNameBorrowed::from_data_unchecked(data)),
-//             0x01_02 => CompositionName(
-//                 composition_name::CompositionNameBorrowed::from_data_unchecked(data),
-//             ),
-//             0x01_03 => MidiClipName(midi_clip_name::MidiClipNameBorrowed::from_data_unchecked(
-//                 data,
-//             )),
-//             0x01_04 => CopyrightNotice(
-//                 copyright_notice::CopyrightNoticeBorrowed::from_data_unchecked(data),
-//             ),
-//             0x01_05 => ComposerName(composer_name::ComposerNameBorrowed::from_data_unchecked(
-//                 data,
-//             )),
-//             0x01_06 => LyricistName(lyricist_name::LyricistNameBorrowed::from_data_unchecked(
-//                 data,
-//             )),
-//             0x01_07 => ArrangerName(arranger_name::ArrangerNameBorrowed::from_data_unchecked(
-//                 data,
-//             )),
-//             0x01_08 => PublisherName(publisher_name::PublisherNameBorrowed::from_data_unchecked(
-//                 data,
-//             )),
-//             0x01_09 => PrimaryPerformerName(
-//                 primary_performer_name::PrimaryPerformerNameBorrowed::from_data_unchecked(data),
-//             ),
-//             0x01_10 => AccompanyingPerformerName(
-//                 accompanying_performer_name::AccompanyingPerformerNameBorrowed::from_data_unchecked(
-//                     data,
-//                 ),
-//             ),
-//             0x01_11 => RecordingDate(recording_date::RecordingDateBorrowed::from_data_unchecked(
-//                 data,
-//             )),
-//             0x01_12 => RecordingLocation(
-//                 recording_location::RecordingLocationBorrowed::from_data_unchecked(data),
-//             ),
-//             0x02_00 => UnknownPerformanceText(
-//                 unknown_performance_text::UnknownPerformanceTextBorrowed::from_data_unchecked(data),
-//             ),
-//             0x02_01 => Lyrics(lyrics::LyricsBorrowed::from_data_unchecked(data)),
-//             0x02_02 => {
-//                 LyricsLanguage(lyrics_language::LyricsLanguageBorrowed::from_data_unchecked(data))
-//             }
-//             0x02_03 => Ruby(ruby::RubyBorrowed::from_data_unchecked(data)),
-//             0x02_04 => RubyLanguage(ruby_language::RubyLanguageBorrowed::from_data_unchecked(
-//                 data,
-//             )),
-//             _ => panic!(),
-//         }
-//     }
-// }
+impl<'a> TryFrom<&'a [u32]> for FlexData<&'a [u32]> {
+    type Error = crate::error::Error;
+    fn try_from(value: &'a [u32]) -> Result<Self, Self::Error> {
+        use crate::buffer::UmpPrivate;
+        use FlexData::*;
+        Ok(match value.message()[0].word(1) {
+            0x00_00 => SetTempo(set_tempo::SetTempo::try_from(value)?.into()),
+            0x00_01 => {
+                SetTimeSignature(set_time_signature::SetTimeSignature::try_from(value)?.into())
+            }
+            0x00_02 => SetMetronome(set_metronome::SetMetronome::try_from(value)?.into()),
+            0x00_03 => SetKeySignature(set_key_signature::SetKeySignature::try_from(value)?.into()),
+            0x00_04 => SetChordName(set_chord_name::SetChordName::try_from(value)?.into()),
+            0x01_00 => UnknownMetadataText(
+                unknown_metadata_text::UnknownMetadataText::try_from(value)?.into(),
+            ),
+            0x01_01 => ProjectName(project_name::ProjectName::try_from(value)?.into()),
+            0x01_02 => CompositionName(composition_name::CompositionName::try_from(value)?.into()),
+            0x01_03 => MidiClipName(midi_clip_name::MidiClipName::try_from(value)?.into()),
+            0x01_04 => CopyrightNotice(copyright_notice::CopyrightNotice::try_from(value)?.into()),
+            0x01_05 => ComposerName(composer_name::ComposerName::try_from(value)?.into()),
+            0x01_06 => LyricistName(lyricist_name::LyricistName::try_from(value)?.into()),
+            0x01_07 => ArrangerName(arranger_name::ArrangerName::try_from(value)?.into()),
+            0x01_08 => PublisherName(publisher_name::PublisherName::try_from(value)?.into()),
+            0x01_09 => PrimaryPerformerName(
+                primary_performer_name::PrimaryPerformerName::try_from(value)?.into(),
+            ),
+            0x01_10 => AccompanyingPerformerName(
+                accompanying_performer_name::AccompanyingPerformerName::try_from(value)?.into(),
+            ),
+            0x01_11 => RecordingDate(recording_date::RecordingDate::try_from(value)?.into()),
+            0x01_12 => {
+                RecordingLocation(recording_location::RecordingLocation::try_from(value)?.into())
+            }
+            0x02_00 => UnknownPerformanceText(
+                unknown_performance_text::UnknownPerformanceText::try_from(value)?.into(),
+            ),
+            0x02_01 => Lyrics(lyrics::Lyrics::try_from(value)?.into()),
+            0x02_02 => LyricsLanguage(lyrics_language::LyricsLanguage::try_from(value)?.into()),
+            0x02_03 => Ruby(ruby::Ruby::try_from(value)?.into()),
+            0x02_04 => RubyLanguage(ruby_language::RubyLanguage::try_from(value)?.into()),
+            _ => Err(crate::Error::InvalidData(
+                "Couldn't interpret flex data status / bank fields",
+            ))?,
+        })
+    }
+}
+
+impl<B: Ump> FlexDataMessage<B> for FlexData<B> {}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Bank {
@@ -860,7 +851,7 @@ pub enum Bank {
     PerformanceText,
 }
 
-pub trait FlexData<B: crate::buffer::Ump>: crate::traits::Data<B> {
+pub trait FlexDataMessage<B: crate::buffer::Ump>: crate::traits::Data<B> {
     fn bank(&self) -> Bank {
         use crate::buffer::UmpPrivate;
         use Bank::*;
@@ -1185,5 +1176,52 @@ fn clear_payload(buffer: &mut [u32]) {
         packet[1] = 0x0;
         packet[2] = 0x0;
         packet[3] = 0x0;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn try_from_text() {
+        let buffer = [
+            0x0000_0000_u32,
+            0xD050_0106,
+            0x4769_6D6D,
+            0x6520_736F,
+            0x6D65_2073,
+            0xD0D0_0106,
+            0x6967_6E61,
+            0x6C21_0000,
+            0x0000_0000,
+        ];
+        assert_eq!(
+            FlexData::try_from(&buffer[..]),
+            Ok(FlexData::LyricistName(
+                lyricist_name::LyricistName::try_from(&buffer[..]).unwrap()
+            ))
+        );
+    }
+
+    #[test]
+    fn try_from_set_tempo() {
+        let buffer = [0xD710_0000_u32, 0xF751_FE05];
+        assert_eq!(
+            FlexData::try_from(&buffer[..]),
+            Ok(FlexData::SetTempo(
+                set_tempo::SetTempo::try_from(&buffer[..]).unwrap()
+            ))
+        );
+    }
+
+    #[test]
+    fn read_bank() {
+        assert_eq!(
+            FlexData::try_from(&[0xD710_0000_u32, 0xF751_FE05][..])
+                .unwrap()
+                .bank(),
+            Bank::SetupAndPerformance,
+        );
     }
 }

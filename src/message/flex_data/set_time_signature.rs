@@ -41,12 +41,12 @@ struct SetTimeSignature {
     number_of_32nd_notes: u8,
 }
 
-impl<B: crate::buffer::Ump> flex_data::FlexData<B> for SetTimeSignature<B> {}
+impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for SetTimeSignature<B> {}
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{message::flex_data::FlexData, numeric_types::u4, traits::Grouped};
+    use crate::{message::flex_data::FlexDataMessage, numeric_types::u4, traits::Grouped};
     use pretty_assertions::assert_eq;
 
     #[test]

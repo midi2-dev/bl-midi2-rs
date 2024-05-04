@@ -31,7 +31,7 @@ struct SetKeySignature {
     sharps_flats: SharpsFlats,
 }
 
-impl<B: crate::buffer::Ump> flex_data::FlexData<B> for SetKeySignature<B> {}
+impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for SetKeySignature<B> {}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SharpsFlats {
