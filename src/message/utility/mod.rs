@@ -140,8 +140,10 @@ impl<B: crate::buffer::Buffer> crate::util::property::Property<B> for JitterRedu
     type Type = Option<JitterReduction>;
 }
 
-impl<B: crate::buffer::Buffer> crate::util::property::ReadProperty<B> for JitterReductionProperty {
-    fn read(buffer: &B) -> Self::Type {
+impl<'a, B: crate::buffer::Buffer> crate::util::property::ReadProperty<'a, B>
+    for JitterReductionProperty
+{
+    fn read(buffer: &'a B) -> Self::Type {
         use crate::buffer::{SpecialiseU32, UmpPrivate, UnitPrivate, UNIT_ID_U32};
         use crate::util::BitOps;
 
@@ -249,8 +251,8 @@ impl<B: crate::buffer::Ump> crate::util::property::Property<B> for TypeProperty 
     type Type = ();
 }
 
-impl<B: crate::buffer::Ump> crate::util::property::ReadProperty<B> for TypeProperty {
-    fn read(_buffer: &B) -> Self::Type {
+impl<'a, B: crate::buffer::Ump> crate::util::property::ReadProperty<'a, B> for TypeProperty {
+    fn read(_buffer: &'a B) -> Self::Type {
         ()
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
@@ -285,10 +287,10 @@ impl<const STATUS: u8, B: crate::buffer::Ump> crate::util::property::Property<B>
     type Type = ();
 }
 
-impl<const STATUS: u8, B: crate::buffer::Ump> crate::util::property::ReadProperty<B>
+impl<'a, const STATUS: u8, B: crate::buffer::Ump> crate::util::property::ReadProperty<'a, B>
     for StatusProperty<STATUS>
 {
-    fn read(_buffer: &B) -> Self::Type {
+    fn read(_buffer: &'a B) -> Self::Type {
         ()
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
@@ -322,8 +324,8 @@ impl<B: crate::buffer::Ump> crate::util::property::Property<B> for DataProperty 
     type Type = u16;
 }
 
-impl<B: crate::buffer::Ump> crate::util::property::ReadProperty<B> for DataProperty {
-    fn read(buffer: &B) -> Self::Type {
+impl<'a, B: crate::buffer::Ump> crate::util::property::ReadProperty<'a, B> for DataProperty {
+    fn read(buffer: &'a B) -> Self::Type {
         use crate::util::BitOps;
         buffer.buffer()[0].word(1)
     }

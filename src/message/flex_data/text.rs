@@ -1,7 +1,7 @@
 use crate::{
     buffer::{BufferMut, Ump},
     message::{common_properties, flex_data},
-    util::property::{Property, ReadBorrowedProperty, ReadProperty, ResizeProperty, WriteProperty},
+    util::property::{Property, ReadProperty, ResizeProperty, WriteProperty},
 };
 
 pub struct TextWriteStrProperty<'a>(core::marker::PhantomData<&'a u8>);
@@ -142,7 +142,7 @@ impl<'a, B: Ump> Property<B> for TextReadBytesProperty<'a> {
     type Type = TextBytesIterator<'a>;
 }
 
-impl<'a, B: 'a + Ump> ReadBorrowedProperty<'a, B> for TextReadBytesProperty<'a> {
+impl<'a, B: 'a + Ump> ReadProperty<'a, B> for TextReadBytesProperty<'a> {
     fn read(buffer: &'a B) -> <Self as Property<B>>::Type {
         TextBytesIterator {
             buffer: buffer.buffer(),
@@ -164,8 +164,8 @@ impl<B: Ump> Property<B> for TextReadStringProperty {
 }
 
 #[cfg(feature = "std")]
-impl<B: Ump> ReadProperty<B> for TextReadStringProperty {
-    fn read(_buffer: &B) -> Self::Type {
+impl<'a, B: Ump> ReadProperty<'a, B> for TextReadStringProperty {
+    fn read(_buffer: &'a B) -> Self::Type {
         todo!()
     }
     fn validate(_buffer: &B) -> crate::result::Result<()> {

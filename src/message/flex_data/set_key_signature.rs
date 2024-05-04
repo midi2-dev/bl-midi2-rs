@@ -53,8 +53,8 @@ impl<B: crate::buffer::Ump> crate::util::property::Property<B> for SharpsFlatsPr
     type Type = SharpsFlats;
 }
 
-impl<B: crate::buffer::Ump> crate::util::property::ReadProperty<B> for SharpsFlatsProperty {
-    fn read(buffer: &B) -> Self::Type {
+impl<'a, B: crate::buffer::Ump> crate::util::property::ReadProperty<'a, B> for SharpsFlatsProperty {
+    fn read(buffer: &'a B) -> Self::Type {
         use crate::buffer::UmpPrivate;
         use SharpsFlats::*;
         match u8::from(buffer.buffer().message()[1].nibble(0)) {

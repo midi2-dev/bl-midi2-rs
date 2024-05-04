@@ -195,10 +195,10 @@ impl<const STATUS: u8, B: crate::buffer::Buffer> crate::util::property::Property
     type Type = ();
 }
 
-impl<const STATUS: u8, B: crate::buffer::Buffer> crate::util::property::ReadProperty<B>
+impl<'a, const STATUS: u8, B: crate::buffer::Buffer> crate::util::property::ReadProperty<'a, B>
     for SystemCommonStatus<STATUS>
 {
-    fn read(_buffer: &B) -> Self::Type {
+    fn read(_buffer: &'a B) -> Self::Type {
         ()
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {

@@ -25,7 +25,7 @@ impl<S: schema::UmpSchema, B: crate::buffer::Ump> crate::util::property::Propert
     type Type = Tonic;
 }
 
-impl<B: crate::buffer::Ump> crate::util::property::ReadProperty<B>
+impl<'a, B: crate::buffer::Ump> crate::util::property::ReadProperty<'a, B>
     for TonicProperty<schema::Ump<0x0, 0x0F00_0000, 0x0, 0x0>>
 {
     fn validate(buffer: &B) -> crate::result::Result<()> {
@@ -33,7 +33,7 @@ impl<B: crate::buffer::Ump> crate::util::property::ReadProperty<B>
         Tonic::from_nibble(buffer.buffer().message()[1].nibble(1))?;
         Ok(())
     }
-    fn read(buffer: &B) -> Self::Type {
+    fn read(buffer: &'a B) -> Self::Type {
         use crate::buffer::UmpPrivate;
         Tonic::from_nibble(buffer.buffer().message()[1].nibble(1)).unwrap()
     }
@@ -54,7 +54,7 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::util::property::Wr
     }
 }
 
-impl<B: crate::buffer::Ump> crate::util::property::ReadProperty<B>
+impl<'a, B: crate::buffer::Ump> crate::util::property::ReadProperty<'a, B>
     for TonicProperty<schema::Ump<0x0, 0x0, 0x0, 0x0F00_0000>>
 {
     fn validate(buffer: &B) -> crate::result::Result<()> {
@@ -62,7 +62,7 @@ impl<B: crate::buffer::Ump> crate::util::property::ReadProperty<B>
         Tonic::from_nibble(buffer.buffer().message()[3].nibble(1))?;
         Ok(())
     }
-    fn read(buffer: &B) -> Self::Type {
+    fn read(buffer: &'a B) -> Self::Type {
         use crate::buffer::UmpPrivate;
         Tonic::from_nibble(buffer.buffer().message()[3].nibble(1)).unwrap()
     }

@@ -72,10 +72,10 @@ impl<B: crate::buffer::Ump, S: schema::UmpSchema> crate::util::property::Propert
     type Type = SharpsFlats;
 }
 
-impl<B: crate::buffer::Ump> crate::util::property::ReadProperty<B>
+impl<'a, B: crate::buffer::Ump> crate::util::property::ReadProperty<'a, B>
     for SharpsFlatsProperty<schema::Ump<0x0, 0x0, 0x0, 0xF000_0000>>
 {
-    fn read(buffer: &B) -> Self::Type {
+    fn read(buffer: &'a B) -> Self::Type {
         use crate::buffer::UmpPrivate;
         SharpsFlats::from_nibble(buffer.buffer().message()[3].nibble(0)).unwrap()
     }
@@ -101,10 +101,10 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::util::property::Wr
     }
 }
 
-impl<B: crate::buffer::Ump> crate::util::property::ReadProperty<B>
+impl<'a, B: crate::buffer::Ump> crate::util::property::ReadProperty<'a, B>
     for SharpsFlatsProperty<schema::Ump<0x0, 0xF000_0000, 0x0, 0x0>>
 {
-    fn read(buffer: &B) -> Self::Type {
+    fn read(buffer: &'a B) -> Self::Type {
         use crate::buffer::UmpPrivate;
         SharpsFlats::from_nibble(buffer.buffer().message()[1].nibble(0)).unwrap()
     }
@@ -202,7 +202,7 @@ impl<B: crate::buffer::Ump, S: schema::UmpSchema> crate::util::property::Propert
     type Type = ChordType;
 }
 
-impl<B: crate::buffer::Ump> crate::util::property::ReadProperty<B>
+impl<'a, B: crate::buffer::Ump> crate::util::property::ReadProperty<'a, B>
     for ChordTypeProperty<schema::Ump<0x0, 0x00FF_0000, 0x0, 0x0>>
 {
     fn validate(buffer: &B) -> crate::result::Result<()> {
@@ -210,7 +210,7 @@ impl<B: crate::buffer::Ump> crate::util::property::ReadProperty<B>
         ChordType::from_octet(buffer.buffer().message()[1].octet(1))?;
         Ok(())
     }
-    fn read(buffer: &B) -> Self::Type {
+    fn read(buffer: &'a B) -> Self::Type {
         use crate::buffer::UmpPrivate;
         ChordType::from_octet(buffer.buffer().message()[1].octet(1)).unwrap()
     }
@@ -231,7 +231,7 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::util::property::Wr
     }
 }
 
-impl<B: crate::buffer::Ump> crate::util::property::ReadProperty<B>
+impl<'a, B: crate::buffer::Ump> crate::util::property::ReadProperty<'a, B>
     for ChordTypeProperty<schema::Ump<0x0, 0x0, 0x0, 0x00FF_0000>>
 {
     fn validate(buffer: &B) -> crate::result::Result<()> {
@@ -239,7 +239,7 @@ impl<B: crate::buffer::Ump> crate::util::property::ReadProperty<B>
         ChordType::from_octet(buffer.buffer().message()[3].octet(1))?;
         Ok(())
     }
-    fn read(buffer: &B) -> Self::Type {
+    fn read(buffer: &'a B) -> Self::Type {
         use crate::buffer::UmpPrivate;
         ChordType::from_octet(buffer.buffer().message()[3].octet(1)).unwrap()
     }
@@ -354,7 +354,7 @@ impl<B: crate::buffer::Ump, S: schema::UmpSchema> crate::util::property::Propert
 
 macro_rules! alteration_property_impl {
     ($ump1:expr,$ump2:expr,$ump3:expr,$ump4:expr,$buffer_index:expr,$octet_index:expr) => {
-        impl<B: crate::buffer::Ump> crate::util::property::ReadProperty<B>
+        impl<'a, B: crate::buffer::Ump> crate::util::property::ReadProperty<'a, B>
             for AlterationProperty<schema::Ump<$ump1, $ump2, $ump3, $ump4>>
         {
             fn validate(buffer: &B) -> crate::result::Result<()> {
@@ -364,7 +364,7 @@ macro_rules! alteration_property_impl {
                 )?;
                 Ok(())
             }
-            fn read(buffer: &B) -> Self::Type {
+            fn read(buffer: &'a B) -> Self::Type {
                 use crate::buffer::UmpPrivate;
                 alteration_from_octet(buffer.buffer().message()[$buffer_index].octet($octet_index))
                     .unwrap()

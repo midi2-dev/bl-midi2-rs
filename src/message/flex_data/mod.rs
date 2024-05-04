@@ -294,8 +294,8 @@ impl<const STATUS: u8, B: Ump> Property<B> for StatusProperty<STATUS> {
     type Type = ();
 }
 
-impl<const STATUS: u8, B: Ump> ReadProperty<B> for StatusProperty<STATUS> {
-    fn read(_buffer: &B) -> Self::Type {
+impl<'a, const STATUS: u8, B: Ump> ReadProperty<'a, B> for StatusProperty<STATUS> {
+    fn read(_buffer: &'a B) -> Self::Type {
         ()
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
@@ -327,8 +327,8 @@ impl<const BANK: u8, B: Ump> Property<B> for BankProperty<BANK> {
     type Type = ();
 }
 
-impl<const BANK: u8, B: Ump> ReadProperty<B> for BankProperty<BANK> {
-    fn read(_buffer: &B) -> Self::Type {
+impl<'a, const BANK: u8, B: Ump> ReadProperty<'a, B> for BankProperty<BANK> {
+    fn read(_buffer: &'a B) -> Self::Type {
         ()
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
@@ -360,8 +360,8 @@ impl<const FORMAT: u8, B: Ump> Property<B> for FormatProperty<FORMAT> {
     type Type = ();
 }
 
-impl<const FORMAT: u8, B: Ump> ReadProperty<B> for FormatProperty<FORMAT> {
-    fn read(_buffer: &B) -> Self::Type {
+impl<'a, const FORMAT: u8, B: Ump> ReadProperty<'a, B> for FormatProperty<FORMAT> {
+    fn read(_buffer: &'a B) -> Self::Type {
         ()
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
@@ -393,8 +393,8 @@ impl<B: Ump> Property<B> for OptionalChannelProperty {
     type Type = Option<crate::numeric_types::u4>;
 }
 
-impl<B: Ump> ReadProperty<B> for OptionalChannelProperty {
-    fn read(buffer: &B) -> Self::Type {
+impl<'a, B: Ump> ReadProperty<'a, B> for OptionalChannelProperty {
+    fn read(buffer: &'a B) -> Self::Type {
         use crate::buffer::UmpPrivate;
         use crate::numeric_types::u2;
         if buffer.buffer().message()[0].crumb(5) == u2::new(0x0) {
@@ -444,8 +444,8 @@ impl<B: Ump> Property<B> for NoChannelProperty {
     type Type = ();
 }
 
-impl<B: Ump> ReadProperty<B> for NoChannelProperty {
-    fn read(_buffer: &B) -> Self::Type {
+impl<'a, B: Ump> ReadProperty<'a, B> for NoChannelProperty {
+    fn read(_buffer: &'a B) -> Self::Type {
         ()
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {

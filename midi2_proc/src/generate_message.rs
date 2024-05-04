@@ -11,7 +11,6 @@ struct Property {
     readonly: bool,
     writeonly: bool,
     resize: bool,
-    borrowed: bool,
 }
 
 impl Property {
@@ -91,7 +90,6 @@ fn properties(input: &syn::ItemStruct) -> Vec<Property> {
             readonly: has_attr(field, "readonly"),
             writeonly: has_attr(field, "writeonly"),
             resize: has_attr(field, "resize"),
-            borrowed: has_attr(field, "borrowed"),
         })
         .collect()
 }
@@ -256,17 +254,9 @@ fn property_getter(property: &Property, public: bool) -> TokenStream {
     } else {
         TokenStream::new()
     };
-    if property.borrowed {
-        quote! {
-            #pub_token fn #ident(&self) -> #ty {
-                <#meta_type as crate::util::property::ReadBorrowedProperty<B>>::read(self.buffer_access())
-            }
-        }
-    } else {
-        quote! {
-            #pub_token fn #ident(&self) -> #ty {
-                <#meta_type as crate::util::property::ReadProperty<B>>::read(self.buffer_access())
-            }
+    quote! {
+        #pub_token fn #ident(&self) -> #ty {
+            <#meta_type as crate::util::property::ReadProperty<B>>::read(self.buffer_access())
         }
     }
 }
@@ -471,15 +461,9 @@ fn try_from_slice_impl(
     };
     for property in properties.iter().filter(|p| !p.writeonly) {
         let meta_type = &property.meta_type;
-        if property.borrowed {
-            validation_steps.extend(quote! {
-                <#meta_type as crate::util::property::ReadBorrowedProperty<&[#unit_type]>>::validate(&buffer)?;
-            });
-        } else {
-            validation_steps.extend(quote! {
-                <#meta_type as crate::util::property::ReadProperty<&[#unit_type]>>::validate(&buffer)?;
-            });
-        }
+        validation_steps.extend(quote! {
+            <#meta_type as crate::util::property::ReadProperty<&[#unit_type]>>::validate(&buffer)?;
+        });
     }
     quote! {
         impl<'a, #generic_unit> core::convert::TryFrom<&'a [#unit_type]> for #root_ident<&'a [#unit_type]> {

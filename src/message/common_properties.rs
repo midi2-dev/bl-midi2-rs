@@ -16,8 +16,8 @@ impl<const TYPE: u8, B: Buffer> Property<B> for UmpMessageTypeProperty<TYPE> {
     type Type = ();
 }
 
-impl<const TYPE: u8, B: Buffer> ReadProperty<B> for UmpMessageTypeProperty<TYPE> {
-    fn read(_buffer: &B) -> Self::Type {
+impl<'a, const TYPE: u8, B: Buffer> ReadProperty<'a, B> for UmpMessageTypeProperty<TYPE> {
+    fn read(_buffer: &'a B) -> Self::Type {
         ()
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
@@ -54,8 +54,8 @@ impl<const STATUS: u8, B: Buffer> Property<B> for ChannelVoiceStatusProperty<STA
     type Type = ();
 }
 
-impl<const STATUS: u8, B: Buffer> ReadProperty<B> for ChannelVoiceStatusProperty<STATUS> {
-    fn read(_buffer: &B) -> Self::Type {
+impl<'a, const STATUS: u8, B: Buffer> ReadProperty<'a, B> for ChannelVoiceStatusProperty<STATUS> {
+    fn read(_buffer: &'a B) -> Self::Type {
         ()
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
@@ -123,13 +123,14 @@ impl<
 }
 
 impl<
+        'a,
         B: Buffer,
         BytesSchema: schema::BytesSchema,
         UmpSchema: schema::UmpSchema,
         T: Default + schema::UmpSchemaRepr<UmpSchema> + schema::BytesSchemaRepr<BytesSchema>,
-    > ReadProperty<B> for HybridSchemaProperty<T, BytesSchema, UmpSchema>
+    > ReadProperty<'a, B> for HybridSchemaProperty<T, BytesSchema, UmpSchema>
 {
-    fn read(buffer: &B) -> Self::Type {
+    fn read(buffer: &'a B) -> Self::Type {
         match <B::Unit as UnitPrivate>::UNIT_ID {
             UNIT_ID_U32 => <T as schema::UmpSchemaRepr<UmpSchema>>::read(
                 buffer.buffer().specialise_u32().message(),
@@ -185,12 +186,13 @@ impl<
 }
 
 impl<
+        'a,
         B: Buffer,
         BytesSchema: schema::BytesSchema,
         T: Default + schema::BytesSchemaRepr<BytesSchema>,
-    > ReadProperty<B> for BytesSchemaProperty<T, BytesSchema>
+    > ReadProperty<'a, B> for BytesSchemaProperty<T, BytesSchema>
 {
-    fn read(buffer: &B) -> Self::Type {
+    fn read(buffer: &'a B) -> Self::Type {
         match <B::Unit as UnitPrivate>::UNIT_ID {
             UNIT_ID_U32 => Default::default(),
             UNIT_ID_U8 => {
@@ -234,10 +236,14 @@ impl<B: Buffer, UmpSchema: schema::UmpSchema, T: Default + schema::UmpSchemaRepr
     type Type = T;
 }
 
-impl<B: Buffer, UmpSchema: schema::UmpSchema, T: Default + schema::UmpSchemaRepr<UmpSchema>>
-    ReadProperty<B> for UmpSchemaProperty<T, UmpSchema>
+impl<
+        'a,
+        B: Buffer,
+        UmpSchema: schema::UmpSchema,
+        T: Default + schema::UmpSchemaRepr<UmpSchema>,
+    > ReadProperty<'a, B> for UmpSchemaProperty<T, UmpSchema>
 {
-    fn read(buffer: &B) -> Self::Type {
+    fn read(buffer: &'a B) -> Self::Type {
         match <B::Unit as UnitPrivate>::UNIT_ID {
             UNIT_ID_U32 => <T as schema::UmpSchemaRepr<UmpSchema>>::read(
                 buffer.buffer().specialise_u32().message(),
