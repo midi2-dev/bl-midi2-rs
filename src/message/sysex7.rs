@@ -137,12 +137,14 @@ impl<'a, B: crate::buffer::Buffer> crate::util::property::ReadProperty<'a, B>
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
         if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U32 {
+            use crate::buffer::UmpPrivate;
+
             message_helpers::validate_sysex_group_statuses(
-                buffer.specialise_u32(),
-                |s| s == numeric_types::u4::new(0x0),
-                |s| s == numeric_types::u4::new(0x1),
-                |s| s == numeric_types::u4::new(0x2),
-                |s| s == numeric_types::u4::new(0x3),
+                buffer.specialise_u32().message(),
+                |p| u8::from(p[0].nibble(2)) == 0x0,
+                |p| u8::from(p[0].nibble(2)) == 0x1,
+                |p| u8::from(p[0].nibble(2)) == 0x2,
+                |p| u8::from(p[0].nibble(2)) == 0x3,
                 2,
                 crate::numeric_types::u4::new(UMP_MESSAGE_TYPE),
             )?;

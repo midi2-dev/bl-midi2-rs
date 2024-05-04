@@ -48,11 +48,13 @@ impl<'a, B: Ump + BufferMut> ResizeProperty<B> for TextWriteStrProperty<'a> {
 
         let buffer_size = ump_buffer_size_for_str(value);
         buffer.resize(buffer_size);
+        flex_data::clear_payload(buffer.buffer_mut().message_mut());
         grow_buffer(
             buffer.buffer_mut().message_mut(),
             buffer_size - crate::buffer::OFFSET_FOR_JITTER_REDUCTION,
         );
     }
+
     fn try_resize(buffer: &mut B, value: &Self::Type) -> Result<(), crate::error::BufferOverflow>
     where
         B: crate::buffer::BufferTryResize,
@@ -61,6 +63,7 @@ impl<'a, B: Ump + BufferMut> ResizeProperty<B> for TextWriteStrProperty<'a> {
 
         let buffer_size = ump_buffer_size_for_str(value);
         buffer.try_resize(buffer_size)?;
+        flex_data::clear_payload(buffer.buffer_mut().message_mut());
         grow_buffer(
             buffer.buffer_mut().message_mut(),
             buffer_size - crate::buffer::OFFSET_FOR_JITTER_REDUCTION,

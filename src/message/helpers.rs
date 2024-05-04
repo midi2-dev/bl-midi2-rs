@@ -62,23 +62,19 @@ pub fn sysex_group_consistent_groups(
 //     Ok(())
 // }
 
-pub const ERR_SYSEX_EXPECTED_COMPLETE: &str =
-    "A one-packet sysex message should have Complete status";
-pub const ERR_SYSEX_EXPECTED_BEGIN: &str =
-    "The first packet of a multi-packet sysex message should have status Begin";
-pub const ERR_SYSEX_EXPECTED_CONTINUE: &str =
-    "The packet statuses between first and last should be Continue";
-pub const ERR_SYSEX_EXPECTED_END: &str =
-    "The last packet of a multi-packet sysex message should have status End";
+pub const ERR_SYSEX_EXPECTED_COMPLETE: &str = "Expected Complete packet";
+pub const ERR_SYSEX_EXPECTED_BEGIN: &str = "Expected Begin packet";
+pub const ERR_SYSEX_EXPECTED_CONTINUE: &str = "Expected Continue packet";
+pub const ERR_SYSEX_EXPECTED_END: &str = "Expected End packet";
 pub const ERR_EMPTY_MESSAGE: &str = "The message buffer is empty";
 
 // assumes that buffer contains valid messages
 #[cfg(any(feature = "sysex7", feature = "sysex8"))]
 pub fn validate_sysex_group_statuses<
-    IsComplete: Fn(crate::numeric_types::u4) -> bool,
-    IsBegin: Fn(crate::numeric_types::u4) -> bool,
-    IsContinue: Fn(crate::numeric_types::u4) -> bool,
-    IsEnd: Fn(crate::numeric_types::u4) -> bool,
+    IsComplete: Fn(&[u32]) -> bool,
+    IsBegin: Fn(&[u32]) -> bool,
+    IsContinue: Fn(&[u32]) -> bool,
+    IsEnd: Fn(&[u32]) -> bool,
 >(
     buffer: &[u32],
     is_complete: IsComplete,
@@ -98,26 +94,24 @@ pub fn validate_sysex_group_statuses<
     let Some(first_packet) = iter.next() else {
         return Err(Error::InvalidData(ERR_EMPTY_MESSAGE));
     };
-    let first_status = first_packet[0].nibble(2);
 
     if iter.peek().is_none() {
-        if is_complete(first_status) {
+        if is_complete(first_packet) {
             return Ok(());
         } else {
             return Err(Error::InvalidData(ERR_SYSEX_EXPECTED_COMPLETE));
         }
     }
 
-    if !is_begin(first_status) {
+    if !is_begin(first_packet) {
         return Err(Error::InvalidData(ERR_SYSEX_EXPECTED_BEGIN));
     }
 
     while let Some(chunk) = iter.next() {
-        let status = chunk[0].nibble(2);
-        if iter.peek().is_some() && !is_continue(status) {
+        if iter.peek().is_some() && !is_continue(chunk) {
             return Err(Error::InvalidData(ERR_SYSEX_EXPECTED_CONTINUE));
         }
-        if iter.peek().is_none() && !is_end(status) {
+        if iter.peek().is_none() && !is_end(chunk) {
             return Err(Error::InvalidData(ERR_SYSEX_EXPECTED_END));
         }
     }
