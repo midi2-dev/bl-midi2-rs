@@ -1,9 +1,5 @@
 use crate::{
-    buffer::{Buffer, Ump},
-    util::{
-        schema::{Property, UmpSchema},
-        BitOps, Truncate,
-    },
+    util::{property, BitOps, Truncate},
     *,
 };
 
@@ -15,13 +11,15 @@ pub enum Attribute {
     Pitch7_9 { note: u7, pitch_up: u9 },
 }
 
+const ERR_INVALID_NOTE_ATTRIBUTE: &str = "Couldn't interpret note attribute";
+
 pub fn validate_ump(bytes: &[u32]) -> Result<()> {
     match bytes[0].octet(3) {
         0x0 => Ok(()),
         0x1 => Ok(()),
         0x2 => Ok(()),
         0x3 => Ok(()),
-        _ => Err(Error::InvalidData),
+        _ => Err(Error::InvalidData(ERR_INVALID_NOTE_ATTRIBUTE)),
     }
 }
 
@@ -62,17 +60,43 @@ pub fn write_attribute(bytes: &mut [u32], attr: Option<Attribute>) -> &mut [u32]
     &mut bytes[..2]
 }
 
-impl Property<Option<Attribute>, UmpSchema<0x0000_00FF, 0x0000_FFFF, 0x0, 0x0>, ()> for Ump {
-    fn get(data: &[<Ump as Buffer>::Data]) -> Option<Attribute> {
-        from_ump(data)
+struct AttributeProperty;
+
+impl<B: crate::buffer::Ump> property::Property<B> for AttributeProperty {
+    type Type = Option<Attribute>;
+}
+
+impl<'a, B: crate::buffer::Ump> property::ReadProperty<'a, B> for AttributeProperty {
+    fn read(buffer: &'a B) -> Self::Type {
+        from_ump(buffer.buffer())
     }
-    fn write(data: &mut [<Ump as Buffer>::Data], v: Option<Attribute>) {
-        write_attribute(data, v);
-    }
-    fn validate(data: &[<Ump as Buffer>::Data]) -> Result<()> {
-        validate_ump(data)
+    fn validate(buffer: &B) -> crate::result::Result<()> {
+        validate_ump(buffer.buffer())
     }
 }
+
+impl<B: crate::buffer::Ump + crate::buffer::BufferMut> property::WriteProperty<B>
+    for AttributeProperty
+{
+    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+        Ok(())
+    }
+    fn write(buffer: &mut B, v: Self::Type) {
+        write_attribute(buffer.buffer_mut(), v);
+    }
+    fn default() -> Self::Type {
+        Default::default()
+    }
+}
+
+// impl Property<Option<Attribute>, UmpSchema<0x0000_00FF, 0x0000_FFFF, 0x0, 0x0>, ()> for Ump {
+//     fn get(data: &[<Ump as Buffer>::Data]) -> Option<Attribute> {
+//     }
+//     fn write(data: &mut [<Ump as Buffer>::Data], v: Option<Attribute>) {
+//     }
+//     fn validate(data: &[<Ump as Buffer>::Data]) -> Result<()> {
+//     }
+// }
 
 #[cfg(test)]
 mod tests {
@@ -85,7 +109,10 @@ mod tests {
 
     #[test]
     fn from_packet_invalid() {
-        assert_eq!(try_from_ump(&[0x0000_0004]), Err(Error::InvalidData),);
+        assert_eq!(
+            try_from_ump(&[0x0000_0004]),
+            Err(Error::InvalidData(ERR_INVALID_NOTE_ATTRIBUTE)),
+        );
     }
 
     #[test]

@@ -692,11 +692,16 @@ fn jitter_reduction_impl(root_ident: &syn::Ident, property: &Property) -> TokenS
     }
 }
 
-fn channeled_impl(root_ident: &syn::Ident, property: &Property) -> TokenStream {
+fn channeled_impl(
+    root_ident: &syn::Ident,
+    property: &Property,
+    args: &GenerateMessageArgs,
+) -> TokenStream {
     let setter = property_setter(property, false);
     let getter = property_getter(property, false);
+    let constraint = generic_buffer_constraint(args);
     quote! {
-        impl<B: crate::buffer::Buffer> crate::traits::Channeled<B> for #root_ident<B> {
+        impl<B: #constraint> crate::traits::Channeled<B> for #root_ident<B> {
             #getter
             #setter
         }
@@ -862,7 +867,7 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
         tokens.extend(grouped_impl(root_ident, property));
     }
     if let Some(property) = properties.iter().find(|p| p.is_channel()) {
-        tokens.extend(channeled_impl(root_ident, property));
+        tokens.extend(channeled_impl(root_ident, property, &args));
     }
     if let Representation::UmpOrBytes = args.representation() {
         // we skip generating conversion for sysex7
