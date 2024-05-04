@@ -108,7 +108,6 @@ struct GenerateMessageArgs {
     fixed_size: bool,
     min_size_ump: Option<usize>,
     min_size_bytes: Option<usize>,
-    type_doc: Option<syn::LitStr>,
 }
 
 impl GenerateMessageArgs {
@@ -141,9 +140,6 @@ impl syn::parse::Parse for GenerateMessageArgs {
             if ident == "MinSizeBytes" {
                 args.min_size_bytes = Some(parse_fixed_size(input));
             }
-            if ident == "Doc" {
-                args.type_doc = Some(parse_string(input));
-            }
 
             if let Err(_) = input.parse::<syn::Token![,]>() {
                 assert!(input.is_empty());
@@ -173,19 +169,6 @@ fn parse_fixed_size(input: syn::parse::ParseStream) -> usize {
         .expect("Valid base 10 literal size")
 }
 
-fn parse_string(input: syn::parse::ParseStream) -> syn::LitStr {
-    let syn::ExprParen { expr, .. } = input.parse().expect("Expected bracketed expression");
-
-    let syn::Expr::Lit(syn::ExprLit {
-        lit: syn::Lit::Str(str_lit),
-        ..
-    }) = *expr
-    else {
-        panic!("Expected a string literal");
-    };
-    str_lit
-}
-
 fn imports() -> TokenStream {
     quote! {
         use crate::buffer::UnitPrivate as UnitPrivateGenMessage;
@@ -205,17 +188,27 @@ fn generic_buffer_constraint(args: &GenerateMessageArgs) -> TokenStream {
     }
 }
 
-fn message(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream {
+fn message(
+    root_ident: &syn::Ident,
+    args: &GenerateMessageArgs,
+    attributes: &Vec<syn::Attribute>,
+) -> TokenStream {
     let constraint = generic_buffer_constraint(args);
-    let mut doc = TokenStream::new();
-    if let Some(doc_file) = &args.type_doc {
-        doc.extend(quote! {
-            #[doc = include_str!(#doc_file)]
-        });
+
+    let mut doc_attributes = TokenStream::new();
+    for attribute in attributes.iter() {
+        if let syn::Meta::NameValue(syn::MetaNameValue { path, .. }) = &attribute.meta {
+            if let Some(syn::PathSegment { ident, .. }) = path.segments.last() {
+                if ident == "doc" {
+                    doc_attributes.extend(quote! { #attribute });
+                }
+            }
+        }
     }
+
     quote! {
         #[derive(PartialEq, Eq, midi2_proc::Debug)]
-        #doc
+        #doc_attributes
         pub struct #root_ident<B: #constraint>(B);
     }
 }
@@ -824,7 +817,7 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     let root_ident = &input.ident;
 
     let imports = imports();
-    let message = message(root_ident, &args);
+    let message = message(root_ident, &args, &input.attrs);
     let message_impl = message_impl(root_ident, &args, &properties);
     let data_impl = data_impl(root_ident, &args);
     let min_size_impl = min_size_impl(root_ident, &args);
@@ -872,6 +865,8 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
         tokens.extend(channeled_impl(root_ident, property));
     }
     if let Representation::UmpOrBytes = args.representation() {
+        // we skip generating conversion for sysex7
+        // these traits are implemented manually
         if !properties.iter().any(|p| p.is_sysex_payload()) {
             tokens.extend(from_bytes_impl(root_ident, &properties));
             tokens.extend(from_ump_impl(root_ident, &properties));
