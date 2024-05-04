@@ -25,6 +25,7 @@ pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x2;
     midi2_proc::Grouped,
     midi2_proc::FromBytes,
     midi2_proc::FromUmp,
+    midi2_proc::JitterReduced,
     midi2_proc::TryFromBytes,
     midi2_proc::TryFromUmp,
     midi2_proc::RebufferFrom,

@@ -31,6 +31,42 @@ pub fn data(item: TokenStream1) -> TokenStream1 {
     .into()
 }
 
+pub fn jitter_reduced(item: TokenStream1) -> TokenStream1 {
+    let input = parse_macro_input!(item as ItemEnum);
+    let ident = &input.ident;
+    let mut match_arms_setter = TokenStream::new();
+    let mut match_arms_getter = TokenStream::new();
+    for variant in &input.variants {
+        let variant_ident = &variant.ident;
+        match_arms_getter.extend(quote! {
+            #variant_ident(m) => m.jitter_reduction(),
+        });
+        match_arms_setter.extend(quote! {
+            #variant_ident(m) => m.set_jitter_reduction(jr),
+        });
+    }
+    quote! {
+        impl<B: crate::buffer::Ump>  crate::traits::JitterReduced<B> for #ident<B> {
+            fn jitter_reduction(&self) -> Option<crate::message::utility::JitterReduction> {
+                use #ident::*;
+                match self {
+                    #match_arms_getter
+                }
+            }
+            fn set_jitter_reduction(&mut self, jr: Option<crate::message::utility::JitterReduction>)
+            where
+                B: crate::buffer::BufferMut
+            {
+                use #ident::*;
+                match self {
+                    #match_arms_setter
+                }
+            }
+        }
+    }
+    .into()
+}
+
 pub fn from_bytes(item: TokenStream1) -> TokenStream1 {
     let input = parse_macro_input!(item as ItemEnum);
     let ident = &input.ident;

@@ -762,6 +762,7 @@ const PERFORMANCE_TEXT_BANK: u8 = 0x2;
     midi2_proc::Grouped,
     midi2_proc::RebufferFrom,
     midi2_proc::TryRebufferFrom,
+    midi2_proc::JitterReduced,
     Clone,
     Debug,
     PartialEq,
@@ -1223,5 +1224,21 @@ mod tests {
                 .bank(),
             Bank::SetupAndPerformance,
         );
+    }
+
+    #[test]
+    fn set_jr() {
+        use crate::message::utility::JitterReduction;
+        use crate::traits::{JitterReduced, RebufferInto};
+
+        let mut message: FlexData<std::vec::Vec<u32>> =
+            FlexData::try_from(&[0xD710_0000_u32, 0xF751_FE05][..])
+                .unwrap()
+                .rebuffer_into();
+
+        let jr = Some(JitterReduction::Timestamp(0x1234));
+        message.set_jitter_reduction(jr.clone());
+
+        assert_eq!(message.jitter_reduction(), jr.clone());
     }
 }
