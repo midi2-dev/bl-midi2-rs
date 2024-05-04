@@ -42,8 +42,11 @@ pub mod unknown_metadata_text_event {
         text: &str,
         #[property(text::TextReadBytesProperty)]
         #[readonly]
-        #[borrowed]
         text_bytes: text::TextBytesIterator,
+        #[property(text::TextReadStringProperty)]
+        #[readonly]
+        #[std]
+        text: std::string::String,
     }
 
     impl<B: crate::buffer::Ump> crate::traits::Size<B> for UnknownMetadataTextEvent<B> {
@@ -137,6 +140,29 @@ pub mod unknown_metadata_text_event {
                     0x47, 0x69, 0x6D, 0x6D, 0x65, 0x20, 0x73, 0x6F, 0x6D, 0x65, 0x20, 0x73, 0x69,
                     0x67, 0x6E, 0x61, 0x6C, 0x21,
                 ]
+            )
+        }
+
+        #[test]
+        #[cfg(feature = "std")]
+        fn read_string() {
+            assert_eq!(
+                UnknownMetadataTextEvent::try_from(
+                    &[
+                        0x0000_0000,
+                        0xD050_0100,
+                        0x4769_6D6D,
+                        0x6520_736F,
+                        0x6D65_2073,
+                        0xD0D0_0100,
+                        0x6967_6E61,
+                        0x6C21_0000,
+                        0x0000_0000,
+                    ][..]
+                )
+                .unwrap()
+                .text(),
+                "Gimme some signal!",
             )
         }
     }
@@ -412,7 +438,7 @@ impl<B: Ump + BufferMut> WriteProperty<B> for OptionalChannelProperty {
     fn write(buffer: &mut B, v: Self::Type) {
         use crate::buffer::UmpPrivateMut;
 
-        let mut buffer_slice = buffer.buffer_mut();
+        let buffer_slice = buffer.buffer_mut();
         let data = buffer_slice.message_mut();
         optional_channel_to_slice(data, v);
     }
@@ -467,7 +493,7 @@ impl<B: Ump + BufferMut> WriteProperty<B> for NoChannelProperty {
         use crate::numeric_types::u2;
         use crate::numeric_types::u4;
 
-        let mut buffer_slice = buffer.buffer_mut();
+        let buffer_slice = buffer.buffer_mut();
         let data = buffer_slice.message_mut();
         data[0].set_crumb(5, u2::new(0x1));
         data[0].set_nibble(3, u4::new(0x0));

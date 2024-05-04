@@ -216,7 +216,7 @@ impl<B: crate::buffer::Buffer + crate::buffer::BufferMut> crate::util::property:
             return;
         }
 
-        let mut buffer = buffer.specialise_u32_mut();
+        let buffer = buffer.specialise_u32_mut();
         let jr_slice = buffer.jitter_reduction_mut();
         debug_assert!(!jr_slice.is_empty());
         match jr {

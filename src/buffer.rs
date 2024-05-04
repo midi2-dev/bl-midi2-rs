@@ -227,21 +227,21 @@ impl<B: Buffer> SpecialiseU8<B> for B {
     }
 }
 
-pub(crate) trait UmpPrivate {
-    fn message(&self) -> &[u32];
-    fn jitter_reduction(&self) -> &[u32];
+pub(crate) trait UmpPrivate<'a> {
+    fn message(self) -> &'a [u32];
+    fn jitter_reduction(self) -> &'a [u32];
 }
 
-pub(crate) trait UmpPrivateMut: UmpPrivate {
-    fn message_mut(&mut self) -> &mut [u32];
-    fn jitter_reduction_mut(&mut self) -> &mut [u32];
+pub(crate) trait UmpPrivateMut<'a>: UmpPrivate<'a> {
+    fn message_mut(self) -> &'a mut [u32];
+    fn jitter_reduction_mut(self) -> &'a mut [u32];
 }
 
-impl UmpPrivate for &[u32] {
-    fn message(&self) -> &[u32] {
+impl<'a> UmpPrivate<'a> for &'a [u32] {
+    fn message(self) -> &'a [u32] {
         &self[self.jitter_reduction().len()..]
     }
-    fn jitter_reduction(&self) -> &[u32] {
+    fn jitter_reduction(self) -> &'a [u32] {
         match self.len() {
             0 => self,
             _ => {
@@ -255,11 +255,12 @@ impl UmpPrivate for &[u32] {
     }
 }
 
-impl UmpPrivate for &mut [u32] {
-    fn message(&self) -> &[u32] {
-        &self[self.jitter_reduction().len()..]
+impl<'a> UmpPrivate<'a> for &'a mut [u32] {
+    fn message(self) -> &'a [u32] {
+        let start = self.jitter_reduction().len();
+        &self[start..]
     }
-    fn jitter_reduction(&self) -> &[u32] {
+    fn jitter_reduction(self) -> &'a [u32] {
         match self.len() {
             0 => self,
             _ => {
@@ -273,12 +274,12 @@ impl UmpPrivate for &mut [u32] {
     }
 }
 
-impl UmpPrivateMut for &mut [u32] {
-    fn message_mut(&mut self) -> &mut [u32] {
+impl<'a> UmpPrivateMut<'a> for &'a mut [u32] {
+    fn message_mut(self) -> &'a mut [u32] {
         let begin = self.jitter_reduction().len();
         &mut self[begin..]
     }
-    fn jitter_reduction_mut(&mut self) -> &mut [u32] {
+    fn jitter_reduction_mut(self) -> &'a mut [u32] {
         match self.len() {
             0 => self,
             _ => {

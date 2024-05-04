@@ -124,15 +124,49 @@ fn grow_buffer(mut buffer: &mut [u32], size: usize) {
 }
 
 pub struct TextBytesIterator<'a> {
-    pub buffer: &'a [u32],
-    pub packet_index: usize,
-    pub byte_index: usize,
+    buffer: &'a [u32],
+    packet_index: usize,
+    byte_index: usize,
 }
 
 impl<'a> core::iter::Iterator for TextBytesIterator<'a> {
     type Item = u8;
     fn next(&mut self) -> Option<Self::Item> {
-        todo!()
+        if self.finished() {
+            return None;
+        }
+        let ret = Some(self.value());
+        self.advance();
+        while !self.finished() && self.value() == 0 {
+            self.advance();
+        }
+        ret
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        ((self.buffer.len() - 1) * 12, Some(self.buffer.len() * 12))
+    }
+}
+
+impl<'a> core::iter::FusedIterator for TextBytesIterator<'a> {}
+
+impl<'a> TextBytesIterator<'a> {
+    fn finished(&self) -> bool {
+        self.buffer.len() / 4 <= self.packet_index
+    }
+    fn advance(&mut self) {
+        self.byte_index += 1;
+        if self.byte_index == 12 {
+            // end of message
+            self.packet_index += 1;
+            self.byte_index = 0;
+        }
+    }
+    fn value(&mut self) -> u8 {
+        use crate::util::BitOps;
+        let buffer_index = self.packet_index * 4 + 1 + self.byte_index / 4;
+        let byte_index = self.byte_index % 4;
+        self.buffer[buffer_index].octet(byte_index)
     }
 }
 
@@ -144,8 +178,9 @@ impl<'a, B: Ump> Property<B> for TextReadBytesProperty<'a> {
 
 impl<'a, B: 'a + Ump> ReadProperty<'a, B> for TextReadBytesProperty<'a> {
     fn read(buffer: &'a B) -> <Self as Property<B>>::Type {
+        use crate::buffer::UmpPrivate;
         TextBytesIterator {
-            buffer: buffer.buffer(),
+            buffer: buffer.buffer().message(),
             packet_index: 0,
             byte_index: 0,
         }
@@ -165,10 +200,15 @@ impl<B: Ump> Property<B> for TextReadStringProperty {
 
 #[cfg(feature = "std")]
 impl<'a, B: Ump> ReadProperty<'a, B> for TextReadStringProperty {
-    fn read(_buffer: &'a B) -> Self::Type {
-        todo!()
+    fn read(buffer: &'a B) -> Self::Type {
+        let bytes = TextReadBytesProperty::read(buffer).collect();
+        std::string::String::from_utf8(bytes).unwrap()
     }
-    fn validate(_buffer: &B) -> crate::result::Result<()> {
-        todo!()
+    fn validate(buffer: &B) -> crate::result::Result<()> {
+        let bytes = TextReadBytesProperty::read(buffer).collect();
+        std::string::String::from_utf8(bytes).map_err(|_| {
+            crate::Error::InvalidData("Payload bytes do not represent a valid utf string")
+        })?;
+        Ok(())
     }
 }

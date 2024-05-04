@@ -11,6 +11,7 @@ struct Property {
     readonly: bool,
     writeonly: bool,
     resize: bool,
+    std: bool,
 }
 
 impl Property {
@@ -90,6 +91,7 @@ fn properties(input: &syn::ItemStruct) -> Vec<Property> {
             readonly: has_attr(field, "readonly"),
             writeonly: has_attr(field, "writeonly"),
             resize: has_attr(field, "resize"),
+            std: has_attr(field, "std"),
         })
         .collect()
 }
@@ -254,7 +256,10 @@ fn property_getter(property: &Property, public: bool) -> TokenStream {
     } else {
         TokenStream::new()
     };
+    let std_only_attribute = std_only_attribute(property);
+
     quote! {
+        #std_only_attribute
         #pub_token fn #ident(&self) -> #ty {
             <#meta_type as crate::util::property::ReadProperty<B>>::read(self.buffer_access())
         }
@@ -273,17 +278,21 @@ fn property_setter(property: &Property, public: bool) -> TokenStream {
     } else {
         TokenStream::new()
     };
+    let std_only_attribute = std_only_attribute(property);
+
     if property.resize {
         let fallible_ident = syn::Ident::new(
             format!("try_{}", ident.to_string()).as_str(),
             proc_macro2::Span::call_site(),
         );
         quote! {
+            #std_only_attribute
             #pub_token fn #ident(&mut self, value: #ty) where B: crate::buffer::BufferMut + crate::buffer::BufferResize {
                 <#meta_type as crate::util::property::ResizeProperty<B>>::resize(self.buffer_access_mut(), &value);
                 <#meta_type as crate::util::property::WriteProperty<B>>::write(self.buffer_access_mut(), value);
             }
 
+            #std_only_attribute
             #pub_token fn #fallible_ident(&mut self, value: #ty) -> core::result::Result<(), crate::error::BufferOverflow>
             where B: crate::buffer::BufferMut + crate::buffer::BufferTryResize {
                 <#meta_type as crate::util::property::ResizeProperty<B>>::try_resize(self.buffer_access_mut(), &value)?;
@@ -293,10 +302,21 @@ fn property_setter(property: &Property, public: bool) -> TokenStream {
         }
     } else {
         quote! {
+            #std_only_attribute
             #pub_token fn #ident(&mut self, value: #ty) where B: crate::buffer::BufferMut {
                 <#meta_type as crate::util::property::WriteProperty<B>>::write(self.buffer_access_mut(), value);
             }
         }
+    }
+}
+
+fn std_only_attribute(property: &Property) -> TokenStream {
+    if property.std {
+        quote! {
+            #[cfg(feature = "std")]
+        }
+    } else {
+        TokenStream::new()
     }
 }
 
@@ -461,7 +481,10 @@ fn try_from_slice_impl(
     };
     for property in properties.iter().filter(|p| !p.writeonly) {
         let meta_type = &property.meta_type;
+        let std_only_attribute = std_only_attribute(property);
+
         validation_steps.extend(quote! {
+            #std_only_attribute
             <#meta_type as crate::util::property::ReadProperty<&[#unit_type]>>::validate(&buffer)?;
         });
     }
@@ -641,7 +664,10 @@ fn initialise_property_statements(
     let mut initialise_properties = TokenStream::new();
     for property in properties.iter().filter(|p| !p.readonly) {
         let meta_type = &property.meta_type;
+        let std_only_attribute = std_only_attribute(property);
+
         initialise_properties.extend(quote! {
+            #std_only_attribute
             <#meta_type as crate::util::property::WriteProperty<#buffer_type>>::write(
                 &mut buffer,
                 <#meta_type as crate::util::property::WriteProperty<#buffer_type>>::default(),
@@ -735,8 +761,11 @@ fn try_from_bytes_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> T
 fn convert_properties(properties: &Vec<Property>) -> TokenStream {
     let mut convert_properties = TokenStream::new();
     for property in properties.iter().filter(|p| !p.readonly && !p.writeonly) {
+        let std_only_attribute = std_only_attribute(property);
         let meta_type = &property.meta_type;
+
         convert_properties.extend(quote! {
+            #std_only_attribute
             <#meta_type as crate::util::property::WriteProperty<B>>::write(
                 &mut buffer,
                 <#meta_type as crate::util::property::ReadProperty<A>>::read(&other.0)
