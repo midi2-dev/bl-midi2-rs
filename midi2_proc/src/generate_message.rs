@@ -445,8 +445,8 @@ fn data_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream
                             0 => 0,
                             _ => {
                                 match u8::from(jr_slice[0].nibble(2)) {
-                                    0 => 1,
-                                    _ => 0,
+                                    0 => 1, // the jr header is noop - skip from the data slice
+                                    _ => 0, // the jr header has data - include it!
                                 }
                             }
                         };
