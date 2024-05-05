@@ -1,6 +1,6 @@
 use crate::{
     error::Error,
-    util::{schema, BitOps, Truncate},
+    util::{property, BitOps, Truncate},
     *,
 };
 
@@ -130,12 +130,41 @@ pub fn to_index_and_data(c: Controller) -> (u8, u32) {
     }
 }
 
-impl schema::UmpSchemaRepr<schema::Ump<0x0000_00FF, 0xFFFF_FFFF, 0x0, 0x0>> for Controller {
-    fn read(buffer: &[u32]) -> Self {
+pub struct ControllerProperty;
+
+impl<B: crate::buffer::Ump> property::Property<B> for ControllerProperty {
+    type Type = Controller;
+}
+
+impl<'a, B: crate::buffer::Ump> property::ReadProperty<'a, B> for ControllerProperty {
+    fn validate(buffer: &B) -> crate::result::Result<()> {
+        use crate::buffer::UmpPrivate;
+
+        let buffer = buffer.buffer().message();
+        validate_index(buffer[0].octet(3))
+    }
+    fn read(buffer: &'a B) -> Self::Type {
+        use crate::buffer::UmpPrivate;
+
+        let buffer = buffer.buffer().message();
         from_index_and_data(buffer[0].octet(3), buffer[1])
     }
-    fn write(buffer: &mut [u32], value: Self) {
-        let (index, controller_data) = to_index_and_data(value);
+}
+
+impl<B: crate::buffer::Ump + crate::buffer::BufferMut> property::WriteProperty<B>
+    for ControllerProperty
+{
+    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+        Ok(())
+    }
+    fn default() -> Self::Type {
+        Default::default()
+    }
+    fn write(buffer: &mut B, v: Self::Type) {
+        use crate::buffer::UmpPrivateMut;
+
+        let buffer = buffer.buffer_mut().message_mut();
+        let (index, controller_data) = to_index_and_data(v);
         buffer[0].set_octet(3, index);
         buffer[1] = controller_data;
     }

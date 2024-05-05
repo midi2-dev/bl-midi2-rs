@@ -1,18 +1,29 @@
-const OP_CODE: u32 = 0b0101;
-const MIDI2_CHANNEL_VOICE_TYPE: u32 = 0x4;
+use crate::{
+    message::{common_properties, midi2_channel_voice::UMP_MESSAGE_TYPE},
+    numeric_types::{u4, u7},
+    util::schema,
+};
 
-#[midi2_proc::generate_message(Grouped, Channeled)]
+pub(crate) const STATUS: u8 = 0b0101;
+
+#[midi2_proc::generate_message(FixedSize, MinSizeUmp(2))]
 struct RelativeAssignableController {
-    ump_type: Property<
-        NumericalConstant<MIDI2_CHANNEL_VOICE_TYPE>,
-        UmpSchema<0xF000_0000, 0x0, 0x0, 0x0>,
-        (),
-    >,
-    status: Property<NumericalConstant<OP_CODE>, UmpSchema<0x00F0_0000, 0x0, 0x0, 0x0>, ()>,
-    channel: Property<u4, UmpSchema<0x000F_0000, 0x0, 0x0, 0x0>, ()>,
-    bank: Property<u7, UmpSchema<0x0000_7F00, 0x0, 0x0, 0x0>, ()>,
-    index: Property<u7, UmpSchema<0x0000_007F, 0x0, 0x0, 0x0>, ()>,
-    controller_data: Property<u32, UmpSchema<0x0000_0000, 0xFFFF_FFFF, 0x0, 0x0>, ()>,
+    #[property(crate::message::utility::JitterReductionProperty)]
+    jitter_reduction: Option<crate::message::utility::JitterReduction>,
+    #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
+    ump_type: (),
+    #[property(common_properties::ChannelVoiceStatusProperty<STATUS>)]
+    status: (),
+    #[property(common_properties::UmpSchemaProperty<u4, schema::Ump<0x000F_0000, 0x0, 0x0, 0x0>>)]
+    channel: u4,
+    #[property(common_properties::GroupProperty)]
+    group: u4,
+    #[property(common_properties::UmpSchemaProperty<u7, schema::Ump<0x0000_7F00, 0x0, 0x0, 0x0>>)]
+    bank: u7,
+    #[property(common_properties::UmpSchemaProperty<u7, schema::Ump<0x0000_007F, 0x0, 0x0, 0x0>>)]
+    index: u7,
+    #[property(common_properties::UmpSchemaProperty<u32, schema::Ump<0x0000_0000, 0xFFFF_FFFF, 0x0, 0x0>>)]
+    controller_data: u32,
 }
 
 #[cfg(test)]
@@ -22,44 +33,25 @@ mod tests {
 
     #[test]
     fn builder() {
-        assert_eq!(
-            RelativeAssignableControllerMessage::builder()
-                .group(u4::new(0x3))
-                .channel(u4::new(0x1))
-                .bank(u7::new(0x24))
-                .index(u7::new(0x52))
-                .controller_data(0x898874E4)
-                .build(),
-            Ok(RelativeAssignableControllerMessage::Owned(
-                RelativeAssignableControllerOwned([0x4351_2452, 0x898874E4, 0x0, 0x0,])
-            )),
-        );
-    }
+        use crate::traits::{Channeled, Grouped};
 
-    #[test]
-    fn group() {
-        assert_eq!(
-            RelativeAssignableControllerMessage::from_data(&[0x4351_2452, 0x898874E4, 0x0, 0x0])
-                .unwrap()
-                .group(),
-            u4::new(0x3),
-        );
-    }
+        let mut message = RelativeAssignableController::new_arr();
+        message.set_group(u4::new(0x3));
+        message.set_channel(u4::new(0x1));
+        message.set_bank(u7::new(0x24));
+        message.set_index(u7::new(0x52));
+        message.set_controller_data(0x898874E4);
 
-    #[test]
-    fn channel() {
         assert_eq!(
-            RelativeAssignableControllerMessage::from_data(&[0x4351_2452, 0x898874E4, 0x0, 0x0])
-                .unwrap()
-                .channel(),
-            u4::new(0x1),
+            message,
+            RelativeAssignableController([0x0, 0x4351_2452, 0x898874E4, 0x0, 0x0,]),
         );
     }
 
     #[test]
     pub fn bank() {
         assert_eq!(
-            RelativeAssignableControllerMessage::from_data(&[0x4351_2452, 0x898874E4, 0x0, 0x0])
+            RelativeAssignableController::try_from(&[0x4351_2452, 0x898874E4][..])
                 .unwrap()
                 .bank(),
             u7::new(0x24),
@@ -69,7 +61,7 @@ mod tests {
     #[test]
     pub fn index() {
         assert_eq!(
-            RelativeAssignableControllerMessage::from_data(&[0x4351_2452, 0x898874E4, 0x0, 0x0])
+            RelativeAssignableController::try_from(&[0x4351_2452, 0x898874E4][..])
                 .unwrap()
                 .index(),
             u7::new(0x52),
@@ -79,7 +71,7 @@ mod tests {
     #[test]
     pub fn controller_data() {
         assert_eq!(
-            RelativeAssignableControllerMessage::from_data(&[0x4351_2452, 0x898874E4, 0x0, 0x0])
+            RelativeAssignableController::try_from(&[0x4351_2452, 0x898874E4][..])
                 .unwrap()
                 .controller_data(),
             0x898874E4,

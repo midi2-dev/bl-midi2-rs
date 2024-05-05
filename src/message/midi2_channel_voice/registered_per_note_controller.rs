@@ -1,19 +1,30 @@
-use crate::message::midi2_channel_voice::controller::Controller;
+use crate::{
+    message::{
+        common_properties,
+        midi2_channel_voice::{controller, UMP_MESSAGE_TYPE},
+    },
+    numeric_types::{u4, u7},
+    util::schema,
+};
 
-const OP_CODE: u32 = 0b0000;
-const MIDI2_CHANNEL_VOICE_TYPE: u32 = 0x4;
+pub(crate) const STATUS: u8 = 0b0000;
 
-#[midi2_proc::generate_message(Grouped, Channeled)]
+#[midi2_proc::generate_message(FixedSize, MinSizeUmp(2))]
 struct RegisteredPerNoteController {
-    ump_type: Property<
-        NumericalConstant<MIDI2_CHANNEL_VOICE_TYPE>,
-        UmpSchema<0xF000_0000, 0x0, 0x0, 0x0>,
-        (),
-    >,
-    status: Property<NumericalConstant<OP_CODE>, UmpSchema<0x00F0_0000, 0x0, 0x0, 0x0>, ()>,
-    channel: Property<u4, UmpSchema<0x000F_0000, 0x0, 0x0, 0x0>, ()>,
-    note: Property<u7, UmpSchema<0x0000_7F00, 0x0, 0x0, 0x0>, ()>,
-    controller: Property<Controller, UmpSchema<0x0000_00FF, 0xFFFF_FFFF, 0x0, 0x0>, ()>,
+    #[property(crate::message::utility::JitterReductionProperty)]
+    jitter_reduction: Option<crate::message::utility::JitterReduction>,
+    #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
+    ump_type: (),
+    #[property(common_properties::ChannelVoiceStatusProperty<STATUS>)]
+    status: (),
+    #[property(common_properties::UmpSchemaProperty<u4, schema::Ump<0x000F_0000, 0x0, 0x0, 0x0>>)]
+    channel: u4,
+    #[property(common_properties::GroupProperty)]
+    group: u4,
+    #[property(common_properties::UmpSchemaProperty<u7, schema::Ump<0x0000_7F00, 0x0, 0x0, 0x0>>)]
+    note: u7,
+    #[property(controller::ControllerProperty)]
+    controller: controller::Controller,
 }
 
 #[cfg(test)]
@@ -23,43 +34,24 @@ mod tests {
 
     #[test]
     fn builder() {
-        assert_eq!(
-            RegisteredPerNoteControllerMessage::builder()
-                .group(u4::new(0x4))
-                .channel(u4::new(0x5))
-                .note(u7::new(0x6C))
-                .controller(Controller::Volume(0xE1E35E92))
-                .build(),
-            Ok(RegisteredPerNoteControllerMessage::Owned(
-                RegisteredPerNoteControllerOwned([0x4405_6C07, 0xE1E35E92, 0x0, 0x0,])
-            )),
-        );
-    }
+        use crate::traits::{Channeled, Grouped};
 
-    #[test]
-    fn group() {
-        assert_eq!(
-            RegisteredPerNoteControllerMessage::from_data(&[0x4405_6C07, 0xE1E35E92, 0x0, 0x0])
-                .unwrap()
-                .group(),
-            u4::new(0x4),
-        );
-    }
+        let mut message = RegisteredPerNoteController::new_arr();
+        message.set_group(u4::new(0x4));
+        message.set_channel(u4::new(0x5));
+        message.set_note(u7::new(0x6C));
+        message.set_controller(controller::Controller::Volume(0xE1E35E92));
 
-    #[test]
-    fn channel() {
         assert_eq!(
-            RegisteredPerNoteControllerMessage::from_data(&[0x4405_6C07, 0xE1E35E92, 0x0, 0x0])
-                .unwrap()
-                .channel(),
-            u4::new(0x5),
+            message,
+            RegisteredPerNoteController([0x0, 0x4405_6C07, 0xE1E35E92, 0x0, 0x0,]),
         );
     }
 
     #[test]
     fn note() {
         assert_eq!(
-            RegisteredPerNoteControllerMessage::from_data(&[0x4405_6C07, 0xE1E35E92, 0x0, 0x0])
+            RegisteredPerNoteController::try_from(&[0x4405_6C07, 0xE1E35E92][..])
                 .unwrap()
                 .note(),
             u7::new(0x6C),
@@ -69,10 +61,10 @@ mod tests {
     #[test]
     fn controller() {
         assert_eq!(
-            RegisteredPerNoteControllerMessage::from_data(&[0x4405_6C07, 0xE1E35E92, 0x0, 0x0])
+            RegisteredPerNoteController::try_from(&[0x4405_6C07, 0xE1E35E92][..])
                 .unwrap()
                 .controller(),
-            Controller::Volume(0xE1E35E92),
+            controller::Controller::Volume(0xE1E35E92),
         );
     }
 }

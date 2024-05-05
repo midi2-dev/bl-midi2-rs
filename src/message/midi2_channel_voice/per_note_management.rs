@@ -1,18 +1,29 @@
-const OP_CODE: u32 = 0b1111;
-const MIDI2_CHANNEL_VOICE_TYPE: u32 = 0x4;
+use crate::{
+    message::{common_properties, midi2_channel_voice::UMP_MESSAGE_TYPE},
+    numeric_types::{u4, u7},
+    util::schema,
+};
 
-#[midi2_proc::generate_message(Grouped, Channeled)]
+pub(crate) const STATUS: u8 = 0b1111;
+
+#[midi2_proc::generate_message(FixedSize, MinSizeUmp(1))]
 struct PerNoteManagement {
-    ump_type: Property<
-        NumericalConstant<MIDI2_CHANNEL_VOICE_TYPE>,
-        UmpSchema<0xF000_0000, 0x0, 0x0, 0x0>,
-        (),
-    >,
-    status: Property<NumericalConstant<OP_CODE>, UmpSchema<0x00F0_0000, 0x0, 0x0, 0x0>, ()>,
-    channel: Property<u4, UmpSchema<0x000F_0000, 0x0, 0x0, 0x0>, ()>,
-    note: Property<u7, UmpSchema<0x0000_7F00, 0x0, 0x0, 0x0>, ()>,
-    detach: Property<bool, UmpSchema<0x0000_0001, 0x0, 0x0, 0x0>, ()>,
-    reset: Property<bool, UmpSchema<0x0000_0002, 0x0, 0x0, 0x0>, ()>,
+    #[property(crate::message::utility::JitterReductionProperty)]
+    jitter_reduction: Option<crate::message::utility::JitterReduction>,
+    #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
+    ump_type: (),
+    #[property(common_properties::ChannelVoiceStatusProperty<STATUS>)]
+    status: (),
+    #[property(common_properties::UmpSchemaProperty<u4, schema::Ump<0x000F_0000, 0x0, 0x0, 0x0>>)]
+    channel: u4,
+    #[property(common_properties::GroupProperty)]
+    group: u4,
+    #[property(common_properties::UmpSchemaProperty<u7, schema::Ump<0x0000_7F00, 0x0, 0x0, 0x0>>)]
+    note: u7,
+    #[property(common_properties::UmpSchemaProperty<bool, schema::Ump<0x0000_0001, 0x0, 0x0, 0x0>>)]
+    detach: bool,
+    #[property(common_properties::UmpSchemaProperty<bool, schema::Ump<0x0000_0002, 0x0, 0x0, 0x0>>)]
+    reset: bool,
 }
 
 #[cfg(test)]
@@ -21,48 +32,26 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     #[test]
-    fn builder() {
-        assert_eq!(
-            PerNoteManagementMessage::builder()
-                .group(u4::new(0xB))
-                .channel(u4::new(0x9))
-                .note(u7::new(0x1C))
-                .detach(true)
-                .reset(true)
-                .build(),
-            Ok(PerNoteManagementMessage::Owned(PerNoteManagementOwned([
-                0x4BF9_1C03,
-                0x0,
-                0x0,
-                0x0
-            ]))),
-        );
-    }
+    fn setters() {
+        use crate::traits::{Channeled, Grouped};
 
-    #[test]
-    fn group() {
-        assert_eq!(
-            PerNoteManagementMessage::from_data(&[0x4BF9_1C03, 0x0, 0x0, 0x0])
-                .unwrap()
-                .group(),
-            u4::new(0xB),
-        );
-    }
+        let mut message = PerNoteManagement::new_arr();
+        message.set_group(u4::new(0xB));
+        message.set_channel(u4::new(0x9));
+        message.set_note(u7::new(0x1C));
+        message.set_detach(true);
+        message.set_reset(true);
 
-    #[test]
-    fn channel() {
         assert_eq!(
-            PerNoteManagementMessage::from_data(&[0x4BF9_1C03, 0x0, 0x0, 0x0])
-                .unwrap()
-                .channel(),
-            u4::new(0x9),
+            message,
+            PerNoteManagement([0x0, 0x4BF9_1C03, 0x0, 0x0, 0x0]),
         );
     }
 
     #[test]
     fn note() {
         assert_eq!(
-            PerNoteManagementMessage::from_data(&[0x4BF9_1C03, 0x0, 0x0, 0x0])
+            PerNoteManagement::try_from(&[0x4BF9_1C03][..])
                 .unwrap()
                 .note(),
             u7::new(0x1C),
@@ -71,19 +60,15 @@ mod tests {
 
     #[test]
     fn detach() {
-        assert!(
-            PerNoteManagementMessage::from_data(&[0x4BF9_1C03, 0x0, 0x0, 0x0])
-                .unwrap()
-                .detach(),
-        );
+        assert!(PerNoteManagement::try_from(&[0x4BF9_1C03][..])
+            .unwrap()
+            .detach(),);
     }
 
     #[test]
     fn reset() {
-        assert!(
-            PerNoteManagementMessage::from_data(&[0x4BF9_1C03, 0x0, 0x0, 0x0])
-                .unwrap()
-                .reset(),
-        );
+        assert!(PerNoteManagement::try_from(&[0x4BF9_1C03][..])
+            .unwrap()
+            .reset(),);
     }
 }
