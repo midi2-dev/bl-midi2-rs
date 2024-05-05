@@ -1,6 +1,8 @@
-An ergonomic wrapper around MIDI System Exclusive data.
+# System Exclusive 7Bit
 
-# Abstract over [Buffer](crate::buffer::Buffer)
+A semantic wrapper type around midi2 system exclusive 7bit data.
+
+## Abstract over [Buffer](crate::buffer::Buffer)
 
 Use it with a [Ump](crate::buffer::Ump) buffer.
 
@@ -46,7 +48,7 @@ assert_eq!(
 );
 ```
 
-# Borrowed workflow
+## Borrowed workflow
 
 You can create a [Sysex7](crate::message::sysex7::Sysex7) from
 borrowed data and avoid copying or allocating if you have the data already existing
@@ -100,7 +102,7 @@ assert_eq!(
 );
 ```
 
-# Fixed size buffers
+## Fixed size buffers
 
 Use with fixed size, or fallible buffers.
 

@@ -1,3 +1,5 @@
+#![doc = include_str!("README.md")]
+
 use crate::{
     message::{common_properties, helpers as message_helpers},
     numeric_types::{self, u7},
@@ -8,7 +10,8 @@ use crate::{
 pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x3;
 
 #[midi2_proc::generate_message(MinSizeUmp(2), MinSizeBytes(2))]
-#[doc = include_str!("sysex7_doc.md")]
+/// A semantic wrapper type around midi2 system exclusive 7bit data.
+/// See the [module docs](crate::message::sysex7) for more detailed info
 struct Sysex7 {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
