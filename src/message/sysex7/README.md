@@ -1,6 +1,6 @@
 # System Exclusive 7Bit
 
-A semantic wrapper type around midi2 system exclusive 7bit data.
+A semantic wrapper type around MIDI system exclusive 7bit data.
 
 ## Abstract over [Buffer](crate::buffer::Buffer)
 

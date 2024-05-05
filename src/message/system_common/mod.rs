@@ -1,10 +1,12 @@
+#![doc = include_str!("README.md")]
+
 pub const UMP_MESSAGE_TYPE: u8 = 0x1;
 
-pub mod song_position_pointer;
-pub mod song_select;
-pub mod time_code;
+mod song_position_pointer;
+mod song_select;
+mod time_code;
 
-pub mod tune_request {
+mod tune_request {
     use crate::message::{
         common_properties,
         system_common::{self, UMP_MESSAGE_TYPE},
@@ -22,7 +24,7 @@ pub mod tune_request {
         group: crate::numeric_types::u4,
     }
 }
-pub mod timing_clock {
+mod timing_clock {
     use crate::message::{
         common_properties,
         system_common::{self, UMP_MESSAGE_TYPE},
@@ -40,7 +42,7 @@ pub mod timing_clock {
         group: crate::numeric_types::u4,
     }
 }
-pub mod start {
+mod start {
     use crate::message::{
         common_properties,
         system_common::{self, UMP_MESSAGE_TYPE},
@@ -58,7 +60,7 @@ pub mod start {
         group: crate::numeric_types::u4,
     }
 }
-pub mod cont {
+mod cont {
     use crate::message::{
         common_properties,
         system_common::{self, UMP_MESSAGE_TYPE},
@@ -76,7 +78,7 @@ pub mod cont {
         group: crate::numeric_types::u4,
     }
 }
-pub mod stop {
+mod stop {
     use crate::message::{
         common_properties,
         system_common::{self, UMP_MESSAGE_TYPE},
@@ -94,7 +96,7 @@ pub mod stop {
         group: crate::numeric_types::u4,
     }
 }
-pub mod active_sensing {
+mod active_sensing {
     use crate::message::{
         common_properties,
         system_common::{self, UMP_MESSAGE_TYPE},
@@ -112,7 +114,7 @@ pub mod active_sensing {
         group: crate::numeric_types::u4,
     }
 }
-pub mod reset {
+mod reset {
     use crate::message::{
         common_properties,
         system_common::{self, UMP_MESSAGE_TYPE},
@@ -130,6 +132,17 @@ pub mod reset {
         group: crate::numeric_types::u4,
     }
 }
+
+pub use active_sensing::ActiveSensing;
+pub use cont::Continue;
+pub use reset::Reset;
+pub use song_position_pointer::SongPositionPointer;
+pub use song_select::SongSelect;
+pub use start::Start;
+pub use stop::Stop;
+pub use time_code::TimeCode;
+pub use timing_clock::TimingClock;
+pub use tune_request::TuneRequest;
 
 #[derive(
     derive_more::From,
