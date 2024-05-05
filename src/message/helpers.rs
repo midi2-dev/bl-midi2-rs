@@ -1,6 +1,6 @@
 use crate::traits::{SysexInternal, SysexTryResizeError};
 
-#[cfg(any(feature = "sysex7", feature = "sysex8"))]
+#[cfg(any(feature = "sysex7", feature = "sysex8", feature = "flex-data"))]
 pub fn group_from_packet(p: &[u32]) -> crate::numeric_types::u4 {
     use crate::util::BitOps;
     p[0].nibble(1)
@@ -8,7 +8,7 @@ pub fn group_from_packet(p: &[u32]) -> crate::numeric_types::u4 {
 
 pub const ERR_INCONSISTENT_GROUPS: &str = "Inconsistent groups across packets";
 
-#[cfg(any(feature = "sysex7", feature = "sysex8"))]
+#[cfg(any(feature = "sysex7", feature = "sysex8", feature = "flex-data"))]
 pub fn sysex_group_consistent_groups(
     buffer: &[u32],
     stride: usize,
@@ -69,7 +69,7 @@ pub const ERR_SYSEX_EXPECTED_END: &str = "Expected End packet";
 pub const ERR_EMPTY_MESSAGE: &str = "The message buffer is empty";
 
 // assumes that buffer contains valid messages
-#[cfg(any(feature = "sysex7", feature = "sysex8"))]
+#[cfg(any(feature = "sysex7", feature = "sysex8", feature = "flex-data"))]
 pub fn validate_sysex_group_statuses<
     IsComplete: Fn(&[u32]) -> bool,
     IsBegin: Fn(&[u32]) -> bool,

@@ -800,6 +800,9 @@ impl<'a> TryFrom<&'a [u32]> for FlexData<&'a [u32]> {
     fn try_from(value: &'a [u32]) -> Result<Self, Self::Error> {
         use crate::buffer::UmpPrivate;
         use FlexData::*;
+        if value.message().len() < 1 {
+            return Err(crate::error::Error::InvalidData("Slice is too short"));
+        };
         Ok(match value.message()[0].word(1) {
             0x00_00 => SetTempo(set_tempo::SetTempo::try_from(value)?.into()),
             0x00_01 => {
@@ -1183,6 +1186,15 @@ fn clear_payload(buffer: &mut [u32]) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn try_from_empty() {
+        let buffer = [];
+        assert_eq!(
+            FlexData::try_from(&buffer[..]),
+            Err(crate::Error::InvalidData("Slice is too short")),
+        );
+    }
 
     #[test]
     fn try_from_text() {
