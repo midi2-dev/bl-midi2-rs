@@ -158,7 +158,7 @@ pub trait Sysex<B: crate::buffer::Buffer> {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct SysexTryResizeError(pub usize);
+pub(crate) struct SysexTryResizeError(pub usize);
 
 pub(crate) trait SysexInternal<B: crate::buffer::Buffer>: Sysex<B> {
     fn payload_size(&self) -> usize;
