@@ -32,6 +32,10 @@ pub mod numeric_types {
 }
 
 pub mod prelude {
+    #[cfg(feature = "midi1-channel-voice")]
+    pub use crate::message::midi1_channel_voice;
+    #[cfg(feature = "midi2-channel-voice")]
+    pub use crate::message::midi2_channel_voice;
     #[cfg(feature = "sysex7")]
     pub use crate::message::sysex7;
     #[cfg(feature = "system-common")]
