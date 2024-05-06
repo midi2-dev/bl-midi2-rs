@@ -10,7 +10,7 @@ use crate::{
 pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x3;
 
 #[midi2_proc::generate_message(MinSizeUmp(2), MinSizeBytes(2))]
-/// A semantic wrapper type around midi2 system exclusive 7bit data.
+/// A semantic wrapper type around MIDI System Exclusive 7bit data.
 /// See the [module docs](crate::message::sysex7) for more detailed info
 struct Sysex7 {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]

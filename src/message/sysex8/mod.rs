@@ -11,7 +11,7 @@ const ERR_INVALID_NUMBER_OF_PAYLOAD_BYTES: &str = "Invalid number of payload byt
 const ERR_INCONSISTENT_STREAM_ID: &str = "Inconsistent stream id fields across packets";
 
 #[midi2_proc::generate_message(MinSizeUmp(4))]
-/// A semantic wrapper type around midi2 system exclusive 7bit data.
+/// A semantic wrapper type around MIDI 2.0 System Exclusive 8bit data.
 /// See the [module docs](crate::message::sysex8) for more detailed info
 struct Sysex8 {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
