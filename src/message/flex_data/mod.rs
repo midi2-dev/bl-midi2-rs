@@ -1199,14 +1199,6 @@ fn status_to_buffer(buffer: &mut [u32], status: u8) {
     buffer[0].set_octet(3, status);
 }
 
-fn clear_payload(buffer: &mut [u32]) {
-    for packet in buffer.chunks_exact_mut(4) {
-        packet[1] = 0x0;
-        packet[2] = 0x0;
-        packet[3] = 0x0;
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

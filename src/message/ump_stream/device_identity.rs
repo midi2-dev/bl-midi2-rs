@@ -1,43 +1,68 @@
-use crate::message::ump_stream::TYPE_CODE as UMP_STREAM_TYPE;
-const STATUS: u32 = 0x2;
+use crate::{
+    message::{common_properties, ump_stream, ump_stream::UMP_MESSAGE_TYPE},
+    numeric_types::{u14, u7},
+    util::schema,
+};
 
-#[midi2_proc::generate_message()]
+pub(crate) const STATUS: u16 = 0x2;
+
+#[midi2_proc::generate_message(FixedSize, MinSizeUmp(4))]
 struct DeviceIdentity {
-    ump_type:
-        Property<NumericalConstant<UMP_STREAM_TYPE>, UmpSchema<0xF000_0000, 0x0, 0x0, 0x0>, ()>,
-    format: Property<NumericalConstant<0x0>, UmpSchema<0x0C00_0000, 0x0, 0x0, 0x0>, ()>,
-    status: Property<NumericalConstant<STATUS>, UmpSchema<0x03FF_0000, 0x0, 0x0, 0x0>, ()>,
-    device_manufacturer: Property<[u7; 3], UmpSchema<0x0, 0x007F_7F7F, 0x0, 0x0>, ()>,
-    device_family: Property<u14, UmpSchema<0x0, 0x0, 0x7F7F_0000, 0x0>, ()>,
-    device_family_model_number: Property<u14, UmpSchema<0x0, 0x0, 0x0000_7F7F, 0x0>, ()>,
-    software_version: Property<[u7; 4], UmpSchema<0x0, 0x0, 0x0, 0x7F7F_7F7F>, ()>,
+    #[property(crate::message::utility::JitterReductionProperty)]
+    jitter_reduction: Option<crate::message::utility::JitterReduction>,
+    #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
+    ump_type: (),
+    #[property(ump_stream::StatusProperty<STATUS>)]
+    status: (),
+    #[property(ump_stream::ConsistentFormatsProperty)]
+    consistent_formats: (),
+    #[property(common_properties::UmpSchemaProperty<[u7; 3], schema::Ump<0x0, 0x007F_7F7F, 0x0, 0x0>>)]
+    device_manufacturer: [u7; 3],
+    #[property(common_properties::UmpSchemaProperty<u14, schema::Ump<0x0, 0x0, 0x7F7F_0000, 0x0>>)]
+    device_family: u14,
+    #[property(common_properties::UmpSchemaProperty<u14, schema::Ump<0x0, 0x0, 0x0000_7F7F, 0x0>>)]
+    device_family_model_number: u14,
+    #[property(common_properties::UmpSchemaProperty<[u7; 4], schema::Ump<0x0, 0x0, 0x0, 0x7F7F_7F7F>>)]
+    software_version: [u7; 4],
 }
 
-impl Property<[u7; 3], UmpSchema<0x0, 0x007F_7F7F, 0x0, 0x0>, ()> for Ump {
-    fn get(data: &[<Ump as Buffer>::Data]) -> [u7; 3] {
-        [data[1].septet(1), data[1].septet(2), data[1].septet(3)]
+impl schema::UmpSchemaRepr<schema::Ump<0x0, 0x007F_7F7F, 0x0, 0x0>>
+    for [crate::numeric_types::u7; 3]
+{
+    fn write(buffer: &mut [u32], value: Self) {
+        use crate::util::BitOps;
+        buffer[1].set_septet(1, value[0]);
+        buffer[1].set_septet(2, value[1]);
+        buffer[1].set_septet(3, value[2]);
     }
-    fn write(data: &mut [<Ump as Buffer>::Data], v: [u7; 3]) {
-        data[1].set_septet(1, v[0]);
-        data[1].set_septet(2, v[1]);
-        data[1].set_septet(3, v[2]);
-    }
-}
-
-impl Property<[u7; 4], UmpSchema<0x0, 0x0, 0x0, 0x7F7F_7F7F>, ()> for Ump {
-    fn get(data: &[<Ump as Buffer>::Data]) -> [u7; 4] {
+    fn read(buffer: &[u32]) -> Self {
+        use crate::util::BitOps;
         [
-            data[3].septet(0),
-            data[3].septet(1),
-            data[3].septet(2),
-            data[3].septet(3),
+            buffer[1].septet(1),
+            buffer[1].septet(2),
+            buffer[1].septet(3),
         ]
     }
-    fn write(data: &mut [<Ump as Buffer>::Data], v: [u7; 4]) {
-        data[3].set_septet(0, v[0]);
-        data[3].set_septet(1, v[1]);
-        data[3].set_septet(2, v[2]);
-        data[3].set_septet(3, v[3]);
+}
+
+impl schema::UmpSchemaRepr<schema::Ump<0x0, 0x0, 0x0, 0x7F7F_7F7F>>
+    for [crate::numeric_types::u7; 4]
+{
+    fn write(buffer: &mut [u32], value: Self) {
+        use crate::util::BitOps;
+        buffer[3].set_septet(0, value[0]);
+        buffer[3].set_septet(1, value[1]);
+        buffer[3].set_septet(2, value[2]);
+        buffer[3].set_septet(3, value[3]);
+    }
+    fn read(buffer: &[u32]) -> Self {
+        use crate::util::BitOps;
+        [
+            buffer[3].septet(0),
+            buffer[3].septet(1),
+            buffer[3].septet(2),
+            buffer[3].septet(3),
+        ]
     }
 }
 
@@ -48,30 +73,23 @@ mod tests {
 
     #[test]
     fn builder() {
+        let mut message = DeviceIdentity::new_arr();
+        message.set_device_manufacturer([u7::new(0x0F), u7::new(0x33), u7::new(0x28)]);
+        message.set_device_family(u14::new(0xF4A));
+        message.set_device_family_model_number(u14::new(0x3818));
+        message.set_software_version([u7::new(0x43), u7::new(0x54), u7::new(0x32), u7::new(0x1)]);
         assert_eq!(
-            DeviceIdentityMessage::builder()
-                .device_manufacturer([u7::new(0x0F), u7::new(0x33), u7::new(0x28)])
-                .device_family(u14::new(0xF4A))
-                .device_family_model_number(u14::new(0x3818))
-                .software_version([u7::new(0x43), u7::new(0x54), u7::new(0x32), u7::new(0x1)])
-                .build(),
-            Ok(DeviceIdentityMessage::Owned(DeviceIdentityOwned([
-                0xF002_0000,
-                0x000f_3328,
-                0x4A1E_1870,
-                0x4354_3201,
-            ]))),
+            message,
+            DeviceIdentity([0x0, 0xF002_0000, 0x000f_3328, 0x4A1E_1870, 0x4354_3201,]),
         );
     }
 
     #[test]
     fn device_manufacturer() {
         assert_eq!(
-            DeviceIdentityMessage::from_data(
-                &[0xF002_0000, 0x000f_3328, 0x4A1E_1870, 0x4354_3201,]
-            )
-            .unwrap()
-            .device_manufacturer(),
+            DeviceIdentity::try_from(&[0xF002_0000, 0x000F_3328, 0x4A1E_1870, 0x4354_3201][..])
+                .unwrap()
+                .device_manufacturer(),
             [u7::new(0x0F), u7::new(0x33), u7::new(0x28)],
         );
     }
@@ -79,11 +97,9 @@ mod tests {
     #[test]
     fn device_family() {
         assert_eq!(
-            DeviceIdentityMessage::from_data(
-                &[0xF002_0000, 0x000f_3328, 0x4A1E_1870, 0x4354_3201,]
-            )
-            .unwrap()
-            .device_family(),
+            DeviceIdentity::try_from(&[0xF002_0000, 0x000F_3328, 0x4A1E_1870, 0x4354_3201][..])
+                .unwrap()
+                .device_family(),
             u14::new(0xF4A),
         );
     }
@@ -91,11 +107,9 @@ mod tests {
     #[test]
     fn device_family_model_number() {
         assert_eq!(
-            DeviceIdentityMessage::from_data(
-                &[0xF002_0000, 0x000f_3328, 0x4A1E_1870, 0x4354_3201,]
-            )
-            .unwrap()
-            .device_family_model_number(),
+            DeviceIdentity::try_from(&[0xF002_0000, 0x000F_3328, 0x4A1E_1870, 0x4354_3201][..])
+                .unwrap()
+                .device_family_model_number(),
             u14::new(0x3818),
         );
     }
@@ -103,11 +117,9 @@ mod tests {
     #[test]
     fn software_version() {
         assert_eq!(
-            DeviceIdentityMessage::from_data(
-                &[0xF002_0000, 0x000f_3328, 0x4A1E_1870, 0x4354_3201,]
-            )
-            .unwrap()
-            .software_version(),
+            DeviceIdentity::try_from(&[0xF002_0000, 0x000F_3328, 0x4A1E_1870, 0x4354_3201][..])
+                .unwrap()
+                .software_version(),
             [u7::new(0x43), u7::new(0x54), u7::new(0x32), u7::new(0x1)],
         );
     }

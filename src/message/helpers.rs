@@ -27,41 +27,6 @@ pub fn sysex_group_consistent_groups(
     }
 }
 
-// #[cfg(any(feature = "ump-stream", feature = "flex-data"))]
-// pub fn check_flex_data_or_ump_stream_consistent_packet_formats(
-//     buffer: &[u32],
-//     format_crumb_index: usize,
-// ) -> crate::result::Result<()> {
-//     use crate::{error::Error, numeric_types::*, util::BitOps};
-//     // complete message
-//     if buffer.len() == 4 && buffer[0].crumb(format_crumb_index) != u2::new(0b00) {
-//         return Err(Error::InvalidData);
-//     } else if buffer.len() > 4 {
-//         // composite message
-//         let mut packets = buffer.chunks_exact(4).peekable();
-//         // start
-//         if packets.next().unwrap()[0].crumb(format_crumb_index) != u2::new(0b01) {
-//             return Err(Error::InvalidData);
-//         }
-//
-//         while let Some(packet) = packets.next() {
-//             if packets.peek().is_some() {
-//                 // continue
-//                 if packet[0].crumb(format_crumb_index) != u2::new(0b10) {
-//                     return Err(Error::InvalidData);
-//                 }
-//             } else {
-//                 // end
-//                 if packet[0].crumb(format_crumb_index) != u2::new(0b11) {
-//                     return Err(Error::InvalidData);
-//                 }
-//             }
-//         }
-//     }
-//
-//     Ok(())
-// }
-
 pub const ERR_SYSEX_EXPECTED_COMPLETE: &str = "Expected Complete packet";
 pub const ERR_SYSEX_EXPECTED_BEGIN: &str = "Expected Begin packet";
 pub const ERR_SYSEX_EXPECTED_CONTINUE: &str = "Expected Continue packet";
@@ -69,7 +34,12 @@ pub const ERR_SYSEX_EXPECTED_END: &str = "Expected End packet";
 pub const ERR_EMPTY_MESSAGE: &str = "The message buffer is empty";
 
 // assumes that buffer contains valid messages
-#[cfg(any(feature = "sysex7", feature = "sysex8", feature = "flex-data"))]
+#[cfg(any(
+    feature = "sysex7",
+    feature = "sysex8",
+    feature = "flex-data",
+    feature = "ump-stream"
+))]
 pub fn validate_sysex_group_statuses<
     IsComplete: Fn(&[u32]) -> bool,
     IsBegin: Fn(&[u32]) -> bool,
@@ -117,6 +87,82 @@ pub fn validate_sysex_group_statuses<
     }
 
     Ok(())
+}
+
+pub mod ump_stream_flex_data {
+
+    const COMPLETE_FORMAT: u8 = 0x0;
+    const START_FORMAT: u8 = 0x1;
+    const CONTINUE_FORMAT: u8 = 0x2;
+    const END_FORMAT: u8 = 0x3;
+
+    pub fn set_format_fields<const UMP_TYPE: u8>(buffer: &mut [u32]) {
+        use crate::numeric_types::u2;
+        use crate::util::BitOps;
+
+        let mut packets = buffer
+            .chunks_exact_mut(4)
+            .take_while(|packet| u8::from(packet[0].nibble(0)) == UMP_TYPE)
+            .peekable();
+        let Some(first) = packets.next() else {
+            panic!("Should never be called with an empty slice");
+        };
+
+        if packets.peek().is_some() {
+            first[0].set_crumb(4, u2::new(START_FORMAT));
+        } else {
+            first[0].set_crumb(4, u2::new(COMPLETE_FORMAT));
+        }
+
+        while let Some(packet) = packets.next() {
+            if packets.peek().is_none() {
+                packet[0].set_crumb(4, u2::new(END_FORMAT));
+            } else {
+                packet[0].set_crumb(4, u2::new(CONTINUE_FORMAT));
+            }
+        }
+    }
+
+    pub fn write_str(buffer: &mut [u32], text: &str) {
+        use crate::util::BitOps;
+
+        let mut packet_index = 0;
+        let mut byte_index = 0;
+
+        for b in text.as_bytes() {
+            buffer[packet_index * 4 + 1 + byte_index / 4].set_octet(byte_index % 4, *b);
+
+            if byte_index == 11 {
+                // end of the packet
+                packet_index += 1;
+                byte_index = 0;
+            } else {
+                byte_index += 1;
+            }
+        }
+    }
+
+    pub fn clear_payload(buffer: &mut [u32]) {
+        for packet in buffer.chunks_exact_mut(4) {
+            packet[1] = 0x0;
+            packet[2] = 0x0;
+            packet[3] = 0x0;
+        }
+    }
+
+    pub fn required_buffer_size_for_str(text: &str) -> usize {
+        let str_size = text.as_bytes().len();
+        let ret = if str_size % 12 == 0 {
+            if str_size == 0 {
+                4
+            } else {
+                str_size * 3 / 12
+            }
+        } else {
+            4 * (str_size / 12 + 1)
+        };
+        ret + crate::buffer::OFFSET_FOR_JITTER_REDUCTION
+    }
 }
 
 pub fn try_set_sysex_data<

@@ -1,12 +1,17 @@
-use crate::message::ump_stream::TYPE_CODE as UMP_STREAM_TYPE;
-const STATUS: u32 = 0x21;
+use crate::message::{common_properties, ump_stream, ump_stream::UMP_MESSAGE_TYPE};
 
-#[midi2_proc::generate_message()]
+pub(crate) const STATUS: u16 = 0x21;
+
+#[midi2_proc::generate_message(FixedSize, MinSizeUmp(1))]
 struct EndOfClip {
-    ump_type:
-        Property<NumericalConstant<UMP_STREAM_TYPE>, UmpSchema<0xF000_0000, 0x0, 0x0, 0x0>, ()>,
-    format: Property<NumericalConstant<0x0>, UmpSchema<0x0C00_0000, 0x0, 0x0, 0x0>, ()>,
-    status: Property<NumericalConstant<STATUS>, UmpSchema<0x03FF_0000, 0x0, 0x0, 0x0>, ()>,
+    #[property(crate::message::utility::JitterReductionProperty)]
+    jitter_reduction: Option<crate::message::utility::JitterReduction>,
+    #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
+    ump_type: (),
+    #[property(ump_stream::StatusProperty<STATUS>)]
+    status: (),
+    #[property(ump_stream::ConsistentFormatsProperty)]
+    consistent_formats: (),
 }
 
 #[cfg(test)]
@@ -15,25 +20,18 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     #[test]
-    fn builder() {
+    fn setters() {
         assert_eq!(
-            EndOfClipMessage::builder().build(),
-            Ok(EndOfClipMessage::Owned(EndOfClipOwned([
-                0xF021_0000,
-                0x0,
-                0x0,
-                0x0
-            ])))
+            EndOfClip::new_arr(),
+            EndOfClip([0x0, 0xF021_0000, 0x0, 0x0, 0x0])
         );
     }
 
     #[test]
     fn from_data() {
         assert_eq!(
-            EndOfClipMessage::from_data(&[0xF021_0000]),
-            Ok(EndOfClipMessage::Borrowed(EndOfClipBorrowed(&[
-                0xF021_0000
-            ])))
+            EndOfClip::try_from(&[0xF021_0000][..]),
+            Ok(EndOfClip(&[0xF021_0000][..]))
         );
     }
 }

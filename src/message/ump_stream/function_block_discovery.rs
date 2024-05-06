@@ -1,17 +1,27 @@
-use crate::message::ump_stream::TYPE_CODE as UMP_STREAM_TYPE;
-const STATUS: u32 = 0x10;
+use crate::{
+    message::{common_properties, ump_stream, ump_stream::UMP_MESSAGE_TYPE},
+    util::schema,
+};
 
-#[midi2_proc::generate_message()]
+pub(crate) const STATUS: u16 = 0x10;
+
+#[midi2_proc::generate_message(FixedSize, MinSizeUmp(1))]
 struct FunctionBlockDiscovery {
-    ump_type:
-        Property<NumericalConstant<UMP_STREAM_TYPE>, UmpSchema<0xF000_0000, 0x0, 0x0, 0x0>, ()>,
-    format: Property<NumericalConstant<0x0>, UmpSchema<0x0C00_0000, 0x0, 0x0, 0x0>, ()>,
-    status: Property<NumericalConstant<STATUS>, UmpSchema<0x03FF_0000, 0x0, 0x0, 0x0>, ()>,
-    function_block_number: Property<u8, UmpSchema<0x0000_FF00, 0x0, 0x0, 0x0>, ()>,
-    requesting_function_block_info:
-        Property<bool, UmpSchema<0b0000_0000_0000_0000_0000_0000_0000_0010, 0x0, 0x0, 0x0>, ()>,
-    requesting_function_block_name:
-        Property<bool, UmpSchema<0b0000_0000_0000_0000_0000_0000_0000_0001, 0x0, 0x0, 0x0>, ()>,
+    #[property(crate::message::utility::JitterReductionProperty)]
+    jitter_reduction: Option<crate::message::utility::JitterReduction>,
+    #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
+    ump_type: (),
+    #[property(ump_stream::StatusProperty<STATUS>)]
+    status: (),
+    #[property(ump_stream::ConsistentFormatsProperty)]
+    consistent_formats: (),
+
+    #[property(common_properties::UmpSchemaProperty<u8, schema::Ump<0x0000_FF00, 0x0, 0x0, 0x0>>)]
+    function_block_number: u8,
+    #[property(common_properties::UmpSchemaProperty<bool, schema::Ump<0b0000_0000_0000_0000_0000_0000_0000_0010, 0x0, 0x0, 0x0>>)]
+    requesting_function_block_info: bool,
+    #[property(common_properties::UmpSchemaProperty<bool, schema::Ump<0b0000_0000_0000_0000_0000_0000_0000_0001, 0x0, 0x0, 0x0>>)]
+    requesting_function_block_name: bool,
 }
 
 #[cfg(test)]
@@ -20,23 +30,21 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     #[test]
-    fn builder() {
+    fn setters() {
+        let mut message = FunctionBlockDiscovery::new_arr();
+        message.set_function_block_number(0x09);
+        message.set_requesting_function_block_info(true);
+        message.set_requesting_function_block_name(true);
         assert_eq!(
-            FunctionBlockDiscoveryMessage::builder()
-                .function_block_number(0x09)
-                .requesting_function_block_info(true)
-                .requesting_function_block_name(true)
-                .build(),
-            Ok(FunctionBlockDiscoveryMessage::Owned(
-                FunctionBlockDiscoveryOwned([0xF010_0903, 0x0, 0x0, 0x0])
-            ))
+            message,
+            FunctionBlockDiscovery([0x0, 0xF010_0903, 0x0, 0x0, 0x0])
         );
     }
 
     #[test]
     fn function_block_number() {
         assert_eq!(
-            FunctionBlockDiscoveryMessage::from_data(&[0xF010_0903])
+            FunctionBlockDiscovery::try_from(&[0xF010_0903][..])
                 .unwrap()
                 .function_block_number(),
             0x09,
@@ -46,7 +54,7 @@ mod tests {
     #[test]
     fn requesting_function_block_info() {
         assert_eq!(
-            FunctionBlockDiscoveryMessage::from_data(&[0xF010_0903])
+            FunctionBlockDiscovery::try_from(&[0xF010_0903][..])
                 .unwrap()
                 .requesting_function_block_info(),
             true
@@ -56,7 +64,7 @@ mod tests {
     #[test]
     fn requesting_function_block_name() {
         assert_eq!(
-            FunctionBlockDiscoveryMessage::from_data(&[0xF010_0903])
+            FunctionBlockDiscovery::try_from(&[0xF010_0903][..])
                 .unwrap()
                 .requesting_function_block_name(),
             true

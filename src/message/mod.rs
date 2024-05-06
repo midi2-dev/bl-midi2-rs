@@ -59,47 +59,47 @@ mod tests {
     //     );
     // }
 
-    #[cfg(feature = "std")]
-    #[cfg(feature = "ump-stream")]
-    #[test]
-    fn ump_stream_builder() {
-        use crate::test_support::debug;
-        use pretty_assertions::assert_eq;
-        assert_eq!(
-            debug::Data(
-                Message::builder()
-                    .ump_stream()
-                    .function_block_name()
-                    .name("VibratoVanguard: Leading Waves of Euphony🚀🎶🌊")
-                    .function_block(0x5)
-                    .build()
-                    .unwrap()
-                    .data()
-            ),
-            debug::Data(&[
-                0xF412_0556,
-                0x6962_7261,
-                0x746F_5661,
-                0x6E67_7561,
-                0xF812_0572,
-                0x643A_204C,
-                0x6561_6469,
-                0x6E67_2057,
-                0xF812_0561,
-                0x7665_7320,
-                0x6F66_2045,
-                0x7570_686F,
-                0xF812_056E,
-                0x79F0_9F9A,
-                0x80F0_9F8E,
-                0xB6F0_9F8C,
-                0xFC12_058A,
-                0x0000_0000,
-                0x0000_0000,
-                0x0000_0000,
-            ]),
-        );
-    }
+    // #[cfg(feature = "std")]
+    // #[cfg(feature = "ump-stream")]
+    // #[test]
+    // fn ump_stream_builder() {
+    //     use crate::test_support::debug;
+    //     use pretty_assertions::assert_eq;
+    //     assert_eq!(
+    //         debug::Data(
+    //             Message::builder()
+    //                 .ump_stream()
+    //                 .function_block_name()
+    //                 .name("VibratoVanguard: Leading Waves of Euphony🚀🎶🌊")
+    //                 .function_block(0x5)
+    //                 .build()
+    //                 .unwrap()
+    //                 .data()
+    //         ),
+    //         debug::Data(&[
+    //             0xF412_0556,
+    //             0x6962_7261,
+    //             0x746F_5661,
+    //             0x6E67_7561,
+    //             0xF812_0572,
+    //             0x643A_204C,
+    //             0x6561_6469,
+    //             0x6E67_2057,
+    //             0xF812_0561,
+    //             0x7665_7320,
+    //             0x6F66_2045,
+    //             0x7570_686F,
+    //             0xF812_056E,
+    //             0x79F0_9F9A,
+    //             0x80F0_9F8E,
+    //             0xB6F0_9F8C,
+    //             0xFC12_058A,
+    //             0x0000_0000,
+    //             0x0000_0000,
+    //             0x0000_0000,
+    //         ]),
+    //     );
+    // }
 
     // #[cfg(feature = "std")]
     // #[cfg(feature = "sysex8")]

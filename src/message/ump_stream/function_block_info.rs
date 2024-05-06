@@ -1,30 +1,39 @@
-use crate::message::ump_stream::TYPE_CODE as UMP_STREAM_TYPE;
-const STATUS: u32 = 0x11;
+use crate::{
+    message::{common_properties, ump_stream, ump_stream::UMP_MESSAGE_TYPE},
+    numeric_types::{u4, u7},
+    util::{property, schema},
+};
 
-#[midi2_proc::generate_message()]
+pub(crate) const STATUS: u16 = 0x11;
+
+#[midi2_proc::generate_message(FixedSize, MinSizeUmp(2))]
 struct FunctionBlockInfo {
-    ump_type:
-        Property<NumericalConstant<UMP_STREAM_TYPE>, UmpSchema<0xF000_0000, 0x0, 0x0, 0x0>, ()>,
-    format: Property<NumericalConstant<0x0>, UmpSchema<0x0C00_0000, 0x0, 0x0, 0x0>, ()>,
-    status: Property<NumericalConstant<STATUS>, UmpSchema<0x03FF_0000, 0x0, 0x0, 0x0>, ()>,
-    active: Property<bool, UmpSchema<0b0000_0000_0000_0000_1000_0000_0000_0000, 0x0, 0x0, 0x0>, ()>,
-    function_block_number: Property<u7, UmpSchema<0x0000_7F00, 0x0, 0x0, 0x0>, ()>,
-    first_group: Property<u4, UmpSchema<0x0, 0x0F00_0000, 0x0, 0x0>, ()>,
-    number_of_groups_spanned: Property<u8, UmpSchema<0x0, 0x00FF_0000, 0x0, 0x0>, ()>,
-    midi_ci_version: Property<u8, UmpSchema<0x0, 0x0000_FF00, 0x0, 0x0>, ()>,
-    max_number_of_midi_ci_streams: Property<u8, UmpSchema<0x0, 0x0000_00FF, 0x0, 0x0>, ()>,
-    ui_hint:
-        Property<UiHint, UmpSchema<0b0000_0000_0000_0000_0000_0000_0011_0000, 0x0, 0x0, 0x0>, ()>,
-    midi1_port: Property<
-        Option<Midi1Port>,
-        UmpSchema<0b0000_0000_0000_0000_0000_0000_0000_1100, 0x0, 0x0, 0x0>,
-        (),
-    >,
-    direction: Property<
-        Direction,
-        UmpSchema<0b0000_0000_0000_0000_0000_0000_0000_0011, 0x0, 0x0, 0x0>,
-        (),
-    >,
+    #[property(crate::message::utility::JitterReductionProperty)]
+    jitter_reduction: Option<crate::message::utility::JitterReduction>,
+    #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
+    ump_type: (),
+    #[property(ump_stream::StatusProperty<STATUS>)]
+    status: (),
+    #[property(ump_stream::ConsistentFormatsProperty)]
+    consistent_formats: (),
+    #[property(common_properties::UmpSchemaProperty<bool, schema::Ump<0b0000_0000_0000_0000_1000_0000_0000_0000, 0x0, 0x0, 0x0>>)]
+    active: bool,
+    #[property(common_properties::UmpSchemaProperty<u7, schema::Ump<0x0000_7F00, 0x0, 0x0, 0x0>>)]
+    function_block_number: u7,
+    #[property(common_properties::UmpSchemaProperty<u4, schema::Ump<0x0, 0x0F00_0000, 0x0, 0x0>>)]
+    first_group: u4,
+    #[property(common_properties::UmpSchemaProperty<u8, schema::Ump<0x0, 0x00FF_0000, 0x0, 0x0>>)]
+    number_of_groups_spanned: u8,
+    #[property(common_properties::UmpSchemaProperty<u8, schema::Ump<0x0, 0x0000_FF00, 0x0, 0x0>>)]
+    midi_ci_version: u8,
+    #[property(common_properties::UmpSchemaProperty<u8, schema::Ump<0x0, 0x0000_00FF, 0x0, 0x0>>)]
+    max_number_of_midi_ci_streams: u8,
+    #[property(UiHintProperty)]
+    ui_hint: UiHint,
+    #[property(Midi1PortProperty)]
+    midi1_port: Option<Midi1Port>,
+    #[property(DirectionProperty)]
+    direction: Direction,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -35,16 +44,19 @@ pub enum UiHint {
     SenderReciever,
 }
 
-impl<BytesSchema: Schema>
-    Property<
-        UiHint,
-        UmpSchema<0b0000_0000_0000_0000_0000_0000_0011_0000, 0x0, 0x0, 0x0>,
-        BytesSchema,
-    > for Ump
-{
-    fn get(data: &[<Ump as Buffer>::Data]) -> UiHint {
+struct UiHintProperty;
+
+impl<B: crate::buffer::Ump> property::Property<B> for UiHintProperty {
+    type Type = UiHint;
+}
+
+impl<'a, B: crate::buffer::Ump> property::ReadProperty<'a, B> for UiHintProperty {
+    fn read(buffer: &'a B) -> Self::Type {
+        use crate::buffer::UmpPrivate;
+        use crate::util::BitOps;
         use UiHint::*;
-        match u8::from(data[0].crumb(13)) {
+
+        match u8::from(buffer.buffer().message()[0].crumb(13)) {
             0b00 => Undeclared,
             0b01 => Receiver,
             0b10 => Sender,
@@ -52,9 +64,24 @@ impl<BytesSchema: Schema>
             _ => unreachable!(),
         }
     }
-    fn write(data: &mut [<Ump as Buffer>::Data], v: UiHint) {
+    fn validate(_buffer: &B) -> crate::result::Result<()> {
+        Ok(())
+    }
+}
+
+impl<B: crate::buffer::Ump + crate::buffer::BufferMut> property::WriteProperty<B>
+    for UiHintProperty
+{
+    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+        Ok(())
+    }
+    fn write(buffer: &mut B, v: Self::Type) {
+        use crate::buffer::UmpPrivateMut;
+        use crate::numeric_types::u2;
+        use crate::util::BitOps;
         use UiHint::*;
-        data[0].set_crumb(
+
+        buffer.buffer_mut().message_mut()[0].set_crumb(
             13,
             match v {
                 Undeclared => u2::new(0b00),
@@ -63,6 +90,9 @@ impl<BytesSchema: Schema>
                 SenderReciever => u2::new(0b11),
             },
         );
+    }
+    fn default() -> Self::Type {
+        Default::default()
     }
 }
 
@@ -79,25 +109,53 @@ pub enum Midi1Port {
     DontRestrictBandwidth,
 }
 
-impl<BytesSchema: Schema>
-    Property<
-        Option<Midi1Port>,
-        UmpSchema<0b0000_0000_0000_0000_0000_0000_0000_1100, 0x0, 0x0, 0x0>,
-        BytesSchema,
-    > for Ump
-{
-    fn get(data: &[<Ump as Buffer>::Data]) -> Option<Midi1Port> {
+struct Midi1PortProperty;
+
+impl<B: crate::buffer::Ump> property::Property<B> for Midi1PortProperty {
+    type Type = Option<Midi1Port>;
+}
+
+impl<'a, B: crate::buffer::Ump> property::ReadProperty<'a, B> for Midi1PortProperty {
+    fn read(buffer: &'a B) -> Self::Type {
+        use crate::buffer::UmpPrivate;
+        use crate::util::BitOps;
         use Midi1Port::*;
-        match u8::from(data[0].crumb(14)) {
+
+        match u8::from(buffer.buffer().message()[0].crumb(14)) {
             0b00 => None,
             0b01 => Some(DontRestrictBandwidth),
             0b10 => Some(RestrictBandwidth),
             _ => panic!(),
         }
     }
-    fn write(data: &mut [<Ump as Buffer>::Data], v: Option<Midi1Port>) {
+    fn validate(buffer: &B) -> crate::result::Result<()> {
+        use crate::buffer::UmpPrivate;
+        use crate::util::BitOps;
+
+        match u8::from(buffer.buffer().message()[0].crumb(14)) {
+            0b00 => Ok(()),
+            0b01 => Ok(()),
+            0b10 => Ok(()),
+            _ => Err(crate::error::Error::InvalidData(
+                "Couldn't interpret midi1 port field",
+            )),
+        }
+    }
+}
+
+impl<B: crate::buffer::Ump + crate::buffer::BufferMut> property::WriteProperty<B>
+    for Midi1PortProperty
+{
+    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+        Ok(())
+    }
+    fn write(buffer: &mut B, v: Self::Type) {
+        use crate::buffer::UmpPrivateMut;
+        use crate::numeric_types::u2;
+        use crate::util::BitOps;
         use Midi1Port::*;
-        data[0].set_crumb(
+
+        buffer.buffer_mut().message_mut()[0].set_crumb(
             14,
             match v {
                 None => u2::new(0b00),
@@ -106,14 +164,8 @@ impl<BytesSchema: Schema>
             },
         );
     }
-    fn validate(data: &[<Self as Buffer>::Data]) -> Result<()> {
-        match u8::from(data[0].crumb(14)) {
-            0b00 => Ok(()),
-            0b01 => Ok(()),
-            0b10 => Ok(()),
-            0b11 => Err(Error::InvalidData),
-            _ => unreachable!(),
-        }
+    fn default() -> Self::Type {
+        Default::default()
     }
 }
 
@@ -124,25 +176,54 @@ pub enum Direction {
     Bidirectional,
 }
 
-impl<BytesSchema: Schema>
-    Property<
-        Direction,
-        UmpSchema<0b0000_0000_0000_0000_0000_0000_0000_0011, 0x0, 0x0, 0x0>,
-        BytesSchema,
-    > for Ump
-{
-    fn get(data: &[<Ump as Buffer>::Data]) -> Direction {
+struct DirectionProperty;
+
+impl<B: crate::buffer::Ump> property::Property<B> for DirectionProperty {
+    type Type = Direction;
+}
+
+impl<'a, B: crate::buffer::Ump> property::ReadProperty<'a, B> for DirectionProperty {
+    fn read(buffer: &'a B) -> Self::Type {
+        use crate::buffer::UmpPrivate;
+        use crate::util::BitOps;
         use Direction::*;
-        match u8::from(data[0].crumb(15)) {
+
+        match u8::from(buffer.buffer().message()[0].crumb(15)) {
             0b01 => Input,
             0b10 => Output,
             0b11 => Bidirectional,
             _ => panic!(),
         }
     }
-    fn write(data: &mut [<Ump as Buffer>::Data], v: Direction) {
+    fn validate(buffer: &B) -> crate::result::Result<()> {
+        use crate::buffer::UmpPrivate;
+        use crate::util::BitOps;
+
+        match u8::from(buffer.buffer().message()[0].crumb(15)) {
+            0b00 => Err(crate::error::Error::InvalidData(
+                "Couldn't interpret direction field",
+            )),
+            0b01 => Ok(()),
+            0b10 => Ok(()),
+            0b11 => Ok(()),
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl<B: crate::buffer::Ump + crate::buffer::BufferMut> property::WriteProperty<B>
+    for DirectionProperty
+{
+    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+        Ok(())
+    }
+    fn write(buffer: &mut B, v: Self::Type) {
+        use crate::buffer::UmpPrivateMut;
+        use crate::numeric_types::u2;
+        use crate::util::BitOps;
         use Direction::*;
-        data[0].set_crumb(
+
+        buffer.buffer_mut().message_mut()[0].set_crumb(
             15,
             match v {
                 Input => u2::new(0b01),
@@ -151,14 +232,8 @@ impl<BytesSchema: Schema>
             },
         );
     }
-    fn validate(data: &[<Self as Buffer>::Data]) -> Result<()> {
-        match u8::from(data[0].crumb(15)) {
-            0b00 => Err(Error::InvalidData),
-            0b01 => Ok(()),
-            0b10 => Ok(()),
-            0b11 => Ok(()),
-            _ => unreachable!(),
-        }
+    fn default() -> Self::Type {
+        Default::default()
     }
 }
 
@@ -176,31 +251,27 @@ mod tests {
 
     #[test]
     fn builder() {
+        let mut message = FunctionBlockInfo::new_arr();
+        message.set_active(true);
+        message.set_function_block_number(u7::new(0x11));
+        message.set_first_group(u4::new(0xD));
+        message.set_number_of_groups_spanned(0x8);
+        message.set_midi_ci_version(0x1);
+        message.set_max_number_of_midi_ci_streams(0x20);
+        message.set_ui_hint(UiHint::SenderReciever);
+        message.set_midi1_port(Some(Midi1Port::DontRestrictBandwidth));
+        message.set_direction(Direction::Output);
+
         assert_eq!(
-            FunctionBlockInfoMessage::builder()
-                .active(true)
-                .function_block_number(u7::new(0x11))
-                .first_group(u4::new(0xD))
-                .number_of_groups_spanned(0x8)
-                .midi_ci_version(0x1)
-                .max_number_of_midi_ci_streams(0x20)
-                .ui_hint(UiHint::SenderReciever)
-                .midi1_port(Some(Midi1Port::DontRestrictBandwidth))
-                .direction(Direction::Output)
-                .build(),
-            Ok(FunctionBlockInfoMessage::Owned(FunctionBlockInfoOwned([
-                0xF011_9136,
-                0x0D08_0120,
-                0x0,
-                0x0,
-            ])))
+            message,
+            FunctionBlockInfo([0x0, 0xF011_9136, 0x0D08_0120, 0x0, 0x0,])
         )
     }
 
     #[test]
     fn active() {
         assert_eq!(
-            FunctionBlockInfoMessage::from_data(&[0xF011_9136, 0x0D08_0120])
+            FunctionBlockInfo::try_from(&[0xF011_9136, 0x0D08_0120][..])
                 .unwrap()
                 .active(),
             true
@@ -210,7 +281,7 @@ mod tests {
     #[test]
     fn function_block_number() {
         assert_eq!(
-            FunctionBlockInfoMessage::from_data(&[0xF011_9136, 0x0D08_0120])
+            FunctionBlockInfo::try_from(&[0xF011_9136, 0x0D08_0120][..])
                 .unwrap()
                 .function_block_number(),
             u7::new(0x11),
@@ -220,7 +291,7 @@ mod tests {
     #[test]
     fn first_group() {
         assert_eq!(
-            FunctionBlockInfoMessage::from_data(&[0xF011_9136, 0x0D08_0120])
+            FunctionBlockInfo::try_from(&[0xF011_9136, 0x0D08_0120][..])
                 .unwrap()
                 .first_group(),
             u4::new(0xD),
@@ -230,7 +301,7 @@ mod tests {
     #[test]
     fn number_of_groups_spanned() {
         assert_eq!(
-            FunctionBlockInfoMessage::from_data(&[0xF011_9136, 0x0D08_0120])
+            FunctionBlockInfo::try_from(&[0xF011_9136, 0x0D08_0120][..])
                 .unwrap()
                 .number_of_groups_spanned(),
             0x8,
@@ -240,7 +311,7 @@ mod tests {
     #[test]
     fn midi_ci_version() {
         assert_eq!(
-            FunctionBlockInfoMessage::from_data(&[0xF011_9136, 0x0D08_0120])
+            FunctionBlockInfo::try_from(&[0xF011_9136, 0x0D08_0120][..])
                 .unwrap()
                 .midi_ci_version(),
             0x1,
@@ -250,7 +321,7 @@ mod tests {
     #[test]
     fn max_number_of_midi_ci_streams() {
         assert_eq!(
-            FunctionBlockInfoMessage::from_data(&[0xF011_9136, 0x0D08_0120])
+            FunctionBlockInfo::try_from(&[0xF011_9136, 0x0D08_0120][..])
                 .unwrap()
                 .max_number_of_midi_ci_streams(),
             0x20,
@@ -260,7 +331,7 @@ mod tests {
     #[test]
     fn ui_hint() {
         assert_eq!(
-            FunctionBlockInfoMessage::from_data(&[0xF011_9136, 0x0D08_0120])
+            FunctionBlockInfo::try_from(&[0xF011_9136, 0x0D08_0120][..])
                 .unwrap()
                 .ui_hint(),
             UiHint::SenderReciever,
@@ -270,7 +341,7 @@ mod tests {
     #[test]
     fn midi1_port() {
         assert_eq!(
-            FunctionBlockInfoMessage::from_data(&[0xF011_9136, 0x0D08_0120])
+            FunctionBlockInfo::try_from(&[0xF011_9136, 0x0D08_0120][..])
                 .unwrap()
                 .midi1_port(),
             Some(Midi1Port::DontRestrictBandwidth),
@@ -280,7 +351,7 @@ mod tests {
     #[test]
     fn direction() {
         assert_eq!(
-            FunctionBlockInfoMessage::from_data(&[0xF011_9136, 0x0D08_0120])
+            FunctionBlockInfo::try_from(&[0xF011_9136, 0x0D08_0120][..])
                 .unwrap()
                 .direction(),
             Direction::Output,

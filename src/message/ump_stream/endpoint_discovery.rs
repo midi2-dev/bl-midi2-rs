@@ -1,24 +1,34 @@
-use crate::message::ump_stream::TYPE_CODE as UMP_STREAM_TYPE;
-const STATUS: u32 = 0x0;
+use crate::{
+    message::{common_properties, ump_stream, ump_stream::UMP_MESSAGE_TYPE},
+    util::schema,
+};
 
-#[midi2_proc::generate_message()]
+pub(crate) const STATUS: u16 = 0x0;
+
+#[midi2_proc::generate_message(FixedSize, MinSizeUmp(2))]
 struct EndpointDiscovery {
-    ump_type:
-        Property<NumericalConstant<UMP_STREAM_TYPE>, UmpSchema<0xF000_0000, 0x0, 0x0, 0x0>, ()>,
-    format: Property<NumericalConstant<0x0>, UmpSchema<0x0C00_0000, 0x0, 0x0, 0x0>, ()>,
-    status: Property<NumericalConstant<STATUS>, UmpSchema<0x03FF_0000, 0x0, 0x0, 0x0>, ()>,
-    ump_version_major: Property<u8, UmpSchema<0x0000_FF00, 0x0, 0x0, 0x0>, ()>,
-    ump_version_minor: Property<u8, UmpSchema<0x0000_00FF, 0x0, 0x0, 0x0>, ()>,
-    request_endpoint_info:
-        Property<bool, UmpSchema<0x0, 0b0000_0000_0000_0000_0000_0000_0000_0001, 0x0, 0x0>, ()>,
-    request_device_identity:
-        Property<bool, UmpSchema<0x0, 0b0000_0000_0000_0000_0000_0000_0000_0010, 0x0, 0x0>, ()>,
-    request_endpoint_name:
-        Property<bool, UmpSchema<0x0, 0b0000_0000_0000_0000_0000_0000_0000_0100, 0x0, 0x0>, ()>,
-    request_product_instance_id:
-        Property<bool, UmpSchema<0x0, 0b0000_0000_0000_0000_0000_0000_0000_1000, 0x0, 0x0>, ()>,
-    request_stream_configuration:
-        Property<bool, UmpSchema<0x0, 0b0000_0000_0000_0000_0000_0000_0001_0000, 0x0, 0x0>, ()>,
+    #[property(crate::message::utility::JitterReductionProperty)]
+    jitter_reduction: Option<crate::message::utility::JitterReduction>,
+    #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
+    ump_type: (),
+    #[property(ump_stream::StatusProperty<STATUS>)]
+    status: (),
+    #[property(ump_stream::ConsistentFormatsProperty)]
+    consistent_formats: (),
+    #[property(common_properties::UmpSchemaProperty<u8, schema::Ump<0x0000_FF00, 0x0, 0x0, 0x0>>)]
+    ump_version_major: u8,
+    #[property(common_properties::UmpSchemaProperty<u8, schema::Ump<0x0000_00FF, 0x0, 0x0, 0x0>>)]
+    ump_version_minor: u8,
+    #[property(common_properties::UmpSchemaProperty<bool, schema::Ump<0x0, 0b0000_0000_0000_0000_0000_0000_0000_0001, 0x0, 0x0>>)]
+    request_endpoint_info: bool,
+    #[property(common_properties::UmpSchemaProperty<bool, schema::Ump<0x0, 0b0000_0000_0000_0000_0000_0000_0000_0010, 0x0, 0x0>>)]
+    request_device_identity: bool,
+    #[property(common_properties::UmpSchemaProperty<bool, schema::Ump<0x0, 0b0000_0000_0000_0000_0000_0000_0000_0100, 0x0, 0x0>>)]
+    request_endpoint_name: bool,
+    #[property(common_properties::UmpSchemaProperty<bool, schema::Ump<0x0, 0b0000_0000_0000_0000_0000_0000_0000_1000, 0x0, 0x0>>)]
+    request_product_instance_id: bool,
+    #[property(common_properties::UmpSchemaProperty<bool, schema::Ump<0x0, 0b0000_0000_0000_0000_0000_0000_0001_0000, 0x0, 0x0>>)]
+    request_stream_configuration: bool,
 }
 
 #[cfg(test)]
@@ -28,29 +38,24 @@ mod tests {
 
     #[test]
     fn builder() {
+        let mut message = EndpointDiscovery::new_arr();
+        message.set_ump_version_major(0x1);
+        message.set_ump_version_minor(0x1);
+        message.set_request_endpoint_info(true);
+        message.set_request_device_identity(true);
+        message.set_request_endpoint_name(true);
+        message.set_request_product_instance_id(true);
+        message.set_request_stream_configuration(true);
         assert_eq!(
-            EndpointDiscoveryMessage::builder()
-                .ump_version_major(0x1)
-                .ump_version_minor(0x1)
-                .request_endpoint_info(true)
-                .request_device_identity(true)
-                .request_endpoint_name(true)
-                .request_product_instance_id(true)
-                .request_stream_configuration(true)
-                .build(),
-            Ok(EndpointDiscoveryMessage::Owned(EndpointDiscoveryOwned([
-                0xF000_0101,
-                0x0000_001F,
-                0x0,
-                0x0
-            ]))),
+            message,
+            EndpointDiscovery([0x0, 0xF000_0101, 0x0000_001F, 0x0, 0x0]),
         );
     }
 
     #[test]
     fn ump_version_major() {
         assert_eq!(
-            EndpointDiscoveryMessage::from_data(&[0xF000_0101, 0x0000_001F])
+            EndpointDiscovery::try_from(&[0xF000_0101, 0x0000_001F][..])
                 .unwrap()
                 .ump_version_major(),
             0x1,
@@ -60,7 +65,7 @@ mod tests {
     #[test]
     fn ump_version_minor() {
         assert_eq!(
-            EndpointDiscoveryMessage::from_data(&[0xF000_0101, 0x0000_001F])
+            EndpointDiscovery::try_from(&[0xF000_0101, 0x0000_001F][..])
                 .unwrap()
                 .ump_version_minor(),
             0x1,
@@ -70,7 +75,7 @@ mod tests {
     #[test]
     fn request_endpoint_info() {
         assert_eq!(
-            EndpointDiscoveryMessage::from_data(&[0xF000_0101, 0x0000_001F])
+            EndpointDiscovery::try_from(&[0xF000_0101, 0x0000_001F][..])
                 .unwrap()
                 .request_endpoint_info(),
             true,
@@ -80,7 +85,7 @@ mod tests {
     #[test]
     fn request_device_identity() {
         assert_eq!(
-            EndpointDiscoveryMessage::from_data(&[0xF000_0101, 0x0000_001F])
+            EndpointDiscovery::try_from(&[0xF000_0101, 0x0000_001F][..])
                 .unwrap()
                 .request_device_identity(),
             true,
@@ -90,7 +95,7 @@ mod tests {
     #[test]
     fn request_endpoint_name() {
         assert_eq!(
-            EndpointDiscoveryMessage::from_data(&[0xF000_0101, 0x0000_001F])
+            EndpointDiscovery::try_from(&[0xF000_0101, 0x0000_001F][..])
                 .unwrap()
                 .request_endpoint_name(),
             true,
@@ -100,7 +105,7 @@ mod tests {
     #[test]
     fn request_product_instance_id() {
         assert_eq!(
-            EndpointDiscoveryMessage::from_data(&[0xF000_0101, 0x0000_001F])
+            EndpointDiscovery::try_from(&[0xF000_0101, 0x0000_001F][..])
                 .unwrap()
                 .request_product_instance_id(),
             true,
@@ -110,7 +115,7 @@ mod tests {
     #[test]
     fn request_stream_configuration() {
         assert_eq!(
-            EndpointDiscoveryMessage::from_data(&[0xF000_0101, 0x0000_001F])
+            EndpointDiscovery::try_from(&[0xF000_0101, 0x0000_001F][..])
                 .unwrap()
                 .request_stream_configuration(),
             true,
