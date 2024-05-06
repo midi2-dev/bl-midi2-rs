@@ -34,13 +34,6 @@ pub use ux;
 pub use traits::*;
 
 pub mod prelude {
-    #[cfg(feature = "midi1-channel-voice")]
-    pub use crate::channel_voice1;
-    #[cfg(feature = "midi2-channel-voice")]
-    pub use crate::channel_voice2;
-    #[cfg(feature = "sysex7")]
-    pub use crate::sysex7;
-    #[cfg(feature = "system-common")]
-    pub use crate::system_common;
-    pub use crate::{traits::*, ux::*};
+    pub use super::*;
+    pub use crate::ux::*;
 }
