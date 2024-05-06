@@ -182,9 +182,11 @@ impl<'a, B: crate::buffer::Buffer> crate::detail::property::ReadProperty<'a, B>
         ()
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
+        use crate::buffer::UmpPrivate;
         if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U32 {
             if buffer
                 .specialise_u32()
+                .message()
                 .chunks_exact(2)
                 .any(|p| u8::from(p[0].nibble(3)) > 6)
             {

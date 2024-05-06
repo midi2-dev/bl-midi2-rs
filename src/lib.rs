@@ -4,7 +4,6 @@
 #[cfg(any(feature = "std", test))]
 extern crate std;
 
-pub mod buffer;
 #[cfg(feature = "midi1-channel-voice")]
 pub mod channel_voice1;
 #[cfg(feature = "midi2-channel-voice")]
@@ -23,14 +22,17 @@ pub mod system_common;
 pub mod ump_stream;
 pub mod utility;
 
+pub mod buffer;
 pub mod error;
 pub mod result;
 
 mod detail;
+mod message;
 mod traits;
 
 pub use ux;
 
+pub use message::*;
 pub use traits::*;
 
 pub mod prelude {

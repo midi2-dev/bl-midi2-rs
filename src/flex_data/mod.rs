@@ -771,14 +771,14 @@ pub use set_time_signature::SetTimeSignature;
 pub use unknown_metadata_text::UnknownMetadataText;
 pub use unknown_performance_text::UnknownPerformanceText;
 
-const UMP_MESSAGE_TYPE: u8 = 0xD;
-const COMPLETE_FORMAT: u8 = 0x0;
-const START_FORMAT: u8 = 0x1;
-const CONTINUE_FORMAT: u8 = 0x2;
-const END_FORMAT: u8 = 0x3;
-const SETUP_AND_PERFORMANCE_BANK: u8 = 0x0;
-const METADATA_TEXT_BANK: u8 = 0x1;
-const PERFORMANCE_TEXT_BANK: u8 = 0x2;
+pub(crate) const UMP_MESSAGE_TYPE: u8 = 0xD;
+pub(crate) const COMPLETE_FORMAT: u8 = 0x0;
+pub(crate) const START_FORMAT: u8 = 0x1;
+pub(crate) const CONTINUE_FORMAT: u8 = 0x2;
+pub(crate) const END_FORMAT: u8 = 0x3;
+pub(crate) const SETUP_AND_PERFORMANCE_BANK: u8 = 0x0;
+pub(crate) const METADATA_TEXT_BANK: u8 = 0x1;
+pub(crate) const PERFORMANCE_TEXT_BANK: u8 = 0x2;
 
 #[derive(
     derive_more::From,
