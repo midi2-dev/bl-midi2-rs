@@ -1,20 +1,20 @@
 use crate::util::BitOps;
 
-pub mod channel_pressure;
-pub mod control_change;
-pub mod key_pressure;
-pub mod note_off;
-pub mod note_on;
-pub mod pitch_bend;
-pub mod program_change;
+mod channel_pressure;
+mod control_change;
+mod key_pressure;
+mod note_off;
+mod note_on;
+mod pitch_bend;
+mod program_change;
 
-use channel_pressure::ChannelPressure;
-use control_change::ControlChange;
-use key_pressure::KeyPressure;
-use note_off::NoteOff;
-use note_on::NoteOn;
-use pitch_bend::PitchBend;
-use program_change::ProgramChange;
+pub use channel_pressure::ChannelPressure;
+pub use control_change::ControlChange;
+pub use key_pressure::KeyPressure;
+pub use note_off::NoteOff;
+pub use note_on::NoteOn;
+pub use pitch_bend::PitchBend;
+pub use program_change::ProgramChange;
 
 pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x2;
 

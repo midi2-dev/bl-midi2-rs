@@ -8,14 +8,14 @@ use crate::{
 
 mod text;
 
-pub mod set_chord_name;
-pub mod set_key_signature;
-pub mod set_metronome;
-pub mod set_tempo;
-pub mod set_time_signature;
-pub mod tonic;
-pub mod unknown_metadata_text;
-pub mod project_name {
+mod set_chord_name;
+mod set_key_signature;
+mod set_metronome;
+mod set_tempo;
+mod set_time_signature;
+mod tonic;
+mod unknown_metadata_text;
+mod project_name {
     use crate::message::{common_properties, flex_data};
 
     const BANK: u8 = super::METADATA_TEXT_BANK;
@@ -58,7 +58,7 @@ pub mod project_name {
     }
     impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for ProjectName<B> {}
 }
-pub mod composition_name {
+mod composition_name {
     use crate::message::{common_properties, flex_data};
 
     const BANK: u8 = super::METADATA_TEXT_BANK;
@@ -101,7 +101,7 @@ pub mod composition_name {
     }
     impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for CompositionName<B> {}
 }
-pub mod midi_clip_name {
+mod midi_clip_name {
     use crate::message::{common_properties, flex_data};
 
     const BANK: u8 = super::METADATA_TEXT_BANK;
@@ -144,7 +144,7 @@ pub mod midi_clip_name {
     }
     impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for MidiClipName<B> {}
 }
-pub mod copyright_notice {
+mod copyright_notice {
     use crate::message::{common_properties, flex_data};
 
     const BANK: u8 = super::METADATA_TEXT_BANK;
@@ -187,7 +187,7 @@ pub mod copyright_notice {
     }
     impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for CopyrightNotice<B> {}
 }
-pub mod composer_name {
+mod composer_name {
     use crate::message::{common_properties, flex_data};
 
     const BANK: u8 = super::METADATA_TEXT_BANK;
@@ -230,7 +230,7 @@ pub mod composer_name {
     }
     impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for ComposerName<B> {}
 }
-pub mod lyricist_name {
+mod lyricist_name {
     use crate::message::{common_properties, flex_data};
 
     const BANK: u8 = super::METADATA_TEXT_BANK;
@@ -273,7 +273,7 @@ pub mod lyricist_name {
     }
     impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for LyricistName<B> {}
 }
-pub mod arranger_name {
+mod arranger_name {
     use crate::message::{common_properties, flex_data};
 
     const BANK: u8 = super::METADATA_TEXT_BANK;
@@ -316,7 +316,7 @@ pub mod arranger_name {
     }
     impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for ArrangerName<B> {}
 }
-pub mod publisher_name {
+mod publisher_name {
     use crate::message::{common_properties, flex_data};
 
     const BANK: u8 = super::METADATA_TEXT_BANK;
@@ -359,7 +359,7 @@ pub mod publisher_name {
     }
     impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for PublisherName<B> {}
 }
-pub mod primary_performer_name {
+mod primary_performer_name {
     use crate::message::{common_properties, flex_data};
 
     const BANK: u8 = super::METADATA_TEXT_BANK;
@@ -402,7 +402,7 @@ pub mod primary_performer_name {
     }
     impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for PrimaryPerformerName<B> {}
 }
-pub mod accompanying_performer_name {
+mod accompanying_performer_name {
     use crate::message::{common_properties, flex_data};
 
     const BANK: u8 = super::METADATA_TEXT_BANK;
@@ -445,7 +445,7 @@ pub mod accompanying_performer_name {
     }
     impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for AccompanyingPerformerName<B> {}
 }
-pub mod recording_date {
+mod recording_date {
     use crate::message::{common_properties, flex_data};
 
     const BANK: u8 = super::METADATA_TEXT_BANK;
@@ -488,7 +488,7 @@ pub mod recording_date {
     }
     impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for RecordingDate<B> {}
 }
-pub mod recording_location {
+mod recording_location {
     use crate::message::{common_properties, flex_data};
 
     const BANK: u8 = super::METADATA_TEXT_BANK;
@@ -531,7 +531,7 @@ pub mod recording_location {
     }
     impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for RecordingLocation<B> {}
 }
-pub mod unknown_performance_text {
+mod unknown_performance_text {
     use crate::message::{common_properties, flex_data};
 
     const BANK: u8 = super::PERFORMANCE_TEXT_BANK;
@@ -574,7 +574,7 @@ pub mod unknown_performance_text {
     }
     impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for UnknownPerformanceText<B> {}
 }
-pub mod lyrics {
+mod lyrics {
     use crate::message::{common_properties, flex_data};
 
     const BANK: u8 = super::PERFORMANCE_TEXT_BANK;
@@ -617,7 +617,7 @@ pub mod lyrics {
     }
     impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for Lyrics<B> {}
 }
-pub mod lyrics_language {
+mod lyrics_language {
     use crate::message::{common_properties, flex_data};
 
     const BANK: u8 = super::PERFORMANCE_TEXT_BANK;
@@ -660,7 +660,7 @@ pub mod lyrics_language {
     }
     impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for LyricsLanguage<B> {}
 }
-pub mod ruby {
+mod ruby {
     use crate::message::{common_properties, flex_data};
 
     const BANK: u8 = super::PERFORMANCE_TEXT_BANK;
@@ -703,7 +703,7 @@ pub mod ruby {
     }
     impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for Ruby<B> {}
 }
-pub mod ruby_language {
+mod ruby_language {
     use crate::message::{common_properties, flex_data};
 
     const BANK: u8 = super::PERFORMANCE_TEXT_BANK;
@@ -746,6 +746,30 @@ pub mod ruby_language {
     }
     impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for RubyLanguage<B> {}
 }
+
+pub use accompanying_performer_name::AccompanyingPerformerName;
+pub use arranger_name::ArrangerName;
+pub use composer_name::ComposerName;
+pub use composition_name::CompositionName;
+pub use copyright_notice::CopyrightNotice;
+pub use lyricist_name::LyricistName;
+pub use lyrics::Lyrics;
+pub use lyrics_language::LyricsLanguage;
+pub use midi_clip_name::MidiClipName;
+pub use primary_performer_name::PrimaryPerformerName;
+pub use project_name::ProjectName;
+pub use publisher_name::PublisherName;
+pub use recording_date::RecordingDate;
+pub use recording_location::RecordingLocation;
+pub use ruby::Ruby;
+pub use ruby_language::RubyLanguage;
+pub use set_chord_name::SetChordName;
+pub use set_key_signature::SetKeySignature;
+pub use set_metronome::SetMetronome;
+pub use set_tempo::SetTempo;
+pub use set_time_signature::SetTimeSignature;
+pub use unknown_metadata_text::UnknownMetadataText;
+pub use unknown_performance_text::UnknownPerformanceText;
 
 const UMP_MESSAGE_TYPE: u8 = 0xD;
 const COMPLETE_FORMAT: u8 = 0x0;
