@@ -1,13 +1,13 @@
 use crate::{
-    message::{common_properties, midi2_channel_voice::UMP_MESSAGE_TYPE},
+    message::{channel_voice2::UMP_MESSAGE_TYPE, common_properties},
     numeric_types::{u4, u7},
     util::schema,
 };
 
-pub(crate) const STATUS: u8 = 0b0100;
+pub(crate) const STATUS: u8 = 0b0010;
 
 #[midi2_proc::generate_message(FixedSize, MinSizeUmp(2))]
-struct RelativeRegisteredController {
+struct RegisteredController {
     #[property(crate::message::utility::JitterReductionProperty)]
     jitter_reduction: Option<crate::message::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
@@ -35,46 +35,56 @@ mod tests {
     fn builder() {
         use crate::traits::{Channeled, Grouped};
 
-        let mut message = RelativeRegisteredController::new_arr();
-        message.set_group(u4::new(0x1));
-        message.set_channel(u4::new(0xE));
-        message.set_bank(u7::new(0x45));
-        message.set_index(u7::new(0x02));
-        message.set_controller_data(0xAF525908);
+        let mut message = RegisteredController::new_arr();
+        message.set_group(u4::new(0xA));
+        message.set_channel(u4::new(0xB));
+        message.set_bank(u7::new(0x7D));
+        message.set_index(u7::new(0x64));
+        message.set_controller_data(0x46845E00);
 
         assert_eq!(
             message,
-            RelativeRegisteredController([0x0, 0x414E_4502, 0xAF525908, 0x0, 0x0,]),
+            RegisteredController([0x0, 0x4A2B_7D64, 0x46845E00, 0x0, 0x0]),
         );
     }
 
     #[test]
     pub fn bank() {
         assert_eq!(
-            RelativeRegisteredController::try_from(&[0x414E_4502, 0xAF525908][..])
+            RegisteredController::try_from(&[0x4A2B_7D64, 0x46845E00][..])
                 .unwrap()
                 .bank(),
-            u7::new(0x45),
+            u7::new(0x7D),
         );
     }
 
     #[test]
     pub fn index() {
         assert_eq!(
-            RelativeRegisteredController::try_from(&[0x414E_4502, 0xAF525908][..])
+            RegisteredController::try_from(&[0x4A2B_7D64, 0x46845E00][..])
                 .unwrap()
                 .index(),
-            u7::new(0x02),
+            u7::new(0x64),
         );
     }
 
     #[test]
     pub fn controller_data() {
         assert_eq!(
-            RelativeRegisteredController::try_from(&[0x414E_4502, 0xAF525908][..])
+            RegisteredController::try_from(&[0x4A2B_7D64, 0x46845E00][..])
                 .unwrap()
                 .controller_data(),
-            0xAF525908,
+            0x46845E00,
+        );
+    }
+
+    #[test]
+    pub fn data() {
+        assert_eq!(
+            RegisteredController::try_from(&[0x4A2B_7D64, 0x46845E00][..])
+                .unwrap()
+                .data(),
+            &[0x4A2B_7D64, 0x46845E00],
         );
     }
 }

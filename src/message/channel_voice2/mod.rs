@@ -49,7 +49,7 @@ pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x4;
     PartialEq,
     Eq,
 )]
-pub enum Midi2ChannelVoice<B: crate::buffer::Ump> {
+pub enum ChannelVoice1<B: crate::buffer::Ump> {
     AssignableController(assignable_controller::AssignableController<B>),
     AssignablePerNoteController(assignable_per_note_controller::AssignablePerNoteController<B>),
     ChannelPitchBend(channel_pitch_bend::ChannelPitchBend<B>),
@@ -67,7 +67,7 @@ pub enum Midi2ChannelVoice<B: crate::buffer::Ump> {
     RelativeRegisteredController(relative_registered_controller::RelativeRegisteredController<B>),
 }
 
-impl<'a> TryFrom<&'a [u32]> for Midi2ChannelVoice<&'a [u32]> {
+impl<'a> TryFrom<&'a [u32]> for ChannelVoice1<&'a [u32]> {
     type Error = crate::error::Error;
     fn try_from(buffer: &'a [u32]) -> Result<Self, Self::Error> {
         if buffer.len() < 1 {
@@ -132,7 +132,7 @@ mod test {
         use crate::traits::Channeled;
 
         assert_eq!(
-            Midi2ChannelVoice::try_from(&[0x4BAC_5900, 0xC0B83064][..])
+            ChannelVoice1::try_from(&[0x4BAC_5900, 0xC0B83064][..])
                 .unwrap()
                 .channel(),
             u4::new(0xC),

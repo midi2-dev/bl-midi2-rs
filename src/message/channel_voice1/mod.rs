@@ -35,7 +35,7 @@ pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x2;
     PartialEq,
     Eq,
 )]
-pub enum Midi1ChannelVoice<B: crate::buffer::Buffer> {
+pub enum ChannelVoice1<B: crate::buffer::Buffer> {
     ChannelPressure(ChannelPressure<B>),
     ControlChange(ControlChange<B>),
     KeyPressure(KeyPressure<B>),
@@ -45,7 +45,7 @@ pub enum Midi1ChannelVoice<B: crate::buffer::Buffer> {
     ProgramChange(ProgramChange<B>),
 }
 
-impl<'a, U: crate::buffer::Unit> core::convert::TryFrom<&'a [U]> for Midi1ChannelVoice<&'a [U]> {
+impl<'a, U: crate::buffer::Unit> core::convert::TryFrom<&'a [U]> for ChannelVoice1<&'a [U]> {
     type Error = crate::error::Error;
     fn try_from(buffer: &'a [U]) -> Result<Self, Self::Error> {
         if buffer.len() < 1 {
@@ -94,7 +94,7 @@ mod test {
     #[test]
     fn channel() {
         assert_eq!(
-            Midi1ChannelVoice::try_from(&[0x2FD6_0900_u32][..])
+            ChannelVoice1::try_from(&[0x2FD6_0900_u32][..])
                 .unwrap()
                 .channel(),
             u4::new(0x6),
@@ -104,7 +104,7 @@ mod test {
     #[test]
     fn channel_bytes() {
         assert_eq!(
-            Midi1ChannelVoice::try_from(&[0xD6_u8, 0x09_u8][..])
+            ChannelVoice1::try_from(&[0xD6_u8, 0x09_u8][..])
                 .unwrap()
                 .channel(),
             u4::new(0x6),
@@ -114,7 +114,7 @@ mod test {
     #[test]
     fn group() {
         assert_eq!(
-            Midi1ChannelVoice::try_from(&[0x2FD6_0900_u32][..])
+            ChannelVoice1::try_from(&[0x2FD6_0900_u32][..])
                 .unwrap()
                 .group(),
             u4::new(0xF),
@@ -124,47 +124,47 @@ mod test {
     #[test]
     fn from_bytes() {
         let buffer = [0xD6_u8, 0x09_u8];
-        let borrowed = Midi1ChannelVoice::try_from(&buffer[..]).unwrap();
-        let owned = Midi1ChannelVoice::<std::vec::Vec<u32>>::from_bytes(borrowed);
+        let borrowed = ChannelVoice1::try_from(&buffer[..]).unwrap();
+        let owned = ChannelVoice1::<std::vec::Vec<u32>>::from_bytes(borrowed);
         assert_eq!(owned.data(), &[0x20D6_0900]);
     }
 
     #[test]
     fn from_ump() {
         let buffer = [0x20D6_0900_u32];
-        let borrowed = Midi1ChannelVoice::try_from(&buffer[..]).unwrap();
-        let owned = Midi1ChannelVoice::<std::vec::Vec<u8>>::from_ump(borrowed);
+        let borrowed = ChannelVoice1::try_from(&buffer[..]).unwrap();
+        let owned = ChannelVoice1::<std::vec::Vec<u8>>::from_ump(borrowed);
         assert_eq!(owned.data(), &[0xD6, 0x09]);
     }
 
     #[test]
     fn try_from_bytes() {
         let buffer = [0xD6_u8, 0x09_u8];
-        let borrowed = Midi1ChannelVoice::try_from(&buffer[..]).unwrap();
-        let owned = Midi1ChannelVoice::<[u32; 5]>::try_from_bytes(borrowed).unwrap();
+        let borrowed = ChannelVoice1::try_from(&buffer[..]).unwrap();
+        let owned = ChannelVoice1::<[u32; 5]>::try_from_bytes(borrowed).unwrap();
         assert_eq!(owned.data(), &[0x20D6_0900]);
     }
 
     #[test]
     fn try_from_ump() {
         let buffer = [0x20D6_0900_u32];
-        let borrowed = Midi1ChannelVoice::try_from(&buffer[..]).unwrap();
-        let owned = Midi1ChannelVoice::<[u8; 3]>::try_from_ump(borrowed).unwrap();
+        let borrowed = ChannelVoice1::try_from(&buffer[..]).unwrap();
+        let owned = ChannelVoice1::<[u8; 3]>::try_from_ump(borrowed).unwrap();
         assert_eq!(owned.data(), &[0xD6, 0x09]);
     }
 
     #[test]
     fn clone() {
         let buffer = [0x20D6_0900_u32];
-        let borrowed = Midi1ChannelVoice::try_from(&buffer[..]).unwrap();
+        let borrowed = ChannelVoice1::try_from(&buffer[..]).unwrap();
         let cloned = borrowed.clone();
         assert_eq!(borrowed.data(), cloned.data());
     }
 
     #[test]
     fn rebuffer_into() {
-        let message: Midi1ChannelVoice<std::vec::Vec<u32>> =
-            Midi1ChannelVoice::try_from(&[0x2FD6_0900_u32][..])
+        let message: ChannelVoice1<std::vec::Vec<u32>> =
+            ChannelVoice1::try_from(&[0x2FD6_0900_u32][..])
                 .unwrap()
                 .rebuffer_into();
         assert_eq!(message.data(), &[0x2FD6_0900]);
@@ -172,11 +172,10 @@ mod test {
 
     #[test]
     fn try_rebuffer_into() {
-        let message: Midi1ChannelVoice<[u32; 4]> =
-            Midi1ChannelVoice::try_from(&[0x2FD6_0900_u32][..])
-                .unwrap()
-                .try_rebuffer_into()
-                .unwrap();
+        let message: ChannelVoice1<[u32; 4]> = ChannelVoice1::try_from(&[0x2FD6_0900_u32][..])
+            .unwrap()
+            .try_rebuffer_into()
+            .unwrap();
         assert_eq!(message.data(), &[0x2FD6_0900]);
     }
 }

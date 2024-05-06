@@ -2,7 +2,7 @@
 
 A helper library for dealing with midi 2 byte data.
 
-For detailed midi2 specification see [the documenation](https://midi.org/)
+For detailed midi2 specification see [the documentation](https://midi.org/)
 on which this library is based.
 
 ## **Note!**
@@ -25,7 +25,7 @@ use midi2::prelude::*;
 #[cfg(feature = "midi2-channel-voice")]
 {
     let message = Message::builder()
-        .midi2_channel_voice()
+        .channel_voice2()
         .note_on()
         .group(u4::new(0xD))
         .note(u7::new(0x60))
@@ -73,7 +73,7 @@ use midi2::prelude::*;
     assert_eq!(
         message,
         Message::builder()
-            .midi1_channel_voice()
+            .channel_voice1()
             .key_pressure()
             .channel(u4::new(0xB))
             .note(u7::new(0x60))
@@ -104,7 +104,7 @@ assert_eq!(
 ## Pretty Printing
 
 Each message implements debug formatting so that the underlying 
-data can be easily read in a hexidecimal format.
+data can be easily read in a hexadecimal format.
 
 ```rust
 use midi2::prelude::*;

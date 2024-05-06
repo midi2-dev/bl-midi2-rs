@@ -1,12 +1,12 @@
 use crate::{
-    message::{common_properties, midi1_channel_voice::UMP_MESSAGE_TYPE},
+    message::{channel_voice1::UMP_MESSAGE_TYPE, common_properties},
     util::schema,
 };
 
-pub(crate) const STATUS: u8 = 0b1001;
+pub(crate) const STATUS: u8 = 0b1010;
 
 #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1), MinSizeBytes(3))]
-struct NoteOn {
+struct KeyPressure {
     #[property(crate::message::utility::JitterReductionProperty)]
     jitter_reduction: Option<crate::message::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
@@ -28,7 +28,7 @@ struct NoteOn {
         schema::Bytes<0x00, 0x0, 0x7F>,
         schema::Ump<0x0000_007F, 0x0, 0x0, 0x0>,
     >)]
-    velocity: crate::numeric_types::u7,
+    pressure: crate::numeric_types::u7,
 }
 
 #[cfg(test)]
@@ -42,43 +42,51 @@ mod tests {
 
     #[test]
     fn setters() {
-        let mut message = NoteOn::new_arr();
-        message.set_group(u4::new(0xD));
-        message.set_channel(u4::new(0xE));
-        message.set_note(u7::new(0x75));
-        message.set_velocity(u7::new(0x3D));
-        assert_eq!(message, NoteOn([0x0, 0x2D9E_753D, 0x0, 0x0, 0x0]));
+        let mut message = KeyPressure::new_arr();
+        message.set_group(u4::new(0xA));
+        message.set_channel(u4::new(0x3));
+        message.set_note(u7::new(0x7F));
+        message.set_pressure(u7::new(0x5C));
+        assert_eq!(message, KeyPressure([0x0, 0x2AA3_7F5C, 0x0, 0x0, 0x0]));
     }
 
     #[test]
     fn group() {
         assert_eq!(
-            NoteOn::try_from(&[0x2D9E_753D_u32][..]).unwrap().group(),
-            u4::new(0xD),
+            KeyPressure::try_from(&[0x2AA3_7F5C_u32][..])
+                .unwrap()
+                .group(),
+            u4::new(0xA),
         );
     }
 
     #[test]
     fn channel() {
         assert_eq!(
-            NoteOn::try_from(&[0x2D9E_753D_u32][..]).unwrap().channel(),
-            u4::new(0xE),
+            KeyPressure::try_from(&[0x2AA3_7F5C_u32][..])
+                .unwrap()
+                .channel(),
+            u4::new(0x3),
         );
     }
 
     #[test]
     fn note() {
         assert_eq!(
-            NoteOn::try_from(&[0x2D9E_753D_u32][..]).unwrap().note(),
-            u7::new(0x75),
+            KeyPressure::try_from(&[0x2AA3_7F5C_u32][..])
+                .unwrap()
+                .note(),
+            u7::new(0x7F),
         );
     }
 
     #[test]
-    fn velocity() {
+    fn pressure() {
         assert_eq!(
-            NoteOn::try_from(&[0x2D9E_753D_u32][..]).unwrap().velocity(),
-            u7::new(0x3D),
+            KeyPressure::try_from(&[0x2AA3_7F5C_u32][..])
+                .unwrap()
+                .pressure(),
+            u7::new(0x5C),
         );
     }
 }

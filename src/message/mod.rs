@@ -1,12 +1,12 @@
 mod common_properties;
 mod helpers;
 
+#[cfg(feature = "midi1-channel-voice")]
+pub mod channel_voice1;
+#[cfg(feature = "midi2-channel-voice")]
+pub mod channel_voice2;
 #[cfg(feature = "flex-data")]
 pub mod flex_data;
-#[cfg(feature = "midi1-channel-voice")]
-pub mod midi1_channel_voice;
-#[cfg(feature = "midi2-channel-voice")]
-pub mod midi2_channel_voice;
 #[cfg(feature = "sysex7")]
 pub mod sysex7;
 #[cfg(feature = "sysex8")]
@@ -23,9 +23,9 @@ pub mod utility;
 //     #[cfg(feature = "flex-data")]
 //     FlexData(FlexDataMessage<'a>),
 //     #[cfg(feature = "midi1-channel-voice")]
-//     Midi1ChannelVoice(Midi1ChannelVoiceMessage<'a>),
+//     ChannelVoice1(ChannelVoice1Message<'a>),
 //     #[cfg(feature = "midi2-channel-voice")]
-//     Midi2ChannelVoice(Midi2ChannelVoiceMessage<'a>),
+//     ChannelVoice1(ChannelVoice1Message<'a>),
 //     #[cfg(feature = "sysex7")]
 //     Sysex7(Sysex7Message<'a>),
 //     #[cfg(feature = "sysex8")]
@@ -50,7 +50,7 @@ mod tests {
     //     assert_eq!(
     //         Message::from_byte_data(&[0xAB, 0x60, 0x33]),
     //         Message::builder()
-    //             .midi1_channel_voice()
+    //             .channel_voice1()
     //             .key_pressure()
     //             .channel(u4::new(0xB))
     //             .note(u7::new(0x60))

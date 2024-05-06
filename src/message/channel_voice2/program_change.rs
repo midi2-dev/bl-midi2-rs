@@ -1,5 +1,5 @@
 use crate::{
-    message::{common_properties, midi2_channel_voice::UMP_MESSAGE_TYPE},
+    message::{channel_voice2::UMP_MESSAGE_TYPE, common_properties},
     numeric_types::{u14, u4, u7},
     util::{property, schema},
 };

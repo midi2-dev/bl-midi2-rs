@@ -1,10 +1,10 @@
 use crate::{
     message::{
-        common_properties,
-        midi2_channel_voice::{
+        channel_voice2::{
             attribute::{Attribute, AttributeProperty},
             UMP_MESSAGE_TYPE,
         },
+        common_properties,
     },
     numeric_types::{u4, u7},
     util::schema,

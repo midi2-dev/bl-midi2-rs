@@ -1,10 +1,10 @@
 use crate::{
     message::{
-        common_properties,
-        midi2_channel_voice::{
+        channel_voice2::{
             attribute::{Attribute, AttributeProperty},
             UMP_MESSAGE_TYPE,
         },
+        common_properties,
     },
     numeric_types::{u4, u7},
     util::schema,
@@ -20,12 +20,12 @@ pub(crate) const STATUS: u8 = 0b1001;
 /// use midi2::prelude::*;
 /// use midi2::prelude::*;
 ///
-/// let mut message = midi2_channel_voice::NoteOn::new_arr();
+/// let mut message = channel_voice2::NoteOn::new_arr();
 /// message.set_group(u4::new(0x8));
 /// message.set_channel(u4::new(0x8));
 /// message.set_note(u7::new(0x5E));
 /// message.set_velocity(0x6A14);
-/// message.set_attribute(Some(midi2_channel_voice::NoteAttribute::Pitch7_9 {
+/// message.set_attribute(Some(channel_voice2::NoteAttribute::Pitch7_9 {
 ///     note: u7::new(0x74),
 ///     pitch_up: u9::new(0x18A),
 /// }));

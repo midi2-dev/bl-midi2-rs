@@ -1,13 +1,13 @@
 use crate::{
-    message::{common_properties, midi2_channel_voice::UMP_MESSAGE_TYPE},
+    message::{channel_voice2::UMP_MESSAGE_TYPE, common_properties},
     numeric_types::{u4, u7},
     util::schema,
 };
 
-pub(crate) const STATUS: u8 = 0b0110;
+pub(crate) const STATUS: u8 = 0b1101;
 
 #[midi2_proc::generate_message(FixedSize, MinSizeUmp(2))]
-struct PerNotePitchBend {
+struct ChannelPressure {
     #[property(crate::message::utility::JitterReductionProperty)]
     jitter_reduction: Option<crate::message::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
@@ -19,9 +19,11 @@ struct PerNotePitchBend {
     #[property(common_properties::GroupProperty)]
     group: u4,
     #[property(common_properties::UmpSchemaProperty<u7, schema::Ump<0x0000_7F00, 0x0, 0x0, 0x0>>)]
-    note: u7,
+    bank: u7,
+    #[property(common_properties::UmpSchemaProperty<u7, schema::Ump<0x0000_007F, 0x0, 0x0, 0x0>>)]
+    index: u7,
     #[property(common_properties::UmpSchemaProperty<u32, schema::Ump<0x0000_0000, 0xFFFF_FFFF, 0x0, 0x0>>)]
-    pitch_bend_data: u32,
+    channel_pressure_data: u32,
 }
 
 #[cfg(test)]
@@ -30,38 +32,27 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     #[test]
-    fn builder() {
+    fn setter() {
         use crate::traits::{Channeled, Grouped};
 
-        let mut message = PerNotePitchBend::new_arr();
-        message.set_group(u4::new(0x9));
-        message.set_channel(u4::new(0x2));
-        message.set_note(u7::new(0x76));
-        message.set_pitch_bend_data(0x2AD74672);
+        let mut message = ChannelPressure::new_arr();
+        message.set_group(u4::new(0xE));
+        message.set_channel(u4::new(0xD));
+        message.set_channel_pressure_data(0xDE0DE0F2);
 
         assert_eq!(
             message,
-            PerNotePitchBend([0x0, 0x4962_7600, 0x2AD74672, 0x0, 0x0]),
+            ChannelPressure([0x0, 0x4EDD_0000, 0xDE0D_E0F2, 0x0, 0x0]),
         );
     }
 
     #[test]
-    fn note() {
+    fn channel_pressure_data() {
         assert_eq!(
-            PerNotePitchBend::try_from(&[0x4962_7600, 0x2AD74672][..])
+            ChannelPressure::try_from(&[0x4EDD_0000, 0xDE0D_E0F2][..])
                 .unwrap()
-                .note(),
-            u7::new(0x76),
-        );
-    }
-
-    #[test]
-    fn pitch_bend_data() {
-        assert_eq!(
-            PerNotePitchBend::try_from(&[0x4962_7600, 0x2AD74672][..])
-                .unwrap()
-                .pitch_bend_data(),
-            0x2AD74672,
+                .channel_pressure_data(),
+            0xDE0DE0F2,
         );
     }
 }

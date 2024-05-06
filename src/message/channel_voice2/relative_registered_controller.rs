@@ -1,13 +1,13 @@
 use crate::{
-    message::{common_properties, midi2_channel_voice::UMP_MESSAGE_TYPE},
+    message::{channel_voice2::UMP_MESSAGE_TYPE, common_properties},
     numeric_types::{u4, u7},
     util::schema,
 };
 
-pub(crate) const STATUS: u8 = 0b0011;
+pub(crate) const STATUS: u8 = 0b0100;
 
 #[midi2_proc::generate_message(FixedSize, MinSizeUmp(2))]
-struct AssignableController {
+struct RelativeRegisteredController {
     #[property(crate::message::utility::JitterReductionProperty)]
     jitter_reduction: Option<crate::message::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
@@ -32,72 +32,49 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     #[test]
-    fn setters() {
+    fn builder() {
         use crate::traits::{Channeled, Grouped};
 
-        let mut message = AssignableController::new_arr();
-        message.set_group(u4::new(0xC));
-        message.set_channel(u4::new(0x8));
-        message.set_bank(u7::new(0x51));
-        message.set_index(u7::new(0x38));
-        message.set_controller_data(0x3F3ADD42);
+        let mut message = RelativeRegisteredController::new_arr();
+        message.set_group(u4::new(0x1));
+        message.set_channel(u4::new(0xE));
+        message.set_bank(u7::new(0x45));
+        message.set_index(u7::new(0x02));
+        message.set_controller_data(0xAF525908);
+
         assert_eq!(
             message,
-            AssignableController([0x0, 0x4C38_5138, 0x3F3ADD42, 0x0, 0x0]),
-        );
-    }
-
-    #[test]
-    fn group() {
-        use crate::traits::Grouped;
-
-        assert_eq!(
-            AssignableController::try_from(&[0x4C38_5138, 0x3F3ADD42][..])
-                .unwrap()
-                .group(),
-            u4::new(0xC),
-        );
-    }
-
-    #[test]
-    fn channel() {
-        use crate::traits::Channeled;
-
-        assert_eq!(
-            AssignableController::try_from(&[0x4C38_5138, 0x3F3ADD42][..])
-                .unwrap()
-                .channel(),
-            u4::new(0x8),
+            RelativeRegisteredController([0x0, 0x414E_4502, 0xAF525908, 0x0, 0x0,]),
         );
     }
 
     #[test]
     pub fn bank() {
         assert_eq!(
-            AssignableController::try_from(&[0x4C38_5138, 0x3F3ADD42][..])
+            RelativeRegisteredController::try_from(&[0x414E_4502, 0xAF525908][..])
                 .unwrap()
                 .bank(),
-            u7::new(0x51),
+            u7::new(0x45),
         );
     }
 
     #[test]
     pub fn index() {
         assert_eq!(
-            AssignableController::try_from(&[0x4C38_5138, 0x3F3ADD42][..])
+            RelativeRegisteredController::try_from(&[0x414E_4502, 0xAF525908][..])
                 .unwrap()
                 .index(),
-            u7::new(0x38),
+            u7::new(0x02),
         );
     }
 
     #[test]
     pub fn controller_data() {
         assert_eq!(
-            AssignableController::try_from(&[0x4C38_5138, 0x3F3ADD42][..])
+            RelativeRegisteredController::try_from(&[0x414E_4502, 0xAF525908][..])
                 .unwrap()
                 .controller_data(),
-            0x3F3ADD42,
+            0xAF525908,
         );
     }
 }

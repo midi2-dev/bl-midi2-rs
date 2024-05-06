@@ -1,7 +1,7 @@
 use crate::{
     message::{
+        channel_voice2::{controller, UMP_MESSAGE_TYPE},
         common_properties,
-        midi2_channel_voice::{controller, UMP_MESSAGE_TYPE},
     },
     numeric_types::{u4, u7},
     util::schema,
