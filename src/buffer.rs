@@ -245,7 +245,7 @@ impl<'a> UmpPrivate<'a> for &'a [u32] {
         match self.len() {
             0 => self,
             _ => {
-                use crate::util::BitOps;
+                use crate::detail::BitOps;
                 match u8::from(self[0].nibble(0)) {
                     0x0 => &self[0..1],
                     _ => &self[0..0],
@@ -264,7 +264,7 @@ impl<'a> UmpPrivate<'a> for &'a mut [u32] {
         match self.len() {
             0 => self,
             _ => {
-                use crate::util::BitOps;
+                use crate::detail::BitOps;
                 match u8::from(self[0].nibble(0)) {
                     0x0 => &self[0..1],
                     _ => &self[0..0],
@@ -283,7 +283,7 @@ impl<'a> UmpPrivateMut<'a> for &'a mut [u32] {
         match self.len() {
             0 => self,
             _ => {
-                use crate::util::BitOps;
+                use crate::detail::BitOps;
                 match u8::from(self[0].nibble(0)) {
                     0x0 => &mut self[0..1],
                     _ => &mut self[0..0],

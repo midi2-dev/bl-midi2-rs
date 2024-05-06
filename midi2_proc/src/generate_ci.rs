@@ -77,7 +77,7 @@ fn properties(input: &ItemStruct) -> Vec<Property> {
 fn message_type(root_ident: &Ident) -> TokenStream {
     let ident = common::message_borrowed_ident(root_ident);
     quote! {
-        pub struct #ident<'a>(crate::message::sysex_bytes::Sysex7BytesBorrowed<'a>);
+        pub struct #ident<'a>(crate::sysex_bytes::Sysex7BytesBorrowed<'a>);
     }
 }
 
@@ -96,7 +96,7 @@ fn borrowed_message_impl(root_ident: &Ident) -> TokenStream {
 fn borrowed_builder_type(root_ident: &Ident) -> TokenStream {
     let ident = common::message_borrowed_builder_ident(root_ident);
     quote! {
-        pub struct #ident<'a>(crate::message::sysex_bytes::Sysex7BytesBorrowedBuilder<'a>);
+        pub struct #ident<'a>(crate::sysex_bytes::Sysex7BytesBorrowedBuilder<'a>);
     }
 }
 
@@ -127,7 +127,7 @@ fn borrowed_builder_impl(root_ident: &Ident, properties: &Vec<Property>) -> Toke
                 Ok(#message_ident(self.0.build()?))
             }
             pub fn new(buffer: &'a mut [u8]) -> Self {
-                let mut sysex_builder = crate::message::sysex_bytes::Sysex7BytesBorrowedBuilder::new(buffer);
+                let mut sysex_builder = crate::sysex_bytes::Sysex7BytesBorrowedBuilder::new(buffer);
                 #write_defaults
                 Self(sysex_builder)
             }
@@ -175,7 +175,7 @@ fn borrowed_message_sysex_trait_impl(root_ident: &Ident) -> TokenStream {
     let ident = common::message_borrowed_ident(root_ident);
     quote! {
         impl<'a> crate::traits::Sysex<'a> for #ident<'a> {
-            type PayloadIterator = <crate::message::sysex_bytes::Sysex7BytesBorrowed<'a> as crate::traits::Sysex<'a>>::PayloadIterator;
+            type PayloadIterator = <crate::sysex_bytes::Sysex7BytesBorrowed<'a> as crate::traits::Sysex<'a>>::PayloadIterator;
             fn payload<'b: 'a>(&'b self) -> Self::PayloadIterator {
                 self.0.payload()
             }
@@ -214,12 +214,12 @@ fn borrowed_message_from_byte_data_trait_impl(
         impl<'a> crate::traits::FromByteData<'a> for #ident<'a> {
             type Target = Self;
             fn validate_byte_data(buffer: &'a [u8]) -> crate::result::Result<()> {
-                let sysex = crate::message::sysex_bytes::Sysex7BytesBorrowed::from_byte_data(buffer)?;
+                let sysex = crate::sysex_bytes::Sysex7BytesBorrowed::from_byte_data(buffer)?;
                 #validation_steps
                 Ok(())
             }
             fn from_byte_data_unchecked(buffer: &'a [u8]) -> Self::Target {
-                Self(crate::message::sysex_bytes::Sysex7BytesBorrowed::from_byte_data_unchecked(buffer))
+                Self(crate::sysex_bytes::Sysex7BytesBorrowed::from_byte_data_unchecked(buffer))
             }
         }
     }

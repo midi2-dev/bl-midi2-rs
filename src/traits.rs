@@ -5,15 +5,15 @@ pub trait Data<B: Buffer> {
 }
 
 pub trait Grouped<B: Ump> {
-    fn group(&self) -> crate::u4;
-    fn set_group(&mut self, group: crate::u4)
+    fn group(&self) -> crate::ux::u4;
+    fn set_group(&mut self, group: crate::ux::u4)
     where
         B: BufferMut;
 }
 
 pub trait Channeled<B: Buffer> {
-    fn channel(&self) -> crate::u4;
-    fn set_channel(&mut self, channel: crate::u4)
+    fn channel(&self) -> crate::ux::u4;
+    fn set_channel(&mut self, channel: crate::ux::u4)
     where
         B: BufferMut;
 }
@@ -121,8 +121,8 @@ where
 }
 
 pub trait JitterReduced<B: crate::buffer::Ump>: Data<B> {
-    fn jitter_reduction(&self) -> Option<crate::message::utility::JitterReduction>;
-    fn set_jitter_reduction(&mut self, jr: Option<crate::message::utility::JitterReduction>)
+    fn jitter_reduction(&self) -> Option<crate::utility::JitterReduction>;
+    fn set_jitter_reduction(&mut self, jr: Option<crate::utility::JitterReduction>)
     where
         B: crate::buffer::BufferMut;
 }

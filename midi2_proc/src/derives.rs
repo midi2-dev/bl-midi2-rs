@@ -47,13 +47,13 @@ pub fn jitter_reduced(item: TokenStream1) -> TokenStream1 {
     }
     quote! {
         impl<B: crate::buffer::Ump>  crate::traits::JitterReduced<B> for #ident<B> {
-            fn jitter_reduction(&self) -> Option<crate::message::utility::JitterReduction> {
+            fn jitter_reduction(&self) -> Option<crate::utility::JitterReduction> {
                 use #ident::*;
                 match self {
                     #match_arms_getter
                 }
             }
-            fn set_jitter_reduction(&mut self, jr: Option<crate::message::utility::JitterReduction>)
+            fn set_jitter_reduction(&mut self, jr: Option<crate::utility::JitterReduction>)
             where
                 B: crate::buffer::BufferMut
             {
@@ -288,13 +288,13 @@ pub fn grouped(item: TokenStream1) -> TokenStream1 {
     }
     quote! {
         impl<B: crate::buffer::Ump> crate::traits::Grouped<B> for #ident<B> {
-            fn group(&self) -> crate::u4 {
+            fn group(&self) -> crate::ux::u4 {
                 use #ident::*;
                 match self {
                     #match_arms_read
                 }
             }
-            fn set_group(&mut self, group: crate::u4)
+            fn set_group(&mut self, group: crate::ux::u4)
             where
                 B: crate::buffer::BufferMut
             {
@@ -328,13 +328,13 @@ pub fn channeled(item: TokenStream1) -> TokenStream1 {
         .ident();
     quote! {
         impl #impl_generics crate::traits::Channeled<#buffer_id> for #ident #ty_generics #where_clause {
-            fn channel(&self) -> crate::u4 {
+            fn channel(&self) -> crate::ux::u4 {
                 use #ident::*;
                 match self {
                     #match_arms_read
                 }
             }
-            fn set_channel(&mut self, channel: crate::u4)
+            fn set_channel(&mut self, channel: crate::ux::u4)
             where
                 #buffer_id: crate::buffer::BufferMut
             {
