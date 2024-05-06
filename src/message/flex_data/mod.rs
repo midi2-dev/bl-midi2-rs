@@ -1174,7 +1174,7 @@ fn flex_data_dyn_size<B: crate::buffer::Ump>(buffer: &B) -> usize {
         .message()
         .chunks_exact(4)
         .position(|p| {
-            let status: u8 = p[0].nibble(2).into();
+            let status: u8 = p[0].nibble(2).into(); //todo: this looks wrong too
             status == COMPLETE_FORMAT || status == END_FORMAT
         })
         .expect("Message is in an invalid state. Couldn't find end packet.")
@@ -1197,6 +1197,14 @@ fn bank_to_buffer(buffer: &mut [u32], bank: u8) {
 
 fn status_to_buffer(buffer: &mut [u32], status: u8) {
     buffer[0].set_octet(3, status);
+}
+
+fn clear_payload(buffer: &mut [u32]) {
+    for packet in buffer.chunks_exact_mut(4) {
+        packet[1] = 0x0;
+        packet[2] = 0x0;
+        packet[3] = 0x0;
+    }
 }
 
 #[cfg(test)]
