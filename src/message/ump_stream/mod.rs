@@ -16,85 +16,106 @@ mod start_of_clip;
 mod stream_configuration_notification;
 mod stream_configuration_request;
 
+pub use device_identity::*;
+pub use end_of_clip::*;
+pub use endpoint_discovery::*;
+pub use endpoint_info::*;
+pub use endpoint_name::*;
+pub use function_block_discovery::*;
+pub use function_block_info::*;
+pub use function_block_name::*;
+pub use product_instance_id::*;
+pub use start_of_clip::*;
+pub use stream_configuration_notification::*;
+pub use stream_configuration_request::*;
+
 pub(crate) const UMP_MESSAGE_TYPE: u8 = 0xF;
 const COMPLETE_FORMAT: u8 = 0x0;
 const START_FORMAT: u8 = 0x1;
 const CONTINUE_FORMAT: u8 = 0x2;
 const END_FORMAT: u8 = 0x3;
 
-// #[derive(midi2_proc::UmpDebug, derive_more::From, midi2_proc::Data, Clone, PartialEq, Eq)]
-// #[non_exhaustive]
-// pub enum UmpStreamMessage<'a> {
-//     DeviceIdentity(DeviceIdentityMessage<'a>),
-//     EndOfClip(EndOfClipMessage<'a>),
-//     EndpointDiscovery(EndpointDiscoveryMessage<'a>),
-//     EndpointInfo(EndpointInfoMessage<'a>),
-//     EndpointName(EndpointNameMessage<'a>),
-//     FunctionBlockDiscovery(FunctionBlockDiscoveryMessage<'a>),
-//     FunctionBlockInfo(FunctionBlockInfoMessage<'a>),
-//     FunctionBlockName(FunctionBlockNameMessage<'a>),
-//     ProductInstanceId(ProductInstanceIdMessage<'a>),
-//     StartOfClip(StartOfClipMessage<'a>),
-//     StreamConfigurationNotification(StreamConfigurationNotificationMessage<'a>),
-//     StreamConfigurationRequest(StreamConfigurationRequestMessage<'a>),
-// }
+#[derive(
+    derive_more::From,
+    midi2_proc::Data,
+    midi2_proc::JitterReduced,
+    midi2_proc::RebufferFrom,
+    midi2_proc::TryRebufferFrom,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
+)]
+#[non_exhaustive]
+pub enum UmpStream<B: crate::buffer::Ump> {
+    DeviceIdentity(device_identity::DeviceIdentity<B>),
+    EndOfClip(end_of_clip::EndOfClip<B>),
+    EndpointDiscovery(endpoint_discovery::EndpointDiscovery<B>),
+    EndpointInfo(endpoint_info::EndpointInfo<B>),
+    EndpointName(endpoint_name::EndpointName<B>),
+    FunctionBlockDiscovery(function_block_discovery::FunctionBlockDiscovery<B>),
+    FunctionBlockInfo(function_block_info::FunctionBlockInfo<B>),
+    FunctionBlockName(function_block_name::FunctionBlockName<B>),
+    ProductInstanceId(product_instance_id::ProductInstanceId<B>),
+    StartOfClip(start_of_clip::StartOfClip<B>),
+    StreamConfigurationNotification(
+        stream_configuration_notification::StreamConfigurationNotification<B>,
+    ),
+    StreamConfigurationRequest(stream_configuration_request::StreamConfigurationRequest<B>),
+}
 
-// impl<'a> FromData<'a> for UmpStreamBorrowed<'a> {
-//     type Target = Self;
-//     fn validate_data(data: &[u32]) -> Result<()> {
-//         let code = (data[0] & 0x03FF_0000) >> 16;
-//         match code {
-//             DEVICE_IDENTITY => DeviceIdentityBorrowed::validate_data(data),
-//             END_OF_CLIP => EndOfClipBorrowed::validate_data(data),
-//             ENDPOINT_DISCOVERY => EndpointDiscoveryBorrowed::validate_data(data),
-//             ENDPOINT_INFO => EndpointInfoBorrowed::validate_data(data),
-//             ENDPOINT_NAME => EndpointNameBorrowed::validate_data(data),
-//             FUNCTION_BLOCK_DISCOVERY => FunctionBlockDiscoveryBorrowed::validate_data(data),
-//             FUNCTION_BLOCK_INFO => FunctionBlockInfoBorrowed::validate_data(data),
-//             FUNCTION_BLOCK_NAME => FunctionBlockNameBorrowed::validate_data(data),
-//             PRODUCT_INSTANCE_ID => ProductInstanceIdBorrowed::validate_data(data),
-//             START_OF_CLIP => StartOfClipBorrowed::validate_data(data),
-//             STREAM_CONFIGURATION_NOTIFICATION => {
-//                 StreamConfigurationNotificationBorrowed::validate_data(data)
-//             }
-//             STREAM_CONFIGURATION_REQUEST => StreamConfigurationRequestBorrowed::validate_data(data),
-//             _ => Err(Error::InvalidData),
-//         }
-//     }
-//     fn from_data_unchecked(data: &'a [u32]) -> Self {
-//         use UmpStreamBorrowed::*;
-//         let code = (data[0] & 0x03FF_0000) >> 16;
-//         match code {
-//             DEVICE_IDENTITY => DeviceIdentity(DeviceIdentityBorrowed::from_data_unchecked(data)),
-//             END_OF_CLIP => EndOfClip(EndOfClipBorrowed::from_data_unchecked(data)),
-//             ENDPOINT_DISCOVERY => {
-//                 EndpointDiscovery(EndpointDiscoveryBorrowed::from_data_unchecked(data))
-//             }
-//             ENDPOINT_INFO => EndpointInfo(EndpointInfoBorrowed::from_data_unchecked(data)),
-//             ENDPOINT_NAME => EndpointName(EndpointNameBorrowed::from_data_unchecked(data)),
-//             FUNCTION_BLOCK_DISCOVERY => {
-//                 FunctionBlockDiscovery(FunctionBlockDiscoveryBorrowed::from_data_unchecked(data))
-//             }
-//             FUNCTION_BLOCK_INFO => {
-//                 FunctionBlockInfo(FunctionBlockInfoBorrowed::from_data_unchecked(data))
-//             }
-//             FUNCTION_BLOCK_NAME => {
-//                 FunctionBlockName(FunctionBlockNameBorrowed::from_data_unchecked(data))
-//             }
-//             PRODUCT_INSTANCE_ID => {
-//                 ProductInstanceId(ProductInstanceIdBorrowed::from_data_unchecked(data))
-//             }
-//             START_OF_CLIP => StartOfClip(StartOfClipBorrowed::from_data_unchecked(data)),
-//             STREAM_CONFIGURATION_NOTIFICATION => StreamConfigurationNotification(
-//                 StreamConfigurationNotificationBorrowed::from_data_unchecked(data),
-//             ),
-//             STREAM_CONFIGURATION_REQUEST => StreamConfigurationRequest(
-//                 StreamConfigurationRequestBorrowed::from_data_unchecked(data),
-//             ),
-//             _ => panic!(),
-//         }
-//     }
-// }
+impl<'a> TryFrom<&'a [u32]> for UmpStream<&'a [u32]> {
+    type Error = crate::error::Error;
+    fn try_from(value: &'a [u32]) -> Result<Self, Self::Error> {
+        use crate::buffer::UmpPrivate;
+        use UmpStream::*;
+        if value.message().len() < 1 {
+            return Err(crate::error::Error::InvalidData("Slice is too short"));
+        };
+        Ok(match status_from_buffer(value.message()) {
+            device_identity::STATUS => {
+                DeviceIdentity(device_identity::DeviceIdentity::try_from(value)?.into())
+            }
+            end_of_clip::STATUS => EndOfClip(end_of_clip::EndOfClip::try_from(value)?.into()),
+            endpoint_discovery::STATUS => {
+                EndpointDiscovery(endpoint_discovery::EndpointDiscovery::try_from(value)?.into())
+            }
+            endpoint_info::STATUS => {
+                EndpointInfo(endpoint_info::EndpointInfo::try_from(value)?.into())
+            }
+            endpoint_name::STATUS => {
+                EndpointName(endpoint_name::EndpointName::try_from(value)?.into())
+            }
+            function_block_discovery::STATUS => FunctionBlockDiscovery(
+                function_block_discovery::FunctionBlockDiscovery::try_from(value)?.into(),
+            ),
+            function_block_info::STATUS => {
+                FunctionBlockInfo(function_block_info::FunctionBlockInfo::try_from(value)?.into())
+            }
+            function_block_name::STATUS => {
+                FunctionBlockName(function_block_name::FunctionBlockName::try_from(value)?.into())
+            }
+            product_instance_id::STATUS => {
+                ProductInstanceId(product_instance_id::ProductInstanceId::try_from(value)?.into())
+            }
+            start_of_clip::STATUS => {
+                StartOfClip(start_of_clip::StartOfClip::try_from(value)?.into())
+            }
+            stream_configuration_notification::STATUS => StreamConfigurationNotification(
+                stream_configuration_notification::StreamConfigurationNotification::try_from(
+                    value,
+                )?
+                .into(),
+            ),
+            stream_configuration_request::STATUS => StreamConfigurationRequest(
+                stream_configuration_request::StreamConfigurationRequest::try_from(value)?.into(),
+            ),
+            _ => Err(crate::Error::InvalidData(
+                "Couldn't interpret flex data status / bank fields",
+            ))?,
+        })
+    }
+}
 
 struct StatusProperty<const STATUS: u16>;
 
@@ -108,13 +129,12 @@ impl<'a, const STATUS: u16, B: Ump> property::ReadProperty<'a, B> for StatusProp
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
         use crate::buffer::UmpPrivate;
-        use crate::numeric_types::u10;
 
         if buffer
             .buffer()
             .message()
             .chunks_exact(4)
-            .all(|packet| status_from_buffer(packet) == u10::new(STATUS))
+            .all(|packet| status_from_buffer(packet) == STATUS)
         {
             Ok(())
         } else {
@@ -413,7 +433,7 @@ fn write_message_header_data(buffer: &mut [u32], size: usize) {
     use crate::numeric_types::u4;
     use crate::util::BitOps;
 
-    let status = u16::from(status_from_buffer(buffer));
+    let status = status_from_buffer(buffer);
 
     for packet in buffer[..size].chunks_exact_mut(4) {
         packet[0].set_nibble(0, u4::new(UMP_MESSAGE_TYPE));
@@ -445,72 +465,61 @@ fn message_size<B: crate::buffer::Ump>(buffer: &B) -> usize {
         + jr_offset
 }
 
-fn status_from_buffer(buffer: &[u32]) -> crate::numeric_types::u10 {
-    use crate::util::Truncate;
-    (buffer[0] >> 16).truncate()
+fn status_from_buffer(buffer: &[u32]) -> u16 {
+    ((buffer[0] & 0x03FF_0000) >> 16) as u16
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     use crate::test_support::debug;
-//     use pretty_assertions::assert_eq;
-//
-//     #[test]
-//     fn builder() {
-//         assert_eq!(
-//             debug::Data(
-//                 UmpStreamMessage::builder()
-//                     .endpoint_name()
-//                     .name("RhythmRevelation: Beats Beyond Boundaries🌍🥁🚀")
-//                     .build()
-//                     .unwrap()
-//                     .data()
-//             ),
-//             debug::Data(&[
-//                 0xF403_5268,
-//                 0x7974_686D,
-//                 0x5265_7665,
-//                 0x6C61_7469,
-//                 0xF803_6F6E,
-//                 0x3A20_4265,
-//                 0x6174_7320,
-//                 0x4265_796F,
-//                 0xF803_6E64,
-//                 0x2042_6F75,
-//                 0x6E64_6172,
-//                 0x6965_73F0,
-//                 0xFC03_9F8C,
-//                 0x8DF0_9FA5,
-//                 0x81F0_9F9A,
-//                 0x8000_0000,
-//             ]),
-//         );
-//     }
-//
-//     #[test]
-//     fn into_owned() {
-//         let _owned = {
-//             let buffer = [
-//                 0xF403_5268,
-//                 0x7974_686D,
-//                 0x5265_7665,
-//                 0x6C61_7469,
-//                 0xF803_6F6E,
-//                 0x3A20_4265,
-//                 0x6174_7320,
-//                 0x4265_796F,
-//                 0xF803_6E64,
-//                 0x2042_6F75,
-//                 0x6E64_6172,
-//                 0x6965_73F0,
-//                 0xFC03_9F8C,
-//                 0x8DF0_9FA5,
-//                 0x81F0_9F9A,
-//                 0x8000_0000,
-//             ];
-//             let message = UmpStreamMessage::from_data(&buffer).unwrap();
-//             message.into_owned()
-//         };
-//     }
-// }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn builder() {
+        assert_eq!(
+            UmpStream::try_from(
+                &[
+                    0xF403_5268,
+                    0x7974_686D,
+                    0x5265_7665,
+                    0x6C61_7469,
+                    0xF803_6F6E,
+                    0x3A20_4265,
+                    0x6174_7320,
+                    0x4265_796F,
+                    0xF803_6E64,
+                    0x2042_6F75,
+                    0x6E64_6172,
+                    0x6965_73F0,
+                    0xFC03_9F8C,
+                    0x8DF0_9FA5,
+                    0x81F0_9F9A,
+                    0x8000_0000,
+                ][..]
+            ),
+            Ok(UmpStream::EndpointName(
+                endpoint_name::EndpointName::try_from(
+                    &[
+                        0xF403_5268,
+                        0x7974_686D,
+                        0x5265_7665,
+                        0x6C61_7469,
+                        0xF803_6F6E,
+                        0x3A20_4265,
+                        0x6174_7320,
+                        0x4265_796F,
+                        0xF803_6E64,
+                        0x2042_6F75,
+                        0x6E64_6172,
+                        0x6965_73F0,
+                        0xFC03_9F8C,
+                        0x8DF0_9FA5,
+                        0x81F0_9F9A,
+                        0x8000_0000,
+                    ][..]
+                )
+                .unwrap()
+            ))
+        );
+    }
+}
