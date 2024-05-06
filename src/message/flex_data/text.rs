@@ -78,7 +78,7 @@ fn ump_buffer_size_for_str(s: &str) -> usize {
         if str_size == 0 {
             4
         } else {
-            str_size * 3 / 12 // todo: this doesn't look right
+            str_size * 4 / 12
         }
     } else {
         4 * (str_size / 12 + 1)
