@@ -182,7 +182,7 @@ impl<'a, B: crate::buffer::Buffer> crate::detail::property::ReadProperty<'a, B>
         }
 
         // is this needed?
-        // if buffer.len() > 1 && buffer[1].nibble(0) == crate::numeric_types::u4::new(0) {
+        // if buffer.len() > 1 && buffer[1].nibble(0) == crate::ux::u4::new(0) {
         //     return Err(Error::InvalidData(
         //         ERR_JR_HEADER_SHOULD_NOT_EXCEED_ONE_PACKET,
         //     ));
@@ -209,7 +209,7 @@ impl<B: crate::buffer::Buffer + crate::buffer::BufferMut> crate::detail::propert
     fn write(buffer: &mut B, jr: Self::Type) {
         use crate::buffer::{SpecialiseU32, UmpPrivateMut, UnitPrivate, UNIT_ID_U32};
         use crate::detail::BitOps;
-        use crate::numeric_types::u4;
+        use crate::ux::u4;
         use JitterReduction::*;
 
         if <B::Unit as UnitPrivate>::UNIT_ID != UNIT_ID_U32 {

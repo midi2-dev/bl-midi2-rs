@@ -91,7 +91,7 @@ fn ump_buffer_size_for_str(s: &str) -> usize {
 
 fn grow_buffer(mut buffer: &mut [u32], size: usize) {
     use crate::detail::BitOps;
-    use crate::numeric_types::{u2, u4};
+    use crate::ux::{u2, u4};
 
     debug_assert!(size % 4 == 0);
     debug_assert!(size != 0);

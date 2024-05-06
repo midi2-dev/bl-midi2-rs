@@ -12,7 +12,7 @@ struct SetTimeSignature {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
     #[property(common_properties::GroupProperty)]
-    group: crate::numeric_types::u4,
+    group: crate::ux::u4,
     #[property(flex_data::FormatProperty<{flex_data::COMPLETE_FORMAT}>)]
     format: (),
     #[property(flex_data::BankProperty<{flex_data::SETUP_AND_PERFORMANCE_BANK}>)]
@@ -43,7 +43,7 @@ impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for SetTimeSignature<B
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{flex_data::FlexDataMessage, numeric_types::u4, traits::Grouped};
+    use crate::{flex_data::FlexDataMessage, traits::Grouped, ux::u4};
     use pretty_assertions::assert_eq;
 
     #[test]

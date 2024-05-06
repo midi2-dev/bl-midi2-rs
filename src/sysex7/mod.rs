@@ -2,8 +2,8 @@
 
 use crate::{
     detail::{common_properties, helpers as message_helpers, BitOps},
-    numeric_types::{self, u7},
     traits::{Sysex, SysexInternal},
+    ux::{self, u7},
 };
 
 pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x3;
@@ -25,7 +25,7 @@ struct Sysex7 {
     #[property(ValidPacketSizes)]
     valid_packet_sizes: (),
     #[property(GroupProperty)]
-    group: crate::numeric_types::u4,
+    group: crate::ux::u4,
     #[property(SysexPayloadPlaceholder)]
     #[readonly]
     #[writeonly]
@@ -150,7 +150,7 @@ impl<'a, B: crate::buffer::Buffer> crate::detail::property::ReadProperty<'a, B>
                 |p| u8::from(p[0].nibble(2)) == 0x2,
                 |p| u8::from(p[0].nibble(2)) == 0x3,
                 2,
-                crate::numeric_types::u4::new(UMP_MESSAGE_TYPE),
+                crate::ux::u4::new(UMP_MESSAGE_TYPE),
             )?;
         }
         Ok(())
@@ -213,7 +213,7 @@ impl<B: crate::buffer::Buffer + crate::buffer::BufferMut> crate::detail::propert
 struct GroupProperty;
 
 impl<B: crate::buffer::Buffer> crate::detail::property::Property<B> for GroupProperty {
-    type Type = numeric_types::u4;
+    type Type = ux::u4;
 }
 
 impl<'a, B: crate::buffer::Buffer> crate::detail::property::ReadProperty<'a, B> for GroupProperty {
@@ -231,7 +231,7 @@ impl<'a, B: crate::buffer::Buffer> crate::detail::property::ReadProperty<'a, B> 
             message_helpers::sysex_group_consistent_groups(
                 buffer.specialise_u32().message(),
                 2,
-                crate::numeric_types::u4::new(UMP_MESSAGE_TYPE),
+                crate::ux::u4::new(UMP_MESSAGE_TYPE),
             )
         } else {
             Ok(Default::default())
@@ -245,7 +245,7 @@ impl<B: crate::buffer::Buffer + crate::buffer::BufferMut> crate::detail::propert
     fn write(buffer: &mut B, group: Self::Type) {
         if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U32 {
             use crate::buffer::UmpPrivateMut;
-            const TYPE: numeric_types::u4 = numeric_types::u4::new(UMP_MESSAGE_TYPE);
+            const TYPE: ux::u4 = ux::u4::new(UMP_MESSAGE_TYPE);
             for packet in buffer
                 .specialise_u32_mut()
                 .message_mut()
@@ -432,7 +432,7 @@ fn convert_generated_properties<
 }
 
 impl<B: crate::buffer::Buffer> Sysex<B> for Sysex7<B> {
-    type Byte = numeric_types::u7;
+    type Byte = ux::u7;
     type PayloadIterator<'a> = PayloadIterator<'a, B::Unit>
     where
         B::Unit: 'a,
@@ -577,7 +577,7 @@ fn try_resize_ump<
     try_resize_buffer: ResizeBuffer,
 ) -> Result<(), crate::traits::SysexTryResizeError> {
     use crate::buffer::UmpPrivateMut;
-    use numeric_types::u4;
+    use ux::u4;
 
     let mut buffer_size = buffer_size_from_payload_size_ump(payload_size);
     let resize_result = try_resize_buffer(sysex, buffer_size);
@@ -688,7 +688,7 @@ pub struct PayloadIterator<'a, U: crate::buffer::Unit> {
 }
 
 impl<'a, U: crate::buffer::Unit> core::iter::Iterator for PayloadIterator<'a, U> {
-    type Item = numeric_types::u7;
+    type Item = ux::u7;
 
     fn next(&mut self) -> Option<Self::Item> {
         match U::UNIT_ID {
@@ -795,7 +795,7 @@ impl<'a, U: crate::buffer::Unit> PayloadIterator<'a, U> {
         <U as crate::buffer::UnitPrivate>::specialise_buffer_u32(self.data)
     }
 
-    fn value_ump(&self) -> numeric_types::u7 {
+    fn value_ump(&self) -> ux::u7 {
         let buffer_index = self.packet_index * 2 + (self.payload_index + 2) / 4;
         let octet_index = (self.payload_index + 2) % 4;
         self.data_ump()[buffer_index].septet(octet_index)
@@ -839,8 +839,8 @@ impl<'a, U: crate::buffer::Unit> core::iter::ExactSizeIterator for PayloadIterat
 mod tests {
     use super::*;
     use crate::{
-        numeric_types::*,
         traits::{FromBytes, FromUmp, Grouped, RebufferInto, Sysex},
+        ux::*,
     };
     use pretty_assertions::assert_eq;
 

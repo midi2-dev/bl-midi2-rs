@@ -1,6 +1,6 @@
 use crate::{
     detail::{BitOps, Encode7Bit},
-    numeric_types::{u14, u4, u7},
+    ux::{u14, u4, u7},
 };
 
 pub trait UmpSchema {}

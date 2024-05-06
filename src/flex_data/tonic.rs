@@ -1,8 +1,8 @@
 use crate::{
     detail::{schema, BitOps},
     error::Error,
-    numeric_types::*,
     result::Result,
+    ux::*,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

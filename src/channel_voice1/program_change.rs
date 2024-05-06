@@ -14,23 +14,23 @@ struct ProgramChange {
     #[property(common_properties::ChannelVoiceStatusProperty<STATUS>)]
     status: (),
     #[property(common_properties::ChannelProperty)]
-    channel: crate::numeric_types::u4,
+    channel: crate::ux::u4,
     #[property(common_properties::GroupProperty)]
-    group: crate::numeric_types::u4,
+    group: crate::ux::u4,
     #[property(common_properties::HybridSchemaProperty<
-        crate::numeric_types::u7,
+        crate::ux::u7,
         schema::Bytes<0x00, 0x7F, 0x0>,
         schema::Ump<0x0000_7F00, 0x0, 0x0, 0x0>,
     >)]
-    program: crate::numeric_types::u7,
+    program: crate::ux::u7,
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::{
-        numeric_types::*,
         traits::{Channeled, Grouped},
+        ux::*,
     };
     use pretty_assertions::assert_eq;
 

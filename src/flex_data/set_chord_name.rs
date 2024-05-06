@@ -2,8 +2,8 @@ use crate::{
     detail::{common_properties, schema, BitOps},
     error::Error,
     flex_data::{self, UMP_MESSAGE_TYPE},
-    numeric_types::u4,
     result::Result,
+    ux::u4,
 };
 
 const STATUS: u8 = 0x6;
@@ -15,9 +15,9 @@ struct SetChordName {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
     #[property(common_properties::GroupProperty)]
-    group: crate::numeric_types::u4,
+    group: crate::ux::u4,
     #[property(flex_data::OptionalChannelProperty)]
-    optional_channel: Option<crate::numeric_types::u4>,
+    optional_channel: Option<crate::ux::u4>,
     #[property(flex_data::FormatProperty<{flex_data::COMPLETE_FORMAT}>)]
     format: (),
     #[property(flex_data::BankProperty<{flex_data::SETUP_AND_PERFORMANCE_BANK}>)]

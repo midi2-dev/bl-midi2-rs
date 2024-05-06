@@ -3,8 +3,8 @@ use crate::IntoOwned;
 use crate::{
     detail::BitOps,
     message::helpers as message_helpers,
-    numeric_types::*,
     traits::{Data, FromData},
+    ux::*,
     Error, Result,
 };
 

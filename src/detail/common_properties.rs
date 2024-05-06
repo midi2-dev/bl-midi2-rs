@@ -7,7 +7,7 @@ use crate::{
         property::{Property, ReadProperty, WriteProperty},
         schema, BitOps,
     },
-    numeric_types::*,
+    ux::*,
 };
 
 pub struct UmpMessageTypeProperty<const TYPE: u8>;

@@ -128,8 +128,8 @@ mod test {
 
     #[test]
     fn channel() {
-        use crate::numeric_types::u4;
         use crate::traits::Channeled;
+        use crate::ux::u4;
 
         assert_eq!(
             ChannelVoice1::try_from(&[0x4BAC_5900, 0xC0B83064][..])

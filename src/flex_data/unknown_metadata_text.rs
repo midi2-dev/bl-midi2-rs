@@ -11,10 +11,10 @@ struct UnknownMetadataText {
     ump_type: (),
 
     #[property(flex_data::GroupProperty)]
-    group: crate::numeric_types::u4,
+    group: crate::ux::u4,
 
     #[property(flex_data::OptionalChannelProperty)]
-    optional_channel: Option<crate::numeric_types::u4>,
+    optional_channel: Option<crate::ux::u4>,
 
     #[property(flex_data::BankProperty<{flex_data::METADATA_TEXT_BANK}>)]
     bank: (),
@@ -50,7 +50,7 @@ impl<B: crate::buffer::Ump> crate::traits::Size<B> for UnknownMetadataText<B> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{numeric_types::*, traits::Grouped};
+    use crate::{traits::Grouped, ux::*};
     use pretty_assertions::assert_eq;
 
     #[test]

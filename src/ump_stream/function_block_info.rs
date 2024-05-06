@@ -79,7 +79,7 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> property::WriteProperty<B
     fn write(buffer: &mut B, v: Self::Type) {
         use crate::buffer::UmpPrivateMut;
         use crate::detail::BitOps;
-        use crate::numeric_types::u2;
+        use crate::ux::u2;
         use UiHint::*;
 
         buffer.buffer_mut().message_mut()[0].set_crumb(
@@ -153,7 +153,7 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> property::WriteProperty<B
     fn write(buffer: &mut B, v: Self::Type) {
         use crate::buffer::UmpPrivateMut;
         use crate::detail::BitOps;
-        use crate::numeric_types::u2;
+        use crate::ux::u2;
         use Midi1Port::*;
 
         buffer.buffer_mut().message_mut()[0].set_crumb(
@@ -221,7 +221,7 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> property::WriteProperty<B
     fn write(buffer: &mut B, v: Self::Type) {
         use crate::buffer::UmpPrivateMut;
         use crate::detail::BitOps;
-        use crate::numeric_types::u2;
+        use crate::ux::u2;
         use Direction::*;
 
         buffer.buffer_mut().message_mut()[0].set_crumb(

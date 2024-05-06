@@ -83,11 +83,11 @@ fn status<U: crate::buffer::Unit>(buffer: &[U]) -> u8 {
 mod test {
     use super::*;
     use crate::{
-        numeric_types::*,
         traits::{
             Channeled, Data, FromBytes, FromUmp, Grouped, RebufferInto, TryFromBytes, TryFromUmp,
             TryRebufferInto,
         },
+        ux::*,
     };
     use pretty_assertions::assert_eq;
 

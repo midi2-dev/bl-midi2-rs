@@ -1,8 +1,8 @@
 use crate::{
     detail::{common_properties, schema},
-    numeric_types::{u14, u7},
     ump_stream,
     ump_stream::UMP_MESSAGE_TYPE,
+    ux::{u14, u7},
 };
 
 pub(crate) const STATUS: u16 = 0x2;
@@ -27,9 +27,7 @@ struct DeviceIdentity {
     software_version: [u7; 4],
 }
 
-impl schema::UmpSchemaRepr<schema::Ump<0x0, 0x007F_7F7F, 0x0, 0x0>>
-    for [crate::numeric_types::u7; 3]
-{
+impl schema::UmpSchemaRepr<schema::Ump<0x0, 0x007F_7F7F, 0x0, 0x0>> for [crate::ux::u7; 3] {
     fn write(buffer: &mut [u32], value: Self) {
         use crate::detail::BitOps;
         buffer[1].set_septet(1, value[0]);
@@ -46,9 +44,7 @@ impl schema::UmpSchemaRepr<schema::Ump<0x0, 0x007F_7F7F, 0x0, 0x0>>
     }
 }
 
-impl schema::UmpSchemaRepr<schema::Ump<0x0, 0x0, 0x0, 0x7F7F_7F7F>>
-    for [crate::numeric_types::u7; 4]
-{
+impl schema::UmpSchemaRepr<schema::Ump<0x0, 0x0, 0x0, 0x7F7F_7F7F>> for [crate::ux::u7; 4] {
     fn write(buffer: &mut [u32], value: Self) {
         use crate::detail::BitOps;
         buffer[3].set_septet(0, value[0]);

@@ -183,7 +183,7 @@ impl<'a, B: Ump> property::ReadProperty<'a, B> for ConsistentFormatsProperty {
             |p| u8::from(p[0].crumb(2)) == CONTINUE_FORMAT,
             |p| u8::from(p[0].crumb(2)) == END_FORMAT,
             4,
-            crate::numeric_types::u4::new(UMP_MESSAGE_TYPE),
+            crate::ux::u4::new(UMP_MESSAGE_TYPE),
         )
     }
 }
@@ -372,7 +372,7 @@ impl<'a, B: Ump> property::ReadProperty<'a, B> for TextReadStringProperty {
 
 fn set_format_fields(buffer: &mut [u32]) {
     use crate::detail::BitOps;
-    use crate::numeric_types::u2;
+    use crate::ux::u2;
 
     let mut packets = buffer
         .chunks_exact_mut(4)
@@ -431,7 +431,7 @@ fn required_buffer_size_for_str<const OFFSET: usize>(s: &str) -> usize {
 
 fn write_message_header_data(buffer: &mut [u32], size: usize) {
     use crate::detail::BitOps;
-    use crate::numeric_types::u4;
+    use crate::ux::u4;
 
     let status = status_from_buffer(buffer);
 

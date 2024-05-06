@@ -1,7 +1,7 @@
 use crate::traits::{SysexInternal, SysexTryResizeError};
 
 #[cfg(any(feature = "sysex7", feature = "sysex8", feature = "flex-data"))]
-pub fn group_from_packet(p: &[u32]) -> crate::numeric_types::u4 {
+pub fn group_from_packet(p: &[u32]) -> crate::ux::u4 {
     use crate::detail::BitOps;
     p[0].nibble(1)
 }
@@ -12,7 +12,7 @@ pub const ERR_INCONSISTENT_GROUPS: &str = "Inconsistent groups across packets";
 pub fn sysex_group_consistent_groups(
     buffer: &[u32],
     stride: usize,
-    ump_type: crate::numeric_types::u4,
+    ump_type: crate::ux::u4,
 ) -> crate::result::Result<()> {
     use crate::detail::BitOps;
     use group_from_packet as gfp;
@@ -52,7 +52,7 @@ pub fn validate_sysex_group_statuses<
     is_continue: IsContinue,
     is_end: IsEnd,
     stride: usize,
-    ump_type: crate::numeric_types::u4,
+    ump_type: crate::ux::u4,
 ) -> crate::result::Result<()> {
     use crate::{detail::BitOps, error::Error};
 

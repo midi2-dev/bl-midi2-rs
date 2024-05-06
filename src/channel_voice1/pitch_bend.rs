@@ -14,23 +14,23 @@ struct PitchBend {
     #[property(common_properties::ChannelVoiceStatusProperty<STATUS>)]
     status: (),
     #[property(common_properties::ChannelProperty)]
-    channel: crate::numeric_types::u4,
+    channel: crate::ux::u4,
     #[property(common_properties::GroupProperty)]
-    group: crate::numeric_types::u4,
+    group: crate::ux::u4,
     #[property(common_properties::HybridSchemaProperty<
-        crate::numeric_types::u14,
+        crate::ux::u14,
         schema::Bytes<0x00, 0x7F, 0x7F>,
         schema::Ump<0x0000_7F7F, 0x0, 0x0, 0x0>,
     >)]
-    bend: crate::numeric_types::u14,
+    bend: crate::ux::u14,
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::{
-        numeric_types::*,
         traits::{Channeled, Grouped},
+        ux::*,
     };
     use pretty_assertions::assert_eq;
 

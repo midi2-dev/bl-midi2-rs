@@ -1,7 +1,7 @@
 use crate::{
     detail::{common_properties, helpers as message_helpers, BitOps},
-    numeric_types,
     traits::{Sysex, SysexInternal},
+    ux,
 };
 
 pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x5;
@@ -24,7 +24,7 @@ struct Sysex8 {
     #[property(ValidPacketSizes)]
     valid_packet_sizes: (),
     #[property(GroupProperty)]
-    group: crate::numeric_types::u4,
+    group: crate::ux::u4,
     #[property(StreamIdProperty)]
     stream_id: u8,
     #[property(SysexPayloadPlaceholder)]
@@ -55,7 +55,7 @@ impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B>
             |p| u8::from(p[0].nibble(2)) == 0x2,
             |p| u8::from(p[0].nibble(2)) == 0x3,
             4,
-            crate::numeric_types::u4::new(UMP_MESSAGE_TYPE),
+            crate::ux::u4::new(UMP_MESSAGE_TYPE),
         )
     }
 }
@@ -88,7 +88,7 @@ impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B> for
 struct GroupProperty;
 
 impl<B: crate::buffer::Ump> crate::detail::property::Property<B> for GroupProperty {
-    type Type = numeric_types::u4;
+    type Type = ux::u4;
 }
 
 impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B> for GroupProperty {
@@ -101,7 +101,7 @@ impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B> for
         message_helpers::sysex_group_consistent_groups(
             buffer.buffer().message(),
             4,
-            crate::numeric_types::u4::new(UMP_MESSAGE_TYPE),
+            crate::ux::u4::new(UMP_MESSAGE_TYPE),
         )
     }
 }
@@ -404,7 +404,7 @@ fn try_resize<
     try_resize_buffer: ResizeBuffer,
 ) -> Result<(), crate::traits::SysexTryResizeError> {
     use crate::buffer::UmpPrivateMut;
-    use numeric_types::u4;
+    use ux::u4;
 
     let mut buffer_size = buffer_size_from_payload_size(payload_size);
     let resize_result = try_resize_buffer(sysex, buffer_size);
@@ -503,7 +503,7 @@ mod tests {
         use crate::traits::Grouped;
 
         let mut message = Sysex8::<std::vec::Vec<u32>>::new();
-        message.set_group(numeric_types::u4::new(0xC));
+        message.set_group(ux::u4::new(0xC));
 
         assert_eq!(message, Sysex8(std::vec![0x0, 0x5C00_0000, 0x0, 0x0, 0x0]));
     }
@@ -763,7 +763,7 @@ mod tests {
             )
             .unwrap()
             .group(),
-            numeric_types::u4::new(0x4),
+            ux::u4::new(0x4),
         );
     }
 

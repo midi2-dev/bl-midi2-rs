@@ -28,9 +28,9 @@ mod project_name {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
         #[property(flex_data::GroupProperty)]
-        group: crate::numeric_types::u4,
+        group: crate::ux::u4,
         #[property(flex_data::OptionalChannelProperty)]
-        optional_channel: Option<crate::numeric_types::u4>,
+        optional_channel: Option<crate::ux::u4>,
         #[property(flex_data::BankProperty<BANK>)]
         bank: (),
         #[property(flex_data::StatusProperty<{STATUS}>)]
@@ -71,9 +71,9 @@ mod composition_name {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
         #[property(flex_data::GroupProperty)]
-        group: crate::numeric_types::u4,
+        group: crate::ux::u4,
         #[property(flex_data::OptionalChannelProperty)]
-        optional_channel: Option<crate::numeric_types::u4>,
+        optional_channel: Option<crate::ux::u4>,
         #[property(flex_data::BankProperty<BANK>)]
         bank: (),
         #[property(flex_data::StatusProperty<{STATUS}>)]
@@ -114,9 +114,9 @@ mod midi_clip_name {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
         #[property(flex_data::GroupProperty)]
-        group: crate::numeric_types::u4,
+        group: crate::ux::u4,
         #[property(flex_data::OptionalChannelProperty)]
-        optional_channel: Option<crate::numeric_types::u4>,
+        optional_channel: Option<crate::ux::u4>,
         #[property(flex_data::BankProperty<BANK>)]
         bank: (),
         #[property(flex_data::StatusProperty<{STATUS}>)]
@@ -157,9 +157,9 @@ mod copyright_notice {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
         #[property(flex_data::GroupProperty)]
-        group: crate::numeric_types::u4,
+        group: crate::ux::u4,
         #[property(flex_data::OptionalChannelProperty)]
-        optional_channel: Option<crate::numeric_types::u4>,
+        optional_channel: Option<crate::ux::u4>,
         #[property(flex_data::BankProperty<BANK>)]
         bank: (),
         #[property(flex_data::StatusProperty<{STATUS}>)]
@@ -200,9 +200,9 @@ mod composer_name {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
         #[property(flex_data::GroupProperty)]
-        group: crate::numeric_types::u4,
+        group: crate::ux::u4,
         #[property(flex_data::OptionalChannelProperty)]
-        optional_channel: Option<crate::numeric_types::u4>,
+        optional_channel: Option<crate::ux::u4>,
         #[property(flex_data::BankProperty<BANK>)]
         bank: (),
         #[property(flex_data::StatusProperty<{STATUS}>)]
@@ -243,9 +243,9 @@ mod lyricist_name {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
         #[property(flex_data::GroupProperty)]
-        group: crate::numeric_types::u4,
+        group: crate::ux::u4,
         #[property(flex_data::OptionalChannelProperty)]
-        optional_channel: Option<crate::numeric_types::u4>,
+        optional_channel: Option<crate::ux::u4>,
         #[property(flex_data::BankProperty<BANK>)]
         bank: (),
         #[property(flex_data::StatusProperty<{STATUS}>)]
@@ -286,9 +286,9 @@ mod arranger_name {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
         #[property(flex_data::GroupProperty)]
-        group: crate::numeric_types::u4,
+        group: crate::ux::u4,
         #[property(flex_data::OptionalChannelProperty)]
-        optional_channel: Option<crate::numeric_types::u4>,
+        optional_channel: Option<crate::ux::u4>,
         #[property(flex_data::BankProperty<BANK>)]
         bank: (),
         #[property(flex_data::StatusProperty<{STATUS}>)]
@@ -329,9 +329,9 @@ mod publisher_name {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
         #[property(flex_data::GroupProperty)]
-        group: crate::numeric_types::u4,
+        group: crate::ux::u4,
         #[property(flex_data::OptionalChannelProperty)]
-        optional_channel: Option<crate::numeric_types::u4>,
+        optional_channel: Option<crate::ux::u4>,
         #[property(flex_data::BankProperty<BANK>)]
         bank: (),
         #[property(flex_data::StatusProperty<{STATUS}>)]
@@ -372,9 +372,9 @@ mod primary_performer_name {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
         #[property(flex_data::GroupProperty)]
-        group: crate::numeric_types::u4,
+        group: crate::ux::u4,
         #[property(flex_data::OptionalChannelProperty)]
-        optional_channel: Option<crate::numeric_types::u4>,
+        optional_channel: Option<crate::ux::u4>,
         #[property(flex_data::BankProperty<BANK>)]
         bank: (),
         #[property(flex_data::StatusProperty<{STATUS}>)]
@@ -415,9 +415,9 @@ mod accompanying_performer_name {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
         #[property(flex_data::GroupProperty)]
-        group: crate::numeric_types::u4,
+        group: crate::ux::u4,
         #[property(flex_data::OptionalChannelProperty)]
-        optional_channel: Option<crate::numeric_types::u4>,
+        optional_channel: Option<crate::ux::u4>,
         #[property(flex_data::BankProperty<BANK>)]
         bank: (),
         #[property(flex_data::StatusProperty<{STATUS}>)]
@@ -458,9 +458,9 @@ mod recording_date {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
         #[property(flex_data::GroupProperty)]
-        group: crate::numeric_types::u4,
+        group: crate::ux::u4,
         #[property(flex_data::OptionalChannelProperty)]
-        optional_channel: Option<crate::numeric_types::u4>,
+        optional_channel: Option<crate::ux::u4>,
         #[property(flex_data::BankProperty<BANK>)]
         bank: (),
         #[property(flex_data::StatusProperty<{STATUS}>)]
@@ -501,9 +501,9 @@ mod recording_location {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
         #[property(flex_data::GroupProperty)]
-        group: crate::numeric_types::u4,
+        group: crate::ux::u4,
         #[property(flex_data::OptionalChannelProperty)]
-        optional_channel: Option<crate::numeric_types::u4>,
+        optional_channel: Option<crate::ux::u4>,
         #[property(flex_data::BankProperty<BANK>)]
         bank: (),
         #[property(flex_data::StatusProperty<{STATUS}>)]
@@ -544,9 +544,9 @@ mod unknown_performance_text {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
         #[property(flex_data::GroupProperty)]
-        group: crate::numeric_types::u4,
+        group: crate::ux::u4,
         #[property(flex_data::OptionalChannelProperty)]
-        optional_channel: Option<crate::numeric_types::u4>,
+        optional_channel: Option<crate::ux::u4>,
         #[property(flex_data::BankProperty<BANK>)]
         bank: (),
         #[property(flex_data::StatusProperty<{STATUS}>)]
@@ -587,9 +587,9 @@ mod lyrics {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
         #[property(flex_data::GroupProperty)]
-        group: crate::numeric_types::u4,
+        group: crate::ux::u4,
         #[property(flex_data::OptionalChannelProperty)]
-        optional_channel: Option<crate::numeric_types::u4>,
+        optional_channel: Option<crate::ux::u4>,
         #[property(flex_data::BankProperty<BANK>)]
         bank: (),
         #[property(flex_data::StatusProperty<{STATUS}>)]
@@ -630,9 +630,9 @@ mod lyrics_language {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
         #[property(flex_data::GroupProperty)]
-        group: crate::numeric_types::u4,
+        group: crate::ux::u4,
         #[property(flex_data::OptionalChannelProperty)]
-        optional_channel: Option<crate::numeric_types::u4>,
+        optional_channel: Option<crate::ux::u4>,
         #[property(flex_data::BankProperty<BANK>)]
         bank: (),
         #[property(flex_data::StatusProperty<{STATUS}>)]
@@ -673,9 +673,9 @@ mod ruby {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
         #[property(flex_data::GroupProperty)]
-        group: crate::numeric_types::u4,
+        group: crate::ux::u4,
         #[property(flex_data::OptionalChannelProperty)]
-        optional_channel: Option<crate::numeric_types::u4>,
+        optional_channel: Option<crate::ux::u4>,
         #[property(flex_data::BankProperty<BANK>)]
         bank: (),
         #[property(flex_data::StatusProperty<{STATUS}>)]
@@ -716,9 +716,9 @@ mod ruby_language {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
         #[property(flex_data::GroupProperty)]
-        group: crate::numeric_types::u4,
+        group: crate::ux::u4,
         #[property(flex_data::OptionalChannelProperty)]
-        optional_channel: Option<crate::numeric_types::u4>,
+        optional_channel: Option<crate::ux::u4>,
         #[property(flex_data::BankProperty<BANK>)]
         bank: (),
         #[property(flex_data::StatusProperty<{STATUS}>)]
@@ -994,7 +994,7 @@ impl<'a, const FORMAT: u8, B: Ump> ReadProperty<'a, B> for FormatProperty<FORMAT
 impl<const FORMAT: u8, B: Ump + BufferMut> WriteProperty<B> for FormatProperty<FORMAT> {
     fn write(buffer: &mut B, _v: Self::Type) {
         use crate::buffer::UmpPrivateMut;
-        buffer.buffer_mut().message_mut()[0].set_crumb(4, crate::numeric_types::u2::new(FORMAT));
+        buffer.buffer_mut().message_mut()[0].set_crumb(4, crate::ux::u2::new(FORMAT));
     }
     fn validate(_v: &Self::Type) -> crate::result::Result<()> {
         Ok(())
@@ -1007,13 +1007,13 @@ impl<const FORMAT: u8, B: Ump + BufferMut> WriteProperty<B> for FormatProperty<F
 struct OptionalChannelProperty;
 
 impl<B: Ump> Property<B> for OptionalChannelProperty {
-    type Type = Option<crate::numeric_types::u4>;
+    type Type = Option<crate::ux::u4>;
 }
 
 impl<'a, B: Ump> ReadProperty<'a, B> for OptionalChannelProperty {
     fn read(buffer: &'a B) -> Self::Type {
         use crate::buffer::UmpPrivate;
-        use crate::numeric_types::u2;
+        use crate::ux::u2;
         if buffer.buffer().message()[0].crumb(5) == u2::new(0x0) {
             Some(buffer.buffer()[0].nibble(3))
         } else {
@@ -1041,8 +1041,8 @@ impl<B: Ump + BufferMut> WriteProperty<B> for OptionalChannelProperty {
     }
 }
 
-fn optional_channel_to_slice(data: &mut [u32], channel: Option<crate::numeric_types::u4>) {
-    use crate::numeric_types::{u2, u4};
+fn optional_channel_to_slice(data: &mut [u32], channel: Option<crate::ux::u4>) {
+    use crate::ux::{u2, u4};
     match channel {
         Some(channel) => {
             data[0].set_crumb(5, u2::new(0x0));
@@ -1067,7 +1067,7 @@ impl<'a, B: Ump> ReadProperty<'a, B> for NoChannelProperty {
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
         use crate::buffer::UmpPrivate;
-        use crate::numeric_types::u2;
+        use crate::ux::u2;
         if buffer.buffer().message()[0].crumb(5) != u2::new(0x0) {
             Ok(())
         } else {
@@ -1081,8 +1081,8 @@ impl<'a, B: Ump> ReadProperty<'a, B> for NoChannelProperty {
 impl<B: Ump + BufferMut> WriteProperty<B> for NoChannelProperty {
     fn write(buffer: &mut B, _: Self::Type) {
         use crate::buffer::UmpPrivateMut;
-        use crate::numeric_types::u2;
-        use crate::numeric_types::u4;
+        use crate::ux::u2;
+        use crate::ux::u4;
 
         let buffer_slice = buffer.buffer_mut();
         let data = buffer_slice.message_mut();
@@ -1119,7 +1119,7 @@ impl<'a, B: Ump> ReadProperty<'a, B> for ConsistentFormatsProperty {
             |p| u8::from(p[0].crumb(4)) == CONTINUE_FORMAT,
             |p| u8::from(p[0].crumb(4)) == END_FORMAT,
             4,
-            crate::numeric_types::u4::new(UMP_MESSAGE_TYPE),
+            crate::ux::u4::new(UMP_MESSAGE_TYPE),
         )
     }
 }
@@ -1127,7 +1127,7 @@ impl<'a, B: Ump> ReadProperty<'a, B> for ConsistentFormatsProperty {
 struct GroupProperty;
 
 impl<B: Ump> Property<B> for GroupProperty {
-    type Type = crate::numeric_types::u4;
+    type Type = crate::ux::u4;
 }
 
 impl<'a, B: Ump> ReadProperty<'a, B> for GroupProperty {
@@ -1141,7 +1141,7 @@ impl<'a, B: Ump> ReadProperty<'a, B> for GroupProperty {
         sysex_group_consistent_groups(
             buffer.buffer().message(),
             4,
-            crate::numeric_types::u4::new(UMP_MESSAGE_TYPE),
+            crate::ux::u4::new(UMP_MESSAGE_TYPE),
         )
     }
 }

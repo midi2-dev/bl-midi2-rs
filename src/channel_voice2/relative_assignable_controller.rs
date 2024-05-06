@@ -1,7 +1,7 @@
 use crate::{
     channel_voice2::UMP_MESSAGE_TYPE,
     detail::{common_properties, schema},
-    numeric_types::{u4, u7},
+    ux::{u4, u7},
 };
 
 pub(crate) const STATUS: u8 = 0b0101;

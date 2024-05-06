@@ -4,7 +4,7 @@ use crate::{
         UMP_MESSAGE_TYPE,
     },
     detail::{common_properties, schema},
-    numeric_types::{u4, u7},
+    ux::{u4, u7},
 };
 
 pub(crate) const STATUS: u8 = 0b1001;
@@ -56,8 +56,8 @@ mod tests {
 
     #[test]
     fn builder() {
-        use crate::numeric_types::u9;
         use crate::traits::{Channeled, Grouped};
+        use crate::ux::u9;
 
         let mut message = NoteOn::new_arr();
         message.set_group(u4::new(0x8));
@@ -113,7 +113,7 @@ mod tests {
                 .attribute(),
             Some(Attribute::Pitch7_9 {
                 note: u7::new(0x74),
-                pitch_up: crate::numeric_types::u9::new(0x18A),
+                pitch_up: crate::ux::u9::new(0x18A),
             }),
         );
     }

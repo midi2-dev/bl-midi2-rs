@@ -21,7 +21,7 @@ mod tune_request {
         #[property(system_common::SystemCommonStatus<{STATUS}>)]
         status: (),
         #[property(common_properties::GroupProperty)]
-        group: crate::numeric_types::u4,
+        group: crate::ux::u4,
     }
 }
 mod timing_clock {
@@ -39,7 +39,7 @@ mod timing_clock {
         #[property(system_common::SystemCommonStatus<{STATUS}>)]
         status: (),
         #[property(common_properties::GroupProperty)]
-        group: crate::numeric_types::u4,
+        group: crate::ux::u4,
     }
 }
 mod start {
@@ -57,7 +57,7 @@ mod start {
         #[property(system_common::SystemCommonStatus<{STATUS}>)]
         status: (),
         #[property(common_properties::GroupProperty)]
-        group: crate::numeric_types::u4,
+        group: crate::ux::u4,
     }
 }
 mod cont {
@@ -75,7 +75,7 @@ mod cont {
         #[property(system_common::SystemCommonStatus<{STATUS}>)]
         status: (),
         #[property(common_properties::GroupProperty)]
-        group: crate::numeric_types::u4,
+        group: crate::ux::u4,
     }
 }
 mod stop {
@@ -93,7 +93,7 @@ mod stop {
         #[property(system_common::SystemCommonStatus<{STATUS}>)]
         status: (),
         #[property(common_properties::GroupProperty)]
-        group: crate::numeric_types::u4,
+        group: crate::ux::u4,
     }
 }
 mod active_sensing {
@@ -111,7 +111,7 @@ mod active_sensing {
         #[property(system_common::SystemCommonStatus<{STATUS}>)]
         status: (),
         #[property(common_properties::GroupProperty)]
-        group: crate::numeric_types::u4,
+        group: crate::ux::u4,
     }
 }
 mod reset {
@@ -129,7 +129,7 @@ mod reset {
         #[property(system_common::SystemCommonStatus<{STATUS}>)]
         status: (),
         #[property(common_properties::GroupProperty)]
-        group: crate::numeric_types::u4,
+        group: crate::ux::u4,
     }
 }
 
