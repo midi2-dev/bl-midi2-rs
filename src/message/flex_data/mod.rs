@@ -1174,7 +1174,7 @@ fn flex_data_dyn_size<B: crate::buffer::Ump>(buffer: &B) -> usize {
         .message()
         .chunks_exact(4)
         .position(|p| {
-            let status: u8 = p[0].nibble(2).into(); //todo: this looks wrong too
+            let status: u8 = p[0].crumb(4).into();
             status == COMPLETE_FORMAT || status == END_FORMAT
         })
         .expect("Message is in an invalid state. Couldn't find end packet.")
