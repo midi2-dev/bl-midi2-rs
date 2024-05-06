@@ -14,6 +14,8 @@ const ERR_INCONSISTENT_STREAM_ID: &str = "Inconsistent stream id fields across p
 /// A semantic wrapper type around MIDI 2.0 System Exclusive 8bit data.
 /// See the [module docs](crate::message::sysex8) for more detailed info
 struct Sysex8 {
+    #[property(crate::message::utility::JitterReductionProperty)]
+    jitter_reduction: Option<crate::message::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
     #[property(ConsistentStatuses)]
@@ -377,11 +379,13 @@ impl<B: crate::buffer::Ump> SysexInternal<B> for Sysex8<B> {
     where
         B: crate::buffer::BufferMut,
     {
+        use crate::buffer::UmpPrivateMut;
+
         // data is written into the buffer contiguously
         // meaning only the last packet may have a size < 6
         let buffer_index = 4 * (payload_index / 13);
         let byte_index = payload_index % 13;
-        self.0.specialise_u32_mut()[buffer_index + (byte_index + 3) / 4]
+        self.0.specialise_u32_mut().message_mut()[buffer_index + (byte_index + 3) / 4]
             .set_octet((byte_index + 3) % 4, datum);
     }
 
@@ -398,6 +402,7 @@ fn try_resize<
     mut payload_size: usize,
     try_resize_buffer: ResizeBuffer,
 ) -> Result<(), crate::traits::SysexTryResizeError> {
+    use crate::buffer::UmpPrivateMut;
     use numeric_types::u4;
 
     let mut buffer_size = buffer_size_from_payload_size(payload_size);
@@ -411,6 +416,7 @@ fn try_resize<
     let mut iter = sysex
         .0
         .buffer_mut()
+        .message_mut()
         .chunks_exact_mut(4)
         .take(buffer_size / 4)
         .peekable();
@@ -466,7 +472,7 @@ fn try_resize<
 }
 
 fn buffer_size_from_payload_size(payload_size: usize) -> usize {
-    if payload_size % 13 == 0 {
+    let ret = if payload_size % 13 == 0 {
         if payload_size == 0 {
             4
         } else {
@@ -474,7 +480,8 @@ fn buffer_size_from_payload_size(payload_size: usize) -> usize {
         }
     } else {
         4 * (payload_size / 13 + 1)
-    }
+    };
+    ret + crate::buffer::OFFSET_FOR_JITTER_REDUCTION
 }
 
 #[cfg(test)]
@@ -870,6 +877,7 @@ mod tests {
         assert_eq!(
             message,
             Sysex8(std::vec![
+                0x0,
                 0x501E_0000,
                 0x0102_0304,
                 0x0506_0708,
@@ -890,6 +898,7 @@ mod tests {
         assert_eq!(
             message,
             Sysex8(std::vec![
+                0x0,
                 0x501E_0000,
                 0x0102_0304,
                 0x0506_0708,
@@ -913,7 +922,7 @@ mod tests {
     #[test]
     fn set_rubbish_payload_to_fixed_size_buffer() {
         use crate::test_support::rubbish_payload_iterator::RubbishPayloadIterator;
-        let mut message = Sysex8::<[u32; 16]>::try_new().unwrap();
+        let mut message = Sysex8::<[u32; 17]>::try_new().unwrap();
         assert_eq!(
             message.try_set_payload(RubbishPayloadIterator::new()),
             Ok(())
@@ -921,6 +930,7 @@ mod tests {
         assert_eq!(
             message,
             Sysex8([
+                0x0,
                 0x501E_0000,
                 0x0102_0304,
                 0x0506_0708,
@@ -949,6 +959,7 @@ mod tests {
         assert_eq!(
             message,
             Sysex8(std::vec![
+                0x0, // jr
                 0x501E_0000,
                 0x0102_0304,
                 0x0506_0708,
@@ -963,7 +974,7 @@ mod tests {
 
     #[test]
     fn set_and_reset_payload_fixed_size_buffer() {
-        let mut message = Sysex8::<[u32; 12]>::try_new().unwrap();
+        let mut message = Sysex8::<[u32; 13]>::try_new().unwrap();
         assert_eq!(message.try_set_payload(0..30), Ok(()));
         assert_eq!(message.try_set_payload(0..20), Ok(()));
         assert_eq!(

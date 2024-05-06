@@ -13,6 +13,8 @@ pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x3;
 /// A semantic wrapper type around MIDI System Exclusive 7bit data.
 /// See the [module docs](crate::message::sysex7) for more detailed info
 struct Sysex7 {
+    #[property(crate::message::utility::JitterReductionProperty)]
+    jitter_reduction: Option<crate::message::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
     #[property(Sysex7BytesBeginByte)]
@@ -547,11 +549,13 @@ impl<B: crate::buffer::Buffer> SysexInternal<B> for Sysex7<B> {
                 self.0.specialise_u8_mut()[payload_index + 1] = datum.into();
             }
             crate::buffer::UNIT_ID_U32 => {
+                use crate::buffer::UmpPrivateMut;
+
                 // data is written into the buffer contiguously
                 // meaning only the last packet may have a size < 6
                 let buffer_index = 2 * (payload_index / 6);
                 let byte_index = payload_index % 6;
-                self.0.specialise_u32_mut()[buffer_index + (byte_index + 2) / 4]
+                self.0.specialise_u32_mut().message_mut()[buffer_index + (byte_index + 2) / 4]
                     .set_septet((byte_index + 2) % 4, datum);
             }
             _ => unreachable!(),
@@ -571,6 +575,7 @@ fn try_resize_ump<
     mut payload_size: usize,
     try_resize_buffer: ResizeBuffer,
 ) -> Result<(), crate::traits::SysexTryResizeError> {
+    use crate::buffer::UmpPrivateMut;
     use numeric_types::u4;
 
     let mut buffer_size = buffer_size_from_payload_size_ump(payload_size);
@@ -583,6 +588,7 @@ fn try_resize_ump<
     let mut iter = sysex
         .0
         .specialise_u32_mut()
+        .message_mut()
         .chunks_exact_mut(2)
         .take(buffer_size / 2)
         .peekable();
@@ -638,7 +644,7 @@ fn try_resize_ump<
 }
 
 fn buffer_size_from_payload_size_ump(payload_size: usize) -> usize {
-    if payload_size % 6 == 0 {
+    let ret = if payload_size % 6 == 0 {
         if payload_size == 0 {
             2
         } else {
@@ -646,7 +652,8 @@ fn buffer_size_from_payload_size_ump(payload_size: usize) -> usize {
         }
     } else {
         2 * (payload_size / 6 + 1)
-    }
+    };
+    ret + crate::buffer::OFFSET_FOR_JITTER_REDUCTION
 }
 
 // ***********************************************************************
@@ -958,6 +965,38 @@ mod tests {
     }
 
     #[test]
+    fn set_jr() {
+        use crate::message::utility::JitterReduction;
+        use crate::traits::JitterReduced;
+
+        let mut message: Sysex7<std::vec::Vec<u32>> = Sysex7::try_from(
+            &[
+                0x3416_0001_u32,
+                0x0203_0405_u32,
+                0x3426_0607_u32,
+                0x0809_0A0B_u32,
+                0x3433_0C0D_u32,
+                0x0E00_0000_u32,
+            ][..],
+        )
+        .unwrap()
+        .rebuffer_into();
+        message.set_jitter_reduction(Some(JitterReduction::Timestamp(0x1234)));
+        assert_eq!(
+            message,
+            Sysex7(std::vec![
+                0x0020_1234_u32,
+                0x3416_0001_u32,
+                0x0203_0405_u32,
+                0x3426_0607_u32,
+                0x0809_0A0B_u32,
+                0x3433_0C0D_u32,
+                0x0E00_0000_u32,
+            ])
+        );
+    }
+
+    #[test]
     fn try_from_oversized_ump() {
         assert_eq!(
             Sysex7::try_from(
@@ -1187,6 +1226,7 @@ mod tests {
         assert_eq!(
             message,
             Sysex7(std::vec![
+                0x0,
                 0x3016_0001,
                 0x0203_0405,
                 0x3026_0607,
@@ -1209,6 +1249,7 @@ mod tests {
         assert_eq!(
             message,
             Sysex7(std::vec![
+                0x0,
                 0x3016_0001,
                 0x0203_0405,
                 0x3026_0607,
@@ -1234,13 +1275,14 @@ mod tests {
     #[test]
     fn try_set_rubbish_payload_to_fixed_size_buffer_ump() {
         use crate::test_support::rubbish_payload_iterator::RubbishPayloadIterator;
-        let mut message = Sysex7::<[u32; 18]>::try_new().unwrap();
+        let mut message = Sysex7::<[u32; 19]>::try_new().unwrap();
         message
             .try_set_payload(RubbishPayloadIterator::new().map(u7::new))
             .expect("Shouldn't fail");
         assert_eq!(
             message,
             Sysex7([
+                0x0,
                 0x3016_0001,
                 0x0203_0405,
                 0x3026_0607,
@@ -1491,6 +1533,7 @@ mod tests {
         assert_eq!(
             Sysex7::<std::vec::Vec<u32>>::from_bytes(message),
             Sysex7(std::vec![
+                0x0,
                 0x3016_0001,
                 0x0203_0405,
                 0x3026_0607,
