@@ -8,6 +8,7 @@ license = "MIT OR Apache-2.0"
 authors = [
     "Ben Leadbetter <ben.leadbetter@hotmail.com>",
 ]
+repository = "git@github.com:BenLeadbetter/midi2.git"
 
 [workspace]
 members = [
