@@ -1,5 +1,3 @@
-use crate::{channel_voice1, channel_voice2, flex_data, sysex7, sysex8, system_common, ump_stream};
-
 #[derive(
     derive_more::From,
     midi2_proc::Data,
@@ -14,19 +12,19 @@ use crate::{channel_voice1, channel_voice2, flex_data, sysex7, sysex8, system_co
 #[non_exhaustive]
 pub enum UmpMessage<B: crate::buffer::Ump> {
     #[cfg(feature = "flex-data")]
-    FlexData(flex_data::FlexData<B>),
+    FlexData(crate::flex_data::FlexData<B>),
     #[cfg(feature = "midi1-channel-voice")]
-    ChannelVoice1(channel_voice1::ChannelVoice1<B>),
+    ChannelVoice1(crate::channel_voice1::ChannelVoice1<B>),
     #[cfg(feature = "midi2-channel-voice")]
-    ChannelVoice2(channel_voice2::ChannelVoice2<B>),
+    ChannelVoice2(crate::channel_voice2::ChannelVoice2<B>),
     #[cfg(feature = "sysex7")]
-    Sysex7(sysex7::Sysex7<B>),
+    Sysex7(crate::sysex7::Sysex7<B>),
     #[cfg(feature = "sysex8")]
-    Sysex8(sysex8::Sysex8<B>),
+    Sysex8(crate::sysex8::Sysex8<B>),
     #[cfg(feature = "system-common")]
-    SystemCommon(system_common::SystemCommon<B>),
+    SystemCommon(crate::system_common::SystemCommon<B>),
     #[cfg(feature = "ump-stream")]
-    UmpStream(ump_stream::UmpStream<B>),
+    UmpStream(crate::ump_stream::UmpStream<B>),
 }
 
 impl<'a> core::convert::TryFrom<&'a [u32]> for UmpMessage<&'a [u32]> {
@@ -44,26 +42,32 @@ impl<'a> core::convert::TryFrom<&'a [u32]> for UmpMessage<&'a [u32]> {
 
         Ok(match u8::from(buffer.message()[0].nibble(0)) {
             #[cfg(feature = "flex-data")]
-            flex_data::UMP_MESSAGE_TYPE => FlexData(flex_data::FlexData::try_from(buffer)?.into()),
+            crate::flex_data::UMP_MESSAGE_TYPE => {
+                FlexData(crate::flex_data::FlexData::try_from(buffer)?.into())
+            }
             #[cfg(feature = "midi1-channel-voice")]
-            channel_voice1::UMP_MESSAGE_TYPE => {
-                ChannelVoice1(channel_voice1::ChannelVoice1::try_from(buffer)?.into())
+            crate::channel_voice1::UMP_MESSAGE_TYPE => {
+                ChannelVoice1(crate::channel_voice1::ChannelVoice1::try_from(buffer)?.into())
             }
             #[cfg(feature = "midi2-channel-voice")]
-            channel_voice2::UMP_MESSAGE_TYPE => {
-                ChannelVoice2(channel_voice2::ChannelVoice2::try_from(buffer)?.into())
+            crate::channel_voice2::UMP_MESSAGE_TYPE => {
+                ChannelVoice2(crate::channel_voice2::ChannelVoice2::try_from(buffer)?.into())
             }
             #[cfg(feature = "sysex7")]
-            sysex7::UMP_MESSAGE_TYPE => Sysex7(sysex7::Sysex7::try_from(buffer)?.into()),
+            crate::sysex7::UMP_MESSAGE_TYPE => {
+                Sysex7(crate::sysex7::Sysex7::try_from(buffer)?.into())
+            }
             #[cfg(feature = "sysex8")]
-            sysex8::UMP_MESSAGE_TYPE => Sysex8(sysex8::Sysex8::try_from(buffer)?.into()),
+            crate::sysex8::UMP_MESSAGE_TYPE => {
+                Sysex8(crate::sysex8::Sysex8::try_from(buffer)?.into())
+            }
             #[cfg(feature = "system-common")]
-            system_common::UMP_MESSAGE_TYPE => {
-                SystemCommon(system_common::SystemCommon::try_from(buffer)?.into())
+            crate::system_common::UMP_MESSAGE_TYPE => {
+                SystemCommon(crate::system_common::SystemCommon::try_from(buffer)?.into())
             }
             #[cfg(feature = "ump-stream")]
-            ump_stream::UMP_MESSAGE_TYPE => {
-                UmpStream(ump_stream::UmpStream::try_from(buffer)?.into())
+            crate::ump_stream::UMP_MESSAGE_TYPE => {
+                UmpStream(crate::ump_stream::UmpStream::try_from(buffer)?.into())
             }
             _ => Err(crate::error::Error::InvalidData(
                 "Couldn't interpret ump message type",
@@ -85,11 +89,11 @@ impl<'a> core::convert::TryFrom<&'a [u32]> for UmpMessage<&'a [u32]> {
 #[non_exhaustive]
 pub enum BytesMessage<B: crate::buffer::Bytes> {
     #[cfg(feature = "midi1-channel-voice")]
-    ChannelVoice1(channel_voice1::ChannelVoice1<B>),
+    ChannelVoice1(crate::channel_voice1::ChannelVoice1<B>),
     #[cfg(feature = "sysex7")]
-    Sysex7(sysex7::Sysex7<B>),
+    Sysex7(crate::sysex7::Sysex7<B>),
     #[cfg(feature = "system-common")]
-    SystemCommon(system_common::SystemCommon<B>),
+    SystemCommon(crate::system_common::SystemCommon<B>),
 }
 
 impl<'a> core::convert::TryFrom<&'a [u8]> for BytesMessage<&'a [u8]> {
@@ -101,10 +105,15 @@ impl<'a> core::convert::TryFrom<&'a [u8]> for BytesMessage<&'a [u8]> {
         use BytesMessage::*;
 
         Ok(match buffer[0] {
-            0x80..=0xEF => ChannelVoice1(channel_voice1::ChannelVoice1::try_from(buffer)?.into()),
-            0xF0 => Sysex7(sysex7::Sysex7::try_from(buffer)?.into()),
+            #[cfg(feature = "midi1-channel-voice")]
+            0x80..=0xEF => {
+                ChannelVoice1(crate::channel_voice1::ChannelVoice1::try_from(buffer)?.into())
+            }
+            #[cfg(feature = "sysex7")]
+            0xF0 => Sysex7(crate::sysex7::Sysex7::try_from(buffer)?.into()),
+            #[cfg(feature = "system-common")]
             0xF1..=0xF6 | 0xF8..=0xFF => {
-                SystemCommon(system_common::SystemCommon::try_from(buffer)?.into())
+                SystemCommon(crate::system_common::SystemCommon::try_from(buffer)?.into())
             }
             _ => Err(crate::error::Error::InvalidData(
                 "Couldn't interpret bytes message type",
@@ -123,7 +132,7 @@ mod tests {
     #[test]
     #[cfg(feature = "midi1-channel-voice")]
     fn from_byte_data() {
-        use channel_voice1::ChannelVoice1;
+        use crate::channel_voice1::ChannelVoice1;
 
         let buffer = [0xAB, 0x60, 0x33];
         let message = BytesMessage::try_from(&buffer[..]);
@@ -135,7 +144,7 @@ mod tests {
     #[cfg(feature = "ump-stream")]
     #[test]
     fn ump_stream() {
-        use ump_stream::UmpStream;
+        use crate::ump_stream::UmpStream;
 
         let buffer = [
             0xF412_0556,
@@ -226,7 +235,7 @@ mod tests {
     #[cfg(feature = "flex-data")]
     #[test]
     fn flex_data_builder() {
-        use flex_data::FlexData;
+        use crate::flex_data::FlexData;
 
         let buffer = [0x0, 0xD410_0105, 0x54C3_A172, 0x0, 0x0];
         let message = UmpMessage::try_from(&buffer[..]);
