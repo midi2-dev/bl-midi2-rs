@@ -8,6 +8,15 @@ authors = [
     "Ben Leadbetter <ben.leadbetter@hotmail.com>",
 ]
 
+[workspace]
+members = [
+    "midi2_proc",
+]
+
+[lib]
+name = "midi2"
+path = "src/lib.rs" 
+
 [features]
 default = ["ci", "midi2-channel-voice"]
 ci = ["sysex7"]
