@@ -213,14 +213,14 @@ mod composer_name {
         #[property(flex_data::text::TextWriteStrProperty)]
         #[writeonly]
         #[resize]
-        text: &str,
+        name: &str,
         #[property(flex_data::text::TextReadBytesProperty)]
         #[readonly]
-        text_bytes: flex_data::text::TextBytesIterator,
+        name_bytes: flex_data::text::TextBytesIterator,
         #[property(flex_data::text::TextReadStringProperty)]
         #[readonly]
         #[std]
-        text: std::string::String,
+        name: std::string::String,
     }
 
     impl<B: crate::buffer::Ump> crate::traits::Size<B> for ComposerName<B> {
@@ -747,29 +747,32 @@ mod ruby_language {
     impl<B: crate::buffer::Ump> flex_data::FlexDataMessage<B> for RubyLanguage<B> {}
 }
 
-pub use accompanying_performer_name::AccompanyingPerformerName;
-pub use arranger_name::ArrangerName;
-pub use composer_name::ComposerName;
-pub use composition_name::CompositionName;
-pub use copyright_notice::CopyrightNotice;
-pub use lyricist_name::LyricistName;
-pub use lyrics::Lyrics;
-pub use lyrics_language::LyricsLanguage;
-pub use midi_clip_name::MidiClipName;
-pub use primary_performer_name::PrimaryPerformerName;
-pub use project_name::ProjectName;
-pub use publisher_name::PublisherName;
-pub use recording_date::RecordingDate;
-pub use recording_location::RecordingLocation;
-pub use ruby::Ruby;
-pub use ruby_language::RubyLanguage;
-pub use set_chord_name::SetChordName;
-pub use set_key_signature::SetKeySignature;
-pub use set_metronome::SetMetronome;
-pub use set_tempo::SetTempo;
-pub use set_time_signature::SetTimeSignature;
-pub use unknown_metadata_text::UnknownMetadataText;
-pub use unknown_performance_text::UnknownPerformanceText;
+pub use accompanying_performer_name::*;
+pub use arranger_name::*;
+pub use composer_name::*;
+pub use composition_name::*;
+pub use copyright_notice::*;
+pub use lyricist_name::*;
+pub use lyrics::*;
+pub use lyrics_language::*;
+pub use midi_clip_name::*;
+pub use primary_performer_name::*;
+pub use project_name::*;
+pub use publisher_name::*;
+pub use recording_date::*;
+pub use recording_location::*;
+pub use ruby::*;
+pub use ruby_language::*;
+pub use set_chord_name::{
+    Alteration, ChordType, SetChordName, SharpsFlats as SetChordNameSharpsFlats,
+};
+pub use set_key_signature::{SetKeySignature, SharpsFlats as SetKeySignatureSharpsFlats};
+pub use set_metronome::*;
+pub use set_tempo::*;
+pub use set_time_signature::*;
+pub use tonic::*;
+pub use unknown_metadata_text::*;
+pub use unknown_performance_text::*;
 
 pub(crate) const UMP_MESSAGE_TYPE: u8 = 0xD;
 pub(crate) const COMPLETE_FORMAT: u8 = 0x0;
@@ -1013,12 +1016,7 @@ impl<B: Ump> Property<B> for OptionalChannelProperty {
 impl<'a, B: Ump> ReadProperty<'a, B> for OptionalChannelProperty {
     fn read(buffer: &'a B) -> Self::Type {
         use crate::buffer::UmpPrivate;
-        use crate::ux::u2;
-        if buffer.buffer().message()[0].crumb(5) == u2::new(0x0) {
-            Some(buffer.buffer()[0].nibble(3))
-        } else {
-            None
-        }
+        optional_channel_from_slice(buffer.buffer().message())
     }
     fn validate(_buffer: &B) -> crate::result::Result<()> {
         Ok(())
@@ -1052,6 +1050,14 @@ fn optional_channel_to_slice(data: &mut [u32], channel: Option<crate::ux::u4>) {
             data[0].set_crumb(5, u2::new(0x1));
             data[0].set_nibble(3, u4::new(0x0));
         }
+    }
+}
+
+fn optional_channel_from_slice(data: &[u32]) -> Option<ux::u4> {
+    if data[0].crumb(5) == ux::u2::new(0x0) {
+        Some(data[0].nibble(3))
+    } else {
+        None
     }
 }
 

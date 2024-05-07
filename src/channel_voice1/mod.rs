@@ -8,13 +8,13 @@ mod note_on;
 mod pitch_bend;
 mod program_change;
 
-pub use channel_pressure::ChannelPressure;
-pub use control_change::ControlChange;
-pub use key_pressure::KeyPressure;
-pub use note_off::NoteOff;
-pub use note_on::NoteOn;
-pub use pitch_bend::PitchBend;
-pub use program_change::ProgramChange;
+pub use channel_pressure::*;
+pub use control_change::*;
+pub use key_pressure::*;
+pub use note_off::*;
+pub use note_on::*;
+pub use pitch_bend::*;
+pub use program_change::*;
 
 pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x2;
 

@@ -1,5 +1,5 @@
 #![no_std]
-// #![doc = include_str!("../README.md")]
+#![doc = include_str!("../README.md")]
 
 #[cfg(any(feature = "std", test))]
 extern crate std;
@@ -38,4 +38,5 @@ pub use traits::*;
 pub mod prelude {
     pub use super::*;
     pub use crate::ux::*;
+    pub use utility::JitterReduction;
 }

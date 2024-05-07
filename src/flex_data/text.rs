@@ -1,9 +1,6 @@
 use crate::{
     buffer::{BufferMut, Ump},
-    detail::{
-        common_properties,
-        property::{Property, ReadProperty, ResizeProperty, WriteProperty},
-    },
+    detail::property::{Property, ReadProperty, ResizeProperty, WriteProperty},
     flex_data,
 };
 
@@ -96,8 +93,8 @@ fn grow_buffer(mut buffer: &mut [u32], size: usize) {
     debug_assert!(size % 4 == 0);
     debug_assert!(size != 0);
 
-    let group = <common_properties::GroupProperty as ReadProperty<&[u32]>>::read(&&buffer[..5]);
-    let channel = <flex_data::OptionalChannelProperty as ReadProperty<&[u32]>>::read(&&buffer[..5]);
+    let group = buffer[0].nibble(1);
+    let channel = flex_data::optional_channel_from_slice(buffer);
     let bank = flex_data::bank_from_buffer(buffer);
     let status = flex_data::status_from_buffer(buffer);
     let number_of_packets = size / 4;

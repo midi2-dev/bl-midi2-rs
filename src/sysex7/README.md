@@ -125,7 +125,7 @@ assert_eq!(
 // setting payloads larger than the available size will fail
 assert_eq!(
     message.try_set_payload((0u8..30u8).map(u7::new)),
-    Err(midi2::BufferOverflow),
+    Err(midi2::error::BufferOverflow),
 );
 assert_eq!(message.data(), &[0xF0, 0xF7]);
 ```

@@ -116,6 +116,7 @@ pub mod delta_clockstamp_tpq {
     }
 }
 
+#[allow(dead_code)]
 const UMP_MESSAGE_TYPE: u8 = 0x0;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
