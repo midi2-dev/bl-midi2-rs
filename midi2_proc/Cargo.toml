@@ -1,7 +1,14 @@
 [package]
 name = "midi2_proc"
-version = "0.1.0"
+description = "Internal procedural macro crate. Only intended for use with midi2"
+version = "0.2.1"
 edition = "2021"
+readme = "README.md"
+license = "MIT OR Apache-2.0"
+authors = [
+    "Ben Leadbetter <ben.leadbetter@hotmail.com>",
+]
+repository = "git@github.com:BenLeadbetter/midi2.git"
 
 [lib]
 proc-macro = true
