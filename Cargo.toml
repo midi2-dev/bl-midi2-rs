@@ -1,6 +1,6 @@
 [package]
 name = "midi2"
-version = "0.2.0"
+version = "0.2.1"
 description = "Ergonomic, semantic types for wrapping MIDI 2.0 message data."
 edition = "2021"
 readme = "README.md"
