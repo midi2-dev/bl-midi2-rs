@@ -1,7 +1,7 @@
 [package]
 name = "midi2"
-version = "0.1.0"
-description = "A helper library for dealing with midi 2 byte data."
+version = "0.2.0"
+description = "Ergonomic, semantic types for wrapping MIDI 2.0 message data."
 edition = "2021"
 readme = "README.md"
 authors = [
