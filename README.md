@@ -1,6 +1,6 @@
 # MIDI2
 
-Ergonomic, semantic types for wrapping MIDI 2.0 message data.
+Ergonomic, versatile, strong types wrapping MIDI 2.0 message data.
 
 For detailed midi2 specification see [the documentation](https://midi.org/)
 on which this library is based.
