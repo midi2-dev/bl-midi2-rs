@@ -33,7 +33,7 @@ ump-stream = []
 
 [dependencies]
 derive_more = { version = "0.99.17", features = ["from"], default-features = false }
-midi2_proc = { version = "0.1.0", path = "midi2_proc" }
+midi2_proc = { version = "0.2.1", path = "midi2_proc" }
 ux = "0.1.6"
 
 [dev-dependencies]
