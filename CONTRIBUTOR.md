@@ -4,9 +4,9 @@ Contributions are more than welcome!
 The library is still in its early development phase. 
 There is not even a definite road map at this point.
 Please utilise the Issues feature on GitHub 
-or open a PR from your own fork to start a discussion ☺️.
+or open a PR from your own fork to start a discussion ☺️..
 
-## Hooks
+## 🪝 Hooks 🪝
 
 We recommend using the hooks while developing in this repository.
 The hooks manager is a python package which needs installing locally.
@@ -16,14 +16,14 @@ The best way to do this is via a virtual environment.
 > python3 -m venv .venv
 > source .venv/bin/activate
 > pip install -r requirements.txt
-> pre-commit install --install-hooks
+> ./configure-hooks.sh install
 ```
 
-## Building
+## 🧱 Building 🧱
 
-To build , simply follow the usual cargo flow.
+To build, simply follow the usual cargo flow.
 ```shell
-> cargo build
+> cargo build --all-features
 ```
 
 ## Tests
@@ -33,5 +33,9 @@ but no integration test coverage yet.
 To run the tests, follow the usual cargo flow.
 
 ```shell
-> cargo test
+> cargo test --all-features
 ```
+
+## 🌍 A Tour of midi2 🌍 
+
+todo

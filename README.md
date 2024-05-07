@@ -13,6 +13,10 @@ recommended for production.
 We would welcome contributions! 
 Please refer to the [CONTRIBUTOR.md](CONTRIBUTOR.md)
 
+## Quick Start
+
+todo
+
 ## Strongly Typed Message Wrappers
 
 A strongly typed message wrapper is provided for every message in the MIDI 2.0 specification 
@@ -117,11 +121,19 @@ assert_eq!(
 
 ## Almost Entirely no_std Friendly
 
+todo
+
 ## Borrowed Messages
+
+todo
 
 ## Generic Representation
 
+todo
+
 ## Supports For Classical MIDI Byte Stream Messages
+
+todo
 
 ## Cargo Features
 
