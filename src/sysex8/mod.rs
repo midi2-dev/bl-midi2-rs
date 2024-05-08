@@ -996,12 +996,29 @@ mod tests {
     #[test]
     fn set_payload_to_fixed_size_buffer_accidentally_missed_jr_header() {
         let mut message = Sysex8::<[u32; 16]>::try_new().unwrap();
-        assert_eq!(message.try_set_payload(0..50), Err(crate::error::BufferOverflow));
+        assert_eq!(
+            message.try_set_payload(0..50),
+            Err(crate::error::BufferOverflow)
+        );
     }
 
     #[test]
     fn set_payload_to_fixed_size_buffer_with_overflow() {
         let mut message = Sysex8::<[u32; 17]>::try_new().unwrap();
-        assert_eq!(message.try_set_payload(0..60), Err(crate::error::BufferOverflow));
+        assert_eq!(
+            message.try_set_payload(0..60),
+            Err(crate::error::BufferOverflow)
+        );
+    }
+
+    #[test]
+    fn set_empty_payload() {
+        let mut message = Sysex8::<std::vec::Vec<u32>>::new();
+        let buffer: [u8; 0] = [];
+        message.set_payload(buffer.iter().cloned());
+        assert_eq!(
+            message.data(),
+            &[0x5001_0000, 0x0000_0000, 0x0000_0000, 0x0000_0000,]
+        );
     }
 }

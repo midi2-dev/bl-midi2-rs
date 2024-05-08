@@ -13,6 +13,7 @@ repository = "https://github.com/BenLeadbetter/midi2.git"
 [workspace]
 members = [
     "midi2_proc",
+    "fuzz",
 ]
 
 [lib]

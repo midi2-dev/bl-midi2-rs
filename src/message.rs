@@ -87,6 +87,7 @@ impl<'a> core::convert::TryFrom<&'a [u32]> for UmpMessage<&'a [u32]> {
     Eq,
 )]
 #[non_exhaustive]
+#[cfg(any(feature = "channel-voice1", feature = "sysex7", feature = "system-common"))]
 pub enum BytesMessage<B: crate::buffer::Bytes> {
     #[cfg(feature = "channel-voice1")]
     ChannelVoice1(crate::channel_voice1::ChannelVoice1<B>),
@@ -96,6 +97,7 @@ pub enum BytesMessage<B: crate::buffer::Bytes> {
     SystemCommon(crate::system_common::SystemCommon<B>),
 }
 
+#[cfg(any(feature = "channel-voice1", feature = "sysex7", feature = "system-common"))]
 impl<'a> core::convert::TryFrom<&'a [u8]> for BytesMessage<&'a [u8]> {
     type Error = crate::error::Error;
     fn try_from(buffer: &'a [u8]) -> Result<Self, Self::Error> {
