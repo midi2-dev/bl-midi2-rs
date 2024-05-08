@@ -584,8 +584,8 @@ fn try_resize_ump<
     let mut buffer_size = buffer_size_from_payload_size_ump(payload_size);
     let resize_result = try_resize_buffer(sysex, buffer_size);
     if let Err(_) = resize_result {
-        buffer_size = sysex.0.buffer().len();
-        payload_size = buffer_size * 6 / 2;
+        buffer_size = sysex.0.buffer().len() - crate::buffer::OFFSET_FOR_JITTER_REDUCTION;
+        payload_size = (buffer_size / 2) * 6;
     }
 
     let mut iter = sysex
@@ -1574,5 +1574,17 @@ mod tests {
                 0x1B, 0x1C, 0x1D, 0xF7,
             ])
         );
+    }
+
+    #[test]
+    fn set_payload_to_fixed_size_buffer_accidentally_missed_jr_header() {
+        let mut message = Sysex7::<[u32; 8]>::try_new().unwrap();
+        assert_eq!(message.try_set_payload((0..24).map(u7::new)), Err(crate::error::BufferOverflow));
+    }
+
+    #[test]
+    fn set_payload_to_fixed_size_buffer_with_overflow() {
+        let mut message = Sysex7::<[u32; 9]>::try_new().unwrap();
+        assert_eq!(message.try_set_payload((0..30).map(u7::new)), Err(crate::error::BufferOverflow));
     }
 }
