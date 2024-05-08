@@ -22,7 +22,7 @@ pub use attribute::Attribute as NoteAttribute;
 pub use channel_pitch_bend::*;
 pub use channel_pressure::*;
 pub use control_change::*;
-pub use controller::*;
+pub use controller::Controller;
 pub use key_pressure::*;
 pub use note_off::*;
 pub use note_on::*;

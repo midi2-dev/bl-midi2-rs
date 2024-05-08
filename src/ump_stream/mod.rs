@@ -23,7 +23,7 @@ pub use endpoint_info::*;
 pub use endpoint_name::*;
 pub use function_block_discovery::*;
 pub use function_block_info::*;
-pub use function_block_name::*;
+pub use function_block_name::FunctionBlockName;
 pub use product_instance_id::*;
 pub use start_of_clip::*;
 pub use stream_configuration_notification::*;
@@ -201,7 +201,7 @@ impl<B: Ump + BufferMut> property::WriteProperty<B> for ConsistentFormatsPropert
     }
 }
 
-pub struct TextWriteStrProperty<'a, const OFFSET: usize>(core::marker::PhantomData<&'a u8>);
+struct TextWriteStrProperty<'a, const OFFSET: usize>(core::marker::PhantomData<&'a u8>);
 
 impl<'a, const OFFSET: usize, B: Ump> property::Property<B> for TextWriteStrProperty<'a, OFFSET> {
     type Type = &'a str;
@@ -326,7 +326,7 @@ impl<'a> TextBytesIterator<'a> {
     }
 }
 
-pub struct TextReadBytesProperty<'a>(core::marker::PhantomData<&'a u8>);
+struct TextReadBytesProperty<'a>(core::marker::PhantomData<&'a u8>);
 
 impl<'a, B: Ump> property::Property<B> for TextReadBytesProperty<'a> {
     type Type = TextBytesIterator<'a>;
@@ -348,7 +348,7 @@ impl<'a, B: 'a + Ump> property::ReadProperty<'a, B> for TextReadBytesProperty<'a
 }
 
 #[cfg(feature = "std")]
-pub struct TextReadStringProperty;
+struct TextReadStringProperty;
 
 #[cfg(feature = "std")]
 impl<B: Ump> property::Property<B> for TextReadStringProperty {
