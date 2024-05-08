@@ -1,5 +1,5 @@
 //! Generic backing buffers for messages wrapper types.
-//! 
+//!
 //! All messages in midi2 are backed by a generic buffer type.
 //!
 //! A buffer can be any data type which returns a slice of `u32` or `u8`.
@@ -10,8 +10,8 @@
 //! * `[U; SIZE] where U: Unit`
 //! * `Vec<U> where U: Unit` (with the `std` feature enabled)
 //!
-//! The api of the message wrapper changes depending on the traits of the 
-//! backing buffer. 
+//! The api of the message wrapper changes depending on the traits of the
+//! backing buffer.
 //!
 //! For example `&[U]` implements [Buffer]
 //! but doesn't implement [BufferMut] so messages
@@ -29,7 +29,7 @@
 //! assert_eq!(message.note(), u7::default());
 //!
 //! // error[E0277]: the trait bound `&[u32]: BufferMut` is not satisfied
-//! message.set_note(u7::new(0x60)); 
+//! message.set_note(u7::new(0x60));
 //! ```
 //!
 //! `[U: SIZE]` buffers implement [BufferMut], but only
@@ -44,7 +44,7 @@
 //! assert_eq!(message.try_set_payload(0..20), Ok(()));
 //! ```
 //! `Vec<U>` implements [BufferMut] and [BufferResize].
-//! Messages backed with with such buffers have the most powerfull api.
+//! Messages backed with with such buffers have the most powerful api.
 //!
 //! ```rust
 //! use midi2::prelude::*;
@@ -59,7 +59,7 @@
 //! possible to create a custom backing buffer.
 //!
 //! One potential fancy use case might be to create a non-allocating
-//! resizable buffer which uses an area allocator.
+//! resizable buffer which uses an arena allocator.
 
 use crate::error::BufferOverflow;
 

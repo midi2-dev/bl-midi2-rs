@@ -117,4 +117,12 @@ mod tests {
             }),
         );
     }
+
+    #[test]
+    fn empty_jr_data() {
+        assert_eq!(
+            NoteOn([0x0, 0x4898_5E03, 0x6A14_E98A, 0x0, 0x0]).data(),
+            &[0x4898_5E03, 0x6A14_E98A],
+        );
+    }
 }

@@ -1,3 +1,11 @@
+# 0.2.4
+ci: add standard cargo github actions
+docs: fix various typos
+docs: online docs generated with all features enabled
+fix: sysex7 / sysex8 payload iterator integration with jr headers
+fix: sysex7 / sysex8 payload iterator panics when empty
+test: add fuzzing target for sysex7 and sysex8 roundtrip
+
 # 0.2.3
 fix: handling messages example code
 fix: default features include cv2 not cv1

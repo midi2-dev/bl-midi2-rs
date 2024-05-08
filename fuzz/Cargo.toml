@@ -1,0 +1,34 @@
+[package]
+name = "midi2-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+
+[dependencies.midi2]
+path = ".."
+default-features = false
+features = [
+    "std",
+    "sysex8",
+    "sysex7",
+]
+
+[[bin]]
+name = "sysex8_payload_roundtrip"
+path = "./fuzz_targets/sysex8_payload_roundtrip.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "sysex7_payload_roundtrip"
+path = "./fuzz_targets/sysex7_payload_roundtrip.rs"
+test = false
+doc = false
+bench = false
