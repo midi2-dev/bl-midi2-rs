@@ -177,7 +177,7 @@ without the `std` feature.
 
 ```toml
 // Cargo.toml
-midi2 = { version = "0.2.1", default-features = false, features = [<required-message-types>],  }
+midi2 = { version = "0.2.2", default-features = false, features = [<required-message-types>],  }
 ```
 
 ### Generic Representation
