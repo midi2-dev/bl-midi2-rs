@@ -446,18 +446,23 @@ impl<B: crate::buffer::Buffer> Sysex<B> for Sysex7<B> {
     {
         match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
             crate::buffer::UNIT_ID_U8 => PayloadIterator {
-                data: &self.0.buffer()[1..self.size() - 1],
+                data: &self.0.buffer()[1..self.data().len() - 1],
                 payload_index: 0,
                 packet_index: 0,
                 size_cache: 0,
             },
             crate::buffer::UNIT_ID_U32 => {
-                let data = &self.0.buffer()[..self.size()];
-                let size_cache =
-                    <B::Unit as crate::buffer::UnitPrivate>::specialise_buffer_u32(data)
-                        .chunks_exact(2)
-                        .map(|packet| PayloadIterator::<B::Unit>::packet_size(packet))
-                        .sum::<usize>();
+                use crate::buffer::UmpPrivate;
+
+                let jr_offset = self.0.buffer().specialise_u32().jitter_reduction().len();
+                let data = &self.0.buffer()[jr_offset..];
+                let size_cache = self
+                    .data()
+                    .specialise_u32()
+                    .message()
+                    .chunks_exact(2)
+                    .map(PayloadIterator::<B::Unit>::packet_size)
+                    .sum::<usize>();
                 PayloadIterator {
                     data,
                     payload_index: 0,
@@ -804,12 +809,14 @@ impl<'a, U: crate::buffer::Unit> PayloadIterator<'a, U> {
     }
 
     fn finished_ump(&self) -> bool {
-        self.data.len() / 2 == self.packet_index
+        self.size_cache == 0
     }
 
     fn advance_ump(&mut self) {
         self.payload_index += 1;
-        self.size_cache -= 1;
+        if !self.finished_ump() {
+            self.size_cache -= 1;
+        }
 
         let current_packet_size =
             Self::packet_size(&self.data_ump()[self.packet_index * 2..self.packet_index * 2 + 2]);
@@ -1455,6 +1462,66 @@ mod tests {
     }
 
     #[test]
+    fn payload_ump_with_jr_header() {
+        assert_eq!(
+            Sysex7::try_from(
+                &[
+                    0x0,
+                    0x3016_0001_u32,
+                    0x0203_0405,
+                    0x3026_0607,
+                    0x0809_0A0B,
+                    0x3026_0C0D,
+                    0x0E0F_1011,
+                    0x3026_1213,
+                    0x1415_1617,
+                    0x3036_1819,
+                    0x1A1B_1C1D,
+                ][..]
+            )
+            .unwrap()
+            .payload()
+            .map(u8::from)
+            .collect::<std::vec::Vec<u8>>(),
+            std::vec![
+                0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D,
+                0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B,
+                0x1C, 0x1D,
+            ],
+        );
+    }
+
+    #[test]
+    fn payload_ump_with_timestamp_jr_header() {
+        assert_eq!(
+            Sysex7::try_from(
+                &[
+                    0x0020_0000_u32,
+                    0x3016_0001,
+                    0x0203_0405,
+                    0x3026_0607,
+                    0x0809_0A0B,
+                    0x3026_0C0D,
+                    0x0E0F_1011,
+                    0x3026_1213,
+                    0x1415_1617,
+                    0x3036_1819,
+                    0x1A1B_1C1D,
+                ][..]
+            )
+            .unwrap()
+            .payload()
+            .map(u8::from)
+            .collect::<std::vec::Vec<u8>>(),
+            std::vec![
+                0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D,
+                0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B,
+                0x1C, 0x1D,
+            ],
+        );
+    }
+
+    #[test]
     fn payload_ump_nth() {
         let buffer = [
             0x3016_0001_u32,
@@ -1579,12 +1646,28 @@ mod tests {
     #[test]
     fn set_payload_to_fixed_size_buffer_accidentally_missed_jr_header() {
         let mut message = Sysex7::<[u32; 8]>::try_new().unwrap();
-        assert_eq!(message.try_set_payload((0..24).map(u7::new)), Err(crate::error::BufferOverflow));
+        assert_eq!(
+            message.try_set_payload((0..24).map(u7::new)),
+            Err(crate::error::BufferOverflow)
+        );
     }
 
     #[test]
     fn set_payload_to_fixed_size_buffer_with_overflow() {
         let mut message = Sysex7::<[u32; 9]>::try_new().unwrap();
-        assert_eq!(message.try_set_payload((0..30).map(u7::new)), Err(crate::error::BufferOverflow));
+        assert_eq!(
+            message.try_set_payload((0..30).map(u7::new)),
+            Err(crate::error::BufferOverflow)
+        );
+    }
+
+    #[test]
+    fn empty_payload_ump() {
+        assert_eq!(
+            Sysex7::<std::vec::Vec<u32>>::new()
+                .payload()
+                .collect::<std::vec::Vec<u7>>(),
+            std::vec![]
+        );
     }
 }
