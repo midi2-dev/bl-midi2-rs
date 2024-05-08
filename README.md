@@ -176,8 +176,7 @@ You'll want to setup midi2 without default features to compile
 without the `std` feature.
 
 ```toml
-// Cargo.toml
-midi2 = { version = "0.2.3", default-features = false, features = [<required-message-types>],  }
+midi2 = { version = "0.2.3", default-features = false, features = ["channel-voice2", "sysex7"],  }
 ```
 
 ### Generic Representation
