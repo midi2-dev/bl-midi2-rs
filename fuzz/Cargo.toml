@@ -16,11 +16,19 @@ default-features = false
 features = [
     "std",
     "sysex8",
+    "sysex7",
 ]
 
 [[bin]]
 name = "sysex8_payload_roundtrip"
 path = "./fuzz_targets/sysex8_payload_roundtrip.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "sysex7_payload_roundtrip"
+path = "./fuzz_targets/sysex7_payload_roundtrip.rs"
 test = false
 doc = false
 bench = false

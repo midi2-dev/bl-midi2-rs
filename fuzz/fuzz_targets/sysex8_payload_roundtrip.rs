@@ -1,14 +1,9 @@
 #![no_main]
 
 use libfuzzer_sys::fuzz_target;
-use midi2::{
-    prelude::*,
-    sysex8::*,
-};
+use midi2::{prelude::*, sysex8::*};
 
 fuzz_target!(|data: &[u8]| {
-    eprintln!("Input data: {:?}", data);
-
     let mut message = Sysex8::<Vec<u32>>::new();
     message.set_payload(data.iter().cloned());
 
