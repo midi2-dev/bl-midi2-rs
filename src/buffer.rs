@@ -1,3 +1,66 @@
+//! Generic backing buffers for messages wrapper types.
+//! 
+//! All messages in midi2 are backed by a generic buffer type.
+//!
+//! A buffer can be any data type which returns a slice of `u32` or `u8`.
+//!
+//! The buffer traits are already implemented for some typical standard rust types:
+//! * `&[U] where U: Unit`
+//! * `&mut [U] where U: Unit`
+//! * `[U; SIZE] where U: Unit`
+//! * `Vec<U> where U: Unit` (with the `std` feature enabled)
+//!
+//! The api of the message wrapper changes depending on the traits of the 
+//! backing buffer. 
+//!
+//! For example `&[U]` implements [Buffer]
+//! but doesn't implement [BufferMut] so messages
+//! backed by a `&[U]` are imutable.
+//!
+//! ```compile_fail,E0277
+//! use midi2::{
+//!     prelude::*,
+//!     channel_voice1::NoteOn,
+//! };
+//!
+//! let mut message: NoteOn<&[u32]> = NoteOn::try_from(&[0x2D9E_753D][..]).expect("Valid data");
+//!
+//! // the immutable api is available
+//! assert_eq!(message.note(), u7::default());
+//!
+//! // error[E0277]: the trait bound `&[u32]: BufferMut` is not satisfied
+//! message.set_note(u7::new(0x60)); 
+//! ```
+//!
+//! `[U: SIZE]` buffers implement [BufferMut], but only
+//! [BufferTryResize] so any methods which require
+//! a resize are aivaible only in the fallible form.
+//!
+//! ```rust
+//! use midi2::prelude::*;
+//!
+//! let mut message = sysex8::Sysex8::<[u32; 64]>::try_new()
+//!     .expect("Buffer is large enough for default size");
+//! assert_eq!(message.try_set_payload(0..20), Ok(()));
+//! ```
+//! `Vec<U>` implements [BufferMut] and [BufferResize].
+//! Messages backed with with such buffers have the most powerfull api.
+//!
+//! ```rust
+//! use midi2::prelude::*;
+//!
+//! let mut message = sysex8::Sysex8::<Vec<u32>>::new();
+//! message.set_payload(0..20); // "cannot" fail
+//! ```
+//!
+//! ## Implementing Custom Buffers
+//!
+//! Using the traits from this module it is entirely
+//! possible to create a custom backing buffer.
+//!
+//! One potential fancy use case might be to create a non-allocating
+//! resizable buffer which uses an area allocator.
+
 use crate::error::BufferOverflow;
 
 #[allow(private_bounds)]
