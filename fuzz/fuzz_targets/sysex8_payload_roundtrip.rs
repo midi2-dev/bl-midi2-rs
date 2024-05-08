@@ -7,6 +7,8 @@ use midi2::{
 };
 
 fuzz_target!(|data: &[u8]| {
+    eprintln!("Input data: {:?}", data);
+
     let mut message = Sysex8::<Vec<u32>>::new();
     message.set_payload(data.iter().cloned());
 
@@ -17,5 +19,5 @@ fuzz_target!(|data: &[u8]| {
     // message is in a valid state
     let mut buffer = Vec::new();
     buffer.extend_from_slice(message.data());
-    let copy = Sysex8::try_from(&buffer[..]).expect("Valid data");
+    let _ = Sysex8::try_from(&buffer[..]).expect("Valid data");
 });

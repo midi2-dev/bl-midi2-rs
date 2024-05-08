@@ -20,7 +20,6 @@ struct Sysex8 {
     #[property(ConsistentStatuses)]
     #[readonly]
     consistent_statuses: (),
-    #[readonly]
     #[property(ValidPacketSizes)]
     valid_packet_sizes: (),
     #[property(GroupProperty)]
@@ -67,9 +66,7 @@ impl<B: crate::buffer::Ump> crate::detail::property::Property<B> for ValidPacket
 }
 
 impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B> for ValidPacketSizes {
-    fn read(_buffer: &'a B) -> Self::Type {
-        ()
-    }
+    fn read(_buffer: &'a B) -> Self::Type {}
     fn validate(buffer: &B) -> crate::result::Result<()> {
         use crate::buffer::UmpPrivate;
         if buffer.buffer().message().chunks_exact(4).any(|p| {
@@ -82,6 +79,30 @@ impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B> for
         } else {
             Ok(())
         }
+    }
+}
+
+impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::WriteProperty<B>
+    for ValidPacketSizes
+{
+    fn write(buffer: &mut B, _: Self::Type) {
+        use crate::buffer::UmpPrivateMut;
+
+        for packet in buffer
+            .buffer_mut()
+            .message_mut()
+            .chunks_exact_mut(4)
+            .take_while(|packet| u8::from(packet[0].nibble(0)) == UMP_MESSAGE_TYPE)
+        {
+            let sz = packet[0].nibble(3);
+            packet[0].set_nibble(3, sz.max(ux::u4::new(1)));
+        }
+    }
+    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+        Ok(())
+    }
+    fn default() -> Self::Type {
+        Default::default()
     }
 }
 
@@ -302,14 +323,17 @@ impl<'a> PayloadIterator<'a> {
         u8::from(packet[0].nibble(3)) as usize - 1
     }
     fn finished(&self) -> bool {
-        self.data.len() / 4 == self.packet_index
+        self.size_cache == 0
+    }
+    fn size_of_current_packet(&self) -> usize {
+        Self::packet_size(&self.data[self.packet_index * 4..(self.packet_index * 4 + 4)])
     }
     fn advance(&mut self) {
         self.payload_index += 1;
-        self.size_cache -= 1;
-        if self.payload_index
-            == Self::packet_size(&self.data[self.packet_index * 4..(self.packet_index * 4 + 4)])
-        {
+        if !self.finished() {
+            self.size_cache -= 1;
+        }
+        if self.payload_index >= self.size_of_current_packet() {
             // end of message
             self.packet_index += 1;
             self.payload_index = 0;
@@ -329,7 +353,9 @@ impl<B: crate::buffer::Ump> Sysex<B> for Sysex8<B> {
             data: self.0.buffer().message(),
             packet_index: 0,
             payload_index: 0,
-            size_cache: self.0.buffer().message()[..self.size()]
+            size_cache: self
+                .data()
+                .message()
                 .chunks_exact(4)
                 .map(|packet| PayloadIterator::packet_size(packet))
                 .sum(),
@@ -494,7 +520,7 @@ mod tests {
     fn new() {
         assert_eq!(
             Sysex8::<std::vec::Vec<u32>>::new(),
-            Sysex8(std::vec![0x0, 0x5000_0000, 0x0, 0x0, 0x0])
+            Sysex8(std::vec![0x0, 0x5001_0000, 0x0, 0x0, 0x0])
         );
     }
 
@@ -505,7 +531,7 @@ mod tests {
         let mut message = Sysex8::<std::vec::Vec<u32>>::new();
         message.set_group(ux::u4::new(0xC));
 
-        assert_eq!(message, Sysex8(std::vec![0x0, 0x5C00_0000, 0x0, 0x0, 0x0]));
+        assert_eq!(message, Sysex8(std::vec![0x0, 0x5C01_0000, 0x0, 0x0, 0x0]));
     }
 
     #[test]
@@ -1012,13 +1038,35 @@ mod tests {
     }
 
     #[test]
-    fn set_empty_payload() {
+    fn default_constructed_message() {
+        assert_eq!(
+            Sysex8::<std::vec::Vec<u32>>::new(),
+            Sysex8(std::vec![0x0, 0x5001_0000, 0x0, 0x0, 0x0,])
+        );
+    }
+
+    #[test]
+    fn payload_of_empty_message() {
+        let message = Sysex8::<std::vec::Vec<u32>>::new();
+        let payload = message.payload().collect::<std::vec::Vec<u8>>();
+        assert_eq!(payload, std::vec![]);
+    }
+
+    #[test]
+    fn message_data_noop_jr_header() {
         let mut message = Sysex8::<std::vec::Vec<u32>>::new();
         let buffer: [u8; 0] = [];
         message.set_payload(buffer.iter().cloned());
         assert_eq!(
-            message.data(),
-            &[0x5001_0000, 0x0000_0000, 0x0000_0000, 0x0000_0000,]
+            Sysex8(std::vec![
+                0x0000_0000,
+                0x5001_0000,
+                0x0000_0000,
+                0x0000_0000,
+                0x0000_0000
+            ])
+            .data(),
+            &[0x5001_0000, 0x0000_0000, 0x0000_0000, 0x0000_0000],
         );
     }
 }
