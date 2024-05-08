@@ -58,7 +58,7 @@ assert_eq!(
 All message wrappers are grouped into aggregate enum types.
 There's a top level enum type which can represent all messages,
 and there's sub enum types for each different UMP type specified
-by the MIDI 2.0 documentation.
+by the MIDI 2.0 specification.
 
 ```rust
 fn handle_message(buffer: &[u32]) {
@@ -162,7 +162,7 @@ assert_eq!(message.data(), &[0x0020_1234, 0x20D0_0000]);
 ```
 
 NOTE: For this reason all messages need an extra `u32` at the
-start of their buffers to accomodate the header data.
+start of their buffers to accommodate the header data.
 For example, the minimum size buffer for a ChannelVoice2 message 
 is 3, rather than 2.
 
@@ -196,7 +196,7 @@ let mut message = sysex8::Sysex8::<[u32; 17]>::try_new()
 assert_eq!(message.try_set_payload(0..50), Ok(()));
 
 // if there's not enough room in the buffer to 
-// accomodate the resize then an overflow error is returned.
+// accommodate the resize then an overflow error is returned.
 assert_eq!(message.try_set_payload(0..60), Err(midi2::error::BufferOverflow));
 ```
 
@@ -268,7 +268,7 @@ message.set_pressure(u7::new(0x09));
 assert_eq!(message.data(), &[0xD6, 0x09]);
 ```
 
-Messages represented in bytes can be transformed to ump and back using convertion traits.
+Messages represented in bytes can be transformed to ump and back using conversion traits.
 
 ```rust
 use midi2::{
