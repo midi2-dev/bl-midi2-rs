@@ -59,7 +59,7 @@
 //! possible to create a custom backing buffer.
 //!
 //! One potential fancy use case might be to create a non-allocating
-//! resizable buffer which uses an area allocator.
+//! resizable buffer which uses an arena allocator.
 
 use crate::error::BufferOverflow;
 
