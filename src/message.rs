@@ -13,9 +13,9 @@
 pub enum UmpMessage<B: crate::buffer::Ump> {
     #[cfg(feature = "flex-data")]
     FlexData(crate::flex_data::FlexData<B>),
-    #[cfg(feature = "midi1-channel-voice")]
+    #[cfg(feature = "channel-voice1")]
     ChannelVoice1(crate::channel_voice1::ChannelVoice1<B>),
-    #[cfg(feature = "midi2-channel-voice")]
+    #[cfg(feature = "channel-voice2")]
     ChannelVoice2(crate::channel_voice2::ChannelVoice2<B>),
     #[cfg(feature = "sysex7")]
     Sysex7(crate::sysex7::Sysex7<B>),
@@ -45,11 +45,11 @@ impl<'a> core::convert::TryFrom<&'a [u32]> for UmpMessage<&'a [u32]> {
             crate::flex_data::UMP_MESSAGE_TYPE => {
                 FlexData(crate::flex_data::FlexData::try_from(buffer)?.into())
             }
-            #[cfg(feature = "midi1-channel-voice")]
+            #[cfg(feature = "channel-voice1")]
             crate::channel_voice1::UMP_MESSAGE_TYPE => {
                 ChannelVoice1(crate::channel_voice1::ChannelVoice1::try_from(buffer)?.into())
             }
-            #[cfg(feature = "midi2-channel-voice")]
+            #[cfg(feature = "channel-voice2")]
             crate::channel_voice2::UMP_MESSAGE_TYPE => {
                 ChannelVoice2(crate::channel_voice2::ChannelVoice2::try_from(buffer)?.into())
             }
@@ -88,7 +88,7 @@ impl<'a> core::convert::TryFrom<&'a [u32]> for UmpMessage<&'a [u32]> {
 )]
 #[non_exhaustive]
 pub enum BytesMessage<B: crate::buffer::Bytes> {
-    #[cfg(feature = "midi1-channel-voice")]
+    #[cfg(feature = "channel-voice1")]
     ChannelVoice1(crate::channel_voice1::ChannelVoice1<B>),
     #[cfg(feature = "sysex7")]
     Sysex7(crate::sysex7::Sysex7<B>),
@@ -105,7 +105,7 @@ impl<'a> core::convert::TryFrom<&'a [u8]> for BytesMessage<&'a [u8]> {
         use BytesMessage::*;
 
         Ok(match buffer[0] {
-            #[cfg(feature = "midi1-channel-voice")]
+            #[cfg(feature = "channel-voice1")]
             0x80..=0xEF => {
                 ChannelVoice1(crate::channel_voice1::ChannelVoice1::try_from(buffer)?.into())
             }
@@ -130,7 +130,7 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     #[test]
-    #[cfg(feature = "midi1-channel-voice")]
+    #[cfg(feature = "channel-voice1")]
     fn from_byte_data() {
         use crate::channel_voice1::ChannelVoice1;
 

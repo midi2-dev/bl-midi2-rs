@@ -20,11 +20,11 @@ name = "midi2"
 path = "src/lib.rs" 
 
 [features]
-default = ["ci", "midi2-channel-voice"]
+default = ["std", "ci", "channel-voice1"]
 ci = ["sysex7"]
 flex-data = []
-midi1-channel-voice = []
-midi2-channel-voice = []
+channel-voice1 = []
+channel-voice2 = []
 std = []
 sysex7 = []
 sysex8 = []
