@@ -410,7 +410,7 @@ fn try_resize<
     let resize_result = try_resize_buffer(sysex, buffer_size);
     if let Err(_) = resize_result {
         // resize failed. We make do with what we've got
-        buffer_size = sysex.0.buffer().len();
+        buffer_size = sysex.0.buffer().len() - crate::buffer::OFFSET_FOR_JITTER_REDUCTION;
         payload_size = buffer_size * 13 / 4;
     }
 
@@ -991,5 +991,17 @@ mod tests {
                 0x0000_0000,
             ],
         );
+    }
+
+    #[test]
+    fn set_payload_to_fixed_size_buffer_accidentally_missed_jr_header() {
+        let mut message = Sysex8::<[u32; 16]>::try_new().unwrap();
+        assert_eq!(message.try_set_payload(0..50), Err(crate::error::BufferOverflow));
+    }
+
+    #[test]
+    fn set_payload_to_fixed_size_buffer_with_overflow() {
+        let mut message = Sysex8::<[u32; 17]>::try_new().unwrap();
+        assert_eq!(message.try_set_payload(0..60), Err(crate::error::BufferOverflow));
     }
 }
