@@ -1,3 +1,7 @@
+# 0.2.3
+fix: handling messages example code
+fix: default features include cv2 not cv1
+
 # 0.2.2
 chore: licencing
 docs: address todos in readme
