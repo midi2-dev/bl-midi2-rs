@@ -1,9 +1,10 @@
-# MIDI2
+# 🎹 MIDI2 🎹
 
-Ergonomic, semantic types for wrapping MIDI 2.0 message data.
+Ergonomic, versatile, strong types wrapping MIDI 2.0 message data.
 
+This implementation of MIDI 2.0 is based on the 1.1 revision of the specifications.
 For detailed midi2 specification see [the documentation](https://midi.org/)
-on which this library is based.
+on which this crate is based.
 
 ## ⚠️  **Note!** ⚠️  
 
@@ -13,14 +14,9 @@ recommended for production.
 We would welcome contributions! 
 Please refer to the [CONTRIBUTOR.md](CONTRIBUTOR.md)
 
-## Quick Start
-
-todo
-
 ## Strongly Typed Message Wrappers
 
-A strongly typed message wrapper is provided for every message in the MIDI 2.0 specification 
-(version 1.1 as the time of writing).
+A strongly typed message wrapper is provided for every message in the MIDI 2.0 specification.
 
 
 ```rust
@@ -45,16 +41,63 @@ composer_name.set_name("Pinch b2b Peverelist");
 assert_eq!(
     composer_name.data(), 
     &[
-        0xD0500105,
-        0x50696E63,
-        0x68206232,
-        0x62205065,
-        0xD0D00105,
-        0x76657265,
-        0x6C697374,
+        0xD050_0105,
+        0x5069_6E63,
+        0x6820_6232,
+        0x6220_5065,
+        0xD0D0_0105,
+        0x7665_7265,
+        0x6C69_7374,
         0x0000_0000,
 ]);
 
+```
+
+## Aggregate Message Types
+
+All message wrappers are grouped into aggregate enum types.
+There's a top level enum type which can represent all messages,
+and there's sub enum types for each different UMP type specified
+by the MIDI 2.0 documentation.
+
+```rust
+fn handle_message(buffer: &[u32]) {
+    use midi2::prelude::*;
+
+    match UmpMessage::try_from(buffer) {
+        Ok(UmpMessage::ChannelVoice2(m)) => {
+            println!("Channel Voice2: channel: {}", m.channel());
+            match m {
+                channel_voice2::ChannelVoice2::NoteOn(m) => {
+                    println!("Note On! note: {}, velocity: {}", m.note(), m.velocity());
+                }
+                channel_voice2::ChannelVoice2::NoteOff(m) => {
+                    println!("Note Off! note: {}, velocity: {}", m.note(), m.velocity());
+                }
+                _ => {}
+            }
+        }
+        Ok(UmpMessage::Sysex7(m)) => {
+            println!(
+                "Sysex 7bit: payload: {:?}",
+                m.payload().collect::<Vec<u7>>()
+            );
+        }
+        Ok(UmpMessage::FlexData(m)) => {
+            use midi2::flex_data::FlexDataMessage;
+
+            println!("FlexData: bank: {:?}", m.bank());
+            match m {
+                _ => {}, // further matching on different flex data types
+            }
+        }
+        // further matching on other message types
+        Err(e) => {
+            println!("Error parsing ump buffer: {:?}", e);
+        }
+        _ => {}
+    }
+}
 ```
 
 ## Full Sysex Support
@@ -105,36 +148,158 @@ assert_eq!(
 
 ## Jitter Ruduction Support
 
-All ump messages can have a jitter deduction header
+All ump messages have an optional jitter reduction header
 prepended before its message packets.
 
 ```rust
 use midi2::prelude::*;
 
 let mut message = channel_voice1::ChannelPressure::new_arr();
+assert_eq!(message.data(), &[0x20D0_0000]);
+
 message.set_jitter_reduction(Some(JitterReduction::Timestamp(0x1234)));
-assert_eq!(
-    message.data(),
-    &[0x0020_1234, 0x20D0_0000],
-);
+assert_eq!(message.data(), &[0x0020_1234, 0x20D0_0000]);
 ```
 
-## Almost Entirely no_std Friendly
+NOTE: For this reason all messages need an extra `u32` at the
+start of their buffers to accomodate the header data.
+For example, the minimum size buffer for a ChannelVoice2 message 
+is 3, rather than 2.
 
-todo
+## Almost Entirely `#![no_std]` Friendly
 
-## Borrowed Messages
+`#![no_std]` is a first class use case in midi2.
+All message types can be read and written without allocation,
+even messages of arbitrary length, like sysex or flex-data.
 
-todo
+You'll want to setup midi2 without default features to compile
+without the `std` feature.
 
-## Generic Representation
+```toml
+// Cargo.toml
+midi2 = { version = "0.2.2", default-features = false, features = [<required-message-types>],  }
+```
 
-todo
+### Generic Representation
+
+All messages are generic over their representation.
+For example, a simple non-allocating use case would be to
+represent messages within a fixed size array.
+
+```rust
+use midi2::prelude::*;
+
+let mut message = sysex8::Sysex8::<[u32; 17]>::try_new()
+    .expect("Buffer is large enough for min message size");
+
+// in this mode methods which would require a 
+// buffer resize are fallible
+assert_eq!(message.try_set_payload(0..50), Ok(()));
+
+// if there's not enough room in the buffer to 
+// accomodate the resize then an overflow error is returned.
+assert_eq!(message.try_set_payload(0..60), Err(midi2::error::BufferOverflow));
+```
+
+A more advanced use case might be to make a custom buffer which
+uses an arena allocater to back your messages.
+See the [buffer](crate::buffer) docs for more info.
+
+### Borrowed Messages
+
+When reading messages from an existing buffer, the message wrappers
+own a borrowed reference to the data, so no copying or allocation takes place.
+In this case the generic message buffer type is `&[u32]`.
+
+```rust
+use midi2::prelude::*;
+
+let buffer = [
+    0xD050_0100_u32,
+    0x4469_6769,
+    0x7461_6C20,
+    0x4175_6469,
+    0xD090_0100,
+    0x6F20_576F,
+    0x726B_7374,
+    0x6174_696F,
+    0xD0D0_0100,
+    0x6E20_2D20,
+    0x4441_5733,
+    0x362D_3136,
+];
+let Ok(message) = UmpMessage::try_from(&buffer[..]) else {
+    panic!();
+};
+```
+
+Of course this means that such borrowed messages are imutable
+and also have their lifetimes tied to the original buffer.
+
+To remedy this messages can be `rebuffered` into a different
+generic backing buffer type.
+
+```rust
+use midi2::prelude::*;
+
+let mut owned: UmpMessage::<[u32; 5]> = {
+    let buffer = [0x1AF3_4F00_u32];
+    // the borrowed message is imutable and cannot outlive `buffer`
+    let borrowed = UmpMessage::try_from(&buffer[..]).expect("Data is valid");
+    borrowed.try_rebuffer_into().expect("Buffer is large enough")
+};
+
+// the owned message is mutable an liberated from the buffer lifetime.
+owned.set_jitter_reduction(Some(JitterReduction::Timestamp(0x1234)));
+assert_eq!(owned.data(), &[0x0020_1234, 0x1AF3_4F00])
+```
 
 ## Supports For Classical MIDI Byte Stream Messages
 
-todo
+Messages which can be represented in classical midi byte stream format are also supported. 
+To do this simply use a backing buffer over `u8` instead of `u32`! ✨🎩
+
+```rust
+use midi2::prelude::*;
+
+let mut message = channel_voice1::ChannelPressure::new_arr_bytes();
+message.set_channel(u4::new(0x6));
+message.set_pressure(u7::new(0x09));
+
+assert_eq!(message.data(), &[0xD6, 0x09]);
+```
+
+Messages represented in bytes can be transformed to ump and back using convertion traits.
+
+```rust
+use midi2::{
+    prelude::*,
+    channel_voice1::ChannelPressure,
+};
+
+let message = ChannelPressure::new_arr_bytes();
+let message: ChannelPressure<[u32; 5]> = message.try_into_ump().
+    expect("Buffer is large enough");
+
+assert_eq!(message.data(), &[0x20D0_0000]);
+```
 
 ## Cargo Features
 
-Almost all message categories are opt-in.
+midi2 provides several compile-time features that you can enable or disable to customize
+its functionality according to your needs.
+
+Here's a list of available features:
+
+- `default`:
+  - **std** - Include [buffer](crate::buffer) integration for `std::vec::Vec` and enable allocating getters for values which return `std::string::String` values.
+  - **channel-voice2** — Include message wrappers for the MIDI 2.0 channel voice message type.
+  - **sysex7** — Include message wrappers for the MIDI 7bit system exclusive message type.
+  - **ci** — 🚧 WIP 🚧
+
+- `optional`: These features are not enabled by default and can be included by adding them to your `Cargo.toml`.
+  - **flex-data** - Include message wrappers for the MIDI 2.0 Flex Data message type.
+  - **channel-voice1** - Include message wrappers for the classical MIDI channel voice message type.
+  - **sysex8** - Include message wrappers for the MIDI 2.0 System Exclusive 8bit message type.
+  - **system-common** - Include message wrappers for the MIDI 2.0 System Common / System Real Time message type.
+  - **ump-stream** - Include message wrappers for the MIDI 2.0 Ump Stream message type.

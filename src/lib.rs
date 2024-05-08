@@ -4,9 +4,9 @@
 #[cfg(any(feature = "std", test))]
 extern crate std;
 
-#[cfg(feature = "midi1-channel-voice")]
+#[cfg(feature = "channel-voice1")]
 pub mod channel_voice1;
-#[cfg(feature = "midi2-channel-voice")]
+#[cfg(feature = "channel-voice2")]
 pub mod channel_voice2;
 #[cfg(feature = "ci")]
 pub mod ci;
