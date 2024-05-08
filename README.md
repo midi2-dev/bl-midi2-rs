@@ -253,7 +253,7 @@ owned.set_jitter_reduction(Some(JitterReduction::Timestamp(0x1234)));
 assert_eq!(owned.data(), &[0x0020_1234, 0x1AF3_4F00])
 ```
 
-## Supports For Classical MIDI Byte Stream Messages
+## Support For Classical MIDI Byte Stream Messages
 
 Messages which can be represented in classical midi byte stream format are also supported. 
 To do this simply use a backing buffer over `u8` instead of `u32`! ✨🎩
