@@ -81,7 +81,7 @@ assert_eq!(
     ],
 );
 
-// Borrowed messages are immutable and their liftimes are
+// Borrowed messages are immutable and their lifetimes are
 // tied to the original buffer. 
 //
 // To create an owned version use the `Rebuffer` traits.
