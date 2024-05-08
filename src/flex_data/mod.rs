@@ -770,7 +770,7 @@ pub use set_key_signature::{SetKeySignature, SharpsFlats as SetKeySignatureSharp
 pub use set_metronome::*;
 pub use set_tempo::*;
 pub use set_time_signature::*;
-pub use tonic::*;
+pub use tonic::Tonic;
 pub use unknown_metadata_text::*;
 pub use unknown_performance_text::*;
 
@@ -898,7 +898,7 @@ pub trait FlexDataMessage<B: crate::buffer::Ump>: crate::traits::Data<B> {
     }
 }
 
-pub struct StatusProperty<const STATUS: u8>;
+struct StatusProperty<const STATUS: u8>;
 
 impl<const STATUS: u8, B: Ump> Property<B> for StatusProperty<STATUS> {
     type Type = ();
@@ -936,7 +936,7 @@ impl<const STATUS: u8, B: Ump + BufferMut> WriteProperty<B> for StatusProperty<S
     }
 }
 
-pub struct BankProperty<const BANK: u8>;
+struct BankProperty<const BANK: u8>;
 
 impl<const BANK: u8, B: Ump> Property<B> for BankProperty<BANK> {
     type Type = ();
