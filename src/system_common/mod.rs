@@ -1,6 +1,6 @@
 #![doc = include_str!("README.md")]
 
-pub const UMP_MESSAGE_TYPE: u8 = 0x1;
+pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x1;
 
 mod song_position_pointer;
 mod song_select;
