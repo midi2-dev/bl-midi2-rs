@@ -136,7 +136,6 @@ mod tests {
         assert_eq!(
             message,
             FunctionBlockName(std::vec![
-                0x0,
                 0xF412_0953,
                 0x796E_7468,
                 0x5761_7665,

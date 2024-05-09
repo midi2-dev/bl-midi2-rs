@@ -66,71 +66,6 @@ mod tests {
     }
 
     #[test]
-    fn data_with_jr() {
-        use crate::traits::Data;
-        assert_eq!(
-            EndpointName::try_from(
-                &[
-                    0x0040_4321, //jr
-                    0xF403_4769,
-                    0x6D6D_6520,
-                    0x736F_6D65,
-                    0x2073_6967,
-                    0xFC03_6E61,
-                    0x6C20_F09F,
-                    0x948A_20F0,
-                    0x9F99_8C00,
-                ][..]
-            )
-            .unwrap()
-            .data(),
-            &[
-                0x0040_4321, //jr
-                0xF403_4769,
-                0x6D6D_6520,
-                0x736F_6D65,
-                0x2073_6967,
-                0xFC03_6E61,
-                0x6C20_F09F,
-                0x948A_20F0,
-                0x9F99_8C00,
-            ]
-        );
-    }
-
-    #[test]
-    fn data_with_empty_jr() {
-        use crate::traits::Data;
-        assert_eq!(
-            EndpointName::try_from(
-                &[
-                    0x0000_0000, //jr
-                    0xF403_4769,
-                    0x6D6D_6520,
-                    0x736F_6D65,
-                    0x2073_6967,
-                    0xFC03_6E61,
-                    0x6C20_F09F,
-                    0x948A_20F0,
-                    0x9F99_8C00,
-                ][..]
-            )
-            .unwrap()
-            .data(),
-            &[
-                0xF403_4769,
-                0x6D6D_6520,
-                0x736F_6D65,
-                0x2073_6967,
-                0xFC03_6E61,
-                0x6C20_F09F,
-                0x948A_20F0,
-                0x9F99_8C00,
-            ]
-        );
-    }
-
-    #[test]
     fn set_name_and_clear_name() {
         let mut message = EndpointName::new();
         message.set_name("Gimme some signal 🔊 🙌");
@@ -138,7 +73,6 @@ mod tests {
         assert_eq!(
             message,
             EndpointName(std::vec![
-                0x0, //jr
                 0xF003_0000,
                 0x0000_0000,
                 0x0000_0000,

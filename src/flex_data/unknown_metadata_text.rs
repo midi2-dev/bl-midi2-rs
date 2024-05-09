@@ -61,7 +61,7 @@ mod tests {
     fn new() {
         assert_eq!(
             UnknownMetadataText::<std::vec::Vec<u32>>::new(),
-            UnknownMetadataText(std::vec![0x0, 0xD010_0100, 0x0, 0x0, 0x0]),
+            UnknownMetadataText(std::vec![0xD010_0100, 0x0, 0x0, 0x0]),
         )
     }
 
@@ -72,7 +72,6 @@ mod tests {
         assert_eq!(
             message,
             UnknownMetadataText(std::vec![
-                0x0000_0000,
                 0xD050_0100,
                 0x4769_6D6D,
                 0x6520_736F,
@@ -92,7 +91,6 @@ mod tests {
         assert_eq!(
             message,
             UnknownMetadataText(std::vec![
-                0x0000_0000,
                 0xD050_0100,
                 0x5379_6E74,
                 0x6820_7769,
@@ -145,7 +143,6 @@ mod tests {
         assert_eq!(
             message,
             UnknownMetadataText(std::vec![
-                0x0000_0000,
                 0xD050_0100,
                 0x4769_6D6D,
                 0x6520_736F,
@@ -166,7 +163,6 @@ mod tests {
         assert_eq!(
             message,
             UnknownMetadataText(std::vec![
-                0x0000_0000,
                 0xDA50_0100,
                 0x4769_6D6D,
                 0x6520_736F,
@@ -181,14 +177,13 @@ mod tests {
 
     #[test]
     fn try_set_text() {
-        let mut message = UnknownMetadataText::<[u32; 9]>::try_new().unwrap();
+        let mut message = UnknownMetadataText::<[u32; 8]>::try_new().unwrap();
         message
             .try_set_text("Gimme some signal!")
             .expect("Shouldn't fail");
         assert_eq!(
             message,
             UnknownMetadataText([
-                0x0000_0000,
                 0xD050_0100,
                 0x4769_6D6D,
                 0x6520_736F,
@@ -374,7 +369,6 @@ mod tests {
         assert_eq!(
             UnknownMetadataText::try_from(
                 &[
-                    0x0000_0000,
                     0xD050_0100,
                     0x4769_6D6D,
                     0x6520_736F,
@@ -401,7 +395,6 @@ mod tests {
         assert_eq!(
             UnknownMetadataText::try_from(
                 &[
-                    0x0000_0000,
                     0xD050_0100,
                     0x4769_6D6D,
                     0x6520_736F,
@@ -425,7 +418,6 @@ mod tests {
         assert_eq!(
             message,
             UnknownMetadataText(std::vec![
-                0x0,
                 0xD050_0100,
                 0x4469_6769,
                 0x7461_6C20,

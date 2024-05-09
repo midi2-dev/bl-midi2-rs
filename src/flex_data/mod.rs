@@ -1165,7 +1165,6 @@ mod tests {
     #[test]
     fn try_from_text() {
         let buffer = [
-            0x0000_0000_u32,
             0xD050_0106,
             0x4769_6D6D,
             0x6520_736F,

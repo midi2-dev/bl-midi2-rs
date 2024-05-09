@@ -41,7 +41,6 @@ mod tests {
         assert_eq!(
             message,
             ProductInstanceId(std::vec![
-                0x0,
                 0xF004_5069,
                 0x616E_6F50,
                 0x756C_7365,
