@@ -24,6 +24,8 @@ pub enum UmpMessage<B: crate::buffer::Ump> {
     SystemCommon(crate::system_common::SystemCommon<B>),
     #[cfg(feature = "ump-stream")]
     UmpStream(crate::ump_stream::UmpStream<B>),
+    #[cfg(feature = "utility")]
+    Utility(crate::utility::Utility<B>),
 }
 
 impl<'a> core::convert::TryFrom<&'a [u32]> for UmpMessage<&'a [u32]> {
@@ -66,6 +68,10 @@ impl<'a> core::convert::TryFrom<&'a [u32]> for UmpMessage<&'a [u32]> {
             #[cfg(feature = "ump-stream")]
             crate::ump_stream::UMP_MESSAGE_TYPE => {
                 UmpStream(crate::ump_stream::UmpStream::try_from(buffer)?.into())
+            }
+            #[cfg(feature = "utility")]
+            crate::utility::UMP_MESSAGE_TYPE => {
+                Utility(crate::utility::Utility::try_from(buffer)?.into())
             }
             _ => Err(crate::error::Error::InvalidData(
                 "Couldn't interpret ump message type",
@@ -246,6 +252,18 @@ mod tests {
         let buffer = [0xD410_0105, 0x54C3_A172, 0x0, 0x0];
         let message = UmpMessage::try_from(&buffer[..]);
         let Ok(UmpMessage::FlexData(FlexData::ComposerName(_))) = message else {
+            panic!();
+        };
+    }
+
+    #[cfg(feature = "utility")]
+    #[test]
+    fn utility() {
+        use crate::utility::Utility;
+
+        let buffer = [0x0020_1234, 0x0, 0x0, 0x0];
+        let message = UmpMessage::try_from(&buffer[..]);
+        let Ok(UmpMessage::Utility(Utility::Timestamp(_))) = message else {
             panic!();
         };
     }
