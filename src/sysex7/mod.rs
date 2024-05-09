@@ -886,7 +886,7 @@ mod tests {
     #[test]
     fn new_ump() {
         let message = Sysex7::<std::vec::Vec<u32>>::new();
-        assert_eq!(message, Sysex7(std::vec![0x0, 0x3000_0000, 0x0000_0000,]));
+        assert_eq!(message, Sysex7(std::vec![0x3000_0000, 0x0000_0000,]));
     }
 
     #[test]
@@ -1179,7 +1179,6 @@ mod tests {
         assert_eq!(
             message,
             Sysex7(std::vec![
-                0x0,
                 0x3016_0001,
                 0x0203_0405,
                 0x3026_0607,
@@ -1202,7 +1201,6 @@ mod tests {
         assert_eq!(
             message,
             Sysex7(std::vec![
-                0x0,
                 0x3016_0001,
                 0x0203_0405,
                 0x3026_0607,
@@ -1228,14 +1226,13 @@ mod tests {
     #[test]
     fn try_set_rubbish_payload_to_fixed_size_buffer_ump() {
         use crate::detail::test_support::rubbish_payload_iterator::RubbishPayloadIterator;
-        let mut message = Sysex7::<[u32; 19]>::try_new().unwrap();
+        let mut message = Sysex7::<[u32; 18]>::try_new().unwrap();
         message
             .try_set_payload(RubbishPayloadIterator::new().map(u7::new))
             .expect("Shouldn't fail");
         assert_eq!(
             message,
             Sysex7([
-                0x0,
                 0x3016_0001,
                 0x0203_0405,
                 0x3026_0607,
@@ -1405,66 +1402,6 @@ mod tests {
     }
 
     #[test]
-    fn payload_ump_with_jr_header() {
-        assert_eq!(
-            Sysex7::try_from(
-                &[
-                    0x0,
-                    0x3016_0001_u32,
-                    0x0203_0405,
-                    0x3026_0607,
-                    0x0809_0A0B,
-                    0x3026_0C0D,
-                    0x0E0F_1011,
-                    0x3026_1213,
-                    0x1415_1617,
-                    0x3036_1819,
-                    0x1A1B_1C1D,
-                ][..]
-            )
-            .unwrap()
-            .payload()
-            .map(u8::from)
-            .collect::<std::vec::Vec<u8>>(),
-            std::vec![
-                0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D,
-                0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B,
-                0x1C, 0x1D,
-            ],
-        );
-    }
-
-    #[test]
-    fn payload_ump_with_timestamp_jr_header() {
-        assert_eq!(
-            Sysex7::try_from(
-                &[
-                    0x0020_0000_u32,
-                    0x3016_0001,
-                    0x0203_0405,
-                    0x3026_0607,
-                    0x0809_0A0B,
-                    0x3026_0C0D,
-                    0x0E0F_1011,
-                    0x3026_1213,
-                    0x1415_1617,
-                    0x3036_1819,
-                    0x1A1B_1C1D,
-                ][..]
-            )
-            .unwrap()
-            .payload()
-            .map(u8::from)
-            .collect::<std::vec::Vec<u8>>(),
-            std::vec![
-                0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D,
-                0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B,
-                0x1C, 0x1D,
-            ],
-        );
-    }
-
-    #[test]
     fn payload_ump_nth() {
         let buffer = [
             0x3016_0001_u32,
@@ -1546,7 +1483,6 @@ mod tests {
         assert_eq!(
             Sysex7::<std::vec::Vec<u32>>::from_bytes(message),
             Sysex7(std::vec![
-                0x0,
                 0x3016_0001,
                 0x0203_0405,
                 0x3026_0607,
@@ -1587,17 +1523,8 @@ mod tests {
     }
 
     #[test]
-    fn set_payload_to_fixed_size_buffer_accidentally_missed_jr_header() {
-        let mut message = Sysex7::<[u32; 8]>::try_new().unwrap();
-        assert_eq!(
-            message.try_set_payload((0..24).map(u7::new)),
-            Err(crate::error::BufferOverflow)
-        );
-    }
-
-    #[test]
     fn set_payload_to_fixed_size_buffer_with_overflow() {
-        let mut message = Sysex7::<[u32; 9]>::try_new().unwrap();
+        let mut message = Sysex7::<[u32; 8]>::try_new().unwrap();
         assert_eq!(
             message.try_set_payload((0..30).map(u7::new)),
             Err(crate::error::BufferOverflow)

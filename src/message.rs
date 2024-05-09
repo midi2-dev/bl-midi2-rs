@@ -186,7 +186,6 @@ mod tests {
     #[test]
     fn sysex8() {
         let buffer = [
-            0x0020_1234,
             0x5E1E_BE00,
             0x0102_0304,
             0x0506_0708,
@@ -214,7 +213,6 @@ mod tests {
     #[test]
     fn sysex7() {
         let buffer = [
-            0x0000_0000,
             0x3E16_0001,
             0x0203_0405,
             0x3E26_0607,
@@ -242,10 +240,10 @@ mod tests {
 
     #[cfg(feature = "flex-data")]
     #[test]
-    fn flex_data_builder() {
+    fn flex_data() {
         use crate::flex_data::FlexData;
 
-        let buffer = [0x0, 0xD410_0105, 0x54C3_A172, 0x0, 0x0];
+        let buffer = [0xD410_0105, 0x54C3_A172, 0x0, 0x0];
         let message = UmpMessage::try_from(&buffer[..]);
         let Ok(UmpMessage::FlexData(FlexData::ComposerName(_))) = message else {
             panic!();

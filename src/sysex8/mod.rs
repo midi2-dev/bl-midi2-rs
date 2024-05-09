@@ -491,7 +491,7 @@ mod tests {
     fn new() {
         assert_eq!(
             Sysex8::<std::vec::Vec<u32>>::new(),
-            Sysex8(std::vec![0x0, 0x5001_0000, 0x0, 0x0, 0x0])
+            Sysex8(std::vec![0x5001_0000, 0x0, 0x0, 0x0])
         );
     }
 
@@ -502,7 +502,7 @@ mod tests {
         let mut message = Sysex8::<std::vec::Vec<u32>>::new();
         message.set_group(ux::u4::new(0xC));
 
-        assert_eq!(message, Sysex8(std::vec![0x0, 0x5C01_0000, 0x0, 0x0, 0x0]));
+        assert_eq!(message, Sysex8(std::vec![0x5C01_0000, 0x0, 0x0, 0x0]));
     }
 
     #[test]
@@ -875,7 +875,6 @@ mod tests {
         assert_eq!(
             message,
             Sysex8(std::vec![
-                0x0,
                 0x501E_0000,
                 0x0102_0304,
                 0x0506_0708,
@@ -896,7 +895,6 @@ mod tests {
         assert_eq!(
             message,
             Sysex8(std::vec![
-                0x0,
                 0x501E_0000,
                 0x0102_0304,
                 0x0506_0708,
@@ -920,7 +918,7 @@ mod tests {
     #[test]
     fn set_rubbish_payload_to_fixed_size_buffer() {
         use crate::detail::test_support::rubbish_payload_iterator::RubbishPayloadIterator;
-        let mut message = Sysex8::<[u32; 17]>::try_new().unwrap();
+        let mut message = Sysex8::<[u32; 16]>::try_new().unwrap();
         assert_eq!(
             message.try_set_payload(RubbishPayloadIterator::new()),
             Ok(())
@@ -928,7 +926,6 @@ mod tests {
         assert_eq!(
             message,
             Sysex8([
-                0x0,
                 0x501E_0000,
                 0x0102_0304,
                 0x0506_0708,
@@ -957,7 +954,6 @@ mod tests {
         assert_eq!(
             message,
             Sysex8(std::vec![
-                0x0, // jr
                 0x501E_0000,
                 0x0102_0304,
                 0x0506_0708,
@@ -991,17 +987,8 @@ mod tests {
     }
 
     #[test]
-    fn set_payload_to_fixed_size_buffer_accidentally_missed_jr_header() {
-        let mut message = Sysex8::<[u32; 16]>::try_new().unwrap();
-        assert_eq!(
-            message.try_set_payload(0..50),
-            Err(crate::error::BufferOverflow)
-        );
-    }
-
-    #[test]
     fn set_payload_to_fixed_size_buffer_with_overflow() {
-        let mut message = Sysex8::<[u32; 17]>::try_new().unwrap();
+        let mut message = Sysex8::<[u32; 16]>::try_new().unwrap();
         assert_eq!(
             message.try_set_payload(0..60),
             Err(crate::error::BufferOverflow)
@@ -1012,7 +999,7 @@ mod tests {
     fn default_constructed_message() {
         assert_eq!(
             Sysex8::<std::vec::Vec<u32>>::new(),
-            Sysex8(std::vec![0x0, 0x5001_0000, 0x0, 0x0, 0x0,])
+            Sysex8(std::vec![0x5001_0000, 0x0, 0x0, 0x0,])
         );
     }
 
@@ -1021,23 +1008,5 @@ mod tests {
         let message = Sysex8::<std::vec::Vec<u32>>::new();
         let payload = message.payload().collect::<std::vec::Vec<u8>>();
         assert_eq!(payload, std::vec![]);
-    }
-
-    #[test]
-    fn message_data_noop_jr_header() {
-        let mut message = Sysex8::<std::vec::Vec<u32>>::new();
-        let buffer: [u8; 0] = [];
-        message.set_payload(buffer.iter().cloned());
-        assert_eq!(
-            Sysex8(std::vec![
-                0x0000_0000,
-                0x5001_0000,
-                0x0000_0000,
-                0x0000_0000,
-                0x0000_0000
-            ])
-            .data(),
-            &[0x5001_0000, 0x0000_0000, 0x0000_0000, 0x0000_0000],
-        );
     }
 }
