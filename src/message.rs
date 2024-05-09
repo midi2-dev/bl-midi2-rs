@@ -1,7 +1,6 @@
 #[derive(
     derive_more::From,
     midi2_proc::Data,
-    midi2_proc::JitterReduced,
     midi2_proc::RebufferFrom,
     midi2_proc::TryRebufferFrom,
     Clone,
@@ -30,17 +29,16 @@ pub enum UmpMessage<B: crate::buffer::Ump> {
 impl<'a> core::convert::TryFrom<&'a [u32]> for UmpMessage<&'a [u32]> {
     type Error = crate::error::Error;
     fn try_from(buffer: &'a [u32]) -> Result<Self, Self::Error> {
-        use crate::buffer::UmpPrivate;
         use crate::detail::BitOps;
         use UmpMessage::*;
 
-        if buffer.message().len() < 1 {
+        if buffer.len() < 1 {
             return Err(crate::error::Error::InvalidData(
                 "Ump message slice is empty",
             ));
         }
 
-        Ok(match u8::from(buffer.message()[0].nibble(0)) {
+        Ok(match u8::from(buffer[0].nibble(0)) {
             #[cfg(feature = "flex-data")]
             crate::flex_data::UMP_MESSAGE_TYPE => {
                 FlexData(crate::flex_data::FlexData::try_from(buffer)?.into())

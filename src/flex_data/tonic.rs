@@ -29,13 +29,11 @@ impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B>
     for TonicProperty<schema::Ump<0x0, 0x0F00_0000, 0x0, 0x0>>
 {
     fn validate(buffer: &B) -> crate::result::Result<()> {
-        use crate::buffer::UmpPrivate;
-        Tonic::from_nibble(buffer.buffer().message()[1].nibble(1))?;
+        Tonic::from_nibble(buffer.buffer()[1].nibble(1))?;
         Ok(())
     }
     fn read(buffer: &'a B) -> Self::Type {
-        use crate::buffer::UmpPrivate;
-        Tonic::from_nibble(buffer.buffer().message()[1].nibble(1)).unwrap()
+        Tonic::from_nibble(buffer.buffer()[1].nibble(1)).unwrap()
     }
 }
 
@@ -49,8 +47,7 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::
         Default::default()
     }
     fn write(buffer: &mut B, v: Self::Type) {
-        use crate::buffer::UmpPrivateMut;
-        buffer.buffer_mut().message_mut()[1].set_nibble(1, v.into_nibble());
+        buffer.buffer_mut()[1].set_nibble(1, v.into_nibble());
     }
 }
 
@@ -58,13 +55,11 @@ impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B>
     for TonicProperty<schema::Ump<0x0, 0x0, 0x0, 0x0F00_0000>>
 {
     fn validate(buffer: &B) -> crate::result::Result<()> {
-        use crate::buffer::UmpPrivate;
-        Tonic::from_nibble(buffer.buffer().message()[3].nibble(1))?;
+        Tonic::from_nibble(buffer.buffer()[3].nibble(1))?;
         Ok(())
     }
     fn read(buffer: &'a B) -> Self::Type {
-        use crate::buffer::UmpPrivate;
-        Tonic::from_nibble(buffer.buffer().message()[3].nibble(1)).unwrap()
+        Tonic::from_nibble(buffer.buffer()[3].nibble(1)).unwrap()
     }
 }
 
@@ -78,8 +73,7 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::
         Default::default()
     }
     fn write(buffer: &mut B, v: Self::Type) {
-        use crate::buffer::UmpPrivateMut;
-        buffer.buffer_mut().message_mut()[3].set_nibble(1, v.into_nibble());
+        buffer.buffer_mut()[3].set_nibble(1, v.into_nibble());
     }
 }
 

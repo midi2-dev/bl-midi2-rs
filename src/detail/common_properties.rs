@@ -1,7 +1,6 @@
 use crate::{
     buffer::{
-        Buffer, BufferMut, SpecialiseU32, SpecialiseU8, UmpPrivate, UmpPrivateMut, UnitPrivate,
-        UNIT_ID_U32, UNIT_ID_U8,
+        Buffer, BufferMut, SpecialiseU32, SpecialiseU8, UnitPrivate, UNIT_ID_U32, UNIT_ID_U8,
     },
     detail::{
         property::{Property, ReadProperty, WriteProperty},
@@ -22,7 +21,7 @@ impl<'a, const TYPE: u8, B: Buffer> ReadProperty<'a, B> for UmpMessageTypeProper
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
         if <B::Unit as UnitPrivate>::UNIT_ID == UNIT_ID_U32 {
-            let b = buffer.buffer().specialise_u32().message()[0];
+            let b = buffer.buffer().specialise_u32()[0];
             if b.nibble(0) != crate::ux::u4::new(TYPE) {
                 return Err(crate::error::Error::InvalidData(
                     "Incorrect ump message type",
@@ -38,8 +37,7 @@ impl<const TYPE: u8, B: Buffer + crate::buffer::BufferMut> WriteProperty<B>
 {
     fn write(buffer: &mut B, _v: Self::Type) {
         if <B::Unit as UnitPrivate>::UNIT_ID == UNIT_ID_U32 {
-            buffer.buffer_mut().specialise_u32_mut().message_mut()[0]
-                .set_nibble(0, crate::ux::u4::new(TYPE));
+            buffer.buffer_mut().specialise_u32_mut()[0].set_nibble(0, crate::ux::u4::new(TYPE));
         }
     }
     fn validate(_value: &Self::Type) -> crate::result::Result<()> {
@@ -63,7 +61,7 @@ impl<'a, const STATUS: u8, B: Buffer> ReadProperty<'a, B> for ChannelVoiceStatus
     fn validate(buffer: &B) -> crate::result::Result<()> {
         let status = match <B::Unit as UnitPrivate>::UNIT_ID {
             UNIT_ID_U32 => {
-                let b = buffer.buffer().specialise_u32().message()[0];
+                let b = buffer.buffer().specialise_u32()[0];
                 b.nibble(2)
             }
             UNIT_ID_U8 => {
@@ -86,7 +84,7 @@ impl<const STATUS: u8, B: Buffer + crate::buffer::BufferMut> WriteProperty<B>
     fn write(buffer: &mut B, _v: Self::Type) {
         match <B::Unit as UnitPrivate>::UNIT_ID {
             UNIT_ID_U32 => {
-                buffer.buffer_mut().specialise_u32_mut().message_mut()[0]
+                buffer.buffer_mut().specialise_u32_mut()[0]
                     .set_nibble(2, crate::ux::u4::new(STATUS));
             }
             UNIT_ID_U8 => {
@@ -135,9 +133,9 @@ impl<
 {
     fn read(buffer: &'a B) -> Self::Type {
         match <B::Unit as UnitPrivate>::UNIT_ID {
-            UNIT_ID_U32 => <T as schema::UmpSchemaRepr<UmpSchema>>::read(
-                buffer.buffer().specialise_u32().message(),
-            ),
+            UNIT_ID_U32 => {
+                <T as schema::UmpSchemaRepr<UmpSchema>>::read(buffer.buffer().specialise_u32())
+            }
             UNIT_ID_U8 => {
                 <T as schema::BytesSchemaRepr<BytesSchema>>::read(buffer.buffer().specialise_u8())
             }
@@ -162,7 +160,7 @@ impl<
     fn write(buffer: &mut B, v: Self::Type) {
         match <B::Unit as UnitPrivate>::UNIT_ID {
             UNIT_ID_U32 => <T as schema::UmpSchemaRepr<UmpSchema>>::write(
-                buffer.buffer_mut().specialise_u32_mut().message_mut(),
+                buffer.buffer_mut().specialise_u32_mut(),
                 v,
             ),
             UNIT_ID_U8 => <T as schema::BytesSchemaRepr<BytesSchema>>::write(
@@ -248,9 +246,9 @@ impl<
 {
     fn read(buffer: &'a B) -> Self::Type {
         match <B::Unit as UnitPrivate>::UNIT_ID {
-            UNIT_ID_U32 => <T as schema::UmpSchemaRepr<UmpSchema>>::read(
-                buffer.buffer().specialise_u32().message(),
-            ),
+            UNIT_ID_U32 => {
+                <T as schema::UmpSchemaRepr<UmpSchema>>::read(buffer.buffer().specialise_u32())
+            }
             UNIT_ID_U8 => Default::default(),
             _ => unreachable!(),
         }
@@ -269,7 +267,7 @@ impl<
     fn write(buffer: &mut B, v: Self::Type) {
         if <B::Unit as UnitPrivate>::UNIT_ID == UNIT_ID_U32 {
             <T as schema::UmpSchemaRepr<UmpSchema>>::write(
-                buffer.buffer_mut().specialise_u32_mut().message_mut(),
+                buffer.buffer_mut().specialise_u32_mut(),
                 v,
             )
         }

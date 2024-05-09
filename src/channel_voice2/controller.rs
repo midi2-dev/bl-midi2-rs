@@ -139,15 +139,11 @@ impl<B: crate::buffer::Ump> property::Property<B> for ControllerProperty {
 
 impl<'a, B: crate::buffer::Ump> property::ReadProperty<'a, B> for ControllerProperty {
     fn validate(buffer: &B) -> crate::result::Result<()> {
-        use crate::buffer::UmpPrivate;
-
-        let buffer = buffer.buffer().message();
+        let buffer = buffer.buffer();
         validate_index(buffer[0].octet(3))
     }
     fn read(buffer: &'a B) -> Self::Type {
-        use crate::buffer::UmpPrivate;
-
-        let buffer = buffer.buffer().message();
+        let buffer = buffer.buffer();
         from_index_and_data(buffer[0].octet(3), buffer[1])
     }
 }
@@ -162,9 +158,7 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> property::WriteProperty<B
         Default::default()
     }
     fn write(buffer: &mut B, v: Self::Type) {
-        use crate::buffer::UmpPrivateMut;
-
-        let buffer = buffer.buffer_mut().message_mut();
+        let buffer = buffer.buffer_mut();
         let (index, controller_data) = to_index_and_data(v);
         buffer[0].set_octet(3, index);
         buffer[1] = controller_data;

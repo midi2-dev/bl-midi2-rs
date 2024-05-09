@@ -54,9 +54,8 @@ impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B>
     for SharpsFlatsProperty
 {
     fn read(buffer: &'a B) -> Self::Type {
-        use crate::buffer::UmpPrivate;
         use SharpsFlats::*;
-        match u8::from(buffer.buffer().message()[1].nibble(0)) {
+        match u8::from(buffer.buffer()[1].nibble(0)) {
             v @ 0x0..=0x7 => Sharps(u3::new(v)),
             v @ 0x9..=0xF => Flats(u3::new(!(v - 1) & 0b0111)),
             0x8 => NonStandard,
@@ -72,8 +71,7 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::
     for SharpsFlatsProperty
 {
     fn write(buffer: &mut B, v: Self::Type) {
-        use crate::buffer::UmpPrivateMut;
-        buffer.buffer_mut().message_mut()[1].set_nibble(
+        buffer.buffer_mut()[1].set_nibble(
             0,
             match v {
                 SharpsFlats::Sharps(v) => u4::from(v),

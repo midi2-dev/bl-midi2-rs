@@ -12,14 +12,13 @@ impl<'a, B: Ump> Property<B> for TextWriteStrProperty<'a> {
 
 impl<'a, B: Ump + BufferMut> WriteProperty<B> for TextWriteStrProperty<'a> {
     fn write(buffer: &mut B, text: Self::Type) {
-        use crate::buffer::UmpPrivateMut;
         use crate::detail::BitOps;
 
         let mut packet_index = 0;
         let mut byte_index = 0;
 
         for b in text.as_bytes() {
-            buffer.buffer_mut().message_mut()[packet_index * 4 + 1 + byte_index / 4]
+            buffer.buffer_mut()[packet_index * 4 + 1 + byte_index / 4]
                 .set_octet(byte_index % 4, *b);
 
             if byte_index == 11 {
@@ -44,37 +43,27 @@ impl<'a, B: Ump + BufferMut> ResizeProperty<B> for TextWriteStrProperty<'a> {
     where
         B: crate::buffer::BufferResize,
     {
-        use crate::buffer::UmpPrivateMut;
-
         let buffer_size = ump_buffer_size_for_str(value);
         buffer.resize(buffer_size);
-        flex_data::clear_payload(buffer.buffer_mut().message_mut());
-        grow_buffer(
-            buffer.buffer_mut().message_mut(),
-            buffer_size - crate::buffer::OFFSET_FOR_JITTER_REDUCTION,
-        );
+        flex_data::clear_payload(buffer.buffer_mut());
+        grow_buffer(buffer.buffer_mut(), buffer_size);
     }
 
     fn try_resize(buffer: &mut B, value: &Self::Type) -> Result<(), crate::error::BufferOverflow>
     where
         B: crate::buffer::BufferTryResize,
     {
-        use crate::buffer::UmpPrivateMut;
-
         let buffer_size = ump_buffer_size_for_str(value);
         buffer.try_resize(buffer_size)?;
-        flex_data::clear_payload(buffer.buffer_mut().message_mut());
-        grow_buffer(
-            buffer.buffer_mut().message_mut(),
-            buffer_size - crate::buffer::OFFSET_FOR_JITTER_REDUCTION,
-        );
+        flex_data::clear_payload(buffer.buffer_mut());
+        grow_buffer(buffer.buffer_mut(), buffer_size);
         Ok(())
     }
 }
 
 fn ump_buffer_size_for_str(s: &str) -> usize {
     let str_size = s.as_bytes().len();
-    let ret = if str_size % 12 == 0 {
+    if str_size % 12 == 0 {
         if str_size == 0 {
             4
         } else {
@@ -82,8 +71,7 @@ fn ump_buffer_size_for_str(s: &str) -> usize {
         }
     } else {
         4 * (str_size / 12 + 1)
-    };
-    ret + crate::buffer::OFFSET_FOR_JITTER_REDUCTION
+    }
 }
 
 fn grow_buffer(mut buffer: &mut [u32], size: usize) {
@@ -181,9 +169,8 @@ impl<'a, B: Ump> Property<B> for TextReadBytesProperty<'a> {
 
 impl<'a, B: 'a + Ump> ReadProperty<'a, B> for TextReadBytesProperty<'a> {
     fn read(buffer: &'a B) -> <Self as Property<B>>::Type {
-        use crate::buffer::UmpPrivate;
         TextBytesIterator {
-            buffer: buffer.buffer().message(),
+            buffer: buffer.buffer(),
             packet_index: 0,
             byte_index: 0,
         }

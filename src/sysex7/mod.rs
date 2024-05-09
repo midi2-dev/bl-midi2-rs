@@ -141,10 +141,8 @@ impl<'a, B: crate::buffer::Buffer> crate::detail::property::ReadProperty<'a, B>
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
         if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U32 {
-            use crate::buffer::UmpPrivate;
-
             message_helpers::validate_sysex_group_statuses(
-                buffer.specialise_u32().message(),
+                buffer.specialise_u32(),
                 |p| u8::from(p[0].nibble(2)) == 0x0,
                 |p| u8::from(p[0].nibble(2)) == 0x1,
                 |p| u8::from(p[0].nibble(2)) == 0x2,
@@ -182,11 +180,9 @@ impl<'a, B: crate::buffer::Buffer> crate::detail::property::ReadProperty<'a, B>
         ()
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
-        use crate::buffer::UmpPrivate;
         if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U32 {
             if buffer
                 .specialise_u32()
-                .message()
                 .chunks_exact(2)
                 .any(|p| u8::from(p[0].nibble(3)) > 6)
             {
@@ -221,17 +217,15 @@ impl<B: crate::buffer::Buffer> crate::detail::property::Property<B> for GroupPro
 impl<'a, B: crate::buffer::Buffer> crate::detail::property::ReadProperty<'a, B> for GroupProperty {
     fn read(buffer: &'a B) -> Self::Type {
         if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U32 {
-            use crate::buffer::UmpPrivate;
-            buffer.specialise_u32().message()[0].nibble(1)
+            buffer.specialise_u32()[0].nibble(1)
         } else {
             Default::default()
         }
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
         if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U32 {
-            use crate::buffer::UmpPrivate;
             message_helpers::sysex_group_consistent_groups(
-                buffer.specialise_u32().message(),
+                buffer.specialise_u32(),
                 2,
                 crate::ux::u4::new(UMP_MESSAGE_TYPE),
             )
@@ -246,11 +240,9 @@ impl<B: crate::buffer::Buffer + crate::buffer::BufferMut> crate::detail::propert
 {
     fn write(buffer: &mut B, group: Self::Type) {
         if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U32 {
-            use crate::buffer::UmpPrivateMut;
             const TYPE: ux::u4 = ux::u4::new(UMP_MESSAGE_TYPE);
             for packet in buffer
                 .specialise_u32_mut()
-                .message_mut()
                 .chunks_exact_mut(2)
                 .take_while(|packet| packet[0].nibble(0) == TYPE)
             {
@@ -287,11 +279,8 @@ impl<B: crate::buffer::Buffer> crate::traits::Size<B> for Sysex7<B> {
                     + 1
             }
             crate::buffer::UNIT_ID_U32 => {
-                use crate::buffer::UmpPrivate;
-                let jr_offset = self.0.specialise_u32().jitter_reduction().len();
                 self.0
                     .specialise_u32()
-                    .message()
                     .chunks_exact(2)
                     .position(|p| {
                         let status: u8 = p[0].nibble(2).into();
@@ -300,7 +289,6 @@ impl<B: crate::buffer::Buffer> crate::traits::Size<B> for Sysex7<B> {
                     .expect("Message is in an invalid state. Couldn't find end packet.")
                     * 2
                     + 2
-                    + jr_offset
             }
             _ => unreachable!(),
         }
@@ -452,19 +440,14 @@ impl<B: crate::buffer::Buffer> Sysex<B> for Sysex7<B> {
                 size_cache: 0,
             },
             crate::buffer::UNIT_ID_U32 => {
-                use crate::buffer::UmpPrivate;
-
-                let jr_offset = self.0.buffer().specialise_u32().jitter_reduction().len();
-                let data = &self.0.buffer()[jr_offset..];
                 let size_cache = self
                     .data()
                     .specialise_u32()
-                    .message()
                     .chunks_exact(2)
                     .map(PayloadIterator::<B::Unit>::packet_size)
                     .sum::<usize>();
                 PayloadIterator {
-                    data,
+                    data: self.0.buffer(),
                     payload_index: 0,
                     packet_index: 0,
                     size_cache,
@@ -557,13 +540,11 @@ impl<B: crate::buffer::Buffer> SysexInternal<B> for Sysex7<B> {
                 self.0.specialise_u8_mut()[payload_index + 1] = datum.into();
             }
             crate::buffer::UNIT_ID_U32 => {
-                use crate::buffer::UmpPrivateMut;
-
                 // data is written into the buffer contiguously
                 // meaning only the last packet may have a size < 6
                 let buffer_index = 2 * (payload_index / 6);
                 let byte_index = payload_index % 6;
-                self.0.specialise_u32_mut().message_mut()[buffer_index + (byte_index + 2) / 4]
+                self.0.specialise_u32_mut()[buffer_index + (byte_index + 2) / 4]
                     .set_septet((byte_index + 2) % 4, datum);
             }
             _ => unreachable!(),
@@ -583,20 +564,18 @@ fn try_resize_ump<
     mut payload_size: usize,
     try_resize_buffer: ResizeBuffer,
 ) -> Result<(), crate::traits::SysexTryResizeError> {
-    use crate::buffer::UmpPrivateMut;
     use ux::u4;
 
     let mut buffer_size = buffer_size_from_payload_size_ump(payload_size);
     let resize_result = try_resize_buffer(sysex, buffer_size);
     if let Err(_) = resize_result {
-        buffer_size = sysex.0.buffer().len() - crate::buffer::OFFSET_FOR_JITTER_REDUCTION;
+        buffer_size = sysex.0.buffer().len();
         payload_size = (buffer_size / 2) * 6;
     }
 
     let mut iter = sysex
         .0
         .specialise_u32_mut()
-        .message_mut()
         .chunks_exact_mut(2)
         .take(buffer_size / 2)
         .peekable();
@@ -652,7 +631,7 @@ fn try_resize_ump<
 }
 
 fn buffer_size_from_payload_size_ump(payload_size: usize) -> usize {
-    let ret = if payload_size % 6 == 0 {
+    if payload_size % 6 == 0 {
         if payload_size == 0 {
             2
         } else {
@@ -660,8 +639,7 @@ fn buffer_size_from_payload_size_ump(payload_size: usize) -> usize {
         }
     } else {
         2 * (payload_size / 6 + 1)
-    };
-    ret + crate::buffer::OFFSET_FOR_JITTER_REDUCTION
+    }
 }
 
 // ***********************************************************************
@@ -963,44 +941,11 @@ mod tests {
         assert_eq!(
             message,
             Sysex7(std::vec![
-                0x0, // jitter reduction
                 0x3516_0001_u32,
                 0x0203_0405_u32,
                 0x3526_0607_u32,
                 0x0809_0A0B_u32,
                 0x3533_0C0D_u32,
-                0x0E00_0000_u32,
-            ])
-        );
-    }
-
-    #[test]
-    fn set_jr() {
-        use crate::traits::JitterReduced;
-        use crate::utility::JitterReduction;
-
-        let mut message: Sysex7<std::vec::Vec<u32>> = Sysex7::try_from(
-            &[
-                0x3416_0001_u32,
-                0x0203_0405_u32,
-                0x3426_0607_u32,
-                0x0809_0A0B_u32,
-                0x3433_0C0D_u32,
-                0x0E00_0000_u32,
-            ][..],
-        )
-        .unwrap()
-        .rebuffer_into();
-        message.set_jitter_reduction(Some(JitterReduction::Timestamp(0x1234)));
-        assert_eq!(
-            message,
-            Sysex7(std::vec![
-                0x0020_1234_u32,
-                0x3416_0001_u32,
-                0x0203_0405_u32,
-                0x3426_0607_u32,
-                0x0809_0A0B_u32,
-                0x3433_0C0D_u32,
                 0x0E00_0000_u32,
             ])
         );
