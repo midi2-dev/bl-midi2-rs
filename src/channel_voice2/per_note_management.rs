@@ -8,8 +8,6 @@ pub(crate) const STATUS: u8 = 0b1111;
 
 #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1))]
 struct PerNoteManagement {
-    #[property(crate::utility::JitterReductionProperty)]
-    jitter_reduction: Option<crate::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
     #[property(common_properties::ChannelVoiceStatusProperty<STATUS>)]
@@ -42,10 +40,7 @@ mod tests {
         message.set_detach(true);
         message.set_reset(true);
 
-        assert_eq!(
-            message,
-            PerNoteManagement([0x0, 0x4BF9_1C03, 0x0, 0x0, 0x0]),
-        );
+        assert_eq!(message, PerNoteManagement([0x4BF9_1C03, 0x0, 0x0, 0x0]),);
     }
 
     #[test]

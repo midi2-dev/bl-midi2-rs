@@ -7,8 +7,6 @@ pub(crate) const STATUS: u8 = 0b1010;
 
 #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1), MinSizeBytes(3))]
 struct KeyPressure {
-    #[property(crate::utility::JitterReductionProperty)]
-    jitter_reduction: Option<crate::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
     #[property(common_properties::ChannelVoiceStatusProperty<STATUS>)]
@@ -47,7 +45,7 @@ mod tests {
         message.set_channel(u4::new(0x3));
         message.set_note(u7::new(0x7F));
         message.set_pressure(u7::new(0x5C));
-        assert_eq!(message, KeyPressure([0x0, 0x2AA3_7F5C, 0x0, 0x0, 0x0]));
+        assert_eq!(message, KeyPressure([0x2AA3_7F5C, 0x0, 0x0, 0x0]));
     }
 
     #[test]

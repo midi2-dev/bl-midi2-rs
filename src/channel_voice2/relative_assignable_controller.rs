@@ -8,8 +8,6 @@ pub(crate) const STATUS: u8 = 0b0101;
 
 #[midi2_proc::generate_message(FixedSize, MinSizeUmp(2))]
 struct RelativeAssignableController {
-    #[property(crate::utility::JitterReductionProperty)]
-    jitter_reduction: Option<crate::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
     #[property(common_properties::ChannelVoiceStatusProperty<STATUS>)]
@@ -44,7 +42,7 @@ mod tests {
 
         assert_eq!(
             message,
-            RelativeAssignableController([0x0, 0x4351_2452, 0x898874E4, 0x0, 0x0,]),
+            RelativeAssignableController([0x4351_2452, 0x898874E4, 0x0, 0x0,]),
         );
     }
 

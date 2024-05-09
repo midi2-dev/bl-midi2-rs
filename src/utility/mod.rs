@@ -82,13 +82,13 @@ pub mod timestamp {
 
         #[test]
         fn new_arr() {
-            let message = Timestamp::<[u32; 5]>::new_arr();
-            assert_eq!(message, Timestamp([0x0020_0000, 0x0, 0x0, 0x0, 0x0]));
+            let message = Timestamp::new_arr();
+            assert_eq!(message, Timestamp([0x0020_0000, 0x0, 0x0, 0x0]));
         }
 
         #[test]
         fn rebuffer_into() {
-            let message = Timestamp::<[u32; 5]>::new_arr();
+            let message = Timestamp::new_arr();
             let rebuffered: Timestamp<std::vec::Vec<u32>> = message.rebuffer_into();
             assert_eq!(rebuffered, Timestamp(std::vec![0x0020_0000]));
         }
@@ -126,7 +126,6 @@ pub mod delta_clockstamp_tpq {
 #[allow(dead_code)]
 const UMP_MESSAGE_TYPE: u8 = 0x0;
 
-pub(crate) const ERR_JR_UNEXPECTED_CLOCK: &str = "Unexpected clock message";
 pub(crate) const ERR_UNKNOWN_UTILITY_STATUS: &str = "Unknown utility message status";
 
 const STATUS_NOOP: u8 = 0b0000;

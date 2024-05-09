@@ -8,8 +8,6 @@ const STATUS: u8 = 0x5;
 
 #[midi2_proc::generate_message(FixedSize, MinSizeUmp(2))]
 struct SetKeySignature {
-    #[property(crate::utility::JitterReductionProperty)]
-    jitter_reduction: Option<crate::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
     #[property(common_properties::GroupProperty)]
@@ -102,7 +100,7 @@ mod tests {
         message.set_sharps_flats(SharpsFlats::Sharps(u3::new(5)));
         assert_eq!(
             message,
-            SetKeySignature([0x0, 0xD410_0005, 0x5400_0000, 0x0, 0x0,]),
+            SetKeySignature([0xD410_0005, 0x5400_0000, 0x0, 0x0,]),
         );
     }
 
@@ -114,7 +112,7 @@ mod tests {
         message.set_sharps_flats(SharpsFlats::Flats(u3::new(5)));
         assert_eq!(
             message,
-            SetKeySignature([0x0, 0xD410_0005, 0xB400_0000, 0x0, 0x0,]),
+            SetKeySignature([0xD410_0005, 0xB400_0000, 0x0, 0x0,]),
         );
     }
 
@@ -126,7 +124,7 @@ mod tests {
         message.set_sharps_flats(SharpsFlats::NonStandard);
         assert_eq!(
             message,
-            SetKeySignature([0x0, 0xD410_0005, 0x8000_0000, 0x0, 0x0,]),
+            SetKeySignature([0xD410_0005, 0x8000_0000, 0x0, 0x0,]),
         );
     }
 
@@ -139,7 +137,7 @@ mod tests {
         message.set_optional_channel(Some(u4::new(0xD)));
         assert_eq!(
             message,
-            SetKeySignature([0x0, 0xD40D_0005, 0x8000_0000, 0x0, 0x0,]),
+            SetKeySignature([0xD40D_0005, 0x8000_0000, 0x0, 0x0,]),
         );
     }
 

@@ -4,8 +4,6 @@ pub(crate) const STATUS: u16 = 0x3;
 
 #[midi2_proc::generate_message(MinSizeUmp(4))]
 struct EndpointName {
-    #[property(crate::utility::JitterReductionProperty)]
-    jitter_reduction: Option<crate::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
     #[property(ump_stream::StatusProperty<STATUS>)]
@@ -35,25 +33,6 @@ impl<B: crate::buffer::Ump> crate::traits::Size<B> for EndpointName<B> {
 mod tests {
     use super::*;
     use pretty_assertions::assert_eq;
-
-    #[test]
-    fn set_jr() {
-        use crate::traits::JitterReduced;
-        use crate::utility::JitterReduction;
-
-        let mut message = EndpointName::new();
-        message.set_jitter_reduction(Some(JitterReduction::DeltaClockstamp(0x4321)));
-        assert_eq!(
-            message,
-            EndpointName(std::vec![
-                0x0040_4321, //jr
-                0xF003_0000,
-                0x0000_0000,
-                0x0000_0000,
-                0x0000_0000,
-            ]),
-        );
-    }
 
     #[test]
     fn data() {

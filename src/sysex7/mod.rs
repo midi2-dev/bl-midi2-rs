@@ -12,8 +12,6 @@ pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x3;
 /// A semantic wrapper type around MIDI System Exclusive 7bit data.
 /// See the [module docs](crate::sysex7) for more detailed info
 struct Sysex7 {
-    #[property(crate::utility::JitterReductionProperty)]
-    jitter_reduction: Option<crate::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
     #[property(Sysex7BytesBeginByte)]

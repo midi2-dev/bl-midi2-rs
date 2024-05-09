@@ -7,8 +7,6 @@ pub const STATUS: u8 = 0xF3;
 
 #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
 struct SongSelect {
-    #[property(crate::utility::JitterReductionProperty)]
-    jitter_reduction: Option<crate::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
     #[property(system_common::SystemCommonStatus<{STATUS}>)]
@@ -34,7 +32,7 @@ mod tests {
         let mut message = SongSelect::new_arr();
         message.set_group(u4::new(0xA));
         message.set_song(u7::new(0x4F));
-        assert_eq!(message, SongSelect([0x0, 0x1AF3_4F00, 0x0, 0x0, 0x0]),);
+        assert_eq!(message, SongSelect([0x1AF3_4F00, 0x0, 0x0, 0x0]),);
     }
 
     #[test]

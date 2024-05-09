@@ -40,7 +40,7 @@ mod tests {
         message.set_group(u4::new(0xF));
         message.set_channel(u4::new(0x6));
         message.set_pressure(u7::new(0x09));
-        assert_eq!(message, ChannelPressure([0x0, 0x2FD6_0900, 0x0, 0x0, 0x0]));
+        assert_eq!(message, ChannelPressure([0x2FD6_0900, 0x0, 0x0, 0x0]));
     }
 
     #[test]
@@ -365,32 +365,5 @@ mod rebuffer_tests {
         let borrowed = ChannelPressure::try_from(&buffer[..]).unwrap();
         let clone = borrowed.clone();
         assert_eq!(borrowed, clone);
-    }
-}
-
-#[cfg(test)]
-mod jitter_reduction_tests {
-    use super::*;
-    use crate::utility;
-    use pretty_assertions::assert_eq;
-
-    #[test]
-    fn from_data_invalid_jr_status() {
-        assert_eq!(
-            ChannelPressure::try_from(&[0x0050_0000_u32, 0x20D0_0000][..]),
-            Err(crate::error::Error::InvalidData(
-                utility::ERR_UNKNOWN_UTILITY_STATUS
-            )),
-        );
-    }
-
-    #[test]
-    fn from_data_clock_message_in_jr_header() {
-        assert_eq!(
-            ChannelPressure::try_from(&[0x0010_1234_u32, 0x20D0_0000][..]),
-            Err(crate::error::Error::InvalidData(
-                utility::ERR_JR_UNEXPECTED_CLOCK
-            )),
-        );
     }
 }

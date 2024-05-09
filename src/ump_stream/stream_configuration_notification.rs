@@ -8,8 +8,6 @@ pub(crate) const STATUS: u16 = 0x6;
 
 #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1))]
 struct StreamConfigurationNotification {
-    #[property(crate::utility::JitterReductionProperty)]
-    jitter_reduction: Option<crate::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
     #[property(ump_stream::StatusProperty<STATUS>)]
@@ -37,7 +35,7 @@ mod tests {
         message.set_send_jr_timestamps(true);
         assert_eq!(
             message,
-            StreamConfigurationNotification([0x0, 0xF006_0203, 0x0, 0x0, 0x0,]),
+            StreamConfigurationNotification([0xF006_0203, 0x0, 0x0, 0x0,]),
         );
     }
 

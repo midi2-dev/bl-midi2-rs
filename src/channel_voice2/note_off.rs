@@ -11,8 +11,6 @@ pub(crate) const STATUS: u8 = 0b1000;
 
 #[midi2_proc::generate_message(FixedSize, MinSizeUmp(2))]
 struct NoteOff {
-    #[property(crate::utility::JitterReductionProperty)]
-    jitter_reduction: Option<crate::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
     #[property(common_properties::ChannelVoiceStatusProperty<STATUS>)]
@@ -45,7 +43,7 @@ mod tests {
         message.set_velocity(0x9DE6);
         message.set_attribute(Some(Attribute::ManufacturerSpecific(0xCC6E)));
 
-        assert_eq!(message, NoteOff([0x0, 0x4284_4E01, 0x9DE6_CC6E, 0x0, 0x0]),);
+        assert_eq!(message, NoteOff([0x4284_4E01, 0x9DE6_CC6E, 0x0, 0x0]),);
     }
 
     #[test]
@@ -58,7 +56,7 @@ mod tests {
         message.set_note(u7::new(0x4E));
         message.set_velocity(0x9DE6);
 
-        assert_eq!(message, NoteOff([0x0, 0x4284_4E00, 0x9DE6_0000, 0x0, 0x0]),);
+        assert_eq!(message, NoteOff([0x4284_4E00, 0x9DE6_0000, 0x0, 0x0]),);
     }
 
     #[test]

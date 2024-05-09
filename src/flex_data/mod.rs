@@ -23,8 +23,6 @@ mod project_name {
 
     #[midi2_proc::generate_message(MinSizeUmp(4))]
     struct ProjectName {
-        #[property(crate::utility::JitterReductionProperty)]
-        jitter_reduction: Option<crate::utility::JitterReduction>,
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
         #[property(flex_data::GroupProperty)]
@@ -66,8 +64,6 @@ mod composition_name {
 
     #[midi2_proc::generate_message(MinSizeUmp(4))]
     struct CompositionName {
-        #[property(crate::utility::JitterReductionProperty)]
-        jitter_reduction: Option<crate::utility::JitterReduction>,
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
         #[property(flex_data::GroupProperty)]
@@ -109,8 +105,6 @@ mod midi_clip_name {
 
     #[midi2_proc::generate_message(MinSizeUmp(4))]
     struct MidiClipName {
-        #[property(crate::utility::JitterReductionProperty)]
-        jitter_reduction: Option<crate::utility::JitterReduction>,
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
         #[property(flex_data::GroupProperty)]
@@ -152,8 +146,6 @@ mod copyright_notice {
 
     #[midi2_proc::generate_message(MinSizeUmp(4))]
     struct CopyrightNotice {
-        #[property(crate::utility::JitterReductionProperty)]
-        jitter_reduction: Option<crate::utility::JitterReduction>,
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
         #[property(flex_data::GroupProperty)]
@@ -195,8 +187,6 @@ mod composer_name {
 
     #[midi2_proc::generate_message(MinSizeUmp(4))]
     struct ComposerName {
-        #[property(crate::utility::JitterReductionProperty)]
-        jitter_reduction: Option<crate::utility::JitterReduction>,
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
         #[property(flex_data::GroupProperty)]
@@ -238,8 +228,6 @@ mod lyricist_name {
 
     #[midi2_proc::generate_message(MinSizeUmp(4))]
     struct LyricistName {
-        #[property(crate::utility::JitterReductionProperty)]
-        jitter_reduction: Option<crate::utility::JitterReduction>,
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
         #[property(flex_data::GroupProperty)]
@@ -281,8 +269,6 @@ mod arranger_name {
 
     #[midi2_proc::generate_message(MinSizeUmp(4))]
     struct ArrangerName {
-        #[property(crate::utility::JitterReductionProperty)]
-        jitter_reduction: Option<crate::utility::JitterReduction>,
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
         #[property(flex_data::GroupProperty)]
@@ -324,8 +310,6 @@ mod publisher_name {
 
     #[midi2_proc::generate_message(MinSizeUmp(4))]
     struct PublisherName {
-        #[property(crate::utility::JitterReductionProperty)]
-        jitter_reduction: Option<crate::utility::JitterReduction>,
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
         #[property(flex_data::GroupProperty)]
@@ -367,8 +351,6 @@ mod primary_performer_name {
 
     #[midi2_proc::generate_message(MinSizeUmp(4))]
     struct PrimaryPerformerName {
-        #[property(crate::utility::JitterReductionProperty)]
-        jitter_reduction: Option<crate::utility::JitterReduction>,
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
         #[property(flex_data::GroupProperty)]
@@ -410,8 +392,6 @@ mod accompanying_performer_name {
 
     #[midi2_proc::generate_message(MinSizeUmp(4))]
     struct AccompanyingPerformerName {
-        #[property(crate::utility::JitterReductionProperty)]
-        jitter_reduction: Option<crate::utility::JitterReduction>,
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
         #[property(flex_data::GroupProperty)]
@@ -453,8 +433,6 @@ mod recording_date {
 
     #[midi2_proc::generate_message(MinSizeUmp(4))]
     struct RecordingDate {
-        #[property(crate::utility::JitterReductionProperty)]
-        jitter_reduction: Option<crate::utility::JitterReduction>,
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
         #[property(flex_data::GroupProperty)]
@@ -496,8 +474,6 @@ mod recording_location {
 
     #[midi2_proc::generate_message(MinSizeUmp(4))]
     struct RecordingLocation {
-        #[property(crate::utility::JitterReductionProperty)]
-        jitter_reduction: Option<crate::utility::JitterReduction>,
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
         #[property(flex_data::GroupProperty)]
@@ -539,8 +515,6 @@ mod unknown_performance_text {
 
     #[midi2_proc::generate_message(MinSizeUmp(4))]
     struct UnknownPerformanceText {
-        #[property(crate::utility::JitterReductionProperty)]
-        jitter_reduction: Option<crate::utility::JitterReduction>,
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
         #[property(flex_data::GroupProperty)]
@@ -582,8 +556,6 @@ mod lyrics {
 
     #[midi2_proc::generate_message(MinSizeUmp(4))]
     struct Lyrics {
-        #[property(crate::utility::JitterReductionProperty)]
-        jitter_reduction: Option<crate::utility::JitterReduction>,
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
         #[property(flex_data::GroupProperty)]
@@ -625,8 +597,6 @@ mod lyrics_language {
 
     #[midi2_proc::generate_message(MinSizeUmp(4))]
     struct LyricsLanguage {
-        #[property(crate::utility::JitterReductionProperty)]
-        jitter_reduction: Option<crate::utility::JitterReduction>,
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
         #[property(flex_data::GroupProperty)]
@@ -668,8 +638,6 @@ mod ruby {
 
     #[midi2_proc::generate_message(MinSizeUmp(4))]
     struct Ruby {
-        #[property(crate::utility::JitterReductionProperty)]
-        jitter_reduction: Option<crate::utility::JitterReduction>,
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
         #[property(flex_data::GroupProperty)]
@@ -711,8 +679,6 @@ mod ruby_language {
 
     #[midi2_proc::generate_message(MinSizeUmp(4))]
     struct RubyLanguage {
-        #[property(crate::utility::JitterReductionProperty)]
-        jitter_reduction: Option<crate::utility::JitterReduction>,
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
         #[property(flex_data::GroupProperty)]
