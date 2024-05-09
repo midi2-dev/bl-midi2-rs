@@ -123,8 +123,7 @@ pub mod delta_clockstamp_tpq {
     }
 }
 
-#[allow(dead_code)]
-const UMP_MESSAGE_TYPE: u8 = 0x0;
+pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x0;
 
 struct DataProperty;
 
