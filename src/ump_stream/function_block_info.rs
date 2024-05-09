@@ -53,11 +53,10 @@ impl<B: crate::buffer::Ump> property::Property<B> for UiHintProperty {
 
 impl<'a, B: crate::buffer::Ump> property::ReadProperty<'a, B> for UiHintProperty {
     fn read(buffer: &'a B) -> Self::Type {
-        use crate::buffer::UmpPrivate;
         use crate::detail::BitOps;
         use UiHint::*;
 
-        match u8::from(buffer.buffer().message()[0].crumb(13)) {
+        match u8::from(buffer.buffer()[0].crumb(13)) {
             0b00 => Undeclared,
             0b01 => Receiver,
             0b10 => Sender,
@@ -77,12 +76,11 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> property::WriteProperty<B
         Ok(())
     }
     fn write(buffer: &mut B, v: Self::Type) {
-        use crate::buffer::UmpPrivateMut;
         use crate::detail::BitOps;
         use crate::ux::u2;
         use UiHint::*;
 
-        buffer.buffer_mut().message_mut()[0].set_crumb(
+        buffer.buffer_mut()[0].set_crumb(
             13,
             match v {
                 Undeclared => u2::new(0b00),
@@ -118,11 +116,10 @@ impl<B: crate::buffer::Ump> property::Property<B> for Midi1PortProperty {
 
 impl<'a, B: crate::buffer::Ump> property::ReadProperty<'a, B> for Midi1PortProperty {
     fn read(buffer: &'a B) -> Self::Type {
-        use crate::buffer::UmpPrivate;
         use crate::detail::BitOps;
         use Midi1Port::*;
 
-        match u8::from(buffer.buffer().message()[0].crumb(14)) {
+        match u8::from(buffer.buffer()[0].crumb(14)) {
             0b00 => None,
             0b01 => Some(DontRestrictBandwidth),
             0b10 => Some(RestrictBandwidth),
@@ -130,10 +127,9 @@ impl<'a, B: crate::buffer::Ump> property::ReadProperty<'a, B> for Midi1PortPrope
         }
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
-        use crate::buffer::UmpPrivate;
         use crate::detail::BitOps;
 
-        match u8::from(buffer.buffer().message()[0].crumb(14)) {
+        match u8::from(buffer.buffer()[0].crumb(14)) {
             0b00 => Ok(()),
             0b01 => Ok(()),
             0b10 => Ok(()),
@@ -151,12 +147,11 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> property::WriteProperty<B
         Ok(())
     }
     fn write(buffer: &mut B, v: Self::Type) {
-        use crate::buffer::UmpPrivateMut;
         use crate::detail::BitOps;
         use crate::ux::u2;
         use Midi1Port::*;
 
-        buffer.buffer_mut().message_mut()[0].set_crumb(
+        buffer.buffer_mut()[0].set_crumb(
             14,
             match v {
                 None => u2::new(0b00),
@@ -185,11 +180,10 @@ impl<B: crate::buffer::Ump> property::Property<B> for DirectionProperty {
 
 impl<'a, B: crate::buffer::Ump> property::ReadProperty<'a, B> for DirectionProperty {
     fn read(buffer: &'a B) -> Self::Type {
-        use crate::buffer::UmpPrivate;
         use crate::detail::BitOps;
         use Direction::*;
 
-        match u8::from(buffer.buffer().message()[0].crumb(15)) {
+        match u8::from(buffer.buffer()[0].crumb(15)) {
             0b01 => Input,
             0b10 => Output,
             0b11 => Bidirectional,
@@ -197,10 +191,9 @@ impl<'a, B: crate::buffer::Ump> property::ReadProperty<'a, B> for DirectionPrope
         }
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
-        use crate::buffer::UmpPrivate;
         use crate::detail::BitOps;
 
-        match u8::from(buffer.buffer().message()[0].crumb(15)) {
+        match u8::from(buffer.buffer()[0].crumb(15)) {
             0b00 => Err(crate::error::Error::InvalidData(
                 "Couldn't interpret direction field",
             )),
@@ -219,12 +212,11 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> property::WriteProperty<B
         Ok(())
     }
     fn write(buffer: &mut B, v: Self::Type) {
-        use crate::buffer::UmpPrivateMut;
         use crate::detail::BitOps;
         use crate::ux::u2;
         use Direction::*;
 
-        buffer.buffer_mut().message_mut()[0].set_crumb(
+        buffer.buffer_mut()[0].set_crumb(
             15,
             match v {
                 Input => u2::new(0b01),

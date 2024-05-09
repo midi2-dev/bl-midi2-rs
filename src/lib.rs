@@ -38,5 +38,4 @@ pub use traits::*;
 pub mod prelude {
     pub use super::*;
     pub use crate::ux::*;
-    pub use utility::JitterReduction;
 }

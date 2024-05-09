@@ -73,12 +73,10 @@ impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B>
     for SharpsFlatsProperty<schema::Ump<0x0, 0x0, 0x0, 0xF000_0000>>
 {
     fn read(buffer: &'a B) -> Self::Type {
-        use crate::buffer::UmpPrivate;
-        SharpsFlats::from_nibble(buffer.buffer().message()[3].nibble(0)).unwrap()
+        SharpsFlats::from_nibble(buffer.buffer()[3].nibble(0)).unwrap()
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
-        use crate::buffer::UmpPrivate;
-        SharpsFlats::from_nibble(buffer.buffer().message()[3].nibble(0))?;
+        SharpsFlats::from_nibble(buffer.buffer()[3].nibble(0))?;
         Ok(())
     }
 }
@@ -87,8 +85,7 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::
     for SharpsFlatsProperty<schema::Ump<0x0, 0x0, 0x0, 0xF000_0000>>
 {
     fn write(buffer: &mut B, v: Self::Type) {
-        use crate::buffer::UmpPrivateMut;
-        buffer.buffer_mut().message_mut()[3].set_nibble(0, v.into_nibble());
+        buffer.buffer_mut()[3].set_nibble(0, v.into_nibble());
     }
     fn validate(_: &Self::Type) -> crate::result::Result<()> {
         Ok(())
@@ -102,12 +99,10 @@ impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B>
     for SharpsFlatsProperty<schema::Ump<0x0, 0xF000_0000, 0x0, 0x0>>
 {
     fn read(buffer: &'a B) -> Self::Type {
-        use crate::buffer::UmpPrivate;
-        SharpsFlats::from_nibble(buffer.buffer().message()[1].nibble(0)).unwrap()
+        SharpsFlats::from_nibble(buffer.buffer()[1].nibble(0)).unwrap()
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
-        use crate::buffer::UmpPrivate;
-        SharpsFlats::from_nibble(buffer.buffer().message()[1].nibble(0))?;
+        SharpsFlats::from_nibble(buffer.buffer()[1].nibble(0))?;
         Ok(())
     }
 }
@@ -116,8 +111,7 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::
     for SharpsFlatsProperty<schema::Ump<0x0, 0xF000_0000, 0x0, 0x0>>
 {
     fn write(buffer: &mut B, v: Self::Type) {
-        use crate::buffer::UmpPrivateMut;
-        buffer.buffer_mut().message_mut()[1].set_nibble(0, v.into_nibble());
+        buffer.buffer_mut()[1].set_nibble(0, v.into_nibble());
     }
     fn validate(_: &Self::Type) -> crate::result::Result<()> {
         Ok(())
@@ -203,13 +197,11 @@ impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B>
     for ChordTypeProperty<schema::Ump<0x0, 0x00FF_0000, 0x0, 0x0>>
 {
     fn validate(buffer: &B) -> crate::result::Result<()> {
-        use crate::buffer::UmpPrivate;
-        ChordType::from_octet(buffer.buffer().message()[1].octet(1))?;
+        ChordType::from_octet(buffer.buffer()[1].octet(1))?;
         Ok(())
     }
     fn read(buffer: &'a B) -> Self::Type {
-        use crate::buffer::UmpPrivate;
-        ChordType::from_octet(buffer.buffer().message()[1].octet(1)).unwrap()
+        ChordType::from_octet(buffer.buffer()[1].octet(1)).unwrap()
     }
 }
 
@@ -220,8 +212,7 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::
         Ok(())
     }
     fn write(buffer: &mut B, v: Self::Type) {
-        use crate::buffer::UmpPrivateMut;
-        buffer.buffer_mut().message_mut()[1].set_octet(1, v.into_octet());
+        buffer.buffer_mut()[1].set_octet(1, v.into_octet());
     }
     fn default() -> Self::Type {
         Default::default()
@@ -232,13 +223,11 @@ impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B>
     for ChordTypeProperty<schema::Ump<0x0, 0x0, 0x0, 0x00FF_0000>>
 {
     fn validate(buffer: &B) -> crate::result::Result<()> {
-        use crate::buffer::UmpPrivate;
-        ChordType::from_octet(buffer.buffer().message()[3].octet(1))?;
+        ChordType::from_octet(buffer.buffer()[3].octet(1))?;
         Ok(())
     }
     fn read(buffer: &'a B) -> Self::Type {
-        use crate::buffer::UmpPrivate;
-        ChordType::from_octet(buffer.buffer().message()[3].octet(1)).unwrap()
+        ChordType::from_octet(buffer.buffer()[3].octet(1)).unwrap()
     }
 }
 
@@ -249,8 +238,7 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::
         Ok(())
     }
     fn write(buffer: &mut B, v: Self::Type) {
-        use crate::buffer::UmpPrivateMut;
-        buffer.buffer_mut().message_mut()[3].set_octet(1, v.into_octet());
+        buffer.buffer_mut()[3].set_octet(1, v.into_octet());
     }
     fn default() -> Self::Type {
         Default::default()
@@ -355,16 +343,11 @@ macro_rules! alteration_property_impl {
             for AlterationProperty<schema::Ump<$ump1, $ump2, $ump3, $ump4>>
         {
             fn validate(buffer: &B) -> crate::result::Result<()> {
-                use crate::buffer::UmpPrivate;
-                alteration_from_octet(
-                    buffer.buffer().message()[$buffer_index].octet($octet_index),
-                )?;
+                alteration_from_octet(buffer.buffer()[$buffer_index].octet($octet_index))?;
                 Ok(())
             }
             fn read(buffer: &'a B) -> Self::Type {
-                use crate::buffer::UmpPrivate;
-                alteration_from_octet(buffer.buffer().message()[$buffer_index].octet($octet_index))
-                    .unwrap()
+                alteration_from_octet(buffer.buffer()[$buffer_index].octet($octet_index)).unwrap()
             }
         }
 
@@ -376,8 +359,7 @@ macro_rules! alteration_property_impl {
                 Ok(())
             }
             fn write(buffer: &mut B, v: Self::Type) {
-                use crate::buffer::UmpPrivateMut;
-                buffer.buffer_mut().message_mut()[$buffer_index]
+                buffer.buffer_mut()[$buffer_index]
                     .set_octet($octet_index, alteration_into_octet(v));
             }
             fn default() -> Self::Type {
@@ -420,17 +402,12 @@ fn alteration_into_octet(alteration: Option<Alteration>) -> u8 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        flex_data::tonic,
-        traits::{Grouped, JitterReduced},
-        utility::JitterReduction,
-    };
+    use crate::{flex_data::tonic, traits::Grouped, utility::JitterReduction};
     use pretty_assertions::assert_eq;
 
     #[test]
     fn setters() {
         let mut message = SetChordName::new_arr();
-        message.set_jitter_reduction(Some(JitterReduction::Timestamp(0x1234)));
         message.set_group(u4::new(0x7));
         message.set_optional_channel(Some(u4::new(0xB)));
         message.set_tonic_sharps_flats(SharpsFlats::Flat);
@@ -447,13 +424,7 @@ mod tests {
         message.set_bass_alteration2(Some(Alteration::Subtract(u4::new(0x0))));
         assert_eq!(
             message,
-            SetChordName([
-                0x0020_1234,
-                0xD70B_0006,
-                0xF703_3519,
-                0x4B00_0000,
-                0x110A_0020,
-            ]),
+            SetChordName([0xD70B_0006, 0xF703_3519, 0x4B00_0000, 0x110A_0020,]),
         );
     }
 

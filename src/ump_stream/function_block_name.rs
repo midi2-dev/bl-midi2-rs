@@ -46,13 +46,11 @@ impl<B: Ump> property::Property<B> for FunctionBlockProperty {
 
 impl<'a, B: Ump> property::ReadProperty<'a, B> for FunctionBlockProperty {
     fn validate(buffer: &B) -> crate::result::Result<()> {
-        use crate::buffer::UmpPrivate;
         use crate::detail::BitOps;
 
-        let function_block = buffer.buffer().message()[0].octet(2);
+        let function_block = buffer.buffer()[0].octet(2);
         if !buffer
             .buffer()
-            .message()
             .chunks_exact(4)
             .all(|packet| packet[0].octet(2) == function_block)
         {
@@ -64,9 +62,8 @@ impl<'a, B: Ump> property::ReadProperty<'a, B> for FunctionBlockProperty {
         }
     }
     fn read(buffer: &'a B) -> Self::Type {
-        use crate::buffer::UmpPrivate;
         use crate::detail::BitOps;
-        buffer.buffer().message()[0].octet(2)
+        buffer.buffer()[0].octet(2)
     }
 }
 
@@ -78,9 +75,8 @@ impl<B: Ump + BufferMut> property::WriteProperty<B> for FunctionBlockProperty {
         Default::default()
     }
     fn write(buffer: &mut B, v: Self::Type) {
-        use crate::buffer::UmpPrivateMut;
         use crate::detail::BitOps;
-        for packet in buffer.buffer_mut().message_mut().chunks_exact_mut(4) {
+        for packet in buffer.buffer_mut().chunks_exact_mut(4) {
             packet[0].set_octet(2, v);
         }
     }
@@ -94,9 +90,8 @@ impl<'a, B: Ump> property::Property<B> for TextReadBytesProperty<'a> {
 
 impl<'a, B: 'a + Ump> property::ReadProperty<'a, B> for TextReadBytesProperty<'a> {
     fn read(buffer: &'a B) -> <Self as property::Property<B>>::Type {
-        use crate::buffer::UmpPrivate;
         ump_stream::TextBytesIterator {
-            buffer: buffer.buffer().message(),
+            buffer: buffer.buffer(),
             packet_index: 0,
             byte_index: 0,
             offset: 1,

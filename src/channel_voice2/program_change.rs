@@ -32,10 +32,9 @@ impl<B: crate::buffer::Ump> property::Property<B> for BankProperty {
 
 impl<'a, B: crate::buffer::Ump> property::ReadProperty<'a, B> for BankProperty {
     fn read(buffer: &'a B) -> Self::Type {
-        use crate::buffer::UmpPrivate;
         use crate::detail::{BitOps, Encode7Bit};
 
-        let data = buffer.buffer().message();
+        let data = buffer.buffer();
         if data[0].bit(31) {
             Some(u14::from_u7s(&[data[1].octet(2), data[1].octet(3)]))
         } else {
@@ -52,10 +51,9 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> property::WriteProperty<B
         Ok(())
     }
     fn write(buffer: &mut B, v: Self::Type) {
-        use crate::buffer::UmpPrivateMut;
         use crate::detail::{BitOps, Encode7Bit};
 
-        let data = buffer.buffer_mut().message_mut();
+        let data = buffer.buffer_mut();
         match v {
             Some(v) => {
                 let mut u7s = [u7::default(); 2];

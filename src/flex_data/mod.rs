@@ -789,7 +789,6 @@ pub(crate) const PERFORMANCE_TEXT_BANK: u8 = 0x2;
     midi2_proc::Grouped,
     midi2_proc::RebufferFrom,
     midi2_proc::TryRebufferFrom,
-    midi2_proc::JitterReduced,
     Clone,
     Debug,
     PartialEq,
@@ -825,12 +824,11 @@ pub enum FlexData<B: crate::buffer::Ump> {
 impl<'a> TryFrom<&'a [u32]> for FlexData<&'a [u32]> {
     type Error = crate::error::Error;
     fn try_from(value: &'a [u32]) -> Result<Self, Self::Error> {
-        use crate::buffer::UmpPrivate;
         use FlexData::*;
-        if value.message().len() < 1 {
+        if value.len() < 1 {
             return Err(crate::error::Error::InvalidData("Slice is too short"));
         };
-        Ok(match value.message()[0].word(1) {
+        Ok(match value[0].word(1) {
             0x00_00 => SetTempo(set_tempo::SetTempo::try_from(value)?.into()),
             0x00_01 => {
                 SetTimeSignature(set_time_signature::SetTimeSignature::try_from(value)?.into())
@@ -884,9 +882,8 @@ pub enum Bank {
 
 pub trait FlexDataMessage<B: crate::buffer::Ump>: crate::traits::Data<B> {
     fn bank(&self) -> Bank {
-        use crate::buffer::UmpPrivate;
         use Bank::*;
-        match (self.data().message()[0] & 0x0000_FF00) >> 8 {
+        match (self.data()[0] & 0x0000_FF00) >> 8 {
             0x0 => SetupAndPerformance,
             0x1 => MetadataText,
             0x2 => PerformanceText,
@@ -909,10 +906,8 @@ impl<'a, const STATUS: u8, B: Ump> ReadProperty<'a, B> for StatusProperty<STATUS
         ()
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
-        use crate::buffer::UmpPrivate;
         if buffer
             .buffer()
-            .message()
             .chunks_exact(4)
             .all(|packet| packet[0].octet(3) == STATUS)
         {
@@ -925,8 +920,7 @@ impl<'a, const STATUS: u8, B: Ump> ReadProperty<'a, B> for StatusProperty<STATUS
 
 impl<const STATUS: u8, B: Ump + BufferMut> WriteProperty<B> for StatusProperty<STATUS> {
     fn write(buffer: &mut B, _v: Self::Type) {
-        use crate::buffer::UmpPrivateMut;
-        buffer.buffer_mut().message_mut()[0].set_octet(3, STATUS);
+        buffer.buffer_mut()[0].set_octet(3, STATUS);
     }
     fn validate(_v: &Self::Type) -> crate::result::Result<()> {
         Ok(())
@@ -947,10 +941,8 @@ impl<'a, const BANK: u8, B: Ump> ReadProperty<'a, B> for BankProperty<BANK> {
         ()
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
-        use crate::buffer::UmpPrivate;
         if buffer
             .buffer()
-            .message()
             .chunks_exact(4)
             .all(|packet| packet[0].octet(2) == BANK)
         {
@@ -963,8 +955,7 @@ impl<'a, const BANK: u8, B: Ump> ReadProperty<'a, B> for BankProperty<BANK> {
 
 impl<const BANK: u8, B: Ump + BufferMut> WriteProperty<B> for BankProperty<BANK> {
     fn write(buffer: &mut B, _v: Self::Type) {
-        use crate::buffer::UmpPrivateMut;
-        buffer.buffer_mut().message_mut()[0].set_octet(2, BANK);
+        buffer.buffer_mut()[0].set_octet(2, BANK);
     }
     fn validate(_v: &Self::Type) -> crate::result::Result<()> {
         Ok(())
@@ -985,8 +976,7 @@ impl<'a, const FORMAT: u8, B: Ump> ReadProperty<'a, B> for FormatProperty<FORMAT
         ()
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
-        use crate::buffer::UmpPrivate;
-        if FORMAT == buffer.buffer().message()[0].crumb(4).into() {
+        if FORMAT == buffer.buffer()[0].crumb(4).into() {
             Ok(())
         } else {
             Err(crate::error::Error::InvalidData("Incorrect message format"))
@@ -996,8 +986,7 @@ impl<'a, const FORMAT: u8, B: Ump> ReadProperty<'a, B> for FormatProperty<FORMAT
 
 impl<const FORMAT: u8, B: Ump + BufferMut> WriteProperty<B> for FormatProperty<FORMAT> {
     fn write(buffer: &mut B, _v: Self::Type) {
-        use crate::buffer::UmpPrivateMut;
-        buffer.buffer_mut().message_mut()[0].set_crumb(4, crate::ux::u2::new(FORMAT));
+        buffer.buffer_mut()[0].set_crumb(4, crate::ux::u2::new(FORMAT));
     }
     fn validate(_v: &Self::Type) -> crate::result::Result<()> {
         Ok(())
@@ -1015,8 +1004,7 @@ impl<B: Ump> Property<B> for OptionalChannelProperty {
 
 impl<'a, B: Ump> ReadProperty<'a, B> for OptionalChannelProperty {
     fn read(buffer: &'a B) -> Self::Type {
-        use crate::buffer::UmpPrivate;
-        optional_channel_from_slice(buffer.buffer().message())
+        optional_channel_from_slice(buffer.buffer())
     }
     fn validate(_buffer: &B) -> crate::result::Result<()> {
         Ok(())
@@ -1025,10 +1013,8 @@ impl<'a, B: Ump> ReadProperty<'a, B> for OptionalChannelProperty {
 
 impl<B: Ump + BufferMut> WriteProperty<B> for OptionalChannelProperty {
     fn write(buffer: &mut B, v: Self::Type) {
-        use crate::buffer::UmpPrivateMut;
-
         let buffer_slice = buffer.buffer_mut();
-        let data = buffer_slice.message_mut();
+        let data = buffer_slice;
         optional_channel_to_slice(data, v);
     }
     fn validate(_v: &Self::Type) -> crate::result::Result<()> {
@@ -1072,9 +1058,8 @@ impl<'a, B: Ump> ReadProperty<'a, B> for NoChannelProperty {
         ()
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
-        use crate::buffer::UmpPrivate;
         use crate::ux::u2;
-        if buffer.buffer().message()[0].crumb(5) != u2::new(0x0) {
+        if buffer.buffer()[0].crumb(5) != u2::new(0x0) {
             Ok(())
         } else {
             Err(crate::error::Error::InvalidData(
@@ -1086,12 +1071,10 @@ impl<'a, B: Ump> ReadProperty<'a, B> for NoChannelProperty {
 
 impl<B: Ump + BufferMut> WriteProperty<B> for NoChannelProperty {
     fn write(buffer: &mut B, _: Self::Type) {
-        use crate::buffer::UmpPrivateMut;
         use crate::ux::u2;
         use crate::ux::u4;
 
-        let buffer_slice = buffer.buffer_mut();
-        let data = buffer_slice.message_mut();
+        let data = buffer.buffer_mut();
         data[0].set_crumb(5, u2::new(0x1));
         data[0].set_nibble(3, u4::new(0x0));
     }
@@ -1115,11 +1098,10 @@ impl<'a, B: Ump> ReadProperty<'a, B> for ConsistentFormatsProperty {
     }
 
     fn validate(buffer: &B) -> crate::result::Result<()> {
-        use crate::buffer::UmpPrivate;
         use crate::detail::helpers::validate_sysex_group_statuses;
 
         validate_sysex_group_statuses(
-            buffer.buffer().message(),
+            buffer.buffer(),
             |p| u8::from(p[0].crumb(4)) == COMPLETE_FORMAT,
             |p| u8::from(p[0].crumb(4)) == START_FORMAT,
             |p| u8::from(p[0].crumb(4)) == CONTINUE_FORMAT,
@@ -1138,26 +1120,18 @@ impl<B: Ump> Property<B> for GroupProperty {
 
 impl<'a, B: Ump> ReadProperty<'a, B> for GroupProperty {
     fn read(buffer: &'a B) -> Self::Type {
-        use crate::buffer::UmpPrivate;
-        buffer.buffer().message()[0].nibble(1)
+        buffer.buffer()[0].nibble(1)
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
-        use crate::buffer::UmpPrivate;
         use crate::detail::helpers::sysex_group_consistent_groups;
-        sysex_group_consistent_groups(
-            buffer.buffer().message(),
-            4,
-            crate::ux::u4::new(UMP_MESSAGE_TYPE),
-        )
+        sysex_group_consistent_groups(buffer.buffer(), 4, crate::ux::u4::new(UMP_MESSAGE_TYPE))
     }
 }
 
 impl<B: Ump + BufferMut> WriteProperty<B> for GroupProperty {
     fn write(buffer: &mut B, group: Self::Type) {
-        use crate::buffer::UmpPrivateMut;
         for packet in buffer
             .buffer_mut()
-            .message_mut()
             .chunks_exact_mut(4)
             .take_while(|packet| u8::from(packet[0].nibble(0)) == UMP_MESSAGE_TYPE)
         {
@@ -1173,11 +1147,8 @@ impl<B: Ump + BufferMut> WriteProperty<B> for GroupProperty {
 }
 
 fn flex_data_dyn_size<B: crate::buffer::Ump>(buffer: &B) -> usize {
-    use crate::buffer::UmpPrivate;
-    let jr_offset = buffer.buffer().jitter_reduction().len();
     buffer
         .buffer()
-        .message()
         .chunks_exact(4)
         .position(|p| {
             let status: u8 = p[0].crumb(4).into();
@@ -1186,7 +1157,6 @@ fn flex_data_dyn_size<B: crate::buffer::Ump>(buffer: &B) -> usize {
         .expect("Message is in an invalid state. Couldn't find end packet.")
         * 4
         + 4
-        + jr_offset
 }
 
 fn bank_from_buffer(buffer: &[u32]) -> u8 {
@@ -1266,21 +1236,5 @@ mod tests {
                 .bank(),
             Bank::SetupAndPerformance,
         );
-    }
-
-    #[test]
-    fn set_jr() {
-        use crate::traits::{JitterReduced, RebufferInto};
-        use crate::utility::JitterReduction;
-
-        let mut message: FlexData<std::vec::Vec<u32>> =
-            FlexData::try_from(&[0xD710_0000_u32, 0xF751_FE05][..])
-                .unwrap()
-                .rebuffer_into();
-
-        let jr = Some(JitterReduction::Timestamp(0x1234));
-        message.set_jitter_reduction(jr.clone());
-
-        assert_eq!(message.jitter_reduction(), jr.clone());
     }
 }

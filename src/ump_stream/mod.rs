@@ -38,7 +38,6 @@ const END_FORMAT: u8 = 0x3;
 #[derive(
     derive_more::From,
     midi2_proc::Data,
-    midi2_proc::JitterReduced,
     midi2_proc::RebufferFrom,
     midi2_proc::TryRebufferFrom,
     Clone,
@@ -67,12 +66,11 @@ pub enum UmpStream<B: crate::buffer::Ump> {
 impl<'a> TryFrom<&'a [u32]> for UmpStream<&'a [u32]> {
     type Error = crate::error::Error;
     fn try_from(value: &'a [u32]) -> Result<Self, Self::Error> {
-        use crate::buffer::UmpPrivate;
         use UmpStream::*;
-        if value.message().len() < 1 {
+        if value.len() < 1 {
             return Err(crate::error::Error::InvalidData("Slice is too short"));
         };
-        Ok(match status_from_buffer(value.message()) {
+        Ok(match status_from_buffer(value) {
             device_identity::STATUS => {
                 DeviceIdentity(device_identity::DeviceIdentity::try_from(value)?.into())
             }
@@ -128,11 +126,8 @@ impl<'a, const STATUS: u16, B: Ump> property::ReadProperty<'a, B> for StatusProp
         ()
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
-        use crate::buffer::UmpPrivate;
-
         if buffer
             .buffer()
-            .message()
             .chunks_exact(4)
             .all(|packet| status_from_buffer(packet) == STATUS)
         {
@@ -148,9 +143,7 @@ impl<const STATUS: u16, B: Ump + BufferMut> property::WriteProperty<B> for Statu
         Ok(())
     }
     fn write(buffer: &mut B, _v: Self::Type) {
-        use crate::buffer::UmpPrivateMut;
-
-        for packet in buffer.buffer_mut().message_mut().chunks_exact_mut(4) {
+        for packet in buffer.buffer_mut().chunks_exact_mut(4) {
             packet[0] &= !0x03FF_0000;
             packet[0] |= (STATUS as u32) << 16;
         }
@@ -172,12 +165,11 @@ impl<'a, B: Ump> property::ReadProperty<'a, B> for ConsistentFormatsProperty {
     }
 
     fn validate(buffer: &B) -> crate::result::Result<()> {
-        use crate::buffer::UmpPrivate;
         use crate::detail::helpers::validate_sysex_group_statuses;
         use crate::detail::BitOps;
 
         validate_sysex_group_statuses(
-            buffer.buffer().message(),
+            buffer.buffer(),
             |p| u8::from(p[0].crumb(2)) == COMPLETE_FORMAT,
             |p| u8::from(p[0].crumb(2)) == START_FORMAT,
             |p| u8::from(p[0].crumb(2)) == CONTINUE_FORMAT,
@@ -193,8 +185,7 @@ impl<B: Ump + BufferMut> property::WriteProperty<B> for ConsistentFormatsPropert
         ()
     }
     fn write(buffer: &mut B, _v: Self::Type) {
-        use crate::buffer::UmpPrivateMut;
-        set_format_fields(buffer.buffer_mut().message_mut())
+        set_format_fields(buffer.buffer_mut())
     }
     fn validate(_v: &Self::Type) -> crate::result::Result<()> {
         Ok(())
@@ -211,14 +202,13 @@ impl<'a, const OFFSET: usize, B: Ump + BufferMut> property::WriteProperty<B>
     for TextWriteStrProperty<'a, OFFSET>
 {
     fn write(buffer: &mut B, text: Self::Type) {
-        use crate::buffer::UmpPrivateMut;
         use crate::detail::BitOps;
 
         let mut packet_index = 0;
         let mut byte_index = 0;
 
         for b in text.as_bytes() {
-            buffer.buffer_mut().message_mut()[packet_index * 4 + (byte_index + 2 + OFFSET) / 4]
+            buffer.buffer_mut()[packet_index * 4 + (byte_index + 2 + OFFSET) / 4]
                 .set_octet((byte_index + 2 + OFFSET) % 4, *b);
 
             if byte_index == 13 - OFFSET {
@@ -245,34 +235,24 @@ impl<'a, const OFFSET: usize, B: Ump + BufferMut> property::ResizeProperty<B>
     where
         B: crate::buffer::BufferResize,
     {
-        use crate::buffer::UmpPrivateMut;
-
         let buffer_size = required_buffer_size_for_str::<OFFSET>(value);
         buffer.resize(buffer_size);
-        clear_payload::<OFFSET>(buffer.buffer_mut().message_mut());
+        clear_payload::<OFFSET>(buffer.buffer_mut());
 
-        write_message_header_data(
-            buffer.buffer_mut().message_mut(),
-            buffer_size - crate::buffer::OFFSET_FOR_JITTER_REDUCTION,
-        );
-        set_format_fields(buffer.buffer_mut().message_mut());
+        write_message_header_data(buffer.buffer_mut(), buffer_size);
+        set_format_fields(buffer.buffer_mut());
     }
 
     fn try_resize(buffer: &mut B, value: &Self::Type) -> Result<(), crate::error::BufferOverflow>
     where
         B: crate::buffer::BufferTryResize,
     {
-        use crate::buffer::UmpPrivateMut;
-
         let buffer_size = required_buffer_size_for_str::<OFFSET>(value);
         buffer.try_resize(buffer_size)?;
-        clear_payload::<OFFSET>(buffer.buffer_mut().message_mut());
+        clear_payload::<OFFSET>(buffer.buffer_mut());
 
-        write_message_header_data(
-            buffer.buffer_mut().message_mut(),
-            buffer_size - crate::buffer::OFFSET_FOR_JITTER_REDUCTION,
-        );
-        set_format_fields(buffer.buffer_mut().message_mut());
+        write_message_header_data(buffer.buffer_mut(), buffer_size);
+        set_format_fields(buffer.buffer_mut());
 
         Ok(())
     }
@@ -334,9 +314,8 @@ impl<'a, B: Ump> property::Property<B> for TextReadBytesProperty<'a> {
 
 impl<'a, B: 'a + Ump> property::ReadProperty<'a, B> for TextReadBytesProperty<'a> {
     fn read(buffer: &'a B) -> <Self as property::Property<B>>::Type {
-        use crate::buffer::UmpPrivate;
         TextBytesIterator {
-            buffer: buffer.buffer().message(),
+            buffer: buffer.buffer(),
             packet_index: 0,
             byte_index: 0,
             offset: 0,
@@ -417,7 +396,7 @@ fn clear_payload<const OFFSET: usize>(buffer: &mut [u32]) {
 fn required_buffer_size_for_str<const OFFSET: usize>(s: &str) -> usize {
     let str_size = s.as_bytes().len();
     let packet_capacity = 14 - OFFSET;
-    let ret = if str_size % packet_capacity == 0 {
+    if str_size % packet_capacity == 0 {
         if str_size == 0 {
             4
         } else {
@@ -425,8 +404,7 @@ fn required_buffer_size_for_str<const OFFSET: usize>(s: &str) -> usize {
         }
     } else {
         4 * (str_size / packet_capacity + 1)
-    };
-    ret + crate::buffer::OFFSET_FOR_JITTER_REDUCTION
+    }
 }
 
 fn write_message_header_data(buffer: &mut [u32], size: usize) {
@@ -447,13 +425,10 @@ fn write_message_header_data(buffer: &mut [u32], size: usize) {
 }
 
 fn message_size<B: crate::buffer::Ump>(buffer: &B) -> usize {
-    use crate::buffer::UmpPrivate;
     use crate::detail::BitOps;
 
-    let jr_offset = buffer.buffer().jitter_reduction().len();
     buffer
         .buffer()
-        .message()
         .chunks_exact(4)
         .position(|p| {
             let format: u8 = p[0].crumb(2).into();
@@ -462,7 +437,6 @@ fn message_size<B: crate::buffer::Ump>(buffer: &B) -> usize {
         .expect("Message is in an invalid state. Couldn't find end packet.")
         * 4
         + 4
-        + jr_offset
 }
 
 fn status_from_buffer(buffer: &[u32]) -> u16 {

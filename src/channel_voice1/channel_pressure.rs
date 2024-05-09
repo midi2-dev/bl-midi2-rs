@@ -7,8 +7,6 @@ pub(crate) const STATUS: u8 = 0b1101;
 
 #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
 struct ChannelPressure {
-    #[property(crate::utility::JitterReductionProperty)]
-    jitter_reduction: Option<crate::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
     #[property(common_properties::ChannelVoiceStatusProperty<STATUS>)]
@@ -373,41 +371,8 @@ mod rebuffer_tests {
 #[cfg(test)]
 mod jitter_reduction_tests {
     use super::*;
-    use crate::{
-        traits::JitterReduced,
-        utility::{self, JitterReduction},
-    };
+    use crate::utility;
     use pretty_assertions::assert_eq;
-
-    #[test]
-    fn set_jr() {
-        let mut message = ChannelPressure::new_arr();
-        message.set_jitter_reduction(Some(JitterReduction::Timestamp(0x1234)));
-        assert_eq!(
-            message,
-            ChannelPressure([0x0020_1234, 0x20D0_0000, 0x0, 0x0, 0x0])
-        );
-    }
-
-    #[test]
-    fn read_jr() {
-        assert_eq!(
-            ChannelPressure::try_from(&[0x0020_1234_u32, 0x20D0_0000][..])
-                .unwrap()
-                .jitter_reduction(),
-            Some(JitterReduction::Timestamp(0x1234))
-        );
-    }
-
-    #[test]
-    fn jr_data() {
-        assert_eq!(
-            ChannelPressure::try_from(&[0x0020_1234_u32, 0x20D0_0000][..])
-                .unwrap()
-                .data(),
-            &[0x0020_1234_u32, 0x20D0_0000],
-        );
-    }
 
     #[test]
     fn from_data_invalid_jr_status() {
