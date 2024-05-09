@@ -14,8 +14,6 @@ mod tune_request {
     pub(crate) const STATUS: u8 = 0xF6;
     #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
     struct TuneRequest {
-        #[property(crate::utility::JitterReductionProperty)]
-        jitter_reduction: Option<crate::utility::JitterReduction>,
         #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
         ump_type: (),
         #[property(system_common::SystemCommonStatus<{STATUS}>)]
@@ -32,8 +30,6 @@ mod timing_clock {
     pub(crate) const STATUS: u8 = 0xF8;
     #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
     struct TimingClock {
-        #[property(crate::utility::JitterReductionProperty)]
-        jitter_reduction: Option<crate::utility::JitterReduction>,
         #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
         ump_type: (),
         #[property(system_common::SystemCommonStatus<{STATUS}>)]
@@ -50,8 +46,6 @@ mod start {
     pub(crate) const STATUS: u8 = 0xFA;
     #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
     struct Start {
-        #[property(crate::utility::JitterReductionProperty)]
-        jitter_reduction: Option<crate::utility::JitterReduction>,
         #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
         ump_type: (),
         #[property(system_common::SystemCommonStatus<{STATUS}>)]
@@ -68,8 +62,6 @@ mod cont {
     pub(crate) const STATUS: u8 = 0xFB;
     #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
     struct Continue {
-        #[property(crate::utility::JitterReductionProperty)]
-        jitter_reduction: Option<crate::utility::JitterReduction>,
         #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
         ump_type: (),
         #[property(system_common::SystemCommonStatus<{STATUS}>)]
@@ -86,8 +78,6 @@ mod stop {
     pub(crate) const STATUS: u8 = 0xFC;
     #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
     struct Stop {
-        #[property(crate::utility::JitterReductionProperty)]
-        jitter_reduction: Option<crate::utility::JitterReduction>,
         #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
         ump_type: (),
         #[property(system_common::SystemCommonStatus<{STATUS}>)]
@@ -104,8 +94,6 @@ mod active_sensing {
     pub(crate) const STATUS: u8 = 0xFE;
     #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
     struct ActiveSensing {
-        #[property(crate::utility::JitterReductionProperty)]
-        jitter_reduction: Option<crate::utility::JitterReduction>,
         #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
         ump_type: (),
         #[property(system_common::SystemCommonStatus<{STATUS}>)]
@@ -122,8 +110,6 @@ mod reset {
     pub(crate) const STATUS: u8 = 0xFF;
     #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
     struct Reset {
-        #[property(crate::utility::JitterReductionProperty)]
-        jitter_reduction: Option<crate::utility::JitterReduction>,
         #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
         ump_type: (),
         #[property(system_common::SystemCommonStatus<{STATUS}>)]

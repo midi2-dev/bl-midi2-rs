@@ -9,8 +9,6 @@ pub(crate) const STATUS: u16 = 0x12;
 
 #[midi2_proc::generate_message(MinSizeUmp(4))]
 struct FunctionBlockName {
-    #[property(crate::utility::JitterReductionProperty)]
-    jitter_reduction: Option<crate::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
     #[property(ump_stream::StatusProperty<STATUS>)]

@@ -13,6 +13,10 @@ pub trait WriteProperty<B: crate::buffer::Buffer + crate::buffer::BufferMut>: Pr
     // validate that the value represents a valid instance of the property.
     // ideally the type system should do this for us so this will
     // most often just trivially return Ok
+    //
+    // This function is currently unused, but we'll keep it hangingin around
+    // in case we need it sometime down the line.
+    #[allow(dead_code)]
     fn validate(v: &Self::Type) -> crate::result::Result<()>;
     fn default() -> Self::Type;
 }

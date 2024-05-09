@@ -8,8 +8,6 @@ pub(crate) const STATUS: u8 = 0b0000;
 
 #[midi2_proc::generate_message(FixedSize, MinSizeUmp(2))]
 struct RegisteredPerNoteController {
-    #[property(crate::utility::JitterReductionProperty)]
-    jitter_reduction: Option<crate::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
     #[property(common_properties::ChannelVoiceStatusProperty<STATUS>)]
@@ -41,7 +39,7 @@ mod tests {
 
         assert_eq!(
             message,
-            RegisteredPerNoteController([0x0, 0x4405_6C07, 0xE1E35E92, 0x0, 0x0,]),
+            RegisteredPerNoteController([0x4405_6C07, 0xE1E35E92, 0x0, 0x0,]),
         );
     }
 

@@ -8,8 +8,6 @@ pub(crate) const STATUS: u16 = 0x0;
 
 #[midi2_proc::generate_message(FixedSize, MinSizeUmp(2))]
 struct EndpointDiscovery {
-    #[property(crate::utility::JitterReductionProperty)]
-    jitter_reduction: Option<crate::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
     #[property(ump_stream::StatusProperty<STATUS>)]
@@ -49,7 +47,7 @@ mod tests {
         message.set_request_stream_configuration(true);
         assert_eq!(
             message,
-            EndpointDiscovery([0x0, 0xF000_0101, 0x0000_001F, 0x0, 0x0]),
+            EndpointDiscovery([0xF000_0101, 0x0000_001F, 0x0, 0x0]),
         );
     }
 

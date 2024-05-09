@@ -10,8 +10,6 @@ const STATUS: u8 = 0x6;
 
 #[midi2_proc::generate_message(FixedSize, MinSizeUmp(4))]
 struct SetChordName {
-    #[property(crate::utility::JitterReductionProperty)]
-    jitter_reduction: Option<crate::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
     #[property(common_properties::GroupProperty)]
@@ -402,7 +400,7 @@ fn alteration_into_octet(alteration: Option<Alteration>) -> u8 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{flex_data::tonic, traits::Grouped, utility::JitterReduction};
+    use crate::{flex_data::tonic, traits::Grouped};
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -555,34 +553,6 @@ mod tests {
                 .unwrap()
                 .bass_alteration2(),
             Some(Alteration::Subtract(u4::new(0x0))),
-        );
-    }
-
-    #[test]
-    fn no_jitter_reduction() {
-        assert_eq!(
-            SetChordName::try_from(&[0xD70B_0006, 0xF703_3519, 0x4B00_0000, 0x110A_0020,][..])
-                .unwrap()
-                .jitter_reduction(),
-            None,
-        );
-    }
-
-    #[test]
-    fn jitter_reduction() {
-        assert_eq!(
-            SetChordName::try_from(
-                &[
-                    0x0020_1234,
-                    0xD70B_0006,
-                    0xF703_3519,
-                    0x4B00_0000,
-                    0x110A_0020,
-                ][..]
-            )
-            .unwrap()
-            .jitter_reduction(),
-            Some(JitterReduction::Timestamp(0x1234)),
         );
     }
 }

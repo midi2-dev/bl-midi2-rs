@@ -4,9 +4,6 @@ const STATUS: u8 = 0x00;
 
 #[midi2_proc::generate_message(MinSizeUmp(4))]
 struct UnknownMetadataText {
-    #[property(crate::utility::JitterReductionProperty)]
-    jitter_reduction: Option<crate::utility::JitterReduction>,
-
     #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
     ump_type: (),
 

@@ -7,8 +7,6 @@ const STATUS: u8 = 0x2;
 
 #[midi2_proc::generate_message(FixedSize, MinSizeUmp(3))]
 struct SetMetronome {
-    #[property(crate::utility::JitterReductionProperty)]
-    jitter_reduction: Option<crate::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
     #[property(common_properties::GroupProperty)]
@@ -73,7 +71,7 @@ mod tests {
         message.set_number_of_subdivision_clicks2(0x1B);
         assert_eq!(
             message,
-            SetMetronome([0x0, 0xD110_0002, 0x9B4A_FE56, 0xB81B_0000, 0x0,]),
+            SetMetronome([0xD110_0002, 0x9B4A_FE56, 0xB81B_0000, 0x0,]),
         );
     }
 

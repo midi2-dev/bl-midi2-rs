@@ -7,8 +7,6 @@ const STATUS: u8 = 0x1;
 
 #[midi2_proc::generate_message(FixedSize, MinSizeUmp(2))]
 struct SetTimeSignature {
-    #[property(crate::utility::JitterReductionProperty)]
-    jitter_reduction: Option<crate::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
     #[property(common_properties::GroupProperty)]
@@ -55,7 +53,7 @@ mod tests {
         message.set_number_of_32nd_notes(0x7E);
         assert_eq!(
             message,
-            SetTimeSignature([0x0, 0xDA10_0001, 0xCD90_7E00, 0x0, 0x0,]),
+            SetTimeSignature([0xDA10_0001, 0xCD90_7E00, 0x0, 0x0,]),
         );
     }
 

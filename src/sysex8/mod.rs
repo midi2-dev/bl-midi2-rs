@@ -13,8 +13,6 @@ const ERR_INCONSISTENT_STREAM_ID: &str = "Inconsistent stream id fields across p
 /// A semantic wrapper type around MIDI 2.0 System Exclusive 8bit data.
 /// See the [module docs](crate::sysex8) for more detailed info
 struct Sysex8 {
-    #[property(crate::utility::JitterReductionProperty)]
-    jitter_reduction: Option<crate::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
     #[property(ConsistentStatuses)]

@@ -41,7 +41,6 @@ pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x4;
     midi2_proc::Data,
     midi2_proc::Channeled,
     midi2_proc::Grouped,
-    midi2_proc::JitterReduced,
     midi2_proc::RebufferFrom,
     midi2_proc::TryRebufferFrom,
     Clone,

@@ -8,8 +8,6 @@ pub(crate) const STATUS: u8 = 0b0100;
 
 #[midi2_proc::generate_message(FixedSize, MinSizeUmp(2))]
 struct RelativeRegisteredController {
-    #[property(crate::utility::JitterReductionProperty)]
-    jitter_reduction: Option<crate::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
     #[property(common_properties::ChannelVoiceStatusProperty<STATUS>)]
@@ -44,7 +42,7 @@ mod tests {
 
         assert_eq!(
             message,
-            RelativeRegisteredController([0x0, 0x414E_4502, 0xAF525908, 0x0, 0x0,]),
+            RelativeRegisteredController([0x414E_4502, 0xAF525908, 0x0, 0x0,]),
         );
     }
 

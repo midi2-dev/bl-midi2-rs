@@ -67,7 +67,7 @@ mod tests {
             pitch_up: u9::new(0x18A),
         }));
 
-        assert_eq!(message, NoteOn([0x0, 0x4898_5E03, 0x6A14_E98A, 0x0, 0x0]),);
+        assert_eq!(message, NoteOn([0x4898_5E03, 0x6A14_E98A, 0x0, 0x0]),);
     }
 
     #[test]
@@ -80,7 +80,7 @@ mod tests {
         message.set_note(u7::new(0x5E));
         message.set_velocity(0x6A14);
 
-        assert_eq!(message, NoteOn([0x0, 0x4898_5E00, 0x6A14_0000, 0x0, 0x0]),);
+        assert_eq!(message, NoteOn([0x4898_5E00, 0x6A14_0000, 0x0, 0x0]),);
     }
 
     #[test]
