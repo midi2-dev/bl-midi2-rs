@@ -126,14 +126,6 @@ pub mod delta_clockstamp_tpq {
 #[allow(dead_code)]
 const UMP_MESSAGE_TYPE: u8 = 0x0;
 
-pub(crate) const ERR_UNKNOWN_UTILITY_STATUS: &str = "Unknown utility message status";
-
-const STATUS_NOOP: u8 = 0b0000;
-const STATUS_CLOCK: u8 = 0b0001;
-const STATUS_TIMESTAMP: u8 = 0b0010;
-const STATUS_DELTA_CLOCKSTAMP_TPQ: u8 = 0b0011;
-const STATUS_DELTA_CLOCKSTAMP: u8 = 0b0100;
-
 struct DataProperty;
 
 impl<B: crate::buffer::Ump> crate::detail::property::Property<B> for DataProperty {
