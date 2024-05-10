@@ -1,3 +1,8 @@
+# 0.3.1
+docs: fix typos in readme
+fix: panic on empty flex-data text iterator
+fix: panic on empty ump-stream text iterator
+
 # 0.3.0
 docs: fix further readme typos
 feat: utility messages are integrated into top level aggregate
