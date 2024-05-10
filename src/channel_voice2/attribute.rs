@@ -69,12 +69,10 @@ impl<B: crate::buffer::Ump> property::Property<B> for AttributeProperty {
 
 impl<'a, B: crate::buffer::Ump> property::ReadProperty<'a, B> for AttributeProperty {
     fn read(buffer: &'a B) -> Self::Type {
-        use crate::buffer::UmpPrivate;
-        from_ump(buffer.buffer().message())
+        from_ump(buffer.buffer())
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
-        use crate::buffer::UmpPrivate;
-        validate_ump(buffer.buffer().message())
+        validate_ump(buffer.buffer())
     }
 }
 
@@ -85,8 +83,7 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> property::WriteProperty<B
         Ok(())
     }
     fn write(buffer: &mut B, v: Self::Type) {
-        use crate::buffer::UmpPrivateMut;
-        write_attribute(buffer.buffer_mut().message_mut(), v);
+        write_attribute(buffer.buffer_mut(), v);
     }
     fn default() -> Self::Type {
         Default::default()

@@ -8,8 +8,6 @@ pub(crate) const STATUS: u8 = 0b0001;
 
 #[midi2_proc::generate_message(FixedSize, MinSizeUmp(2))]
 struct AssignablePerNoteController {
-    #[property(crate::utility::JitterReductionProperty)]
-    jitter_reduction: Option<crate::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
     #[property(common_properties::ChannelVoiceStatusProperty<STATUS>)]
@@ -44,7 +42,7 @@ mod tests {
 
         assert_eq!(
             message,
-            AssignablePerNoteController([0x0, 0x4214_6FB1, 0x46105EE5, 0x0, 0x0,]),
+            AssignablePerNoteController([0x4214_6FB1, 0x46105EE5, 0x0, 0x0,]),
         );
     }
 

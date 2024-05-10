@@ -9,8 +9,6 @@ pub(crate) const STATUS: u16 = 0x2;
 
 #[midi2_proc::generate_message(FixedSize, MinSizeUmp(4))]
 struct DeviceIdentity {
-    #[property(crate::utility::JitterReductionProperty)]
-    jitter_reduction: Option<crate::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
     #[property(ump_stream::StatusProperty<STATUS>)]
@@ -77,7 +75,7 @@ mod tests {
         message.set_software_version([u7::new(0x43), u7::new(0x54), u7::new(0x32), u7::new(0x1)]);
         assert_eq!(
             message,
-            DeviceIdentity([0x0, 0xF002_0000, 0x000f_3328, 0x4A1E_1870, 0x4354_3201,]),
+            DeviceIdentity([0xF002_0000, 0x000f_3328, 0x4A1E_1870, 0x4354_3201,]),
         );
     }
 

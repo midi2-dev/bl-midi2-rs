@@ -4,8 +4,6 @@ pub(crate) const STATUS: u16 = 0x20;
 
 #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1))]
 struct StartOfClip {
-    #[property(crate::utility::JitterReductionProperty)]
-    jitter_reduction: Option<crate::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
     #[property(ump_stream::StatusProperty<STATUS>)]
@@ -23,7 +21,7 @@ mod tests {
     fn builder() {
         assert_eq!(
             StartOfClip::new_arr(),
-            StartOfClip([0x0, 0xF020_0000, 0x0, 0x0, 0x0]),
+            StartOfClip([0xF020_0000, 0x0, 0x0, 0x0]),
         );
     }
 

@@ -120,13 +120,6 @@ where
     }
 }
 
-pub trait JitterReduced<B: crate::buffer::Ump>: Data<B> {
-    fn jitter_reduction(&self) -> Option<crate::utility::JitterReduction>;
-    fn set_jitter_reduction(&mut self, jr: Option<crate::utility::JitterReduction>)
-    where
-        B: crate::buffer::BufferMut;
-}
-
 pub trait Sysex<B: crate::buffer::Buffer> {
     type Byte;
     type PayloadIterator<'a>: core::iter::Iterator<Item = Self::Byte>

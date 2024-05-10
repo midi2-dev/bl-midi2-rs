@@ -7,8 +7,6 @@ pub(crate) const STATUS: u8 = 0b1110;
 
 #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1), MinSizeBytes(3))]
 struct PitchBend {
-    #[property(crate::utility::JitterReductionProperty)]
-    jitter_reduction: Option<crate::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
     #[property(common_properties::ChannelVoiceStatusProperty<STATUS>)]
@@ -40,7 +38,7 @@ mod tests {
         message.set_group(u4::new(0x1));
         message.set_channel(u4::new(0xE));
         message.set_bend(u14::new(0x147));
-        assert_eq!(message, PitchBend([0x0, 0x21EE_4702, 0x0, 0x0, 0x0]));
+        assert_eq!(message, PitchBend([0x21EE_4702, 0x0, 0x0, 0x0]));
     }
 
     #[test]

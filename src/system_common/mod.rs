@@ -1,6 +1,6 @@
 #![doc = include_str!("README.md")]
 
-pub const UMP_MESSAGE_TYPE: u8 = 0x1;
+pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x1;
 
 mod song_position_pointer;
 mod song_select;
@@ -14,8 +14,6 @@ mod tune_request {
     pub(crate) const STATUS: u8 = 0xF6;
     #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
     struct TuneRequest {
-        #[property(crate::utility::JitterReductionProperty)]
-        jitter_reduction: Option<crate::utility::JitterReduction>,
         #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
         ump_type: (),
         #[property(system_common::SystemCommonStatus<{STATUS}>)]
@@ -32,8 +30,6 @@ mod timing_clock {
     pub(crate) const STATUS: u8 = 0xF8;
     #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
     struct TimingClock {
-        #[property(crate::utility::JitterReductionProperty)]
-        jitter_reduction: Option<crate::utility::JitterReduction>,
         #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
         ump_type: (),
         #[property(system_common::SystemCommonStatus<{STATUS}>)]
@@ -50,8 +46,6 @@ mod start {
     pub(crate) const STATUS: u8 = 0xFA;
     #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
     struct Start {
-        #[property(crate::utility::JitterReductionProperty)]
-        jitter_reduction: Option<crate::utility::JitterReduction>,
         #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
         ump_type: (),
         #[property(system_common::SystemCommonStatus<{STATUS}>)]
@@ -68,8 +62,6 @@ mod cont {
     pub(crate) const STATUS: u8 = 0xFB;
     #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
     struct Continue {
-        #[property(crate::utility::JitterReductionProperty)]
-        jitter_reduction: Option<crate::utility::JitterReduction>,
         #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
         ump_type: (),
         #[property(system_common::SystemCommonStatus<{STATUS}>)]
@@ -86,8 +78,6 @@ mod stop {
     pub(crate) const STATUS: u8 = 0xFC;
     #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
     struct Stop {
-        #[property(crate::utility::JitterReductionProperty)]
-        jitter_reduction: Option<crate::utility::JitterReduction>,
         #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
         ump_type: (),
         #[property(system_common::SystemCommonStatus<{STATUS}>)]
@@ -104,8 +94,6 @@ mod active_sensing {
     pub(crate) const STATUS: u8 = 0xFE;
     #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
     struct ActiveSensing {
-        #[property(crate::utility::JitterReductionProperty)]
-        jitter_reduction: Option<crate::utility::JitterReduction>,
         #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
         ump_type: (),
         #[property(system_common::SystemCommonStatus<{STATUS}>)]
@@ -122,8 +110,6 @@ mod reset {
     pub(crate) const STATUS: u8 = 0xFF;
     #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
     struct Reset {
-        #[property(crate::utility::JitterReductionProperty)]
-        jitter_reduction: Option<crate::utility::JitterReduction>,
         #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
         ump_type: (),
         #[property(system_common::SystemCommonStatus<{STATUS}>)]
@@ -150,7 +136,6 @@ pub use tune_request::*;
     midi2_proc::Grouped,
     midi2_proc::FromBytes,
     midi2_proc::FromUmp,
-    midi2_proc::JitterReduced,
     midi2_proc::TryFromBytes,
     midi2_proc::TryFromUmp,
     midi2_proc::RebufferFrom,
@@ -230,9 +215,9 @@ impl<const STATUS: u8, B: crate::buffer::Buffer + crate::buffer::BufferMut>
     fn write(buffer: &mut B, _: Self::Type) {
         match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
             crate::buffer::UNIT_ID_U32 => {
-                use crate::buffer::{SpecialiseU32, UmpPrivateMut};
+                use crate::buffer::SpecialiseU32;
                 use crate::detail::BitOps;
-                buffer.buffer_mut().specialise_u32_mut().message_mut()[0].set_octet(1, STATUS);
+                buffer.buffer_mut().specialise_u32_mut()[0].set_octet(1, STATUS);
             }
             crate::buffer::UNIT_ID_U8 => {
                 use crate::buffer::SpecialiseU8;
@@ -252,9 +237,8 @@ impl<const STATUS: u8, B: crate::buffer::Buffer + crate::buffer::BufferMut>
 fn status<U: crate::buffer::Unit>(buffer: &[U]) -> u8 {
     match <U as crate::buffer::UnitPrivate>::UNIT_ID {
         crate::buffer::UNIT_ID_U32 => {
-            use crate::buffer::UmpPrivate;
             use crate::detail::BitOps;
-            <U as crate::buffer::UnitPrivate>::specialise_buffer_u32(buffer).message()[0].octet(1)
+            <U as crate::buffer::UnitPrivate>::specialise_buffer_u32(buffer)[0].octet(1)
         }
         crate::buffer::UNIT_ID_U8 => {
             <U as crate::buffer::UnitPrivate>::specialise_buffer_u8(buffer)[0]

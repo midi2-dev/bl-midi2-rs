@@ -13,8 +13,6 @@ const ERR_INCONSISTENT_STREAM_ID: &str = "Inconsistent stream id fields across p
 /// A semantic wrapper type around MIDI 2.0 System Exclusive 8bit data.
 /// See the [module docs](crate::sysex8) for more detailed info
 struct Sysex8 {
-    #[property(crate::utility::JitterReductionProperty)]
-    jitter_reduction: Option<crate::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
     #[property(ConsistentStatuses)]
@@ -45,10 +43,8 @@ impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B>
         ()
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
-        use crate::buffer::UmpPrivate;
-
         message_helpers::validate_sysex_group_statuses(
-            buffer.buffer().message(),
+            buffer.buffer(),
             |p| u8::from(p[0].nibble(2)) == 0x0,
             |p| u8::from(p[0].nibble(2)) == 0x1,
             |p| u8::from(p[0].nibble(2)) == 0x2,
@@ -68,8 +64,7 @@ impl<B: crate::buffer::Ump> crate::detail::property::Property<B> for ValidPacket
 impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B> for ValidPacketSizes {
     fn read(_buffer: &'a B) -> Self::Type {}
     fn validate(buffer: &B) -> crate::result::Result<()> {
-        use crate::buffer::UmpPrivate;
-        if buffer.buffer().message().chunks_exact(4).any(|p| {
+        if buffer.buffer().chunks_exact(4).any(|p| {
             let number_bytes = u8::from(p[0].nibble(3));
             number_bytes < 1 || number_bytes > 14
         }) {
@@ -86,11 +81,8 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::
     for ValidPacketSizes
 {
     fn write(buffer: &mut B, _: Self::Type) {
-        use crate::buffer::UmpPrivateMut;
-
         for packet in buffer
             .buffer_mut()
-            .message_mut()
             .chunks_exact_mut(4)
             .take_while(|packet| u8::from(packet[0].nibble(0)) == UMP_MESSAGE_TYPE)
         {
@@ -114,13 +106,11 @@ impl<B: crate::buffer::Ump> crate::detail::property::Property<B> for GroupProper
 
 impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B> for GroupProperty {
     fn read(buffer: &'a B) -> Self::Type {
-        use crate::buffer::UmpPrivate;
-        buffer.buffer().message()[0].nibble(1)
+        buffer.buffer()[0].nibble(1)
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
-        use crate::buffer::UmpPrivate;
         message_helpers::sysex_group_consistent_groups(
-            buffer.buffer().message(),
+            buffer.buffer(),
             4,
             crate::ux::u4::new(UMP_MESSAGE_TYPE),
         )
@@ -131,11 +121,8 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::
     for GroupProperty
 {
     fn write(buffer: &mut B, group: Self::Type) {
-        use crate::buffer::UmpPrivateMut;
-
         for packet in buffer
             .buffer_mut()
-            .message_mut()
             .chunks_exact_mut(4)
             .take_while(|packet| u8::from(packet[0].nibble(0)) == UMP_MESSAGE_TYPE)
         {
@@ -158,13 +145,11 @@ impl<B: crate::buffer::Ump> crate::detail::property::Property<B> for StreamIdPro
 
 impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B> for StreamIdProperty {
     fn read(buffer: &'a B) -> Self::Type {
-        use crate::buffer::UmpPrivate;
-        stream_id_from_packet(buffer.buffer().message())
+        stream_id_from_packet(buffer.buffer())
     }
     fn validate(buffer: &B) -> crate::result::Result<()> {
-        use crate::buffer::UmpPrivate;
         let sid = stream_id_from_packet;
-        let buffer = buffer.buffer().message();
+        let buffer = buffer.buffer();
         if buffer
             .chunks_exact(4)
             .take_while(|packet| u8::from(packet[0].nibble(0)) == UMP_MESSAGE_TYPE)
@@ -185,11 +170,8 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::
     for StreamIdProperty
 {
     fn write(buffer: &mut B, id: Self::Type) {
-        use crate::buffer::UmpPrivateMut;
-
         for packet in buffer
             .buffer_mut()
-            .message_mut()
             .chunks_exact_mut(4)
             .take_while(|packet| u8::from(packet[0].nibble(0)) == UMP_MESSAGE_TYPE)
         {
@@ -206,11 +188,8 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::
 
 impl<B: crate::buffer::Ump> crate::traits::Size<B> for Sysex8<B> {
     fn size(&self) -> usize {
-        use crate::buffer::UmpPrivate;
-        let jr_offset = self.0.buffer().jitter_reduction().len();
         self.0
             .buffer()
-            .message()
             .chunks_exact(4)
             .position(|p| {
                 let status: u8 = p[0].nibble(2).into();
@@ -219,7 +198,6 @@ impl<B: crate::buffer::Ump> crate::traits::Size<B> for Sysex8<B> {
             .expect("Message is in an invalid state. Couldn't find end packet.")
             * 4
             + 4
-            + jr_offset
     }
 }
 
@@ -348,14 +326,12 @@ impl<B: crate::buffer::Ump> Sysex<B> for Sysex8<B> {
     where
         <B as crate::buffer::Buffer>::Unit: 'a,
     {
-        use crate::buffer::UmpPrivate;
         PayloadIterator {
-            data: self.0.buffer().message(),
+            data: self.0.buffer(),
             packet_index: 0,
             payload_index: 0,
             size_cache: self
                 .data()
-                .message()
                 .chunks_exact(4)
                 .map(|packet| PayloadIterator::packet_size(packet))
                 .sum(),
@@ -406,13 +382,11 @@ impl<B: crate::buffer::Ump> SysexInternal<B> for Sysex8<B> {
     where
         B: crate::buffer::BufferMut,
     {
-        use crate::buffer::UmpPrivateMut;
-
         // data is written into the buffer contiguously
         // meaning only the last packet may have a size < 6
         let buffer_index = 4 * (payload_index / 13);
         let byte_index = payload_index % 13;
-        self.0.specialise_u32_mut().message_mut()[buffer_index + (byte_index + 3) / 4]
+        self.0.specialise_u32_mut()[buffer_index + (byte_index + 3) / 4]
             .set_octet((byte_index + 3) % 4, datum);
     }
 
@@ -429,21 +403,19 @@ fn try_resize<
     mut payload_size: usize,
     try_resize_buffer: ResizeBuffer,
 ) -> Result<(), crate::traits::SysexTryResizeError> {
-    use crate::buffer::UmpPrivateMut;
     use ux::u4;
 
     let mut buffer_size = buffer_size_from_payload_size(payload_size);
     let resize_result = try_resize_buffer(sysex, buffer_size);
     if let Err(_) = resize_result {
         // resize failed. We make do with what we've got
-        buffer_size = sysex.0.buffer().len() - crate::buffer::OFFSET_FOR_JITTER_REDUCTION;
+        buffer_size = sysex.0.buffer().len();
         payload_size = buffer_size * 13 / 4;
     }
 
     let mut iter = sysex
         .0
         .buffer_mut()
-        .message_mut()
         .chunks_exact_mut(4)
         .take(buffer_size / 4)
         .peekable();
@@ -499,7 +471,7 @@ fn try_resize<
 }
 
 fn buffer_size_from_payload_size(payload_size: usize) -> usize {
-    let ret = if payload_size % 13 == 0 {
+    if payload_size % 13 == 0 {
         if payload_size == 0 {
             4
         } else {
@@ -507,8 +479,7 @@ fn buffer_size_from_payload_size(payload_size: usize) -> usize {
         }
     } else {
         4 * (payload_size / 13 + 1)
-    };
-    ret + crate::buffer::OFFSET_FOR_JITTER_REDUCTION
+    }
 }
 
 #[cfg(test)]
@@ -520,7 +491,7 @@ mod tests {
     fn new() {
         assert_eq!(
             Sysex8::<std::vec::Vec<u32>>::new(),
-            Sysex8(std::vec![0x0, 0x5001_0000, 0x0, 0x0, 0x0])
+            Sysex8(std::vec![0x5001_0000, 0x0, 0x0, 0x0])
         );
     }
 
@@ -531,7 +502,7 @@ mod tests {
         let mut message = Sysex8::<std::vec::Vec<u32>>::new();
         message.set_group(ux::u4::new(0xC));
 
-        assert_eq!(message, Sysex8(std::vec![0x0, 0x5C01_0000, 0x0, 0x0, 0x0]));
+        assert_eq!(message, Sysex8(std::vec![0x5C01_0000, 0x0, 0x0, 0x0]));
     }
 
     #[test]
@@ -904,7 +875,6 @@ mod tests {
         assert_eq!(
             message,
             Sysex8(std::vec![
-                0x0,
                 0x501E_0000,
                 0x0102_0304,
                 0x0506_0708,
@@ -925,7 +895,6 @@ mod tests {
         assert_eq!(
             message,
             Sysex8(std::vec![
-                0x0,
                 0x501E_0000,
                 0x0102_0304,
                 0x0506_0708,
@@ -949,7 +918,7 @@ mod tests {
     #[test]
     fn set_rubbish_payload_to_fixed_size_buffer() {
         use crate::detail::test_support::rubbish_payload_iterator::RubbishPayloadIterator;
-        let mut message = Sysex8::<[u32; 17]>::try_new().unwrap();
+        let mut message = Sysex8::<[u32; 16]>::try_new().unwrap();
         assert_eq!(
             message.try_set_payload(RubbishPayloadIterator::new()),
             Ok(())
@@ -957,7 +926,6 @@ mod tests {
         assert_eq!(
             message,
             Sysex8([
-                0x0,
                 0x501E_0000,
                 0x0102_0304,
                 0x0506_0708,
@@ -986,7 +954,6 @@ mod tests {
         assert_eq!(
             message,
             Sysex8(std::vec![
-                0x0, // jr
                 0x501E_0000,
                 0x0102_0304,
                 0x0506_0708,
@@ -1020,17 +987,8 @@ mod tests {
     }
 
     #[test]
-    fn set_payload_to_fixed_size_buffer_accidentally_missed_jr_header() {
-        let mut message = Sysex8::<[u32; 16]>::try_new().unwrap();
-        assert_eq!(
-            message.try_set_payload(0..50),
-            Err(crate::error::BufferOverflow)
-        );
-    }
-
-    #[test]
     fn set_payload_to_fixed_size_buffer_with_overflow() {
-        let mut message = Sysex8::<[u32; 17]>::try_new().unwrap();
+        let mut message = Sysex8::<[u32; 16]>::try_new().unwrap();
         assert_eq!(
             message.try_set_payload(0..60),
             Err(crate::error::BufferOverflow)
@@ -1041,7 +999,7 @@ mod tests {
     fn default_constructed_message() {
         assert_eq!(
             Sysex8::<std::vec::Vec<u32>>::new(),
-            Sysex8(std::vec![0x0, 0x5001_0000, 0x0, 0x0, 0x0,])
+            Sysex8(std::vec![0x5001_0000, 0x0, 0x0, 0x0,])
         );
     }
 
@@ -1050,23 +1008,5 @@ mod tests {
         let message = Sysex8::<std::vec::Vec<u32>>::new();
         let payload = message.payload().collect::<std::vec::Vec<u8>>();
         assert_eq!(payload, std::vec![]);
-    }
-
-    #[test]
-    fn message_data_noop_jr_header() {
-        let mut message = Sysex8::<std::vec::Vec<u32>>::new();
-        let buffer: [u8; 0] = [];
-        message.set_payload(buffer.iter().cloned());
-        assert_eq!(
-            Sysex8(std::vec![
-                0x0000_0000,
-                0x5001_0000,
-                0x0000_0000,
-                0x0000_0000,
-                0x0000_0000
-            ])
-            .data(),
-            &[0x5001_0000, 0x0000_0000, 0x0000_0000, 0x0000_0000],
-        );
     }
 }

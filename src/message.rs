@@ -1,7 +1,6 @@
 #[derive(
     derive_more::From,
     midi2_proc::Data,
-    midi2_proc::JitterReduced,
     midi2_proc::RebufferFrom,
     midi2_proc::TryRebufferFrom,
     Clone,
@@ -25,22 +24,23 @@ pub enum UmpMessage<B: crate::buffer::Ump> {
     SystemCommon(crate::system_common::SystemCommon<B>),
     #[cfg(feature = "ump-stream")]
     UmpStream(crate::ump_stream::UmpStream<B>),
+    #[cfg(feature = "utility")]
+    Utility(crate::utility::Utility<B>),
 }
 
 impl<'a> core::convert::TryFrom<&'a [u32]> for UmpMessage<&'a [u32]> {
     type Error = crate::error::Error;
     fn try_from(buffer: &'a [u32]) -> Result<Self, Self::Error> {
-        use crate::buffer::UmpPrivate;
         use crate::detail::BitOps;
         use UmpMessage::*;
 
-        if buffer.message().len() < 1 {
+        if buffer.len() < 1 {
             return Err(crate::error::Error::InvalidData(
                 "Ump message slice is empty",
             ));
         }
 
-        Ok(match u8::from(buffer.message()[0].nibble(0)) {
+        Ok(match u8::from(buffer[0].nibble(0)) {
             #[cfg(feature = "flex-data")]
             crate::flex_data::UMP_MESSAGE_TYPE => {
                 FlexData(crate::flex_data::FlexData::try_from(buffer)?.into())
@@ -68,6 +68,10 @@ impl<'a> core::convert::TryFrom<&'a [u32]> for UmpMessage<&'a [u32]> {
             #[cfg(feature = "ump-stream")]
             crate::ump_stream::UMP_MESSAGE_TYPE => {
                 UmpStream(crate::ump_stream::UmpStream::try_from(buffer)?.into())
+            }
+            #[cfg(feature = "utility")]
+            crate::utility::UMP_MESSAGE_TYPE => {
+                Utility(crate::utility::Utility::try_from(buffer)?.into())
             }
             _ => Err(crate::error::Error::InvalidData(
                 "Couldn't interpret ump message type",
@@ -188,7 +192,6 @@ mod tests {
     #[test]
     fn sysex8() {
         let buffer = [
-            0x0020_1234,
             0x5E1E_BE00,
             0x0102_0304,
             0x0506_0708,
@@ -216,7 +219,6 @@ mod tests {
     #[test]
     fn sysex7() {
         let buffer = [
-            0x0000_0000,
             0x3E16_0001,
             0x0203_0405,
             0x3E26_0607,
@@ -244,12 +246,24 @@ mod tests {
 
     #[cfg(feature = "flex-data")]
     #[test]
-    fn flex_data_builder() {
+    fn flex_data() {
         use crate::flex_data::FlexData;
 
-        let buffer = [0x0, 0xD410_0105, 0x54C3_A172, 0x0, 0x0];
+        let buffer = [0xD410_0105, 0x54C3_A172, 0x0, 0x0];
         let message = UmpMessage::try_from(&buffer[..]);
         let Ok(UmpMessage::FlexData(FlexData::ComposerName(_))) = message else {
+            panic!();
+        };
+    }
+
+    #[cfg(feature = "utility")]
+    #[test]
+    fn utility() {
+        use crate::utility::Utility;
+
+        let buffer = [0x0020_1234, 0x0, 0x0, 0x0];
+        let message = UmpMessage::try_from(&buffer[..]);
+        let Ok(UmpMessage::Utility(Utility::Timestamp(_))) = message else {
             panic!();
         };
     }

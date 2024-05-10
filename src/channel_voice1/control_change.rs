@@ -7,8 +7,6 @@ pub(crate) const STATUS: u8 = 0b1011;
 
 #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1), MinSizeBytes(3))]
 struct ControlChange {
-    #[property(crate::utility::JitterReductionProperty)]
-    jitter_reduction: Option<crate::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
     #[property(common_properties::ChannelVoiceStatusProperty<STATUS>)]
@@ -47,7 +45,7 @@ mod tests {
         message.set_channel(u4::new(0x7));
         message.set_control(u7::new(0x36));
         message.set_control_data(u7::new(0x37));
-        assert_eq!(message, ControlChange([0x0, 0x2AB7_3637, 0x0, 0x0, 0x0]));
+        assert_eq!(message, ControlChange([0x2AB7_3637, 0x0, 0x0, 0x0]));
     }
 
     #[test]

@@ -31,8 +31,6 @@ pub(crate) const STATUS: u8 = 0b1001;
 /// ```
 #[midi2_proc::generate_message(FixedSize, MinSizeUmp(2))]
 struct NoteOn {
-    #[property(crate::utility::JitterReductionProperty)]
-    jitter_reduction: Option<crate::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
     #[property(common_properties::ChannelVoiceStatusProperty<STATUS>)]
@@ -69,7 +67,7 @@ mod tests {
             pitch_up: u9::new(0x18A),
         }));
 
-        assert_eq!(message, NoteOn([0x0, 0x4898_5E03, 0x6A14_E98A, 0x0, 0x0]),);
+        assert_eq!(message, NoteOn([0x4898_5E03, 0x6A14_E98A, 0x0, 0x0]),);
     }
 
     #[test]
@@ -82,7 +80,7 @@ mod tests {
         message.set_note(u7::new(0x5E));
         message.set_velocity(0x6A14);
 
-        assert_eq!(message, NoteOn([0x0, 0x4898_5E00, 0x6A14_0000, 0x0, 0x0]),);
+        assert_eq!(message, NoteOn([0x4898_5E00, 0x6A14_0000, 0x0, 0x0]),);
     }
 
     #[test]
@@ -115,14 +113,6 @@ mod tests {
                 note: u7::new(0x74),
                 pitch_up: crate::ux::u9::new(0x18A),
             }),
-        );
-    }
-
-    #[test]
-    fn empty_jr_data() {
-        assert_eq!(
-            NoteOn([0x0, 0x4898_5E03, 0x6A14_E98A, 0x0, 0x0]).data(),
-            &[0x4898_5E03, 0x6A14_E98A],
         );
     }
 }

@@ -22,7 +22,7 @@ pub use attribute::Attribute as NoteAttribute;
 pub use channel_pitch_bend::*;
 pub use channel_pressure::*;
 pub use control_change::*;
-pub use controller::*;
+pub use controller::Controller;
 pub use key_pressure::*;
 pub use note_off::*;
 pub use note_on::*;
@@ -41,7 +41,6 @@ pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x4;
     midi2_proc::Data,
     midi2_proc::Channeled,
     midi2_proc::Grouped,
-    midi2_proc::JitterReduced,
     midi2_proc::RebufferFrom,
     midi2_proc::TryRebufferFrom,
     Clone,

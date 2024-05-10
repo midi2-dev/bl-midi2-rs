@@ -8,8 +8,6 @@ const STATUS: u8 = 0x5;
 
 #[midi2_proc::generate_message(FixedSize, MinSizeUmp(2))]
 struct SetKeySignature {
-    #[property(crate::utility::JitterReductionProperty)]
-    jitter_reduction: Option<crate::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
     #[property(common_properties::GroupProperty)]
@@ -54,9 +52,8 @@ impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B>
     for SharpsFlatsProperty
 {
     fn read(buffer: &'a B) -> Self::Type {
-        use crate::buffer::UmpPrivate;
         use SharpsFlats::*;
-        match u8::from(buffer.buffer().message()[1].nibble(0)) {
+        match u8::from(buffer.buffer()[1].nibble(0)) {
             v @ 0x0..=0x7 => Sharps(u3::new(v)),
             v @ 0x9..=0xF => Flats(u3::new(!(v - 1) & 0b0111)),
             0x8 => NonStandard,
@@ -72,8 +69,7 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::
     for SharpsFlatsProperty
 {
     fn write(buffer: &mut B, v: Self::Type) {
-        use crate::buffer::UmpPrivateMut;
-        buffer.buffer_mut().message_mut()[1].set_nibble(
+        buffer.buffer_mut()[1].set_nibble(
             0,
             match v {
                 SharpsFlats::Sharps(v) => u4::from(v),
@@ -104,7 +100,7 @@ mod tests {
         message.set_sharps_flats(SharpsFlats::Sharps(u3::new(5)));
         assert_eq!(
             message,
-            SetKeySignature([0x0, 0xD410_0005, 0x5400_0000, 0x0, 0x0,]),
+            SetKeySignature([0xD410_0005, 0x5400_0000, 0x0, 0x0,]),
         );
     }
 
@@ -116,7 +112,7 @@ mod tests {
         message.set_sharps_flats(SharpsFlats::Flats(u3::new(5)));
         assert_eq!(
             message,
-            SetKeySignature([0x0, 0xD410_0005, 0xB400_0000, 0x0, 0x0,]),
+            SetKeySignature([0xD410_0005, 0xB400_0000, 0x0, 0x0,]),
         );
     }
 
@@ -128,7 +124,7 @@ mod tests {
         message.set_sharps_flats(SharpsFlats::NonStandard);
         assert_eq!(
             message,
-            SetKeySignature([0x0, 0xD410_0005, 0x8000_0000, 0x0, 0x0,]),
+            SetKeySignature([0xD410_0005, 0x8000_0000, 0x0, 0x0,]),
         );
     }
 
@@ -141,7 +137,7 @@ mod tests {
         message.set_optional_channel(Some(u4::new(0xD)));
         assert_eq!(
             message,
-            SetKeySignature([0x0, 0xD40D_0005, 0x8000_0000, 0x0, 0x0,]),
+            SetKeySignature([0xD40D_0005, 0x8000_0000, 0x0, 0x0,]),
         );
     }
 

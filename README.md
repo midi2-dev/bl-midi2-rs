@@ -58,7 +58,7 @@ assert_eq!(
 All message wrappers are grouped into aggregate enum types.
 There's a top level enum type which can represent all messages,
 and there's sub enum types for each different UMP type specified
-by the MIDI 2.0 documentation.
+by the MIDI 2.0 specification.
 
 ```rust
 fn handle_message(buffer: &[u32]) {
@@ -146,26 +146,6 @@ assert_eq!(
 );
 ```
 
-## Jitter Ruduction Support
-
-All ump messages have an optional jitter reduction header
-prepended before its message packets.
-
-```rust
-use midi2::prelude::*;
-
-let mut message = channel_voice1::ChannelPressure::new_arr();
-assert_eq!(message.data(), &[0x20D0_0000]);
-
-message.set_jitter_reduction(Some(JitterReduction::Timestamp(0x1234)));
-assert_eq!(message.data(), &[0x0020_1234, 0x20D0_0000]);
-```
-
-NOTE: For this reason all messages need an extra `u32` at the
-start of their buffers to accomodate the header data.
-For example, the minimum size buffer for a ChannelVoice2 message 
-is 3, rather than 2.
-
 ## Almost Entirely `#![no_std]` Friendly
 
 `#![no_std]` is a first class use case in midi2.
@@ -176,7 +156,7 @@ You'll want to setup midi2 without default features to compile
 without the `std` feature.
 
 ```toml
-midi2 = { version = "0.2.4", default-features = false, features = ["channel-voice2", "sysex7"],  }
+midi2 = { version = "0.3.0", default-features = false, features = ["channel-voice2", "sysex7"],  }
 ```
 
 ### Generic Representation
@@ -188,7 +168,7 @@ represent messages within a fixed size array.
 ```rust
 use midi2::prelude::*;
 
-let mut message = sysex8::Sysex8::<[u32; 17]>::try_new()
+let mut message = sysex8::Sysex8::<[u32; 16]>::try_new()
     .expect("Buffer is large enough for min message size");
 
 // in this mode methods which would require a 
@@ -196,7 +176,7 @@ let mut message = sysex8::Sysex8::<[u32; 17]>::try_new()
 assert_eq!(message.try_set_payload(0..50), Ok(()));
 
 // if there's not enough room in the buffer to 
-// accomodate the resize then an overflow error is returned.
+// accommodate the resize then an overflow error is returned.
 assert_eq!(message.try_set_payload(0..60), Err(midi2::error::BufferOverflow));
 ```
 
@@ -239,18 +219,21 @@ To remedy this messages can be `rebuffered` into a different
 generic backing buffer type.
 
 ```rust
-use midi2::prelude::*;
+use midi2::{
+    prelude::*,
+    channel_voice2::NoteOn,
+};
 
-let mut owned: UmpMessage::<[u32; 5]> = {
-    let buffer = [0x1AF3_4F00_u32];
+let mut owned: NoteOn::<[u32; 4]> = {
+    let buffer = [0x4898_5E03_u32, 0x6A14_E98A];
     // the borrowed message is imutable and cannot outlive `buffer`
-    let borrowed = UmpMessage::try_from(&buffer[..]).expect("Data is valid");
+    let borrowed = NoteOn::try_from(&buffer[..]).expect("Data is valid");
     borrowed.try_rebuffer_into().expect("Buffer is large enough")
 };
 
 // the owned message is mutable an liberated from the buffer lifetime.
-owned.set_jitter_reduction(Some(JitterReduction::Timestamp(0x1234)));
-assert_eq!(owned.data(), &[0x0020_1234, 0x1AF3_4F00])
+owned.set_channel(u4::new(0x9));
+assert_eq!(owned.data(), &[0x4899_5E03, 0x6A14_E98A])
 ```
 
 ## Support For Classical MIDI Byte Stream Messages
@@ -268,7 +251,7 @@ message.set_pressure(u7::new(0x09));
 assert_eq!(message.data(), &[0xD6, 0x09]);
 ```
 
-Messages represented in bytes can be transformed to ump and back using convertion traits.
+Messages represented in bytes can be transformed to ump and back using conversion traits.
 
 ```rust
 use midi2::{
@@ -277,7 +260,7 @@ use midi2::{
 };
 
 let message = ChannelPressure::new_arr_bytes();
-let message: ChannelPressure<[u32; 5]> = message.try_into_ump().
+let message: ChannelPressure<[u32; 4]> = message.try_into_ump().
     expect("Buffer is large enough");
 
 assert_eq!(message.data(), &[0x20D0_0000]);

@@ -8,8 +8,6 @@ pub(crate) const STATUS: u8 = 0b1101;
 
 #[midi2_proc::generate_message(FixedSize, MinSizeUmp(2))]
 struct ChannelPressure {
-    #[property(crate::utility::JitterReductionProperty)]
-    jitter_reduction: Option<crate::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
     #[property(common_properties::ChannelVoiceStatusProperty<STATUS>)]
@@ -42,7 +40,7 @@ mod tests {
 
         assert_eq!(
             message,
-            ChannelPressure([0x0, 0x4EDD_0000, 0xDE0D_E0F2, 0x0, 0x0]),
+            ChannelPressure([0x4EDD_0000, 0xDE0D_E0F2, 0x0, 0x0]),
         );
     }
 

@@ -7,8 +7,6 @@ const STATUS: u8 = 0x0;
 
 #[midi2_proc::generate_message(FixedSize, MinSizeUmp(2))]
 struct SetTempo {
-    #[property(crate::utility::JitterReductionProperty)]
-    jitter_reduction: Option<crate::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
     #[property(common_properties::GroupProperty)]
@@ -41,10 +39,7 @@ mod tests {
         let mut message = SetTempo::new_arr();
         message.set_group(u4::new(0x7));
         message.set_number_of_10_nanosecond_units_per_quarter_note(0xF751FE05);
-        assert_eq!(
-            message,
-            SetTempo([0x0, 0xD710_0000, 0xF751_FE05, 0x0, 0x0,]),
-        );
+        assert_eq!(message, SetTempo([0xD710_0000, 0xF751_FE05, 0x0, 0x0,]),);
     }
 
     #[test]

@@ -8,8 +8,6 @@ pub(crate) const STATUS: u8 = 0b1100;
 
 #[midi2_proc::generate_message(FixedSize, MinSizeUmp(2))]
 struct ProgramChange {
-    #[property(crate::utility::JitterReductionProperty)]
-    jitter_reduction: Option<crate::utility::JitterReduction>,
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
     #[property(common_properties::ChannelVoiceStatusProperty<STATUS>)]
@@ -32,10 +30,9 @@ impl<B: crate::buffer::Ump> property::Property<B> for BankProperty {
 
 impl<'a, B: crate::buffer::Ump> property::ReadProperty<'a, B> for BankProperty {
     fn read(buffer: &'a B) -> Self::Type {
-        use crate::buffer::UmpPrivate;
         use crate::detail::{BitOps, Encode7Bit};
 
-        let data = buffer.buffer().message();
+        let data = buffer.buffer();
         if data[0].bit(31) {
             Some(u14::from_u7s(&[data[1].octet(2), data[1].octet(3)]))
         } else {
@@ -52,10 +49,9 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> property::WriteProperty<B
         Ok(())
     }
     fn write(buffer: &mut B, v: Self::Type) {
-        use crate::buffer::UmpPrivateMut;
         use crate::detail::{BitOps, Encode7Bit};
 
-        let data = buffer.buffer_mut().message_mut();
+        let data = buffer.buffer_mut();
         match v {
             Some(v) => {
                 let mut u7s = [u7::default(); 2];
@@ -90,10 +86,7 @@ mod tests {
         message.set_program(u7::new(0x75));
         message.set_bank(Some(u14::new(0x1F5E)));
 
-        assert_eq!(
-            message,
-            ProgramChange([0x0, 0x4FCE_0001, 0x7500_5E3E, 0x0, 0x0]),
-        );
+        assert_eq!(message, ProgramChange([0x4FCE_0001, 0x7500_5E3E, 0x0, 0x0]),);
     }
 
     #[test]
@@ -105,10 +98,7 @@ mod tests {
         message.set_channel(u4::new(0xE));
         message.set_program(u7::new(0x75));
 
-        assert_eq!(
-            message,
-            ProgramChange([0x0, 0x4FCE_0000, 0x7500_0000, 0x0, 0x0]),
-        );
+        assert_eq!(message, ProgramChange([0x4FCE_0000, 0x7500_0000, 0x0, 0x0]),);
     }
 
     #[test]
