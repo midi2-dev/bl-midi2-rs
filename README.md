@@ -207,12 +207,10 @@ let buffer = [
     0x4441_5733,
     0x362D_3136,
 ];
-let Ok(message) = UmpMessage::try_from(&buffer[..]) else {
-    panic!();
-};
+let message = UmpMessage::try_from(&buffer[..]).expect("Valid data");
 ```
 
-Of course this means that such borrowed messages are imutable
+Of course this means that such borrowed messages are immutable
 and also have their lifetimes tied to the original buffer.
 
 To remedy this messages can be `rebuffered` into a different
@@ -226,12 +224,12 @@ use midi2::{
 
 let mut owned: NoteOn::<[u32; 4]> = {
     let buffer = [0x4898_5E03_u32, 0x6A14_E98A];
-    // the borrowed message is imutable and cannot outlive `buffer`
+    // the borrowed message is immutable and cannot outlive `buffer`
     let borrowed = NoteOn::try_from(&buffer[..]).expect("Data is valid");
     borrowed.try_rebuffer_into().expect("Buffer is large enough")
 };
 
-// the owned message is mutable an liberated from the buffer lifetime.
+// the owned message is mutable and liberated from the buffer lifetime.
 owned.set_channel(u4::new(0x9));
 assert_eq!(owned.data(), &[0x4899_5E03, 0x6A14_E98A])
 ```
