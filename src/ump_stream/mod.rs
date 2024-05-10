@@ -268,14 +268,14 @@ pub struct TextBytesIterator<'a> {
 impl<'a> core::iter::Iterator for TextBytesIterator<'a> {
     type Item = u8;
     fn next(&mut self) -> Option<Self::Item> {
+        while !self.finished() && self.value() == 0 {
+            self.advance();
+        }
         if self.finished() {
             return None;
         }
         let ret = Some(self.value());
         self.advance();
-        while !self.finished() && self.value() == 0 {
-            self.advance();
-        }
         ret
     }
 

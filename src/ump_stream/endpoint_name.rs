@@ -97,4 +97,14 @@ mod tests {
         let message = EndpointName::try_from(&buffer[..]).unwrap();
         assert_eq!(message.name(), "Gimme some signal 🔊 🙌");
     }
+
+    #[test]
+    fn read_empty_bytes() {
+        assert_eq!(
+            EndpointName::<std::vec::Vec<u32>>::new()
+                .name_bytes()
+                .collect::<std::vec::Vec<u8>>(),
+            std::vec![]
+        );
+    }
 }

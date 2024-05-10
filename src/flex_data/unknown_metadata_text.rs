@@ -390,6 +390,16 @@ mod tests {
     }
 
     #[test]
+    fn read_empty_text_bytes() {
+        assert_eq!(
+            UnknownMetadataText::<std::vec::Vec<u32>>::new()
+                .text_bytes()
+                .collect::<std::vec::Vec<u8>>(),
+            std::vec![],
+        )
+    }
+
+    #[test]
     #[cfg(feature = "std")]
     fn read_string() {
         assert_eq!(
