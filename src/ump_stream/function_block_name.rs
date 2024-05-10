@@ -190,4 +190,14 @@ mod tests {
             0x9,
         );
     }
+
+    #[test]
+    fn read_empty_bytes() {
+        assert_eq!(
+            FunctionBlockName::<std::vec::Vec<u32>>::new()
+                .name_bytes()
+                .collect::<std::vec::Vec<u8>>(),
+            std::vec![],
+        );
+    }
 }
