@@ -20,6 +20,7 @@ pub mod sysex8;
 pub mod system_common;
 #[cfg(feature = "ump-stream")]
 pub mod ump_stream;
+#[cfg(feature = "utility")]
 pub mod utility;
 
 pub mod buffer;
