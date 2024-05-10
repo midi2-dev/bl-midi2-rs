@@ -1,3 +1,9 @@
+# 0.3.0
+docs: fix further readme typos
+feat: utility messages are integrated into top level aggregate
+fix: ⚠️  hide some leaked private types and constants
+revert: ⚠️  remove jr timestamp headers and trait
+
 # 0.2.4
 ci: add standard cargo github actions
 docs: fix various typos
@@ -22,4 +28,4 @@ fix: repository url must be http
 refactor: repo is handled as a cargo workspace
 
 # 0.2.1
-fix: default fetures build
+fix: default features build
