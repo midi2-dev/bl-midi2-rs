@@ -1,3 +1,9 @@
+# 0.4.0
+feat: top level messages implement From for all messages
+fix: ⚠️  utility messages should be excluded when feature is not enabled
+refactor: remove some unused code
+refactor: ⚠️  hide private utility submodules
+
 # 0.3.1
 docs: fix typos in readme
 fix: panic on empty flex-data text iterator
