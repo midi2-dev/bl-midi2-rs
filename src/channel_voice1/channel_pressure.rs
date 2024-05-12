@@ -40,6 +40,22 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     #[test]
+    fn new_arr() {
+        assert_eq!(
+            ChannelPressure::<[u32; 1]>::new(),
+            ChannelPressure([0x20D0_0000])
+        );
+    }
+
+    #[test]
+    fn new_arr_bytes() {
+        assert_eq!(
+            ChannelPressure::<[u8; 2]>::new(),
+            ChannelPressure([0xD0, 0x00])
+        );
+    }
+
+    #[test]
     fn setters() {
         let mut message = ChannelPressure::<[u32; 4]>::new();
         message.set_group(u4::new(0xF));
