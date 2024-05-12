@@ -2,7 +2,6 @@ use ux::*;
 
 pub trait Bounded {
     fn absolute_max() -> Self;
-    fn absolute_min() -> Self;
 }
 
 macro_rules! bounded_impl {
@@ -10,9 +9,6 @@ macro_rules! bounded_impl {
         impl Bounded for $t {
             fn absolute_max() -> Self {
                 <$t>::MAX
-            }
-            fn absolute_min() -> Self {
-                <$t>::MIN
             }
         }
     };

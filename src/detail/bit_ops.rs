@@ -1,4 +1,3 @@
-use crate::{detail::Truncate, *};
 use ux::*;
 
 pub trait BitOps {
@@ -173,7 +172,7 @@ impl BitOps for u8 {
         self
     }
     fn septet(&self, _index: usize) -> u7 {
-        self.truncate()
+        u7::new(self & 0x7F)
     }
     fn set_septet(&mut self, index: usize, v: u7) -> &mut Self {
         assert!(index == 0);
@@ -260,6 +259,12 @@ mod tests_u8 {
     fn set_octet() {
         assert_eq!(0x1_u8.set_octet(0, 0x6), &0x6);
         assert_eq!(0x0_u8.set_octet(0, 0xBE), &0xBE);
+    }
+
+    #[test]
+    fn septet() {
+        assert_eq!(0b0111_1111_u8.septet(0), u7::new(0b0111_1111_u8));
+        assert_eq!(0b1111_1111_u8.septet(0), u7::new(0b0111_1111_u8));
     }
 }
 
