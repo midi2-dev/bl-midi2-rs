@@ -168,8 +168,7 @@ represent messages within a fixed size array.
 ```rust
 use midi2::prelude::*;
 
-let mut message = sysex8::Sysex8::<[u32; 16]>::try_new()
-    .expect("Buffer is large enough for min message size");
+let mut message = sysex8::Sysex8::<[u32; 16]>::new();
 
 // in this mode methods which would require a 
 // buffer resize are fallible

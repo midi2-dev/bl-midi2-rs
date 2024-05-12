@@ -177,7 +177,7 @@ mod tests {
 
     #[test]
     fn try_set_text() {
-        let mut message = UnknownMetadataText::<[u32; 8]>::try_new().unwrap();
+        let mut message = UnknownMetadataText::<[u32; 8]>::new();
         message
             .try_set_text("Gimme some signal!")
             .expect("Shouldn't fail");

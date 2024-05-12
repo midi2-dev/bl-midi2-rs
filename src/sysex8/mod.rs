@@ -918,7 +918,7 @@ mod tests {
     #[test]
     fn set_rubbish_payload_to_fixed_size_buffer() {
         use crate::detail::test_support::rubbish_payload_iterator::RubbishPayloadIterator;
-        let mut message = Sysex8::<[u32; 16]>::try_new().unwrap();
+        let mut message = Sysex8::<[u32; 16]>::new();
         assert_eq!(
             message.try_set_payload(RubbishPayloadIterator::new()),
             Ok(())
@@ -968,7 +968,7 @@ mod tests {
 
     #[test]
     fn set_and_reset_payload_fixed_size_buffer() {
-        let mut message = Sysex8::<[u32; 13]>::try_new().unwrap();
+        let mut message = Sysex8::<[u32; 13]>::new();
         assert_eq!(message.try_set_payload(0..30), Ok(()));
         assert_eq!(message.try_set_payload(0..20), Ok(()));
         assert_eq!(
@@ -988,7 +988,7 @@ mod tests {
 
     #[test]
     fn set_payload_to_fixed_size_buffer_with_overflow() {
-        let mut message = Sysex8::<[u32; 16]>::try_new().unwrap();
+        let mut message = Sysex8::<[u32; 16]>::new();
         assert_eq!(
             message.try_set_payload(0..60),
             Err(crate::error::BufferOverflow)

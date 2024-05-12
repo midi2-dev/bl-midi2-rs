@@ -160,10 +160,7 @@ mod tests {
 
     #[test]
     fn data_with_outsized_buffer() {
-        assert_eq!(
-            ChannelPressure::<[u32; 2]>::try_new().unwrap().data(),
-            &[0x20D0_0000]
-        );
+        assert_eq!(ChannelPressure::<[u32; 2]>::new().data(), &[0x20D0_0000]);
     }
 
     #[test]
@@ -223,18 +220,18 @@ mod tests {
     }
 
     #[test]
-    fn try_new_with_custom_buffer() {
+    fn new_with_arr() {
         assert_eq!(
-            ChannelPressure::<[u32; 2]>::try_new(),
-            Ok(ChannelPressure([0x20D0_0000, 0x0]))
+            ChannelPressure::<[u32; 2]>::new(),
+            ChannelPressure([0x20D0_0000, 0x0]),
         )
     }
 
     #[test]
-    fn try_new_with_custom_buffer_bytes() {
+    fn new_with_arr_bytes() {
         assert_eq!(
-            ChannelPressure::<[u8; 3]>::try_new(),
-            Ok(ChannelPressure([0xD0, 0x00, 0x0]))
+            ChannelPressure::<[u8; 3]>::new(),
+            ChannelPressure([0xD0, 0x00, 0x0]),
         )
     }
 

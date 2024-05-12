@@ -39,8 +39,7 @@
 //! ```rust
 //! use midi2::prelude::*;
 //!
-//! let mut message = sysex8::Sysex8::<[u32; 64]>::try_new()
-//!     .expect("Buffer is large enough for default size");
+//! let mut message = sysex8::Sysex8::<[u32; 64]>::new();
 //! assert_eq!(message.try_set_payload(0..20), Ok(()));
 //! ```
 //! `Vec<U>` implements [BufferMut] and [BufferResize].
