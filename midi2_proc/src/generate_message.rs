@@ -469,6 +469,7 @@ fn new_impl(
                     + crate::buffer::BufferResize
         > #root_ident<B>
         {
+            /// Create a new message backed by a resizable buffer.
             pub fn new() -> #root_ident<B>
             {
                 let mut buffer = <B as crate::buffer::BufferDefault>::default();
@@ -499,6 +500,10 @@ fn new_array_impl(
     quote! {
         impl<const SIZE: usize #generics> #root_ident<#buffer_type>
         {
+            /// Create a new message backed by a simple array type buffer.
+            ///
+            /// Note: this constructor will fail to compile for `SIZE` values
+            /// which are smaller than the minimum representable message size.
             pub fn new() -> #root_ident<#buffer_type>
             {
                 let _valid = <Self as crate::traits::ArraySizeValid<SIZE, #buffer_type>>::VALID;
@@ -524,6 +529,7 @@ fn try_new_impl(
                     + crate::buffer::BufferTryResize
         > #root_ident<B>
         {
+            /// Create a new message backed by a buffer with fallible resize.
             pub fn try_new() -> core::result::Result<#root_ident<B>, crate::error::BufferOverflow>
             {
                 let mut buffer = <B as crate::buffer::BufferDefault>::default();
