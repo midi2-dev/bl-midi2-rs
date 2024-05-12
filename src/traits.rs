@@ -170,7 +170,7 @@ pub(crate) trait SysexInternal<B: crate::buffer::Buffer>: Sysex<B> {
 }
 
 pub(crate) trait MinSize<B: Buffer> {
-    fn min_size() -> usize;
+    const MIN_SIZE: usize;
 }
 
 pub(crate) trait Size<B: Buffer> {
