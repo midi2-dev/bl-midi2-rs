@@ -67,7 +67,7 @@ mod tests {
 
     #[test]
     fn set_name_and_clear_name() {
-        let mut message = EndpointName::new();
+        let mut message = EndpointName::<std::vec::Vec<u32>>::new();
         message.set_name("Gimme some signal 🔊 🙌");
         message.set_name("");
         assert_eq!(

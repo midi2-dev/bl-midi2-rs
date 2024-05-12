@@ -423,7 +423,7 @@ mod tests {
 
     #[test]
     fn set_string_multiple_of_12_length() {
-        let mut message = UnknownMetadataText::new();
+        let mut message = UnknownMetadataText::<std::vec::Vec<u32>>::new();
         message.set_text("Digital Audio Workstation - DAW36-16");
         assert_eq!(
             message,

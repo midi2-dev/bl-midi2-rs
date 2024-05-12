@@ -33,7 +33,7 @@ mod tests {
     fn setter() {
         use crate::traits::{Channeled, Grouped};
 
-        let mut message = ChannelPressure::new_arr();
+        let mut message = ChannelPressure::<[u32; 4]>::new();
         message.set_group(u4::new(0xE));
         message.set_channel(u4::new(0xD));
         message.set_channel_pressure_data(0xDE0DE0F2);
@@ -41,6 +41,22 @@ mod tests {
         assert_eq!(
             message,
             ChannelPressure([0x4EDD_0000, 0xDE0D_E0F2, 0x0, 0x0]),
+        );
+    }
+
+    #[test]
+    fn new_arr_3() {
+        assert_eq!(
+            ChannelPressure::<[u32; 3]>::new(),
+            ChannelPressure([0x40D0_0000, 0x0, 0x0]),
+        );
+    }
+
+    #[test]
+    fn new_arr_2() {
+        assert_eq!(
+            ChannelPressure::<[u32; 2]>::new(),
+            ChannelPressure([0x40D0_0000, 0x0]),
         );
     }
 
