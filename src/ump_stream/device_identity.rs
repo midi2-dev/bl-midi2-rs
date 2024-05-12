@@ -7,7 +7,7 @@ use crate::{
 
 pub(crate) const STATUS: u16 = 0x2;
 
-#[midi2_proc::generate_message(FixedSize, MinSizeUmp(4))]
+#[midi2_proc::generate_message(Via(ump_stream::UmpStream), FixedSize, MinSizeUmp(4))]
 struct DeviceIdentity {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),

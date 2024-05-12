@@ -6,7 +6,7 @@ use crate::{
 
 pub(crate) const STATUS: u8 = 0b1111;
 
-#[midi2_proc::generate_message(FixedSize, MinSizeUmp(1))]
+#[midi2_proc::generate_message(Via(crate::channel_voice2::ChannelVoice2), FixedSize, MinSizeUmp(1))]
 struct PerNoteManagement {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),

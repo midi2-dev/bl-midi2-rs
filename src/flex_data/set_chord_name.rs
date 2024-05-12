@@ -8,7 +8,7 @@ use crate::{
 
 const STATUS: u8 = 0x6;
 
-#[midi2_proc::generate_message(FixedSize, MinSizeUmp(4))]
+#[midi2_proc::generate_message(Via(crate::flex_data::FlexData), FixedSize, MinSizeUmp(4))]
 struct SetChordName {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),

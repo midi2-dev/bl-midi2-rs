@@ -5,7 +5,7 @@ use crate::{
 
 pub const STATUS: u8 = 0xF2;
 
-#[midi2_proc::generate_message(FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
+#[midi2_proc::generate_message(Via(system_common::SystemCommon), FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
 struct SongPositionPointer {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),

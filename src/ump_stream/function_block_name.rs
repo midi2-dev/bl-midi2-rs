@@ -7,7 +7,7 @@ use crate::{
 
 pub(crate) const STATUS: u16 = 0x12;
 
-#[midi2_proc::generate_message(MinSizeUmp(4))]
+#[midi2_proc::generate_message(Via(ump_stream::UmpStream), MinSizeUmp(4))]
 struct FunctionBlockName {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),

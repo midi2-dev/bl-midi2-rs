@@ -6,7 +6,7 @@ use crate::{
 
 pub(crate) const STATUS: u8 = 0b0010;
 
-#[midi2_proc::generate_message(FixedSize, MinSizeUmp(2))]
+#[midi2_proc::generate_message(Via(crate::channel_voice2::ChannelVoice2), FixedSize, MinSizeUmp(2))]
 struct RegisteredController {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),

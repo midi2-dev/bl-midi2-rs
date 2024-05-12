@@ -14,11 +14,6 @@ pub fn derive_data(item: TokenStream1) -> TokenStream1 {
     derives::data(item)
 }
 
-#[proc_macro_derive(JitterReduced)]
-pub fn derive_jitter_reduced(item: TokenStream1) -> TokenStream1 {
-    derives::jitter_reduced(item)
-}
-
 #[proc_macro_derive(Grouped)]
 pub fn derive_grouped(item: TokenStream1) -> TokenStream1 {
     derives::grouped(item)

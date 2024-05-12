@@ -102,6 +102,7 @@ struct GenerateMessageArgs {
     fixed_size: bool,
     min_size_ump: Option<usize>,
     min_size_bytes: Option<usize>,
+    via: Option<syn::Type>,
 }
 
 impl GenerateMessageArgs {
@@ -124,7 +125,9 @@ impl syn::parse::Parse for GenerateMessageArgs {
                 break;
             };
 
-            let ident = ident.to_string();
+            if ident == "Via" {
+                args.via = Some(parse_via_args(input));
+            }
             if ident == "FixedSize" {
                 args.fixed_size = true;
             }
@@ -161,6 +164,22 @@ fn parse_fixed_size(input: syn::parse::ParseStream) -> usize {
     int_lit
         .base10_parse::<usize>()
         .expect("Valid base 10 literal size")
+}
+
+fn parse_via_args(input: syn::parse::ParseStream) -> syn::Type {
+    let syn::ExprParen { expr, .. } = input
+        .parse()
+        .expect("Bracketed expression should follow size arg");
+
+    let syn::Expr::Path(path) = *expr
+    else {
+        panic!("Via argument should contain a path type");
+    };
+
+    syn::Type::Path(syn::TypePath{
+        qself: path.qself,
+        path: path.path,
+    })
 }
 
 fn imports() -> TokenStream {
@@ -692,6 +711,26 @@ fn try_from_ump_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> Tok
     }
 }
 
+fn ump_message_via(root_ident: &syn::Ident, via_type: &syn::Type) -> TokenStream {
+    quote! {
+        impl<B: crate::buffer::Ump> core::convert::From<#root_ident<B>> for crate::message::UmpMessage<B> {
+            fn from(value: #root_ident<B>) -> Self {
+                <#via_type<B> as core::convert::From<#root_ident<B>>>::from(value).into()
+            }
+        }
+    }
+}
+
+fn bytes_message_via(root_ident: &syn::Ident, via_type: &syn::Type) -> TokenStream {
+    quote! {
+        impl<B: crate::buffer::Bytes> core::convert::From<#root_ident<B>> for crate::message::BytesMessage<B> {
+            fn from(value: #root_ident<B>) -> Self {
+                <#via_type<B> as core::convert::From<#root_ident<B>>>::from(value).into()
+            }
+        }
+    }
+}
+
 pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1 {
     let input = syn::parse_macro_input!(item as syn::ItemStruct);
     let args = syn::parse_macro_input!(attrs as GenerateMessageArgs);
@@ -751,6 +790,16 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
             tokens.extend(from_ump_impl(root_ident, &properties));
             tokens.extend(try_from_bytes_impl(root_ident, &properties));
             tokens.extend(try_from_ump_impl(root_ident, &properties));
+        }
+    }
+    if let Some(via_type) = args.via.as_ref() {
+        match args.representation() {
+            Representation::Ump => tokens.extend(ump_message_via(root_ident, &via_type)),
+            Representation::Bytes => tokens.extend(bytes_message_via(root_ident, &via_type)),
+            Representation::UmpOrBytes => {
+                tokens.extend(ump_message_via(root_ident, &via_type));
+                tokens.extend(bytes_message_via(root_ident, &via_type));
+            }
         }
     }
 

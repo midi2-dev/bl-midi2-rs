@@ -1,8 +1,8 @@
-pub mod no_op {
+mod no_op {
     use crate::detail::common_properties;
     use crate::utility;
     pub const STATUS: u8 = 0b0000;
-    #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1))]
+    #[midi2_proc::generate_message(Via(crate::utility::Utility), FixedSize, MinSizeUmp(1))]
     struct NoOp {
         #[property(common_properties::UmpMessageTypeProperty<{utility::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
@@ -12,11 +12,11 @@ pub mod no_op {
         time_data: u16,
     }
 }
-pub mod clock {
+mod clock {
     use crate::detail::common_properties;
     use crate::utility;
     pub const STATUS: u8 = 0b0001;
-    #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1))]
+    #[midi2_proc::generate_message(Via(crate::utility::Utility), FixedSize, MinSizeUmp(1))]
     struct Clock {
         #[property(common_properties::UmpMessageTypeProperty<{utility::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
@@ -26,11 +26,11 @@ pub mod clock {
         time_data: u16,
     }
 }
-pub mod timestamp {
+mod timestamp {
     use crate::detail::common_properties;
     use crate::utility;
     pub const STATUS: u8 = 0b0010;
-    #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1))]
+    #[midi2_proc::generate_message(Via(crate::utility::Utility), FixedSize, MinSizeUmp(1))]
     struct Timestamp {
         #[property(common_properties::UmpMessageTypeProperty<{utility::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
@@ -94,11 +94,11 @@ pub mod timestamp {
         }
     }
 }
-pub mod delta_clockstamp {
+mod delta_clockstamp {
     use crate::detail::common_properties;
     use crate::utility;
     pub const STATUS: u8 = 0b0100;
-    #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1))]
+    #[midi2_proc::generate_message(Via(crate::utility::Utility), FixedSize, MinSizeUmp(1))]
     struct DeltaClockstamp {
         #[property(common_properties::UmpMessageTypeProperty<{utility::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
@@ -108,11 +108,11 @@ pub mod delta_clockstamp {
         time_data: u16,
     }
 }
-pub mod delta_clockstamp_tpq {
+mod delta_clockstamp_tpq {
     use crate::detail::common_properties;
     use crate::utility;
     pub const STATUS: u8 = 0b0011;
-    #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1))]
+    #[midi2_proc::generate_message(Via(crate::utility::Utility), FixedSize, MinSizeUmp(1))]
     struct DeltaClockstampTPQ {
         #[property(common_properties::UmpMessageTypeProperty<{utility::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
@@ -124,6 +124,12 @@ pub mod delta_clockstamp_tpq {
 }
 
 pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x0;
+
+pub use no_op::NoOp;
+pub use clock::Clock;
+pub use timestamp::Timestamp;
+pub use delta_clockstamp::DeltaClockstamp;
+pub use delta_clockstamp_tpq::DeltaClockstampTPQ;
 
 struct DataProperty;
 
