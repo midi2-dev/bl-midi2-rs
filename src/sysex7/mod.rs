@@ -1152,7 +1152,7 @@ mod tests {
 
     #[test]
     fn try_set_payload_bytes() {
-        let mut message = Sysex7::<[u8; 22]>::try_new().unwrap();
+        let mut message = Sysex7::<[u8; 22]>::new();
         message.try_set_payload((0u8..20u8).map(u7::new)).unwrap();
         assert_eq!(
             message,
@@ -1165,7 +1165,7 @@ mod tests {
 
     #[test]
     fn try_set_payload_bytes_fail() {
-        let mut message = Sysex7::<[u8; 22]>::try_new().unwrap();
+        let mut message = Sysex7::<[u8; 22]>::new();
         assert_eq!(
             message.try_set_payload((0u8..30u8).map(u7::new)),
             Err(crate::error::BufferOverflow),
@@ -1226,7 +1226,7 @@ mod tests {
     #[test]
     fn try_set_rubbish_payload_to_fixed_size_buffer_ump() {
         use crate::detail::test_support::rubbish_payload_iterator::RubbishPayloadIterator;
-        let mut message = Sysex7::<[u32; 18]>::try_new().unwrap();
+        let mut message = Sysex7::<[u32; 18]>::new();
         message
             .try_set_payload(RubbishPayloadIterator::new().map(u7::new))
             .expect("Shouldn't fail");
@@ -1302,7 +1302,7 @@ mod tests {
     #[test]
     fn try_set_rubbish_payload_to_fixed_size_buffer() {
         use crate::detail::test_support::rubbish_payload_iterator::RubbishPayloadIterator;
-        let mut message = Sysex7::<[u8; 52]>::try_new().unwrap();
+        let mut message = Sysex7::<[u8; 52]>::new();
         message
             .try_set_payload(RubbishPayloadIterator::new().map(u7::new))
             .expect("Shouldn't fail");
@@ -1524,7 +1524,7 @@ mod tests {
 
     #[test]
     fn set_payload_to_fixed_size_buffer_with_overflow() {
-        let mut message = Sysex7::<[u32; 8]>::try_new().unwrap();
+        let mut message = Sysex7::<[u32; 8]>::new();
         assert_eq!(
             message.try_set_payload((0..30).map(u7::new)),
             Err(crate::error::BufferOverflow)

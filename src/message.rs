@@ -282,7 +282,7 @@ mod tests {
     fn from_level2_flex_data() {
         use crate::flex_data::Lyrics;
 
-        let level2_message = Lyrics::<[u32; 4]>::try_new().expect("Buffer large enough");
+        let level2_message = Lyrics::<[u32; 4]>::new();
         let _: UmpMessage<[u32; 4]> = level2_message.into();
     }
 
