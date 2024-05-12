@@ -388,7 +388,7 @@ fn try_from_other<
     let mut buffer = <B as crate::buffer::BufferDefault>::default();
     try_resize(
         &mut buffer,
-        <Sysex7<B> as crate::traits::MinSize<B>>::min_size(),
+        <Sysex7<B> as crate::traits::MinSize<B>>::MIN_SIZE,
     )?;
 
     convert_generated_properties(&other.0, &mut buffer);

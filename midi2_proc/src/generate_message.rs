@@ -374,7 +374,7 @@ fn size_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream
     quote! {
         impl<B: #constraint> crate::traits::Size<B> for #root_ident<B> {
             fn size(&self) -> usize {
-                <Self as crate::traits::MinSize<B>>::min_size()
+                <Self as crate::traits::MinSize<B>>::MIN_SIZE
             }
         }
     }
@@ -396,9 +396,7 @@ fn min_size_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenSt
     let constraint = generic_buffer_constraint(args);
     quote! {
         impl<B: #constraint> crate::traits::MinSize<B> for #root_ident<B> {
-            fn min_size() -> usize {
-                #body
-            }
+            const MIN_SIZE: usize = #body;
         }
     }
 }
@@ -459,7 +457,7 @@ fn try_from_slice_impl(
         impl<'a, #generic_unit> core::convert::TryFrom<&'a [#unit_type]> for #root_ident<&'a [#unit_type]> {
             type Error = crate::error::Error;
             fn try_from(buffer: &'a [#unit_type]) -> core::result::Result<Self, Self::Error> {
-                if buffer.len() < <Self as crate::traits::MinSize<&[#unit_type]>>::min_size() {
+                if buffer.len() < <Self as crate::traits::MinSize<&[#unit_type]>>::MIN_SIZE {
                     return Err(crate::error::Error::InvalidData("Slice is too short"));
                 }
                 #validation_steps
@@ -518,7 +516,7 @@ fn new_impl(
             pub fn new() -> #root_ident<B>
             {
                 let mut buffer = <B as crate::buffer::BufferDefault>::default();
-                buffer.resize(<Self as crate::traits::MinSize<B>>::min_size());
+                buffer.resize(<Self as crate::traits::MinSize<B>>::MIN_SIZE);
                 #initialise_properties
                 #root_ident::<B>(buffer)
             }
@@ -543,7 +541,7 @@ fn try_new_impl(
             pub fn try_new() -> core::result::Result<#root_ident<B>, crate::error::BufferOverflow>
             {
                 let mut buffer = <B as crate::buffer::BufferDefault>::default();
-                buffer.try_resize(<Self as crate::traits::MinSize<B>>::min_size())?;
+                buffer.try_resize(<Self as crate::traits::MinSize<B>>::MIN_SIZE)?;
                 #initialise_properties
                 Ok(#root_ident::<B>(buffer))
             }
@@ -622,7 +620,7 @@ fn from_bytes_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> Token
         {
             fn from_bytes(other: #root_ident<A>) -> Self {
                 let mut buffer = <B as crate::buffer::BufferDefault>::default();
-                buffer.resize(<#root_ident<B> as crate::traits::MinSize<B>>::min_size());
+                buffer.resize(<#root_ident<B> as crate::traits::MinSize<B>>::MIN_SIZE);
                 #convert_properties
                 Self(buffer)
             }
@@ -643,7 +641,7 @@ fn try_from_bytes_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> T
         {
             fn try_from_bytes(other: #root_ident<A>) -> core::result::Result<Self, crate::error::BufferOverflow> {
                 let mut buffer = <B as crate::buffer::BufferDefault>::default();
-                buffer.try_resize(<#root_ident<B> as crate::traits::MinSize<B>>::min_size())?;
+                buffer.try_resize(<#root_ident<B> as crate::traits::MinSize<B>>::MIN_SIZE)?;
                 #convert_properties
                 Ok(Self(buffer))
             }
@@ -681,7 +679,7 @@ fn from_ump_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenSt
         {
             fn from_ump(other: #root_ident<A>) -> Self {
                 let mut buffer = <B as crate::buffer::BufferDefault>::default();
-                buffer.resize(<#root_ident<B> as crate::traits::MinSize<B>>::min_size());
+                buffer.resize(<#root_ident<B> as crate::traits::MinSize<B>>::MIN_SIZE);
                 #convert_properties
                 Self(buffer)
             }
@@ -702,7 +700,7 @@ fn try_from_ump_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> Tok
         {
             fn try_from_ump(other: #root_ident<A>) -> core::result::Result<Self, crate::error::BufferOverflow> {
                 let mut buffer = <B as crate::buffer::BufferDefault>::default();
-                buffer.try_resize(<#root_ident<B> as crate::traits::MinSize<B>>::min_size())?;
+                buffer.try_resize(<#root_ident<B> as crate::traits::MinSize<B>>::MIN_SIZE)?;
                 #convert_properties
                 Ok(Self(buffer))
             }
