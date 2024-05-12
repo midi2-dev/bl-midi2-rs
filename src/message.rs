@@ -267,4 +267,67 @@ mod tests {
             panic!();
         };
     }
+
+    #[cfg(feature = "channel-voice1")]
+    #[test]
+    fn from_level2() {
+        use crate::channel_voice1::ChannelPressure;
+
+        let level2_message = ChannelPressure::new_arr();
+        let _: UmpMessage<[u32; 4]> = level2_message.into();
+    }
+
+    #[cfg(feature = "flex-data")]
+    #[test]
+    fn from_level2_flex_data() {
+        use crate::flex_data::Lyrics;
+
+        let level2_message = Lyrics::<[u32; 4]>::try_new().expect("Buffer large enough");
+        let _: UmpMessage<[u32; 4]> = level2_message.into();
+    }
+
+    #[cfg(feature = "channel-voice1")]
+    #[test]
+    fn from_level2_bytes() {
+        use crate::channel_voice1::ChannelPressure;
+
+        let level2_message = ChannelPressure::new_arr_bytes();
+        let _: BytesMessage<[u8; 3]> = level2_message.into();
+    }
+
+    #[cfg(feature = "channel-voice2")]
+    #[test]
+    fn from_level2_channel_voice2() {
+        use crate::channel_voice2::ChannelPressure;
+
+        let level2_message = ChannelPressure::new_arr();
+        let _: UmpMessage<[u32; 4]> = level2_message.into();
+    }
+
+    #[cfg(feature = "ump-stream")]
+    #[test]
+    fn from_level2_ump_stream() {
+        use crate::ump_stream::EndOfClip;
+
+        let level2_message = EndOfClip::new_arr();
+        let _: UmpMessage<[u32; 4]> = level2_message.into();
+    }
+
+    #[cfg(feature = "utility")]
+    #[test]
+    fn from_level2_utility() {
+        use crate::utility::DeltaClockstampTPQ;
+
+        let level2_message = DeltaClockstampTPQ::new_arr();
+        let _: UmpMessage<[u32; 4]> = level2_message.into();
+    }
+
+    #[cfg(feature = "system-common")]
+    #[test]
+    fn from_level2_system_common() {
+        use crate::system_common::Stop;
+
+        let level2_message = Stop::new_arr();
+        let _: UmpMessage<[u32; 4]> = level2_message.into();
+    }
 }

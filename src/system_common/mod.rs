@@ -12,7 +12,7 @@ mod tune_request {
         system_common::{self, UMP_MESSAGE_TYPE},
     };
     pub(crate) const STATUS: u8 = 0xF6;
-    #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
+    #[midi2_proc::generate_message(Via(system_common::SystemCommon), FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
     struct TuneRequest {
         #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
         ump_type: (),
@@ -28,7 +28,7 @@ mod timing_clock {
         system_common::{self, UMP_MESSAGE_TYPE},
     };
     pub(crate) const STATUS: u8 = 0xF8;
-    #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
+    #[midi2_proc::generate_message(Via(system_common::SystemCommon), FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
     struct TimingClock {
         #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
         ump_type: (),
@@ -44,7 +44,7 @@ mod start {
         system_common::{self, UMP_MESSAGE_TYPE},
     };
     pub(crate) const STATUS: u8 = 0xFA;
-    #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
+    #[midi2_proc::generate_message(Via(system_common::SystemCommon), FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
     struct Start {
         #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
         ump_type: (),
@@ -60,7 +60,7 @@ mod cont {
         system_common::{self, UMP_MESSAGE_TYPE},
     };
     pub(crate) const STATUS: u8 = 0xFB;
-    #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
+    #[midi2_proc::generate_message(Via(system_common::SystemCommon), FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
     struct Continue {
         #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
         ump_type: (),
@@ -76,7 +76,7 @@ mod stop {
         system_common::{self, UMP_MESSAGE_TYPE},
     };
     pub(crate) const STATUS: u8 = 0xFC;
-    #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
+    #[midi2_proc::generate_message(Via(system_common::SystemCommon), FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
     struct Stop {
         #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
         ump_type: (),
@@ -92,7 +92,7 @@ mod active_sensing {
         system_common::{self, UMP_MESSAGE_TYPE},
     };
     pub(crate) const STATUS: u8 = 0xFE;
-    #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
+    #[midi2_proc::generate_message(Via(system_common::SystemCommon), FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
     struct ActiveSensing {
         #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
         ump_type: (),
@@ -108,7 +108,7 @@ mod reset {
         system_common::{self, UMP_MESSAGE_TYPE},
     };
     pub(crate) const STATUS: u8 = 0xFF;
-    #[midi2_proc::generate_message(FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
+    #[midi2_proc::generate_message(Via(system_common::SystemCommon), FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
     struct Reset {
         #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
         ump_type: (),

@@ -6,7 +6,7 @@ use crate::{
 
 pub(crate) const STATUS: u16 = 0x5;
 
-#[midi2_proc::generate_message(FixedSize, MinSizeUmp(1))]
+#[midi2_proc::generate_message(Via(ump_stream::UmpStream), FixedSize, MinSizeUmp(1))]
 struct StreamConfigurationRequest {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),

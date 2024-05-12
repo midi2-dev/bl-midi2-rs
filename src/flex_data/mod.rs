@@ -21,7 +21,7 @@ mod project_name {
     const BANK: u8 = super::METADATA_TEXT_BANK;
     const STATUS: u8 = 0x1;
 
-    #[midi2_proc::generate_message(MinSizeUmp(4))]
+    #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
     struct ProjectName {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
@@ -62,7 +62,7 @@ mod composition_name {
     const BANK: u8 = super::METADATA_TEXT_BANK;
     const STATUS: u8 = 0x2;
 
-    #[midi2_proc::generate_message(MinSizeUmp(4))]
+    #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
     struct CompositionName {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
@@ -103,7 +103,7 @@ mod midi_clip_name {
     const BANK: u8 = super::METADATA_TEXT_BANK;
     const STATUS: u8 = 0x3;
 
-    #[midi2_proc::generate_message(MinSizeUmp(4))]
+    #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
     struct MidiClipName {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
@@ -144,7 +144,7 @@ mod copyright_notice {
     const BANK: u8 = super::METADATA_TEXT_BANK;
     const STATUS: u8 = 0x4;
 
-    #[midi2_proc::generate_message(MinSizeUmp(4))]
+    #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
     struct CopyrightNotice {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
@@ -185,7 +185,7 @@ mod composer_name {
     const BANK: u8 = super::METADATA_TEXT_BANK;
     const STATUS: u8 = 0x5;
 
-    #[midi2_proc::generate_message(MinSizeUmp(4))]
+    #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
     struct ComposerName {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
@@ -226,7 +226,7 @@ mod lyricist_name {
     const BANK: u8 = super::METADATA_TEXT_BANK;
     const STATUS: u8 = 0x6;
 
-    #[midi2_proc::generate_message(MinSizeUmp(4))]
+    #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
     struct LyricistName {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
@@ -267,7 +267,7 @@ mod arranger_name {
     const BANK: u8 = super::METADATA_TEXT_BANK;
     const STATUS: u8 = 0x7;
 
-    #[midi2_proc::generate_message(MinSizeUmp(4))]
+    #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
     struct ArrangerName {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
@@ -308,7 +308,7 @@ mod publisher_name {
     const BANK: u8 = super::METADATA_TEXT_BANK;
     const STATUS: u8 = 0x8;
 
-    #[midi2_proc::generate_message(MinSizeUmp(4))]
+    #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
     struct PublisherName {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
@@ -349,7 +349,7 @@ mod primary_performer_name {
     const BANK: u8 = super::METADATA_TEXT_BANK;
     const STATUS: u8 = 0x9;
 
-    #[midi2_proc::generate_message(MinSizeUmp(4))]
+    #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
     struct PrimaryPerformerName {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
@@ -390,7 +390,7 @@ mod accompanying_performer_name {
     const BANK: u8 = super::METADATA_TEXT_BANK;
     const STATUS: u8 = 0xA;
 
-    #[midi2_proc::generate_message(MinSizeUmp(4))]
+    #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
     struct AccompanyingPerformerName {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
@@ -431,7 +431,7 @@ mod recording_date {
     const BANK: u8 = super::METADATA_TEXT_BANK;
     const STATUS: u8 = 0xB;
 
-    #[midi2_proc::generate_message(MinSizeUmp(4))]
+    #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
     struct RecordingDate {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
@@ -472,7 +472,7 @@ mod recording_location {
     const BANK: u8 = super::METADATA_TEXT_BANK;
     const STATUS: u8 = 0xC;
 
-    #[midi2_proc::generate_message(MinSizeUmp(4))]
+    #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
     struct RecordingLocation {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
@@ -513,7 +513,7 @@ mod unknown_performance_text {
     const BANK: u8 = super::PERFORMANCE_TEXT_BANK;
     const STATUS: u8 = 0x0;
 
-    #[midi2_proc::generate_message(MinSizeUmp(4))]
+    #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
     struct UnknownPerformanceText {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
@@ -554,7 +554,7 @@ mod lyrics {
     const BANK: u8 = super::PERFORMANCE_TEXT_BANK;
     const STATUS: u8 = 0x1;
 
-    #[midi2_proc::generate_message(MinSizeUmp(4))]
+    #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
     struct Lyrics {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
@@ -595,7 +595,7 @@ mod lyrics_language {
     const BANK: u8 = super::PERFORMANCE_TEXT_BANK;
     const STATUS: u8 = 0x2;
 
-    #[midi2_proc::generate_message(MinSizeUmp(4))]
+    #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
     struct LyricsLanguage {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
@@ -636,7 +636,7 @@ mod ruby {
     const BANK: u8 = super::PERFORMANCE_TEXT_BANK;
     const STATUS: u8 = 0x3;
 
-    #[midi2_proc::generate_message(MinSizeUmp(4))]
+    #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
     struct Ruby {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
@@ -677,7 +677,7 @@ mod ruby_language {
     const BANK: u8 = super::PERFORMANCE_TEXT_BANK;
     const STATUS: u8 = 0x4;
 
-    #[midi2_proc::generate_message(MinSizeUmp(4))]
+    #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
     struct RubyLanguage {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
         ump_type: (),

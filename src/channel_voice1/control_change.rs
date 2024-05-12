@@ -5,7 +5,12 @@ use crate::{
 
 pub(crate) const STATUS: u8 = 0b1011;
 
-#[midi2_proc::generate_message(FixedSize, MinSizeUmp(1), MinSizeBytes(3))]
+#[midi2_proc::generate_message(
+    Via(crate::channel_voice1::ChannelVoice1),
+    FixedSize,
+    MinSizeUmp(1),
+    MinSizeBytes(3)
+)]
 struct ControlChange {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),

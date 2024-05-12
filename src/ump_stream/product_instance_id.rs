@@ -2,7 +2,7 @@ use crate::{detail::common_properties, ump_stream, ump_stream::UMP_MESSAGE_TYPE}
 
 pub(crate) const STATUS: u16 = 0x4;
 
-#[midi2_proc::generate_message(MinSizeUmp(4))]
+#[midi2_proc::generate_message(Via(ump_stream::UmpStream), MinSizeUmp(4))]
 struct ProductInstanceId {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),

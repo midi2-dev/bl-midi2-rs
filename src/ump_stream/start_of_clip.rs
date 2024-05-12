@@ -2,7 +2,7 @@ use crate::{detail::common_properties, ump_stream, ump_stream::UMP_MESSAGE_TYPE}
 
 pub(crate) const STATUS: u16 = 0x20;
 
-#[midi2_proc::generate_message(FixedSize, MinSizeUmp(1))]
+#[midi2_proc::generate_message(Via(ump_stream::UmpStream), FixedSize, MinSizeUmp(1))]
 struct StartOfClip {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),

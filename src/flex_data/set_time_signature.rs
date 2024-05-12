@@ -5,7 +5,7 @@ use crate::{
 
 const STATUS: u8 = 0x1;
 
-#[midi2_proc::generate_message(FixedSize, MinSizeUmp(2))]
+#[midi2_proc::generate_message(Via(crate::flex_data::FlexData), FixedSize, MinSizeUmp(2))]
 struct SetTimeSignature {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),

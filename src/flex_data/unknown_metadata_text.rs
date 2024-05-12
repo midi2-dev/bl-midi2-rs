@@ -2,7 +2,7 @@ use crate::{detail::common_properties, flex_data};
 
 const STATUS: u8 = 0x00;
 
-#[midi2_proc::generate_message(MinSizeUmp(4))]
+#[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
 struct UnknownMetadataText {
     #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
     ump_type: (),
