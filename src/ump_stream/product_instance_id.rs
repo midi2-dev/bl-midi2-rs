@@ -36,7 +36,7 @@ mod tests {
 
     #[test]
     fn set_id() {
-        let mut message = ProductInstanceId::new();
+        let mut message = ProductInstanceId::<std::vec::Vec<u32>>::new();
         message.set_id("PianoPulse");
         assert_eq!(
             message,

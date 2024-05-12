@@ -130,7 +130,7 @@ mod tests {
 
     #[test]
     fn set_name() {
-        let mut message = FunctionBlockName::new();
+        let mut message = FunctionBlockName::<std::vec::Vec<u32>>::new();
         message.set_name("SynthWave🌊²");
         message.set_function_block(0x09);
         assert_eq!(

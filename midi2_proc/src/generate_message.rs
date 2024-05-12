@@ -524,6 +524,36 @@ fn new_impl(
     }
 }
 
+fn new_array_impl(
+    root_ident: &syn::Ident,
+    args: &GenerateMessageArgs,
+    properties: &Vec<Property>,
+) -> TokenStream {
+    let generics = match args.representation() {
+        Representation::UmpOrBytes => quote!{ , U: crate::buffer::Unit },
+        _ => TokenStream::new(),
+    };
+    let unit_type = match args.representation() {
+        Representation::Ump => quote!{ u32 },
+        Representation::Bytes => quote!{ u8 },
+        Representation::UmpOrBytes => quote!{ U },
+    };
+    let buffer_type = quote! { [#unit_type; SIZE] };
+    let initialise_properties = initialise_property_statements(properties, quote! { #buffer_type });
+    quote! {
+        impl<const SIZE: usize #generics> #root_ident<#buffer_type>
+        {
+            pub fn new() -> #root_ident<#buffer_type>
+            {
+                let _valid = <Self as crate::traits::ArraySizeValid<SIZE, #buffer_type>>::VALID;
+                let mut buffer = [<#unit_type as crate::buffer::Unit>::zero(); SIZE];
+                #initialise_properties
+                #root_ident(buffer)
+            }
+        }
+    }
+}
+
 fn try_new_impl(
     root_ident: &syn::Ident,
     args: &GenerateMessageArgs,
@@ -744,6 +774,7 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     let rebuffer_from_impl = rebuffer_from_impl(root_ident, &args);
     let try_rebuffer_from_impl = try_rebuffer_from_impl(root_ident, &args);
     let new_impl = new_impl(root_ident, &args, &properties);
+    let new_array_impl = new_array_impl(root_ident, &args, &properties);
     let try_new_impl = try_new_impl(root_ident, &args, &properties);
     let clone_impl = clone_impl(root_ident, &args);
 
@@ -760,6 +791,7 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
         #rebuffer_from_impl
         #try_rebuffer_from_impl
         #new_impl
+        #new_array_impl
         #try_new_impl
         #clone_impl
     });

@@ -173,6 +173,16 @@ pub(crate) trait MinSize<B: Buffer> {
     const MIN_SIZE: usize;
 }
 
+pub(crate) trait ArraySizeValid<const SIZE: usize, B: Buffer>: MinSize<B> {
+    const VALID: ();
+}
+
+impl<const SIZE: usize, B: Buffer, M: MinSize<B>> ArraySizeValid<SIZE, B> for M {
+    const VALID: () = if SIZE < <Self as MinSize<B>>::MIN_SIZE {
+        panic!("Array is shorter than minimum message size");
+    };
+}
+
 pub(crate) trait Size<B: Buffer> {
     fn size(&self) -> usize;
 }
