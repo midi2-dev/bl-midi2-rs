@@ -33,7 +33,7 @@ mod tests {
     fn setters() {
         use crate::traits::{Channeled, Grouped};
 
-        let mut message = AssignableController::new_arr();
+        let mut message = AssignableController::<[u32; 4]>::new();
         message.set_group(u4::new(0xC));
         message.set_channel(u4::new(0x8));
         message.set_bank(u7::new(0x51));

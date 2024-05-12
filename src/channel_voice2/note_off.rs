@@ -36,7 +36,7 @@ mod tests {
     fn builder() {
         use crate::traits::{Channeled, Grouped};
 
-        let mut message = NoteOff::new_arr();
+        let mut message = NoteOff::<[u32; 4]>::new();
         message.set_group(u4::new(0x2));
         message.set_channel(u4::new(0x4));
         message.set_note(u7::new(0x4E));
@@ -50,7 +50,7 @@ mod tests {
     fn builder_no_attribute() {
         use crate::traits::{Channeled, Grouped};
 
-        let mut message = NoteOff::new_arr();
+        let mut message = NoteOff::<[u32; 4]>::new();
         message.set_group(u4::new(0x2));
         message.set_channel(u4::new(0x4));
         message.set_note(u7::new(0x4E));

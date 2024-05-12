@@ -39,7 +39,7 @@ mod tests {
 
     #[test]
     fn builder() {
-        let mut message = PitchBend::new_arr();
+        let mut message = PitchBend::<[u32; 4]>::new();
         message.set_group(u4::new(0x1));
         message.set_channel(u4::new(0xE));
         message.set_bend(u14::new(0x147));

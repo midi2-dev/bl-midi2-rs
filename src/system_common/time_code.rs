@@ -34,7 +34,7 @@ mod tests {
 
     #[test]
     fn setter() {
-        let mut message = TimeCode::new_arr();
+        let mut message = TimeCode::<[u32; 4]>::new();
         message.set_group(u4::new(0x5));
         message.set_time_code(u7::new(0x5F));
         assert_eq!(message, TimeCode([0x15F1_5F00, 0x0, 0x0, 0x0]),);
@@ -42,7 +42,7 @@ mod tests {
 
     #[test]
     fn setters_bytes() {
-        let mut message = TimeCode::new_arr_bytes();
+        let mut message = TimeCode::<[u8; 3]>::new();
         message.set_time_code(u7::new(0x5F));
         assert_eq!(message, TimeCode([0xF1, 0x5F, 0x0,]),);
     }

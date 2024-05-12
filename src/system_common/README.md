@@ -15,7 +15,7 @@ standards.
 ```rust
 use midi2::prelude::*;
 
-let mut message = system_common::SongSelect::new_arr_bytes();
+let mut message = system_common::SongSelect::<[u8; 3]>::new();
 message.set_song(u7::new(0x42));
 assert_eq!(message.data(), &[0xF3, 0x42]);
 ```
@@ -26,7 +26,7 @@ encoded into Universal Message Packets.
 ```rust
 use midi2::prelude::*;
 
-let mut message = system_common::SongSelect::new_arr();
+let mut message = system_common::SongSelect::<[u32; 4]>::new();
 message.set_song(u7::new(0x42));
 message.set_group(u4::new(0x3));
 assert_eq!(message.data(), &[0x13F3_4200]);

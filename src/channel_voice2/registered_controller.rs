@@ -33,7 +33,7 @@ mod tests {
     fn builder() {
         use crate::traits::{Channeled, Grouped};
 
-        let mut message = RegisteredController::new_arr();
+        let mut message = RegisteredController::<[u32; 4]>::new();
         message.set_group(u4::new(0xA));
         message.set_channel(u4::new(0xB));
         message.set_bank(u7::new(0x7D));

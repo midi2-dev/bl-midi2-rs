@@ -39,7 +39,7 @@ mod tests {
 
     #[test]
     fn builder() {
-        let mut message = ProgramChange::new_arr();
+        let mut message = ProgramChange::<[u32; 4]>::new();
         message.set_group(u4::new(0x4));
         message.set_channel(u4::new(0x7));
         message.set_program(u7::new(0x63));

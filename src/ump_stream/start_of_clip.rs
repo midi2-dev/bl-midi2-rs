@@ -20,7 +20,7 @@ mod tests {
     #[test]
     fn builder() {
         assert_eq!(
-            StartOfClip::new_arr(),
+            StartOfClip::<[u32; 4]>::new(),
             StartOfClip([0xF020_0000, 0x0, 0x0, 0x0]),
         );
     }

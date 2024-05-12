@@ -405,7 +405,7 @@ mod tests {
 
     #[test]
     fn setters() {
-        let mut message = SetChordName::new_arr();
+        let mut message = SetChordName::<[u32; 4]>::new();
         message.set_group(u4::new(0x7));
         message.set_optional_channel(Some(u4::new(0xB)));
         message.set_tonic_sharps_flats(SharpsFlats::Flat);

@@ -61,7 +61,7 @@ mod tests {
 
     #[test]
     fn setters() {
-        let mut message = SetMetronome::new_arr();
+        let mut message = SetMetronome::<[u32; 4]>::new();
         message.set_group(u4::new(0x1));
         message.set_number_of_clocks_per_primary_click(0x9B);
         message.set_bar_accent1(0x4A);

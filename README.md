@@ -23,7 +23,7 @@ A strongly typed message wrapper is provided for every message in the MIDI 2.0 s
 use midi2::prelude::*;
 
 // Messages have a simple setter / getter interface
-let mut note_on = channel_voice2::NoteOn::new_arr();
+let mut note_on = channel_voice2::NoteOn::<[u32; 4]>::new();
 note_on.set_group(u4::new(0x8));
 note_on.set_channel(u4::new(0xA));
 note_on.set_note(u7::new(0x5E));
@@ -242,7 +242,7 @@ To do this simply use a backing buffer over `u8` instead of `u32`! ✨🎩
 ```rust
 use midi2::prelude::*;
 
-let mut message = channel_voice1::ChannelPressure::new_arr_bytes();
+let mut message = channel_voice1::ChannelPressure::<[u8; 3]>::new();
 message.set_channel(u4::new(0x6));
 message.set_pressure(u7::new(0x09));
 
@@ -257,7 +257,7 @@ use midi2::{
     channel_voice1::ChannelPressure,
 };
 
-let message = ChannelPressure::new_arr_bytes();
+let message = ChannelPressure::<[u8; 3]>::new();
 let message: ChannelPressure<[u32; 4]> = message.try_into_ump().
     expect("Buffer is large enough");
 

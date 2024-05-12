@@ -273,7 +273,7 @@ mod tests {
     fn from_level2() {
         use crate::channel_voice1::ChannelPressure;
 
-        let level2_message = ChannelPressure::new_arr();
+        let level2_message = ChannelPressure::<[u32; 4]>::new();
         let _: UmpMessage<[u32; 4]> = level2_message.into();
     }
 
@@ -291,7 +291,7 @@ mod tests {
     fn from_level2_bytes() {
         use crate::channel_voice1::ChannelPressure;
 
-        let level2_message = ChannelPressure::new_arr_bytes();
+        let level2_message = ChannelPressure::<[u8; 3]>::new();
         let _: BytesMessage<[u8; 3]> = level2_message.into();
     }
 
@@ -300,7 +300,7 @@ mod tests {
     fn from_level2_channel_voice2() {
         use crate::channel_voice2::ChannelPressure;
 
-        let level2_message = ChannelPressure::new_arr();
+        let level2_message = ChannelPressure::<[u32; 4]>::new();
         let _: UmpMessage<[u32; 4]> = level2_message.into();
     }
 
@@ -309,7 +309,7 @@ mod tests {
     fn from_level2_ump_stream() {
         use crate::ump_stream::EndOfClip;
 
-        let level2_message = EndOfClip::new_arr();
+        let level2_message = EndOfClip::<[u32; 4]>::new();
         let _: UmpMessage<[u32; 4]> = level2_message.into();
     }
 
@@ -318,7 +318,7 @@ mod tests {
     fn from_level2_utility() {
         use crate::utility::DeltaClockstampTPQ;
 
-        let level2_message = DeltaClockstampTPQ::new_arr();
+        let level2_message = DeltaClockstampTPQ::<[u32; 4]>::new();
         let _: UmpMessage<[u32; 4]> = level2_message.into();
     }
 
@@ -327,7 +327,7 @@ mod tests {
     fn from_level2_system_common() {
         use crate::system_common::Stop;
 
-        let level2_message = Stop::new_arr();
+        let level2_message = Stop::<[u32; 4]>::new();
         let _: UmpMessage<[u32; 4]> = level2_message.into();
     }
 }
