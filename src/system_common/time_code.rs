@@ -5,7 +5,12 @@ use crate::{
 
 pub const STATUS: u8 = 0xF1;
 
-#[midi2_proc::generate_message(Via(system_common::SystemCommon), FixedSize, MinSizeUmp(1), MinSizeBytes(3))]
+#[midi2_proc::generate_message(
+    Via(system_common::SystemCommon),
+    FixedSize,
+    MinSizeUmp(1),
+    MinSizeBytes(3)
+)]
 struct TimeCode {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),

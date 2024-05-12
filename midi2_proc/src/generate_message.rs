@@ -171,12 +171,11 @@ fn parse_via_args(input: syn::parse::ParseStream) -> syn::Type {
         .parse()
         .expect("Bracketed expression should follow size arg");
 
-    let syn::Expr::Path(path) = *expr
-    else {
+    let syn::Expr::Path(path) = *expr else {
         panic!("Via argument should contain a path type");
     };
 
-    syn::Type::Path(syn::TypePath{
+    syn::Type::Path(syn::TypePath {
         qself: path.qself,
         path: path.path,
     })

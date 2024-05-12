@@ -125,11 +125,11 @@ mod delta_clockstamp_tpq {
 
 pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x0;
 
-pub use no_op::NoOp;
 pub use clock::Clock;
-pub use timestamp::Timestamp;
 pub use delta_clockstamp::DeltaClockstamp;
 pub use delta_clockstamp_tpq::DeltaClockstampTPQ;
+pub use no_op::NoOp;
+pub use timestamp::Timestamp;
 
 struct DataProperty;
 
