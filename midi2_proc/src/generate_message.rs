@@ -325,50 +325,6 @@ fn std_only_attribute(property: &Property) -> TokenStream {
     }
 }
 
-fn message_new_arr_impl(
-    root_ident: &syn::Ident,
-    args: &GenerateMessageArgs,
-    properties: &Vec<Property>,
-) -> TokenStream {
-    let arr_type = match args.representation() {
-        Representation::Bytes => arr_type_bytes(),
-        Representation::Ump => arr_type_ump(),
-        Representation::UmpOrBytes => arr_type_ump(),
-    };
-    let set_defaults = initialise_property_statements(properties, arr_type.clone());
-    quote! {
-        impl #root_ident<#arr_type> {
-            pub fn new_arr() -> Self {
-                let mut buffer: #arr_type = core::default::Default::default();
-                #set_defaults
-                #root_ident(buffer)
-            }
-        }
-    }
-}
-
-fn secondary_new_arr_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
-    let arr_type = arr_type_bytes();
-    let set_defaults = initialise_property_statements(properties, arr_type.clone());
-    quote! {
-        impl #root_ident<#arr_type> {
-            pub fn new_arr_bytes() -> Self {
-                let mut buffer: #arr_type = core::default::Default::default();
-                #set_defaults
-                #root_ident(buffer)
-            }
-        }
-    }
-}
-
-fn arr_type_ump() -> TokenStream {
-    quote! { [u32; 4] }
-}
-
-fn arr_type_bytes() -> TokenStream {
-    quote! { [u8; 3] }
-}
-
 fn size_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream {
     let constraint = generic_buffer_constraint(args);
     quote! {
@@ -530,13 +486,13 @@ fn new_array_impl(
     properties: &Vec<Property>,
 ) -> TokenStream {
     let generics = match args.representation() {
-        Representation::UmpOrBytes => quote!{ , U: crate::buffer::Unit },
+        Representation::UmpOrBytes => quote! { , U: crate::buffer::Unit },
         _ => TokenStream::new(),
     };
     let unit_type = match args.representation() {
-        Representation::Ump => quote!{ u32 },
-        Representation::Bytes => quote!{ u8 },
-        Representation::UmpOrBytes => quote!{ U },
+        Representation::Ump => quote! { u32 },
+        Representation::Bytes => quote! { u8 },
+        Representation::UmpOrBytes => quote! { U },
     };
     let buffer_type = quote! { [#unit_type; SIZE] };
     let initialise_properties = initialise_property_statements(properties, quote! { #buffer_type });
@@ -796,12 +752,6 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
         #clone_impl
     });
 
-    if args.fixed_size {
-        tokens.extend(message_new_arr_impl(root_ident, &args, &properties));
-        if let Representation::UmpOrBytes = args.representation() {
-            tokens.extend(secondary_new_arr_impl(root_ident, &properties));
-        }
-    }
     if args.fixed_size {
         tokens.extend(size_impl(root_ident, &args))
     }

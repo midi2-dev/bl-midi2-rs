@@ -29,7 +29,7 @@ mod tests {
     fn builder() {
         use crate::traits::{Channeled, Grouped};
 
-        let mut message = ChannelPitchBend::new_arr();
+        let mut message = ChannelPitchBend::<[u32; 4]>::new();
         message.set_group(u4::new(0xB));
         message.set_channel(u4::new(0x9));
         message.set_pitch_bend_data(0x08306AF8);

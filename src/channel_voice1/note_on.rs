@@ -45,7 +45,7 @@ mod tests {
 
     #[test]
     fn setters() {
-        let mut message = NoteOn::new_arr();
+        let mut message = NoteOn::<[u32; 4]>::new();
         message.set_group(u4::new(0xD));
         message.set_channel(u4::new(0xE));
         message.set_note(u7::new(0x75));

@@ -82,13 +82,13 @@ mod timestamp {
 
         #[test]
         fn new_arr() {
-            let message = Timestamp::new_arr();
+            let message = Timestamp::<[u32; 4]>::new();
             assert_eq!(message, Timestamp([0x0020_0000, 0x0, 0x0, 0x0]));
         }
 
         #[test]
         fn rebuffer_into() {
-            let message = Timestamp::new_arr();
+            let message = Timestamp::<[u32; 4]>::new();
             let rebuffered: Timestamp<std::vec::Vec<u32>> = message.rebuffer_into();
             assert_eq!(rebuffered, Timestamp(std::vec![0x0020_0000]));
         }

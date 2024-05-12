@@ -34,14 +34,14 @@ mod tests {
 
     #[test]
     fn setters() {
-        let mut message = SongPositionPointer::new_arr();
+        let mut message = SongPositionPointer::<[u32; 4]>::new();
         message.set_group(u4::new(0xA));
         message.set_position(u14::new(0x367D));
         assert_eq!(message, SongPositionPointer([0x1AF2_7D6C, 0x0, 0x0, 0x0]),);
     }
     #[test]
     fn setters_bytes() {
-        let mut message = SongPositionPointer::new_arr_bytes();
+        let mut message = SongPositionPointer::<[u8; 3]>::new();
         message.set_position(u14::new(0x367D));
         assert_eq!(message, SongPositionPointer([0xF2, 0x7D, 0x6C]),);
     }

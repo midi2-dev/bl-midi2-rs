@@ -45,7 +45,7 @@ mod tests {
 
     #[test]
     fn setters() {
-        let mut message = ControlChange::new_arr();
+        let mut message = ControlChange::<[u32; 4]>::new();
         message.set_group(u4::new(0xA));
         message.set_channel(u4::new(0x7));
         message.set_control(u7::new(0x36));
@@ -55,7 +55,7 @@ mod tests {
 
     #[test]
     fn setters_bytes() {
-        let mut message = ControlChange::new_arr_bytes();
+        let mut message = ControlChange::<[u8; 3]>::new();
         message.set_channel(u4::new(0x7));
         message.set_control(u7::new(0x36));
         message.set_control_data(u7::new(0x37));

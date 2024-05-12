@@ -68,7 +68,7 @@ mod tests {
 
     #[test]
     fn builder() {
-        let mut message = DeviceIdentity::new_arr();
+        let mut message = DeviceIdentity::<[u32; 4]>::new();
         message.set_device_manufacturer([u7::new(0x0F), u7::new(0x33), u7::new(0x28)]);
         message.set_device_family(u14::new(0xF4A));
         message.set_device_family_model_number(u14::new(0x3818));

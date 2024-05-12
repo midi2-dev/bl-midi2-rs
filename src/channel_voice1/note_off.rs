@@ -62,7 +62,7 @@ mod tests {
 
     #[test]
     fn builder() {
-        let mut message = NoteOff::new_arr();
+        let mut message = NoteOff::<[u32; 4]>::new();
         message.set_group(u4::new(0x1));
         message.set_channel(u4::new(0xA));
         message.set_note(u7::new(0x68));

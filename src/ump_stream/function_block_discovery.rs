@@ -30,7 +30,7 @@ mod tests {
 
     #[test]
     fn setters() {
-        let mut message = FunctionBlockDiscovery::new_arr();
+        let mut message = FunctionBlockDiscovery::<[u32; 4]>::new();
         message.set_function_block_number(0x09);
         message.set_requesting_function_block_info(true);
         message.set_requesting_function_block_name(true);

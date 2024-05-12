@@ -242,7 +242,7 @@ mod tests {
 
     #[test]
     fn builder() {
-        let mut message = FunctionBlockInfo::new_arr();
+        let mut message = FunctionBlockInfo::<[u32; 4]>::new();
         message.set_active(true);
         message.set_function_block_number(u7::new(0x11));
         message.set_first_group(u4::new(0xD));

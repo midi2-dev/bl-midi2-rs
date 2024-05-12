@@ -31,7 +31,7 @@ mod tests {
     fn builder() {
         use crate::traits::{Channeled, Grouped};
 
-        let mut message = RegisteredPerNoteController::new_arr();
+        let mut message = RegisteredPerNoteController::<[u32; 4]>::new();
         message.set_group(u4::new(0x4));
         message.set_channel(u4::new(0x5));
         message.set_note(u7::new(0x6C));
