@@ -289,6 +289,16 @@ mod rebuffer_tests {
     }
 
     #[test]
+    fn rebuffer_from_array() {
+        let buffer = [0x2FD6_0900_u32];
+        let borrowed = ChannelPressure::try_from(&buffer[..]).unwrap();
+        assert_eq!(
+            ChannelPressure::<[u32; 1]>::rebuffer_from(borrowed),
+            ChannelPressure([0x2FD6_0900_u32]),
+        );
+    }
+
+    #[test]
     fn try_rebuffer_from_fail() {
         let buffer = [0x2FD6_0900_u32];
         let borrowed = ChannelPressure::try_from(&buffer[..]).unwrap();

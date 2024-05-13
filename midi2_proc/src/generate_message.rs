@@ -439,6 +439,23 @@ fn rebuffer_from_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> To
     }
 }
 
+fn rebuffer_from_array_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream {
+    let constraint = generic_buffer_constraint(args);
+    let buffer_type = quote! { [<A as crate::buffer::Buffer>::Unit; SIZE] };
+    quote! {
+        impl<const SIZE: usize, A: #constraint> crate::traits::RebufferFrom<#root_ident<A>> for #root_ident<#buffer_type>
+        {
+            fn rebuffer_from(other: #root_ident<A>) -> Self {
+                let _valid = <Self as crate::traits::ArraySizeValid<SIZE, #buffer_type>>::VALID;
+                let mut buffer = <#buffer_type as crate::buffer::BufferDefault>::default();
+                let message_size = other.data().len();
+                buffer[..message_size].copy_from_slice(other.data());
+                #root_ident(buffer)
+            }
+        }
+    }
+}
+
 fn try_rebuffer_from_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream {
     let generics = crate::common::try_rebuffer_generics(args.representation());
     quote! {
@@ -759,7 +776,8 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     });
 
     if args.fixed_size {
-        tokens.extend(size_impl(root_ident, &args))
+        tokens.extend(size_impl(root_ident, &args));
+        tokens.extend(rebuffer_from_array_impl(root_ident, &args));
     }
     if let Some(property) = properties.iter().find(|p| p.is_group()) {
         tokens.extend(grouped_impl(root_ident, property));
