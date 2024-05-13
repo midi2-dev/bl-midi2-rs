@@ -194,12 +194,32 @@ mod tests {
     }
 
     #[test]
+    fn from_bytes_array() {
+        let buffer = [0xD6_u8, 0x09_u8];
+        let borrowed = ChannelPressure::try_from(&buffer[..]).unwrap();
+        assert_eq!(
+            ChannelPressure::<[u32; 1]>::from_bytes(borrowed),
+            ChannelPressure([0x20D6_0900_u32]),
+        );
+    }
+
+    #[test]
     fn try_from_ump() {
         let buffer = [0x2FD6_0900_u32];
         let borrowed = ChannelPressure::try_from(&buffer[..]).unwrap();
         assert_eq!(
             ChannelPressure::<[u8; 2]>::try_from_ump(borrowed),
             Ok(ChannelPressure([0xD6_u8, 0x09_u8])),
+        );
+    }
+
+    #[test]
+    fn from_ump_array() {
+        let buffer = [0x2FD6_0900_u32];
+        let borrowed = ChannelPressure::try_from(&buffer[..]).unwrap();
+        assert_eq!(
+            ChannelPressure::<[u8; 2]>::from_ump(borrowed),
+            ChannelPressure([0xD6_u8, 0x09_u8]),
         );
     }
 

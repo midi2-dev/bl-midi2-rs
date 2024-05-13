@@ -617,7 +617,7 @@ fn channeled_impl(
 }
 
 fn from_bytes_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
-    let convert_properties = convert_properties(properties);
+    let convert_properties = convert_properties(properties, &quote! { B });
     quote! {
         impl<
                 A: crate::buffer::Bytes,
@@ -637,8 +637,24 @@ fn from_bytes_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> Token
     }
 }
 
+fn from_bytes_array_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
+    let array_type = quote! { [u32; SIZE] };
+    let convert_properties = convert_properties(properties, &array_type);
+    quote! {
+        impl<const SIZE: usize, A: crate::buffer::Bytes> crate::traits::FromBytes<#root_ident<A>> for #root_ident<#array_type>
+        {
+            fn from_bytes(other: #root_ident<A>) -> Self {
+                let _valid = <Self as crate::traits::ArraySizeValid<SIZE, #array_type>>::VALID;
+                let mut buffer = <#array_type as crate::buffer::BufferDefault>::default();
+                #convert_properties
+                Self(buffer)
+            }
+        }
+    }
+}
+
 fn try_from_bytes_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
-    let convert_properties = convert_properties(properties);
+    let convert_properties = convert_properties(properties, &quote! { B });
     quote! {
         impl<
                 A: crate::buffer::Bytes,
@@ -658,7 +674,7 @@ fn try_from_bytes_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> T
     }
 }
 
-fn convert_properties(properties: &Vec<Property>) -> TokenStream {
+fn convert_properties(properties: &Vec<Property>, target_buffer_type: &TokenStream) -> TokenStream {
     let mut convert_properties = TokenStream::new();
     for property in properties.iter().filter(|p| !p.readonly && !p.writeonly) {
         let std_only_attribute = std_only_attribute(property);
@@ -666,7 +682,7 @@ fn convert_properties(properties: &Vec<Property>) -> TokenStream {
 
         convert_properties.extend(quote! {
             #std_only_attribute
-            <#meta_type as crate::detail::property::WriteProperty<B>>::write(
+            <#meta_type as crate::detail::property::WriteProperty<#target_buffer_type>>::write(
                 &mut buffer,
                 <#meta_type as crate::detail::property::ReadProperty<A>>::read(&other.0)
             );
@@ -676,7 +692,7 @@ fn convert_properties(properties: &Vec<Property>) -> TokenStream {
 }
 
 fn from_ump_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
-    let convert_properties = convert_properties(properties);
+    let convert_properties = convert_properties(properties, &quote! { B });
     quote! {
         impl<
                 A: crate::buffer::Ump,
@@ -696,8 +712,24 @@ fn from_ump_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenSt
     }
 }
 
+fn from_ump_array_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
+    let array_type = quote! { [u8; SIZE] };
+    let convert_properties = convert_properties(properties, &array_type);
+    quote! {
+        impl<const SIZE: usize, A: crate::buffer::Ump> crate::traits::FromUmp<#root_ident<A>> for #root_ident<#array_type>
+        {
+            fn from_ump(other: #root_ident<A>) -> Self {
+                let _valid = <Self as crate::traits::ArraySizeValid<SIZE, #array_type>>::VALID;
+                let mut buffer = <#array_type as crate::buffer::BufferDefault>::default();
+                #convert_properties
+                Self(buffer)
+            }
+        }
+    }
+}
+
 fn try_from_ump_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
-    let convert_properties = convert_properties(properties);
+    let convert_properties = convert_properties(properties, &quote! { B });
     quote! {
         impl<
                 A: crate::buffer::Ump,
@@ -793,6 +825,11 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
             tokens.extend(from_ump_impl(root_ident, &properties));
             tokens.extend(try_from_bytes_impl(root_ident, &properties));
             tokens.extend(try_from_ump_impl(root_ident, &properties));
+
+            if args.fixed_size {
+                tokens.extend(from_ump_array_impl(root_ident, &properties));
+                tokens.extend(from_bytes_array_impl(root_ident, &properties));
+            }
         }
     }
     if let Some(via_type) = args.via.as_ref() {

@@ -257,8 +257,7 @@ use midi2::{
 };
 
 let message = ChannelPressure::<[u8; 3]>::new();
-let message: ChannelPressure<[u32; 4]> = message.try_into_ump().
-    expect("Buffer is large enough");
+let message: ChannelPressure<[u32; 4]> = message.into_ump();
 
 assert_eq!(message.data(), &[0x20D0_0000]);
 ```
