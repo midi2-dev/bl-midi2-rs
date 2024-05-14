@@ -28,6 +28,41 @@ impl<'a> core::iter::ExactSizeIterator for PacketsIterator<'a> {
     }
 }
 
+/// Read the individual packets of a message represented with UMP packets.
+///
+/// ## Basic Usage
+///
+/// ```rust
+/// use midi2::prelude::*;
+///
+/// let mut message = flex_data::ProjectName::<Vec<u32>>::new();
+/// message.set_text("Shadows of the Forgotten Cathedral");
+///
+/// let mut packets = message.packets();
+///
+/// assert_eq!(packets.next(), Some(&[0xD0500101, 0x53686164, 0x6F777320, 0x6F662074][..]));
+/// assert_eq!(packets.next(), Some(&[0xD0900101, 0x68652046, 0x6F72676F, 0x7474656E][..]));
+/// assert_eq!(packets.next(), Some(&[0xD0D00101, 0x20436174, 0x68656472, 0x616C0000][..]));
+/// assert_eq!(packets.next(), None);
+/// ```
+///
+/// Packets may be shorter than 128 bytes for certain messages which are represented by shorter
+/// packets.
+///
+/// ```rust
+/// use midi2::prelude::*;
+///
+/// let mut message = sysex7::Sysex7::<Vec<u32>>::new();
+/// message.set_payload((0..20).map(u7::new));
+///
+/// let mut packets = message.packets();
+///
+/// assert_eq!(packets.next(), Some(&[0x30160001, 0x2030405][..]));
+/// assert_eq!(packets.next(), Some(&[0x30260607, 0x8090A0B][..]));
+/// assert_eq!(packets.next(), Some(&[0x30260C0D, 0xE0F1011][..]));
+/// assert_eq!(packets.next(), Some(&[0x30321213, 0x0][..]));
+/// assert_eq!(packets.next(), None);
+/// ```
 pub trait Packets {
     fn packets(&self) -> PacketsIterator;
 }
