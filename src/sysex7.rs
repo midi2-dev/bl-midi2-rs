@@ -1,4 +1,4 @@
-#![doc = include_str!("README.md")]
+#![doc = include_str!("sysex7/README.md")]
 
 use crate::{
     detail::{common_properties, helpers as message_helpers, BitOps},
