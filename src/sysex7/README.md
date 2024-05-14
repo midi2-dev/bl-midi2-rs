@@ -50,7 +50,7 @@ assert_eq!(
 
 ## Borrowed workflow
 
-You can create a [Sysex7](crate::sysex7::Sysex7) from
+You can create a [Sysex7] from
 borrowed data and avoid copying or allocating if you have the data already existing
 in a buffer.
 

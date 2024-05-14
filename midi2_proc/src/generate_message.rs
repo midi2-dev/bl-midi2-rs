@@ -319,6 +319,7 @@ fn std_only_attribute(property: &Property) -> TokenStream {
     if property.std {
         quote! {
             #[cfg(feature = "std")]
+            #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
         }
     } else {
         TokenStream::new()

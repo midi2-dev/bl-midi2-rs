@@ -43,3 +43,4 @@ pretty_assertions = "1.4.0"
 
 [package.metadata.docs.rs]
 all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

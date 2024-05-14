@@ -181,7 +181,7 @@ assert_eq!(message.try_set_payload(0..60), Err(midi2::error::BufferOverflow));
 
 A more advanced use case might be to make a custom buffer which
 uses an arena allocater to back your messages.
-See the [buffer](crate::buffer) docs for more info.
+See the [buffer] docs for more info.
 
 ### Borrowed Messages
 
@@ -270,7 +270,7 @@ its functionality according to your needs.
 Here's a list of available features:
 
 - `default`:
-  - **std** - Include [buffer](crate::buffer) integration for `std::vec::Vec` and enable allocating getters for values which return `std::string::String` values.
+  - **std** - Include [buffer] integration for `std::vec::Vec` and enable allocating getters for values which return `std::string::String` values.
   - **channel-voice2** — Include message wrappers for the MIDI 2.0 channel voice message type.
   - **sysex7** — Include message wrappers for the MIDI 7bit system exclusive message type.
   - **ci** — 🚧 WIP 🚧
