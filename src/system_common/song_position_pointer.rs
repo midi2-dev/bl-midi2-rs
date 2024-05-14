@@ -39,6 +39,7 @@ mod tests {
         message.set_position(u14::new(0x367D));
         assert_eq!(message, SongPositionPointer([0x1AF2_7D6C, 0x0, 0x0, 0x0]),);
     }
+
     #[test]
     fn setters_bytes() {
         let mut message = SongPositionPointer::<[u8; 3]>::new();
@@ -74,5 +75,16 @@ mod tests {
                 .position(),
             u14::new(0x367D),
         );
+    }
+
+    #[test]
+    fn packets() {
+        use crate::Packets;
+
+        let message = SongPositionPointer::try_from(&[0x1AF2_7D6C][..]).unwrap();
+
+        let mut packets = message.packets();
+        assert_eq!(packets.next(), Some(&[0x1AF2_7D6C][..]));
+        assert_eq!(packets.next(), None);
     }
 }

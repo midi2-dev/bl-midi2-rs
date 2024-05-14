@@ -37,10 +37,7 @@ struct ControlChange {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        traits::{Channeled, Grouped},
-        ux::*,
-    };
+    use crate::{ux::*, Channeled, Grouped, Packets};
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -130,5 +127,14 @@ mod tests {
                 .control_data(),
             u7::new(0x37),
         );
+    }
+
+    #[test]
+    fn packets() {
+        let buffer = [0x2AB7_3637_u32];
+        let message = ControlChange::try_from(&buffer[..]).unwrap();
+        let mut packets = message.packets();
+        assert_eq!(packets.next(), Some(&[0x2AB7_3637_u32][..]));
+        assert_eq!(packets.next(), None);
     }
 }

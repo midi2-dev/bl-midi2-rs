@@ -31,6 +31,29 @@ pub fn data(item: TokenStream1) -> TokenStream1 {
     .into()
 }
 
+pub fn packets(item: TokenStream1) -> TokenStream1 {
+    let input = parse_macro_input!(item as ItemEnum);
+    let ident = &input.ident;
+    let mut match_arms = TokenStream::new();
+    for variant in &input.variants {
+        let variant_ident = &variant.ident;
+        match_arms.extend(quote! {
+            #variant_ident(m) => m.packets(),
+        });
+    }
+    quote! {
+        impl<B: crate::buffer::Ump>  crate::Packets for #ident<B>  {
+            fn packets(&self) -> crate::PacketsIterator {
+                use #ident::*;
+                match self {
+                    #match_arms
+                }
+            }
+        }
+    }
+    .into()
+}
+
 pub fn from_bytes(item: TokenStream1) -> TokenStream1 {
     let input = parse_macro_input!(item as ItemEnum);
     let ident = &input.ident;

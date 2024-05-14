@@ -1540,4 +1540,42 @@ mod tests {
             std::vec![]
         );
     }
+
+    #[test]
+    fn packets() {
+        use crate::Packets;
+
+        let buffer = [
+            0x3016_0001_u32,
+            0x0203_0405,
+            0x3026_0607,
+            0x0809_0A0B,
+            0x3026_0C0D,
+            0x0E0F_1011,
+            0x3026_1213,
+            0x1415_1617,
+            0x3036_1819,
+            0x1A1B_1C1D,
+        ];
+        let message = Sysex7::try_from(&buffer[..]).unwrap();
+        let mut packets = message.packets();
+
+        assert_eq!(packets.next(), Some(&[0x3016_0001, 0x0203_0405,][..]));
+        assert_eq!(packets.next(), Some(&[0x3026_0607, 0x0809_0A0B,][..]));
+        assert_eq!(packets.next(), Some(&[0x3026_0C0D, 0x0E0F_1011,][..]));
+        assert_eq!(packets.next(), Some(&[0x3026_1213, 0x1415_1617,][..]));
+        assert_eq!(packets.next(), Some(&[0x3036_1819, 0x1A1B_1C1D,][..]));
+        assert_eq!(packets.next(), None);
+    }
+
+    #[test]
+    fn packets_empty() {
+        use crate::Packets;
+
+        let message = Sysex7::<[u32; 2]>::new();
+        let mut packets = message.packets();
+
+        assert_eq!(packets.next(), Some(&[0x3000_0000, 0x0][..]));
+        assert_eq!(packets.next(), None);
+    }
 }

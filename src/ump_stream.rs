@@ -38,6 +38,7 @@ const END_FORMAT: u8 = 0x3;
 #[derive(
     derive_more::From,
     midi2_proc::Data,
+    midi2_proc::Packets,
     midi2_proc::RebufferFrom,
     midi2_proc::TryRebufferFrom,
     Clone,
@@ -449,7 +450,7 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     #[test]
-    fn builder() {
+    fn try_from_data() {
         assert_eq!(
             UmpStream::try_from(
                 &[
@@ -495,5 +496,51 @@ mod tests {
                 .unwrap()
             ))
         );
+    }
+
+    #[test]
+    fn packets() {
+        use crate::Packets;
+
+        let message = UmpStream::try_from(
+            &[
+                0xF403_5268,
+                0x7974_686D,
+                0x5265_7665,
+                0x6C61_7469,
+                0xF803_6F6E,
+                0x3A20_4265,
+                0x6174_7320,
+                0x4265_796F,
+                0xF803_6E64,
+                0x2042_6F75,
+                0x6E64_6172,
+                0x6965_73F0,
+                0xFC03_9F8C,
+                0x8DF0_9FA5,
+                0x81F0_9F9A,
+                0x8000_0000,
+            ][..],
+        )
+        .unwrap();
+
+        let mut packets = message.packets();
+        assert_eq!(
+            packets.next(),
+            Some(&[0xF403_5268, 0x7974_686D, 0x5265_7665, 0x6C61_7469,][..])
+        );
+        assert_eq!(
+            packets.next(),
+            Some(&[0xF803_6F6E, 0x3A20_4265, 0x6174_7320, 0x4265_796F,][..])
+        );
+        assert_eq!(
+            packets.next(),
+            Some(&[0xF803_6E64, 0x2042_6F75, 0x6E64_6172, 0x6965_73F0,][..])
+        );
+        assert_eq!(
+            packets.next(),
+            Some(&[0xFC03_9F8C, 0x8DF0_9FA5, 0x81F0_9F9A, 0x8000_0000,][..])
+        );
+        assert_eq!(packets.next(), None,);
     }
 }

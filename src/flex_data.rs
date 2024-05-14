@@ -752,6 +752,7 @@ pub(crate) const PERFORMANCE_TEXT_BANK: u8 = 0x2;
 #[derive(
     derive_more::From,
     midi2_proc::Data,
+    midi2_proc::Packets,
     midi2_proc::Grouped,
     midi2_proc::RebufferFrom,
     midi2_proc::TryRebufferFrom,
@@ -1201,5 +1202,45 @@ mod tests {
                 .bank(),
             Bank::SetupAndPerformance,
         );
+    }
+
+    #[test]
+    fn packets_small() {
+        use crate::Packets;
+
+        let message = FlexData::try_from(&[0xD710_0000_u32, 0xF751_FE05][..]).unwrap();
+        let mut packets = message.packets();
+        assert_eq!(packets.next(), Some(&[0xD710_0000_u32, 0xF751_FE05][..]));
+        assert_eq!(packets.next(), None);
+    }
+
+    #[test]
+    fn packets_big() {
+        use crate::Packets;
+
+        let message = FlexData::try_from(
+            &[
+                0xD050_0106,
+                0x4769_6D6D,
+                0x6520_736F,
+                0x6D65_2073,
+                0xD0D0_0106,
+                0x6967_6E61,
+                0x6C21_0000,
+                0x0000_0000,
+            ][..],
+        )
+        .unwrap();
+        let mut packets = message.packets();
+
+        assert_eq!(
+            packets.next(),
+            Some(&[0xD050_0106, 0x4769_6D6D, 0x6520_736F, 0x6D65_2073,][..])
+        );
+        assert_eq!(
+            packets.next(),
+            Some(&[0xD0D0_0106, 0x6967_6E61, 0x6C21_0000, 0x0000_0000,][..])
+        );
+        assert_eq!(packets.next(), None);
     }
 }
