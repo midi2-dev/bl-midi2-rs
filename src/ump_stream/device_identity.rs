@@ -118,4 +118,20 @@ mod tests {
             [u7::new(0x43), u7::new(0x54), u7::new(0x32), u7::new(0x1)],
         );
     }
+
+    #[test]
+    fn packets() {
+        use crate::Packets;
+
+        let message =
+            DeviceIdentity::try_from(&[0xF002_0000, 0x000F_3328, 0x4A1E_1870, 0x4354_3201][..])
+                .unwrap();
+        let mut packets = message.packets();
+
+        assert_eq!(
+            packets.next(),
+            Some(&[0xF002_0000, 0x000F_3328, 0x4A1E_1870, 0x4354_3201][..])
+        );
+        assert_eq!(packets.next(), None);
+    }
 }

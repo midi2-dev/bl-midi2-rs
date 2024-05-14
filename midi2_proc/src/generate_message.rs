@@ -385,6 +385,19 @@ fn data_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream
     }
 }
 
+fn packets_impl(root_ident: &syn::Ident) -> TokenStream {
+    quote! {
+        impl<B: crate::buffer::Ump> crate::Packets for #root_ident<B> {
+            fn packets(&self) -> crate::PacketsIterator {
+                crate::PacketsIterator(self
+                    .data()
+                    .chunks_exact(<Self as crate::traits::MinSize<B>>::MIN_SIZE)
+                )
+            }
+        }
+    }
+}
+
 fn try_from_slice_impl(
     root_ident: &syn::Ident,
     args: &GenerateMessageArgs,
@@ -831,6 +844,12 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
                 tokens.extend(from_bytes_array_impl(root_ident, &properties));
             }
         }
+    }
+    if matches!(
+        args.representation(),
+        Representation::Ump | Representation::UmpOrBytes
+    ) {
+        tokens.extend(packets_impl(root_ident));
     }
     if let Some(via_type) = args.via.as_ref() {
         match args.representation() {

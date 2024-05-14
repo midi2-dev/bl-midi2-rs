@@ -168,6 +168,7 @@ pub use tune_request::*;
 #[derive(
     derive_more::From,
     midi2_proc::Data,
+    midi2_proc::Packets,
     midi2_proc::Grouped,
     midi2_proc::FromBytes,
     midi2_proc::FromUmp,
@@ -301,5 +302,16 @@ mod tests {
             SystemCommon::try_from(&[0x15F1_5F00_u32][..]),
             time_code::TimeCode::try_from(&[0x15F1_5F00_u32][..]).map(|m| m.into())
         );
+    }
+
+    #[test]
+    fn packets() {
+        use crate::Packets;
+
+        let message = SystemCommon::try_from(&[0x15F1_5F00_u32][..]).unwrap();
+        let mut packets = message.packets();
+
+        assert_eq!(packets.next(), Some(&[0x15F1_5F00_u32][..]));
+        assert_eq!(packets.next(), None);
     }
 }

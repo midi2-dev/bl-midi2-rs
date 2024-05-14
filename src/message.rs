@@ -1,6 +1,7 @@
 #[derive(
     derive_more::From,
     midi2_proc::Data,
+    midi2_proc::Packets,
     midi2_proc::RebufferFrom,
     midi2_proc::TryRebufferFrom,
     Clone,
@@ -242,6 +243,46 @@ mod tests {
         let Ok(UmpMessage::Sysex7(_)) = message else {
             panic!();
         };
+    }
+
+    #[cfg(feature = "sysex7")]
+    #[test]
+    fn packets() {
+        use crate::Packets;
+
+        let buffer = [
+            0x3E16_0001,
+            0x0203_0405,
+            0x3E26_0607,
+            0x0809_0A0B,
+            0x3E26_0C0D,
+            0x0E0F_1011,
+            0x3E26_1213,
+            0x1415_1617,
+            0x3E26_1819,
+            0x1A1B_1C1D,
+            0x3E26_1E1F,
+            0x2021_2223,
+            0x3E26_2425,
+            0x2627_2829,
+            0x3E26_2A2B,
+            0x2C2D_2E2F,
+            0x3E32_3031,
+            0x0000_0000,
+        ];
+        let message = UmpMessage::try_from(&buffer[..]).unwrap();
+        let mut packets = message.packets();
+
+        assert_eq!(packets.next(), Some(&[0x3E16_0001, 0x0203_0405,][..]));
+        assert_eq!(packets.next(), Some(&[0x3E26_0607, 0x0809_0A0B,][..]));
+        assert_eq!(packets.next(), Some(&[0x3E26_0C0D, 0x0E0F_1011,][..]));
+        assert_eq!(packets.next(), Some(&[0x3E26_1213, 0x1415_1617,][..]));
+        assert_eq!(packets.next(), Some(&[0x3E26_1819, 0x1A1B_1C1D,][..]));
+        assert_eq!(packets.next(), Some(&[0x3E26_1E1F, 0x2021_2223,][..]));
+        assert_eq!(packets.next(), Some(&[0x3E26_2425, 0x2627_2829,][..]));
+        assert_eq!(packets.next(), Some(&[0x3E26_2A2B, 0x2C2D_2E2F,][..]));
+        assert_eq!(packets.next(), Some(&[0x3E32_3031, 0x0000_0000,][..]));
+        assert_eq!(packets.next(), None);
     }
 
     #[cfg(feature = "flex-data")]

@@ -14,6 +14,11 @@ pub fn derive_data(item: TokenStream1) -> TokenStream1 {
     derives::data(item)
 }
 
+#[proc_macro_derive(Packets)]
+pub fn derive_packets(item: TokenStream1) -> TokenStream1 {
+    derives::packets(item)
+}
+
 #[proc_macro_derive(Grouped)]
 pub fn derive_grouped(item: TokenStream1) -> TokenStream1 {
     derives::grouped(item)

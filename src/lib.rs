@@ -29,11 +29,13 @@ pub mod result;
 
 mod detail;
 mod message;
+mod packets;
 mod traits;
 
 pub use ux;
 
 pub use message::*;
+pub use packets::*;
 pub use traits::*;
 
 pub mod prelude {

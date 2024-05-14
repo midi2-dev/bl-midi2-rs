@@ -21,6 +21,7 @@ pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x2;
 #[derive(
     derive_more::From,
     midi2_proc::Data,
+    midi2_proc::Packets,
     midi2_proc::Channeled,
     midi2_proc::Grouped,
     midi2_proc::FromBytes,
@@ -82,11 +83,8 @@ fn status<U: crate::buffer::Unit>(buffer: &[U]) -> u8 {
 mod test {
     use super::*;
     use crate::{
-        traits::{
-            Channeled, Data, FromBytes, FromUmp, Grouped, RebufferInto, TryFromBytes, TryFromUmp,
-            TryRebufferInto,
-        },
-        ux::*,
+        ux::*, Channeled, Data, FromBytes, FromUmp, Grouped, Packets, RebufferInto, TryFromBytes,
+        TryFromUmp, TryRebufferInto,
     };
     use pretty_assertions::assert_eq;
 
@@ -176,5 +174,13 @@ mod test {
             .try_rebuffer_into()
             .unwrap();
         assert_eq!(message.data(), &[0x2FD6_0900]);
+    }
+
+    #[test]
+    fn packets() {
+        let message = ChannelVoice1::try_from(&[0x2FD6_0900_u32][..]).unwrap();
+        let mut packets = message.packets();
+        assert_eq!(packets.next(), Some(&[0x2FD6_0900_u32][..]));
+        assert_eq!(packets.next(), None);
     }
 }

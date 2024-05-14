@@ -481,4 +481,41 @@ mod tests {
             ]
         );
     }
+
+    #[test]
+    fn packets() {
+        use crate::Packets;
+
+        let message = UnknownMetadataText::try_from(
+            &[
+                0xD050_0100,
+                0x4469_6769,
+                0x7461_6C20,
+                0x4175_6469,
+                0xD090_0100,
+                0x6F20_576F,
+                0x726B_7374,
+                0x6174_696F,
+                0xD0D0_0100,
+                0x6E20_2D20,
+                0x4441_5733,
+                0x362D_3136,
+            ][..],
+        )
+        .unwrap();
+        let mut packets = message.packets();
+        assert_eq!(
+            packets.next(),
+            Some(&[0xD050_0100, 0x4469_6769, 0x7461_6C20, 0x4175_6469,][..])
+        );
+        assert_eq!(
+            packets.next(),
+            Some(&[0xD090_0100, 0x6F20_576F, 0x726B_7374, 0x6174_696F,][..])
+        );
+        assert_eq!(
+            packets.next(),
+            Some(&[0xD0D0_0100, 0x6E20_2D20, 0x4441_5733, 0x362D_3136,][..])
+        );
+        assert_eq!(packets.next(), None);
+    }
 }

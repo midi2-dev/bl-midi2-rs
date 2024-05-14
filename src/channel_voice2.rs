@@ -39,6 +39,7 @@ pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x4;
 #[derive(
     derive_more::From,
     midi2_proc::Data,
+    midi2_proc::Packets,
     midi2_proc::Channeled,
     midi2_proc::Grouped,
     midi2_proc::RebufferFrom,
@@ -136,5 +137,15 @@ mod test {
                 .channel(),
             u4::new(0xC),
         );
+    }
+
+    #[test]
+    fn packets() {
+        use crate::Packets;
+
+        let message = ChannelVoice2::try_from(&[0x4BAC_5900, 0xC0B83064][..]).unwrap();
+        let mut packets = message.packets();
+        assert_eq!(packets.next(), Some(&[0x4BAC_5900, 0xC0B83064][..]));
+        assert_eq!(packets.next(), None);
     }
 }
