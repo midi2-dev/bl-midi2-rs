@@ -357,9 +357,9 @@ mod tests {
     #[cfg(feature = "utility")]
     #[test]
     fn from_level2_utility() {
-        use crate::utility::DeltaClockstampTPQ;
+        use crate::utility::DeltaClockstampTpq;
 
-        let level2_message = DeltaClockstampTPQ::<[u32; 4]>::new();
+        let level2_message = DeltaClockstampTpq::<[u32; 4]>::new();
         let _: UmpMessage<[u32; 4]> = level2_message.into();
     }
 

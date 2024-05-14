@@ -113,7 +113,7 @@ mod delta_clockstamp_tpq {
     use crate::utility;
     pub const STATUS: u8 = 0b0011;
     #[midi2_proc::generate_message(Via(crate::utility::Utility), FixedSize, MinSizeUmp(1))]
-    struct DeltaClockstampTPQ {
+    struct DeltaClockstampTpq {
         #[property(common_properties::UmpMessageTypeProperty<{utility::UMP_MESSAGE_TYPE}>)]
         ump_type: (),
         #[property(common_properties::ChannelVoiceStatusProperty<STATUS>)]
@@ -127,7 +127,7 @@ pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x0;
 
 pub use clock::Clock;
 pub use delta_clockstamp::DeltaClockstamp;
-pub use delta_clockstamp_tpq::DeltaClockstampTPQ;
+pub use delta_clockstamp_tpq::DeltaClockstampTpq;
 pub use no_op::NoOp;
 pub use timestamp::Timestamp;
 
@@ -179,7 +179,7 @@ pub enum Utility<B: crate::buffer::Ump> {
     Clock(clock::Clock<B>),
     Timestamp(timestamp::Timestamp<B>),
     DeltaClockstamp(delta_clockstamp::DeltaClockstamp<B>),
-    DeltaClockstampTpq(delta_clockstamp_tpq::DeltaClockstampTPQ<B>),
+    DeltaClockstampTpq(delta_clockstamp_tpq::DeltaClockstampTpq<B>),
 }
 
 impl<'a> core::convert::TryFrom<&'a [u32]> for Utility<&'a [u32]> {
@@ -194,7 +194,7 @@ impl<'a> core::convert::TryFrom<&'a [u32]> for Utility<&'a [u32]> {
             timestamp::STATUS => timestamp::Timestamp::try_from(buffer)?.into(),
             delta_clockstamp::STATUS => delta_clockstamp::DeltaClockstamp::try_from(buffer)?.into(),
             delta_clockstamp_tpq::STATUS => {
-                delta_clockstamp_tpq::DeltaClockstampTPQ::try_from(buffer)?.into()
+                delta_clockstamp_tpq::DeltaClockstampTpq::try_from(buffer)?.into()
             }
             _ => Err(crate::error::Error::InvalidData(
                 "Unknown utility message status",
