@@ -1,4 +1,4 @@
-#![doc = include_str!("README.md")]
+#![doc = include_str!("system_common/README.md")]
 
 pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x1;
 
