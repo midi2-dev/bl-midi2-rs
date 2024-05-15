@@ -736,6 +736,7 @@ pub use set_key_signature::{SetKeySignature, SharpsFlats as SetKeySignatureSharp
 pub use set_metronome::*;
 pub use set_tempo::*;
 pub use set_time_signature::*;
+pub use text::TextBytesIterator;
 pub use tonic::Tonic;
 pub use unknown_metadata_text::*;
 pub use unknown_performance_text::*;
