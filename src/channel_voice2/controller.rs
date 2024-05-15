@@ -1,7 +1,6 @@
 use crate::{
     detail::{property, BitOps, Truncate},
-    error::Error,
-    result::Result,
+    error::InvalidData,
 };
 use ux::{u25, u7};
 
@@ -31,7 +30,7 @@ pub enum Controller {
     EffectDepth { index: u8, data: u32 },
 }
 
-pub fn validate_index(index: u8) -> Result<()> {
+pub fn validate_index(index: u8) -> Result<(), crate::error::InvalidData> {
     match index {
         1 => Ok(()),
         2 => Ok(()),
@@ -55,7 +54,7 @@ pub fn validate_index(index: u8) -> Result<()> {
         93 => Ok(()),
         94 => Ok(()),
         95 => Ok(()),
-        _ => Err(Error::InvalidData("Couldn't interpret controller index")),
+        _ => Err(InvalidData("Couldn't interpret controller index")),
     }
 }
 
@@ -138,7 +137,7 @@ impl<B: crate::buffer::Ump> property::Property<B> for ControllerProperty {
 }
 
 impl<'a, B: crate::buffer::Ump> property::ReadProperty<'a, B> for ControllerProperty {
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         let buffer = buffer.buffer();
         validate_index(buffer[0].octet(3))
     }
@@ -151,7 +150,7 @@ impl<'a, B: crate::buffer::Ump> property::ReadProperty<'a, B> for ControllerProp
 impl<B: crate::buffer::Ump + crate::buffer::BufferMut> property::WriteProperty<B>
     for ControllerProperty
 {
-    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn default() -> Self::Type {

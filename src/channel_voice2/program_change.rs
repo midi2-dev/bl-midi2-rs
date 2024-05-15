@@ -39,13 +39,13 @@ impl<'a, B: crate::buffer::Ump> property::ReadProperty<'a, B> for BankProperty {
             None
         }
     }
-    fn validate(_buffer: &B) -> crate::result::Result<()> {
+    fn validate(_buffer: &B) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
 }
 
 impl<B: crate::buffer::Ump + crate::buffer::BufferMut> property::WriteProperty<B> for BankProperty {
-    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn write(buffer: &mut B, v: Self::Type) {

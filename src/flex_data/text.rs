@@ -33,7 +33,7 @@ impl<'a, B: Ump + BufferMut> WriteProperty<B> for TextWriteStrProperty<'a> {
     fn default() -> Self::Type {
         ""
     }
-    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
 }
@@ -175,7 +175,7 @@ impl<'a, B: 'a + Ump> ReadProperty<'a, B> for TextReadBytesProperty<'a> {
             byte_index: 0,
         }
     }
-    fn validate(_buffer: &B) -> crate::result::Result<()> {
+    fn validate(_buffer: &B) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
 }
@@ -194,10 +194,10 @@ impl<'a, B: Ump> ReadProperty<'a, B> for TextReadStringProperty {
         let bytes = TextReadBytesProperty::read(buffer).collect();
         std::string::String::from_utf8(bytes).unwrap()
     }
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         let bytes = TextReadBytesProperty::read(buffer).collect();
         std::string::String::from_utf8(bytes).map_err(|_| {
-            crate::error::Error::InvalidData("Payload bytes do not represent a valid utf string")
+            crate::error::InvalidData("Payload bytes do not represent a valid utf string")
         })?;
         Ok(())
     }

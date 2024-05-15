@@ -142,7 +142,7 @@ impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B> for
         use crate::detail::BitOps;
         buffer.buffer()[0].word(1)
     }
-    fn validate(_buffer: &B) -> crate::result::Result<()> {
+    fn validate(_buffer: &B) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
 }
@@ -154,7 +154,7 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::
         use crate::detail::BitOps;
         buffer.buffer_mut()[0].set_word(1, value);
     }
-    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -183,10 +183,10 @@ pub enum Utility<B: crate::buffer::Ump> {
 }
 
 impl<'a> core::convert::TryFrom<&'a [u32]> for Utility<&'a [u32]> {
-    type Error = crate::error::Error;
+    type Error = crate::error::InvalidData;
     fn try_from(buffer: &'a [u32]) -> Result<Self, Self::Error> {
         if buffer.len() < 1 {
-            return Err(crate::error::Error::InvalidData("Slice is too short"));
+            return Err(crate::error::InvalidData("Slice is too short"));
         };
         Ok(match status(buffer) {
             no_op::STATUS => no_op::NoOp::try_from(buffer)?.into(),
@@ -196,9 +196,7 @@ impl<'a> core::convert::TryFrom<&'a [u32]> for Utility<&'a [u32]> {
             delta_clockstamp_tpq::STATUS => {
                 delta_clockstamp_tpq::DeltaClockstampTpq::try_from(buffer)?.into()
             }
-            _ => Err(crate::error::Error::InvalidData(
-                "Unknown utility message status",
-            ))?,
+            _ => Err(crate::error::InvalidData("Unknown utility message status"))?,
         })
     }
 }

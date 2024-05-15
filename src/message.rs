@@ -30,15 +30,13 @@ pub enum UmpMessage<B: crate::buffer::Ump> {
 }
 
 impl<'a> core::convert::TryFrom<&'a [u32]> for UmpMessage<&'a [u32]> {
-    type Error = crate::error::Error;
+    type Error = crate::error::InvalidData;
     fn try_from(buffer: &'a [u32]) -> Result<Self, Self::Error> {
         use crate::detail::BitOps;
         use UmpMessage::*;
 
         if buffer.len() < 1 {
-            return Err(crate::error::Error::InvalidData(
-                "Ump message slice is empty",
-            ));
+            return Err(crate::error::InvalidData("Ump message slice is empty"));
         }
 
         Ok(match u8::from(buffer[0].nibble(0)) {
@@ -74,7 +72,7 @@ impl<'a> core::convert::TryFrom<&'a [u32]> for UmpMessage<&'a [u32]> {
             crate::utility::UMP_MESSAGE_TYPE => {
                 Utility(crate::utility::Utility::try_from(buffer)?.into())
             }
-            _ => Err(crate::error::Error::InvalidData(
+            _ => Err(crate::error::InvalidData(
                 "Couldn't interpret ump message type",
             ))?,
         })
@@ -112,10 +110,10 @@ pub enum BytesMessage<B: crate::buffer::Bytes> {
     feature = "system-common"
 ))]
 impl<'a> core::convert::TryFrom<&'a [u8]> for BytesMessage<&'a [u8]> {
-    type Error = crate::error::Error;
+    type Error = crate::error::InvalidData;
     fn try_from(buffer: &'a [u8]) -> Result<Self, Self::Error> {
         if buffer.len() < 1 {
-            return Err(crate::error::Error::InvalidData("Bytes slice is empty"));
+            return Err(crate::error::InvalidData("Bytes slice is empty"));
         }
         use BytesMessage::*;
 
@@ -130,7 +128,7 @@ impl<'a> core::convert::TryFrom<&'a [u8]> for BytesMessage<&'a [u8]> {
             0xF1..=0xF6 | 0xF8..=0xFF => {
                 SystemCommon(crate::system_common::SystemCommon::try_from(buffer)?.into())
             }
-            _ => Err(crate::error::Error::InvalidData(
+            _ => Err(crate::error::InvalidData(
                 "Couldn't interpret bytes message type",
             ))?,
         })

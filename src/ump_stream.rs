@@ -65,11 +65,11 @@ pub enum UmpStream<B: crate::buffer::Ump> {
 }
 
 impl<'a> TryFrom<&'a [u32]> for UmpStream<&'a [u32]> {
-    type Error = crate::error::Error;
+    type Error = crate::error::InvalidData;
     fn try_from(value: &'a [u32]) -> Result<Self, Self::Error> {
         use UmpStream::*;
         if value.len() < 1 {
-            return Err(crate::error::Error::InvalidData("Slice is too short"));
+            return Err(crate::error::InvalidData("Slice is too short"));
         };
         Ok(match status_from_buffer(value) {
             device_identity::STATUS => {
@@ -109,7 +109,7 @@ impl<'a> TryFrom<&'a [u32]> for UmpStream<&'a [u32]> {
             stream_configuration_request::STATUS => StreamConfigurationRequest(
                 stream_configuration_request::StreamConfigurationRequest::try_from(value)?.into(),
             ),
-            _ => Err(crate::error::Error::InvalidData(
+            _ => Err(crate::error::InvalidData(
                 "Couldn't interpret flex data status / bank fields",
             ))?,
         })
@@ -126,7 +126,7 @@ impl<'a, const STATUS: u16, B: Ump> property::ReadProperty<'a, B> for StatusProp
     fn read(_buffer: &'a B) -> Self::Type {
         ()
     }
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         if buffer
             .buffer()
             .chunks_exact(4)
@@ -134,13 +134,13 @@ impl<'a, const STATUS: u16, B: Ump> property::ReadProperty<'a, B> for StatusProp
         {
             Ok(())
         } else {
-            Err(crate::error::Error::InvalidData("Incorrect message status"))
+            Err(crate::error::InvalidData("Incorrect message status"))
         }
     }
 }
 
 impl<const STATUS: u16, B: Ump + BufferMut> property::WriteProperty<B> for StatusProperty<STATUS> {
-    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn write(buffer: &mut B, _v: Self::Type) {
@@ -165,7 +165,7 @@ impl<'a, B: Ump> property::ReadProperty<'a, B> for ConsistentFormatsProperty {
         ()
     }
 
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         use crate::detail::helpers::validate_sysex_group_statuses;
         use crate::detail::BitOps;
 
@@ -188,7 +188,7 @@ impl<B: Ump + BufferMut> property::WriteProperty<B> for ConsistentFormatsPropert
     fn write(buffer: &mut B, _v: Self::Type) {
         set_format_fields(buffer.buffer_mut())
     }
-    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
 }
@@ -224,7 +224,7 @@ impl<'a, const OFFSET: usize, B: Ump + BufferMut> property::WriteProperty<B>
     fn default() -> Self::Type {
         ""
     }
-    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
 }
@@ -322,7 +322,7 @@ impl<'a, B: 'a + Ump> property::ReadProperty<'a, B> for TextReadBytesProperty<'a
             offset: 0,
         }
     }
-    fn validate(_buffer: &B) -> crate::result::Result<()> {
+    fn validate(_buffer: &B) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
 }
@@ -341,10 +341,10 @@ impl<'a, B: Ump> property::ReadProperty<'a, B> for TextReadStringProperty {
         let bytes = TextReadBytesProperty::read(buffer).collect();
         std::string::String::from_utf8(bytes).unwrap()
     }
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         let bytes = TextReadBytesProperty::read(buffer).collect();
         std::string::String::from_utf8(bytes).map_err(|_| {
-            crate::error::Error::InvalidData("Payload bytes do not represent a valid utf string")
+            crate::error::InvalidData("Payload bytes do not represent a valid utf string")
         })?;
         Ok(())
     }

@@ -196,10 +196,10 @@ pub enum SystemCommon<B: crate::buffer::Buffer> {
 }
 
 impl<'a, U: crate::buffer::Unit> core::convert::TryFrom<&'a [U]> for SystemCommon<&'a [U]> {
-    type Error = crate::error::Error;
+    type Error = crate::error::InvalidData;
     fn try_from(buffer: &'a [U]) -> Result<Self, Self::Error> {
         if buffer.len() < 1 {
-            return Err(crate::error::Error::InvalidData("Slice is too short"));
+            return Err(crate::error::InvalidData("Slice is too short"));
         };
 
         Ok(match status(&buffer) {
@@ -215,7 +215,7 @@ impl<'a, U: crate::buffer::Unit> core::convert::TryFrom<&'a [U]> for SystemCommo
             time_code::STATUS => time_code::TimeCode::try_from(buffer)?.into(),
             timing_clock::STATUS => timing_clock::TimingClock::try_from(buffer)?.into(),
             tune_request::STATUS => tune_request::TuneRequest::try_from(buffer)?.into(),
-            _ => Err(crate::error::Error::InvalidData(
+            _ => Err(crate::error::InvalidData(
                 "Unknown midi1 channel voice status",
             ))?,
         })
@@ -236,9 +236,9 @@ impl<'a, const STATUS: u8, B: crate::buffer::Buffer> crate::detail::property::Re
     fn read(_buffer: &'a B) -> Self::Type {
         ()
     }
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         if status(buffer.buffer()) != STATUS {
-            Err(crate::error::Error::InvalidData("Incorrect status field"))
+            Err(crate::error::InvalidData("Incorrect status field"))
         } else {
             Ok(())
         }
@@ -262,7 +262,7 @@ impl<const STATUS: u8, B: crate::buffer::Buffer + crate::buffer::BufferMut>
             _ => unreachable!(),
         }
     }
-    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn default() -> Self::Type {

@@ -60,7 +60,7 @@ impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B>
             _ => unreachable!(),
         }
     }
-    fn validate(_buffer: &B) -> crate::result::Result<()> {
+    fn validate(_buffer: &B) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
 }
@@ -78,7 +78,7 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::
             },
         );
     }
-    fn validate(_: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn default() -> Self::Type {

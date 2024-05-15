@@ -49,11 +49,11 @@ impl<B: crate::buffer::Buffer> crate::detail::property::Property<B> for Sysex7By
 impl<'a, B: crate::buffer::Buffer> crate::detail::property::ReadProperty<'a, B>
     for Sysex7BytesBeginByte
 {
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
             crate::buffer::UNIT_ID_U8 => {
                 if buffer.specialise_u8()[0] != START_BYTE {
-                    Err(crate::error::Error::InvalidData(ERR_NO_BEGIN_BYTE))
+                    Err(crate::error::InvalidData(ERR_NO_BEGIN_BYTE))
                 } else {
                     Ok(())
                 }
@@ -75,7 +75,7 @@ impl<B: crate::buffer::Buffer + crate::buffer::BufferMut> crate::detail::propert
             buffer.specialise_u8_mut()[0] = START_BYTE;
         }
     }
-    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -95,14 +95,14 @@ impl<'a, B: crate::buffer::Buffer> crate::detail::property::ReadProperty<'a, B>
     fn read(_buffer: &'a B) -> Self::Type {
         ()
     }
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
             crate::buffer::UNIT_ID_U8 => buffer
                 .specialise_u8()
                 .iter()
                 .position(|b| *b == 0xF7)
                 .map(|_| ())
-                .ok_or(crate::error::Error::InvalidData(ERR_NO_END_BYTE)),
+                .ok_or(crate::error::InvalidData(ERR_NO_END_BYTE)),
             crate::buffer::UNIT_ID_U32 => Ok(()),
             _ => unreachable!(),
         }
@@ -118,7 +118,7 @@ impl<B: crate::buffer::Buffer + crate::buffer::BufferMut> crate::detail::propert
             buffer.specialise_u8_mut()[last] = END_BYTE;
         }
     }
-    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -137,7 +137,7 @@ impl<'a, B: crate::buffer::Buffer> crate::detail::property::ReadProperty<'a, B>
     fn read(_buffer: &'a B) -> Self::Type {
         ()
     }
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U32 {
             message_helpers::validate_sysex_group_statuses(
                 buffer.specialise_u32(),
@@ -157,7 +157,7 @@ impl<B: crate::buffer::Buffer + crate::buffer::BufferMut> crate::detail::propert
     for ConsistentStatuses
 {
     fn write(_: &mut B, _: Self::Type) {}
-    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -177,14 +177,14 @@ impl<'a, B: crate::buffer::Buffer> crate::detail::property::ReadProperty<'a, B>
     fn read(_buffer: &'a B) -> Self::Type {
         ()
     }
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U32 {
             if buffer
                 .specialise_u32()
                 .chunks_exact(2)
                 .any(|p| u8::from(p[0].nibble(3)) > 6)
             {
-                Err(crate::error::Error::InvalidData(ERR_INVALID_PACKET_SIZE))
+                Err(crate::error::InvalidData(ERR_INVALID_PACKET_SIZE))
             } else {
                 Ok(())
             }
@@ -198,7 +198,7 @@ impl<B: crate::buffer::Buffer + crate::buffer::BufferMut> crate::detail::propert
     for ValidPacketSizes
 {
     fn write(_buffer: &mut B, _v: Self::Type) {}
-    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -220,7 +220,7 @@ impl<'a, B: crate::buffer::Buffer> crate::detail::property::ReadProperty<'a, B> 
             Default::default()
         }
     }
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U32 {
             message_helpers::sysex_group_consistent_groups(
                 buffer.specialise_u32(),
@@ -248,7 +248,7 @@ impl<B: crate::buffer::Buffer + crate::buffer::BufferMut> crate::detail::propert
             }
         }
     }
-    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -871,7 +871,7 @@ mod tests {
     fn try_from_bytes_with_no_end_byte() {
         assert_eq!(
             Sysex7::try_from(&[0xF0_u8, 0x0_u8, 0x1_u8, 0x2_u8][..]),
-            Err(crate::error::Error::InvalidData(ERR_NO_END_BYTE))
+            Err(crate::error::InvalidData(ERR_NO_END_BYTE))
         )
     }
 
@@ -879,7 +879,7 @@ mod tests {
     fn try_from_bytes_with_no_begin_byte() {
         assert_eq!(
             Sysex7::try_from(&[0x0_u8, 0x1_u8, 0x2_u8, 0xF7_u8][..]),
-            Err(crate::error::Error::InvalidData(ERR_NO_BEGIN_BYTE))
+            Err(crate::error::InvalidData(ERR_NO_BEGIN_BYTE))
         )
     }
 
@@ -1047,7 +1047,7 @@ mod tests {
                     0x0E00_0000_u32,
                 ][..]
             ),
-            Err(crate::error::Error::InvalidData(
+            Err(crate::error::InvalidData(
                 message_helpers::ERR_INCONSISTENT_GROUPS
             )),
         );
@@ -1066,7 +1066,7 @@ mod tests {
                     0x0E00_0000_u32,
                 ][..]
             ),
-            Err(crate::error::Error::InvalidData(
+            Err(crate::error::InvalidData(
                 message_helpers::ERR_SYSEX_EXPECTED_END
             )),
         );
@@ -1076,7 +1076,7 @@ mod tests {
     fn try_from_ump_incorrect_complete_status() {
         assert_eq!(
             Sysex7::try_from(&[0x3416_0001_u32, 0x0203_0405_u32,][..]),
-            Err(crate::error::Error::InvalidData(
+            Err(crate::error::InvalidData(
                 message_helpers::ERR_SYSEX_EXPECTED_COMPLETE
             )),
         );
@@ -1095,7 +1095,7 @@ mod tests {
                     0x0E00_0000_u32,
                 ][..]
             ),
-            Err(crate::error::Error::InvalidData(
+            Err(crate::error::InvalidData(
                 message_helpers::ERR_SYSEX_EXPECTED_BEGIN
             )),
         );
@@ -1114,7 +1114,7 @@ mod tests {
                     0x0E00_0000_u32,
                 ][..]
             ),
-            Err(crate::error::Error::InvalidData(
+            Err(crate::error::InvalidData(
                 message_helpers::ERR_SYSEX_EXPECTED_CONTINUE
             )),
         );
@@ -1133,7 +1133,7 @@ mod tests {
                     0x0E00_0000_u32,
                 ][..]
             ),
-            Err(crate::error::Error::InvalidData(ERR_INVALID_PACKET_SIZE)),
+            Err(crate::error::InvalidData(ERR_INVALID_PACKET_SIZE)),
         );
     }
 

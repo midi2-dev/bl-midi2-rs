@@ -94,7 +94,7 @@ mod tests {
     fn from_empty_data() {
         assert_eq!(
             ChannelPressure::try_from(&<[u32; 0] as Default>::default()[..]),
-            Err(crate::error::Error::InvalidData("Slice is too short")),
+            Err(crate::error::InvalidData("Slice is too short")),
         );
     }
 

@@ -46,10 +46,10 @@ pub enum ChannelVoice1<B: crate::buffer::Buffer> {
 }
 
 impl<'a, U: crate::buffer::Unit> core::convert::TryFrom<&'a [U]> for ChannelVoice1<&'a [U]> {
-    type Error = crate::error::Error;
+    type Error = crate::error::InvalidData;
     fn try_from(buffer: &'a [U]) -> Result<Self, Self::Error> {
         if buffer.len() < 1 {
-            return Err(crate::error::Error::InvalidData("Slice is too short"));
+            return Err(crate::error::InvalidData("Slice is too short"));
         };
         Ok(match status(buffer) {
             channel_pressure::STATUS => ChannelPressure::try_from(buffer)?.into(),
@@ -59,7 +59,7 @@ impl<'a, U: crate::buffer::Unit> core::convert::TryFrom<&'a [U]> for ChannelVoic
             note_on::STATUS => NoteOn::try_from(buffer)?.into(),
             pitch_bend::STATUS => PitchBend::try_from(buffer)?.into(),
             program_change::STATUS => ProgramChange::try_from(buffer)?.into(),
-            _ => Err(crate::error::Error::InvalidData(
+            _ => Err(crate::error::InvalidData(
                 "Unknown midi1 channel voice status",
             ))?,
         })

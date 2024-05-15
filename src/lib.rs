@@ -26,7 +26,6 @@ pub mod utility;
 
 pub mod buffer;
 pub mod error;
-pub mod result;
 
 mod detail;
 mod message;

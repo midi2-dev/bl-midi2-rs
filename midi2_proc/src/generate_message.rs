@@ -425,10 +425,10 @@ fn try_from_slice_impl(
     }
     quote! {
         impl<'a, #generic_unit> core::convert::TryFrom<&'a [#unit_type]> for #root_ident<&'a [#unit_type]> {
-            type Error = crate::error::Error;
+            type Error = crate::error::InvalidData;
             fn try_from(buffer: &'a [#unit_type]) -> core::result::Result<Self, Self::Error> {
                 if buffer.len() < <Self as crate::traits::MinSize<&[#unit_type]>>::MIN_SIZE {
-                    return Err(crate::error::Error::InvalidData("Slice is too short"));
+                    return Err(crate::error::InvalidData("Slice is too short"));
                 }
                 #validation_steps
                 Ok(#root_ident(buffer))

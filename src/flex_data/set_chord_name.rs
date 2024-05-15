@@ -1,8 +1,6 @@
 use crate::{
     detail::{common_properties, schema, BitOps},
-    error::Error,
     flex_data::{self, UMP_MESSAGE_TYPE},
-    result::Result,
     ux::u4,
 };
 
@@ -73,7 +71,7 @@ impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B>
     fn read(buffer: &'a B) -> Self::Type {
         SharpsFlats::from_nibble(buffer.buffer()[3].nibble(0)).unwrap()
     }
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         SharpsFlats::from_nibble(buffer.buffer()[3].nibble(0))?;
         Ok(())
     }
@@ -85,7 +83,7 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::
     fn write(buffer: &mut B, v: Self::Type) {
         buffer.buffer_mut()[3].set_nibble(0, v.into_nibble());
     }
-    fn validate(_: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -99,7 +97,7 @@ impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B>
     fn read(buffer: &'a B) -> Self::Type {
         SharpsFlats::from_nibble(buffer.buffer()[1].nibble(0)).unwrap()
     }
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         SharpsFlats::from_nibble(buffer.buffer()[1].nibble(0))?;
         Ok(())
     }
@@ -111,7 +109,7 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::
     fn write(buffer: &mut B, v: Self::Type) {
         buffer.buffer_mut()[1].set_nibble(0, v.into_nibble());
     }
-    fn validate(_: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -120,7 +118,7 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::
 }
 
 impl SharpsFlats {
-    fn from_nibble(nibble: u4) -> Result<SharpsFlats> {
+    fn from_nibble(nibble: u4) -> Result<SharpsFlats, crate::error::InvalidData> {
         use SharpsFlats::*;
         match u8::from(nibble) {
             0x2 => Ok(DoubleSharp),
@@ -128,7 +126,7 @@ impl SharpsFlats {
             0x0 => Ok(Natural),
             0xF => Ok(Flat),
             0xE => Ok(DoubleFlat),
-            _ => Err(Error::InvalidData(
+            _ => Err(crate::error::InvalidData(
                 "Couldn't interpret Sharps / Flats field",
             )),
         }
@@ -194,7 +192,7 @@ impl<B: crate::buffer::Ump, S: schema::UmpSchema> crate::detail::property::Prope
 impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B>
     for ChordTypeProperty<schema::Ump<0x0, 0x00FF_0000, 0x0, 0x0>>
 {
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         ChordType::from_octet(buffer.buffer()[1].octet(1))?;
         Ok(())
     }
@@ -206,7 +204,7 @@ impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B>
 impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::WriteProperty<B>
     for ChordTypeProperty<schema::Ump<0x0, 0x00FF_0000, 0x0, 0x0>>
 {
-    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn write(buffer: &mut B, v: Self::Type) {
@@ -220,7 +218,7 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::
 impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B>
     for ChordTypeProperty<schema::Ump<0x0, 0x0, 0x0, 0x00FF_0000>>
 {
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         ChordType::from_octet(buffer.buffer()[3].octet(1))?;
         Ok(())
     }
@@ -232,7 +230,7 @@ impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B>
 impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::WriteProperty<B>
     for ChordTypeProperty<schema::Ump<0x0, 0x0, 0x0, 0x00FF_0000>>
 {
-    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn write(buffer: &mut B, v: Self::Type) {
@@ -244,7 +242,7 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::
 }
 
 impl ChordType {
-    fn from_octet(octet: u8) -> Result<Self> {
+    fn from_octet(octet: u8) -> Result<Self, crate::error::InvalidData> {
         use ChordType::*;
         match octet {
             0x00 => Ok(ClearChord),
@@ -274,7 +272,7 @@ impl ChordType {
             0x18 => Ok(Power),
             0x19 => Ok(Suspended2nd),
             0x1A => Ok(Suspended4th),
-            _ => Err(Error::InvalidData("Couldn't interpret Chord field")),
+            _ => Err(crate::error::InvalidData("Couldn't interpret Chord field")),
         }
     }
 
@@ -340,7 +338,7 @@ macro_rules! alteration_property_impl {
         impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B>
             for AlterationProperty<schema::Ump<$ump1, $ump2, $ump3, $ump4>>
         {
-            fn validate(buffer: &B) -> crate::result::Result<()> {
+            fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
                 alteration_from_octet(buffer.buffer()[$buffer_index].octet($octet_index))?;
                 Ok(())
             }
@@ -353,7 +351,7 @@ macro_rules! alteration_property_impl {
             crate::detail::property::WriteProperty<B>
             for AlterationProperty<schema::Ump<$ump1, $ump2, $ump3, $ump4>>
         {
-            fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+            fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
                 Ok(())
             }
             fn write(buffer: &mut B, v: Self::Type) {
@@ -374,7 +372,7 @@ alteration_property_impl!(0x0, 0x0, 0x00FF_0000, 0x0, 2, 1);
 alteration_property_impl!(0x0, 0x0, 0x0, 0x0000_FF00, 3, 2);
 alteration_property_impl!(0x0, 0x0, 0x0, 0x0000_00FF, 3, 3);
 
-fn alteration_from_octet(octet: u8) -> Result<Option<Alteration>> {
+fn alteration_from_octet(octet: u8) -> Result<Option<Alteration>, crate::error::InvalidData> {
     use Alteration::*;
     match u8::from(octet.nibble(0)) {
         0x0 => Ok(None),
@@ -382,7 +380,9 @@ fn alteration_from_octet(octet: u8) -> Result<Option<Alteration>> {
         0x2 => Ok(Some(Subtract(octet.nibble(1)))),
         0x3 => Ok(Some(Raise(octet.nibble(1)))),
         0x4 => Ok(Some(Lower(octet.nibble(1)))),
-        _ => Err(Error::InvalidData("Couldn't interpret alteration field")),
+        _ => Err(crate::error::InvalidData(
+            "Couldn't interpret alteration field",
+        )),
     }
 }
 

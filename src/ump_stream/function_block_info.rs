@@ -62,7 +62,7 @@ impl<'a, B: crate::buffer::Ump> property::ReadProperty<'a, B> for UiHintProperty
             _ => unreachable!(),
         }
     }
-    fn validate(_buffer: &B) -> crate::result::Result<()> {
+    fn validate(_buffer: &B) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
 }
@@ -70,7 +70,7 @@ impl<'a, B: crate::buffer::Ump> property::ReadProperty<'a, B> for UiHintProperty
 impl<B: crate::buffer::Ump + crate::buffer::BufferMut> property::WriteProperty<B>
     for UiHintProperty
 {
-    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn write(buffer: &mut B, v: Self::Type) {
@@ -124,14 +124,14 @@ impl<'a, B: crate::buffer::Ump> property::ReadProperty<'a, B> for Midi1PortPrope
             _ => panic!(),
         }
     }
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         use crate::detail::BitOps;
 
         match u8::from(buffer.buffer()[0].crumb(14)) {
             0b00 => Ok(()),
             0b01 => Ok(()),
             0b10 => Ok(()),
-            _ => Err(crate::error::Error::InvalidData(
+            _ => Err(crate::error::InvalidData(
                 "Couldn't interpret midi1 port field",
             )),
         }
@@ -141,7 +141,7 @@ impl<'a, B: crate::buffer::Ump> property::ReadProperty<'a, B> for Midi1PortPrope
 impl<B: crate::buffer::Ump + crate::buffer::BufferMut> property::WriteProperty<B>
     for Midi1PortProperty
 {
-    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn write(buffer: &mut B, v: Self::Type) {
@@ -188,11 +188,11 @@ impl<'a, B: crate::buffer::Ump> property::ReadProperty<'a, B> for DirectionPrope
             _ => panic!(),
         }
     }
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         use crate::detail::BitOps;
 
         match u8::from(buffer.buffer()[0].crumb(15)) {
-            0b00 => Err(crate::error::Error::InvalidData(
+            0b00 => Err(crate::error::InvalidData(
                 "Couldn't interpret direction field",
             )),
             0b01 => Ok(()),
@@ -206,7 +206,7 @@ impl<'a, B: crate::buffer::Ump> property::ReadProperty<'a, B> for DirectionPrope
 impl<B: crate::buffer::Ump + crate::buffer::BufferMut> property::WriteProperty<B>
     for DirectionProperty
 {
-    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn write(buffer: &mut B, v: Self::Type) {

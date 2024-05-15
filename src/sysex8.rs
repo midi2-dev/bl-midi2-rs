@@ -42,7 +42,7 @@ impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B>
     fn read(_buffer: &'a B) -> Self::Type {
         ()
     }
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         message_helpers::validate_sysex_group_statuses(
             buffer.buffer(),
             |p| u8::from(p[0].nibble(2)) == 0x0,
@@ -63,12 +63,12 @@ impl<B: crate::buffer::Ump> crate::detail::property::Property<B> for ValidPacket
 
 impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B> for ValidPacketSizes {
     fn read(_buffer: &'a B) -> Self::Type {}
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         if buffer.buffer().chunks_exact(4).any(|p| {
             let number_bytes = u8::from(p[0].nibble(3));
             number_bytes < 1 || number_bytes > 14
         }) {
-            Err(crate::error::Error::InvalidData(
+            Err(crate::error::InvalidData(
                 ERR_INVALID_NUMBER_OF_PAYLOAD_BYTES,
             ))
         } else {
@@ -90,7 +90,7 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::
             packet[0].set_nibble(3, sz.max(ux::u4::new(1)));
         }
     }
-    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -108,7 +108,7 @@ impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B> for
     fn read(buffer: &'a B) -> Self::Type {
         buffer.buffer()[0].nibble(1)
     }
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         message_helpers::sysex_group_consistent_groups(
             buffer.buffer(),
             4,
@@ -129,7 +129,7 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::
             packet[0].set_nibble(1, group);
         }
     }
-    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -147,7 +147,7 @@ impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B> for
     fn read(buffer: &'a B) -> Self::Type {
         stream_id_from_packet(buffer.buffer())
     }
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         let sid = stream_id_from_packet;
         let buffer = buffer.buffer();
         if buffer
@@ -157,7 +157,7 @@ impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B> for
         {
             Ok(())
         } else {
-            Err(crate::error::Error::InvalidData(ERR_INCONSISTENT_STREAM_ID))
+            Err(crate::error::InvalidData(ERR_INCONSISTENT_STREAM_ID))
         }
     }
 }
@@ -178,7 +178,7 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::
             packet[0].set_octet(3, id);
         }
     }
-    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -574,7 +574,7 @@ mod tests {
                     0x3031_0000,
                 ][..]
             ),
-            Err(crate::error::Error::InvalidData(
+            Err(crate::error::InvalidData(
                 ERR_INVALID_NUMBER_OF_PAYLOAD_BYTES
             )),
         );
@@ -603,7 +603,7 @@ mod tests {
                     0x3031_0000,
                 ][..]
             ),
-            Err(crate::error::Error::InvalidData(
+            Err(crate::error::InvalidData(
                 crate::detail::helpers::ERR_INCONSISTENT_GROUPS
             )),
         );
@@ -632,7 +632,7 @@ mod tests {
                     0x3031_0000,
                 ][..]
             ),
-            Err(crate::error::Error::InvalidData(ERR_INCONSISTENT_STREAM_ID,)),
+            Err(crate::error::InvalidData(ERR_INCONSISTENT_STREAM_ID,)),
         );
     }
 
@@ -659,7 +659,7 @@ mod tests {
                     0x3031_0000,
                 ][..]
             ),
-            Err(crate::error::Error::InvalidData(
+            Err(crate::error::InvalidData(
                 crate::detail::helpers::ERR_SYSEX_EXPECTED_BEGIN
             )),
         );
@@ -688,7 +688,7 @@ mod tests {
                     0x3031_0000,
                 ][..]
             ),
-            Err(crate::error::Error::InvalidData(
+            Err(crate::error::InvalidData(
                 crate::detail::helpers::ERR_SYSEX_EXPECTED_CONTINUE
             )),
         );
@@ -717,7 +717,7 @@ mod tests {
                     0x3031_0000,
                 ][..]
             ),
-            Err(crate::error::Error::InvalidData(
+            Err(crate::error::InvalidData(
                 crate::detail::helpers::ERR_SYSEX_EXPECTED_END
             )),
         );
@@ -727,7 +727,7 @@ mod tests {
     fn try_from_slice_expected_complete() {
         assert_eq!(
             Sysex8::try_from(&[0x541C_BB00, 0x0102_0304, 0x0506_0708, 0x090A_0B00,][..]),
-            Err(crate::error::Error::InvalidData(
+            Err(crate::error::InvalidData(
                 crate::detail::helpers::ERR_SYSEX_EXPECTED_COMPLETE
             )),
         );

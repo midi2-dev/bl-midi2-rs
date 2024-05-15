@@ -241,7 +241,7 @@ mod tests {
                     0x0000_0000,
                 ][..]
             ),
-            Err(crate::error::Error::InvalidData("Incorrect message status")),
+            Err(crate::error::InvalidData("Incorrect message status")),
         )
     }
 
@@ -260,7 +260,7 @@ mod tests {
                     0x0000_0000,
                 ][..]
             ),
-            Err(crate::error::Error::InvalidData("Incorrect message bank")),
+            Err(crate::error::InvalidData("Incorrect message bank")),
         )
     }
 
@@ -279,7 +279,7 @@ mod tests {
                     0x0000_0000,
                 ][..]
             ),
-            Err(crate::error::Error::InvalidData(
+            Err(crate::error::InvalidData(
                 crate::detail::helpers::ERR_INCONSISTENT_GROUPS
             )),
         )
@@ -300,7 +300,7 @@ mod tests {
                     0x0000_0000,
                 ][..]
             ),
-            Err(crate::error::Error::InvalidData(
+            Err(crate::error::InvalidData(
                 crate::detail::helpers::ERR_SYSEX_EXPECTED_BEGIN
             )),
         )
@@ -321,7 +321,7 @@ mod tests {
                     0x0000_0000,
                 ][..]
             ),
-            Err(crate::error::Error::InvalidData(
+            Err(crate::error::InvalidData(
                 crate::detail::helpers::ERR_SYSEX_EXPECTED_END
             )),
         )
@@ -333,7 +333,7 @@ mod tests {
             UnknownMetadataText::try_from(
                 &[0xD050_0100, 0x4769_6D6D, 0x6520_736F, 0x6D65_2073,][..]
             ),
-            Err(crate::error::Error::InvalidData(
+            Err(crate::error::InvalidData(
                 crate::detail::helpers::ERR_SYSEX_EXPECTED_COMPLETE
             )),
         )
@@ -358,7 +358,7 @@ mod tests {
                     0x6D65_2073,
                 ][..]
             ),
-            Err(crate::error::Error::InvalidData(
+            Err(crate::error::InvalidData(
                 crate::detail::helpers::ERR_SYSEX_EXPECTED_CONTINUE
             )),
         )
