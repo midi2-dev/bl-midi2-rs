@@ -25,7 +25,7 @@ pub trait Data<B: Buffer> {
     fn data(&self) -> &[B::Unit];
 }
 
-/// Read and mutate the MIDI 2.0 group field of a wrapped MIDI message.
+/// Read and write the MIDI 2.0 group field of a wrapped MIDI message.
 ///
 /// ```rust
 /// use midi2::{ux::u4, Grouped, Data, channel_voice2::NoteOn};
@@ -44,7 +44,7 @@ pub trait Grouped<B: Ump> {
         B: BufferMut;
 }
 
-/// Read and mutate the channel field of a wrapped MIDI message.
+/// Read and write the channel field of a wrapped MIDI message.
 ///
 /// ```rust
 /// use midi2::{ux::u4, Channeled, Data, channel_voice2::NoteOn};
@@ -165,10 +165,35 @@ where
     }
 }
 
+/// Convert a message from a [Bytes](crate::buffer::Bytes) backing buffer
+/// to a [Ump] backing buffer.
+///
+/// ```rust
+/// use midi2::{FromBytes, Data, channel_voice1::NoteOn};
+///
+/// let bytes_message = NoteOn::try_from(&[0x9E_u8, 0x75, 0x3D][..]).expect("Valid data");
+/// let ump_message = NoteOn::<[u32; 4]>::from_bytes(bytes_message);
+///
+/// assert_eq!(ump_message.data(), &[0x209E_753D]);
+/// ```
 pub trait FromBytes<T>: Sized {
     fn from_bytes(other: T) -> Self;
 }
 
+/// Convert a [Bytes](crate::buffer::Bytes) backed message into a [Ump] backed message.
+///
+/// ```rust
+/// use midi2::{IntoUmp, Data, channel_voice1::NoteOn};
+///
+/// let bytes_message = NoteOn::try_from(&[0x9E_u8, 0x75, 0x3D][..]).expect("Valid data");
+/// let ump_message: NoteOn<[u32; 4]> = bytes_message.into_ump();
+///
+/// assert_eq!(ump_message.data(), &[0x209E_753D]);
+/// ```
+///
+/// Note that this is the reciprocal trait to [FromBytes].
+/// Any implementor of [FromBytes] automatically implements [IntoUmp],
+/// similar to the [core::convert::Into] trait.
 pub trait IntoUmp<T> {
     fn into_ump(self) -> T;
 }
@@ -182,10 +207,42 @@ where
     }
 }
 
+/// Convert a message from a [Ump] backing buffer
+/// to a [Bytes](crate::buffer::Bytes) backing buffer.
+///
+/// Note that in most cases this is a "lossy" conversion. Some
+/// fields in a [Ump] message are not represented in a [Bytes](crate::buffer::Bytes)
+/// message like `group`, for example.
+///
+/// ```rust
+/// use midi2::{FromUmp, Data, channel_voice1::NoteOn};
+///
+/// let ump_message = NoteOn::try_from(&[0x279E_753D_u32][..]).expect("Valid data");
+/// let bytes_message = NoteOn::<[u8; 3]>::from_ump(ump_message);
+///
+/// assert_eq!(bytes_message.data(), &[0x9E, 0x75, 0x3D]);
+/// ```
 pub trait FromUmp<T>: Sized {
     fn from_ump(other: T) -> Self;
 }
 
+/// Convert a [Ump] backed message into a [Bytes](crate::buffer::Bytes) backed message.
+///
+/// Note that in most cases this is a "lossy" conversion. Some
+/// fields in a [Ump] message are not represented in a [Bytes](crate::buffer::Bytes)
+/// message like `group`, for example.
+///
+/// ```rust
+/// use midi2::{IntoBytes, Data, channel_voice1::NoteOn};
+///
+/// let ump_message = NoteOn::try_from(&[0x279E_753D_u32][..]).expect("Valid data");
+/// let bytes_message: NoteOn<[u8; 3]> = ump_message.into_bytes();
+///
+/// assert_eq!(bytes_message.data(), &[0x9E, 0x75, 0x3D]);
+/// ```
+/// This is the reciprocal trait to [FromUmp].
+/// Any implementor of [FromUmp] automatically implements [IntoBytes],
+/// similar to the [core::convert::Into] trait.
 pub trait IntoBytes<T> {
     fn into_bytes(self) -> T;
 }
@@ -199,10 +256,67 @@ where
     }
 }
 
+/// Attempt to convert a message from a [Bytes](crate::buffer::Bytes) backing buffer
+/// to a [Ump] backing buffer.
+///
+/// The conversion may fail with a [BufferOverflow](crate::error::BufferOverflow) error
+/// if the target buffer is not large enough to contain the data.
+///
+/// ```rust
+/// use midi2::{TryFromBytes, Data, sysex7::Sysex7};
+///
+/// let bytes_message = Sysex7::try_from(&[
+///     0xF0_u8, 0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xF7,
+/// ][..]).expect("Valid data");
+///
+/// let ump_message = Sysex7::<[u32; 4]>::try_from_bytes(bytes_message.clone());
+///
+/// assert_eq!(ump_message.expect("Buffer is large enough").data(), &[
+///     0x3016_0001,
+///     0x0203_0405,
+///     0x3034_0607,
+///     0x0809_0000,
+/// ]);
+///
+/// let small_ump_message = Sysex7::<[u32; 2]>::try_from_bytes(bytes_message.clone());
+/// small_ump_message.expect_err("Buffer is too small");
+/// ```
 pub trait TryFromBytes<T>: Sized {
     fn try_from_bytes(other: T) -> Result<Self, crate::error::BufferOverflow>;
 }
 
+/// Attempt to convert a [Bytes](crate::buffer::Bytes) backed message into a [Ump] backed message.
+///
+/// The conversion may fail with a [BufferOverflow](crate::error::BufferOverflow) error
+/// if the target buffer is not large enough to contain the data.
+///
+/// ```rust
+/// use midi2::{TryIntoUmp, Data, sysex7::Sysex7, error::BufferOverflow};
+///
+/// let bytes_message = Sysex7::try_from(&[
+///     0xF0_u8, 0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xF7,
+/// ][..]).expect("Valid data");
+///
+/// let ump_message: Result<Sysex7<[u32; 4]>, BufferOverflow> = bytes_message
+///     .clone()
+///     .try_into_ump();
+///
+/// assert_eq!(ump_message.expect("Buffer is large enough").data(), &[
+///     0x3016_0001,
+///     0x0203_0405,
+///     0x3034_0607,
+///     0x0809_0000,
+/// ]);
+///
+/// let small_ump_message: Result<Sysex7<[u32; 2]>, BufferOverflow> = bytes_message
+///     .clone()
+///     .try_into_ump();
+/// small_ump_message.expect_err("Buffer is too small");
+/// ```
+///
+/// Note that this is the reciprocal trait to [TryFromBytes].
+/// Any implementor of [TryFromBytes] automatically implements [IntoUmp],
+/// similar to the [core::convert::TryInto] trait.
 pub trait TryIntoUmp<T> {
     fn try_into_ump(self) -> Result<T, crate::error::BufferOverflow>;
 }
@@ -216,10 +330,75 @@ where
     }
 }
 
+/// Attempt to convert a message from a [Ump] backing buffer
+/// to a [Bytes](crate::buffer::Bytes) backing buffer.
+///
+/// The conversion may fail with a [BufferOverflow](crate::error::BufferOverflow) error
+/// if the target buffer is not large enough to contain the data.
+///
+/// Note that in most cases this is a "lossy" conversion. Some
+/// fields in a [Ump] message are not represented in a [Bytes](crate::buffer::Bytes)
+/// message like `group`, for example.
+///
+/// ```rust
+/// use midi2::{TryFromUmp, Data, sysex7::Sysex7};
+///
+/// let ump_message = Sysex7::try_from(&[
+///     0x3016_0001_u32,
+///     0x0203_0405,
+///     0x3034_0607,
+///     0x0809_0000,
+/// ][..]).expect("Valid data");
+///
+/// let bytes_message = Sysex7::<[u8; 12]>::try_from_ump(ump_message.clone());
+///
+/// assert_eq!(bytes_message.expect("Buffer is large enough").data(), &[
+///     0xF0, 0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xF7,
+/// ]);
+///
+/// let small_bytes_message = Sysex7::<[u8; 10]>::try_from_ump(ump_message.clone());
+/// small_bytes_message.expect_err("Buffer is too small");
+/// ```
 pub trait TryFromUmp<T>: Sized {
     fn try_from_ump(other: T) -> Result<Self, crate::error::BufferOverflow>;
 }
 
+/// Attempt to convert a [Ump] backed message into a [Bytes](crate::buffer::Bytes) backed message.
+///
+/// The conversion may fail with a [BufferOverflow](crate::error::BufferOverflow) error
+/// if the target buffer is not large enough to contain the data.
+///
+/// Note that in most cases this is a "lossy" conversion. Some
+/// fields in a [Ump] message are not represented in a [Bytes](crate::buffer::Bytes)
+/// message like `group`, for example.
+///
+/// ```rust
+/// use midi2::{TryIntoBytes, Data, sysex7::Sysex7, error::BufferOverflow};
+///
+/// let ump_message = Sysex7::try_from(&[
+///     0x3016_0001_u32,
+///     0x0203_0405,
+///     0x3034_0607,
+///     0x0809_0000,
+/// ][..]).expect("Valid data");
+///
+/// let bytes_message: Result<Sysex7<[u8; 12]>, BufferOverflow> = ump_message
+///     .clone()
+///     .try_into_bytes();
+///
+/// assert_eq!(bytes_message.expect("Buffer is large enough").data(), &[
+///     0xF0, 0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xF7,
+/// ]);
+///
+/// let small_bytes_message: Result<Sysex7<[u8; 10]>, BufferOverflow> = ump_message
+///     .try_into_bytes()
+///     .clone();
+/// small_bytes_message.expect_err("Buffer is too small");
+/// ```
+///
+/// This is the reciprocal trait to [TryFromUmp].
+/// Any implementor of [TryFromUmp] automatically implements [TryIntoBytes],
+/// similar to the [core::convert::TryInto] trait.
 pub trait TryIntoBytes<T> {
     fn try_into_bytes(self) -> Result<T, crate::error::BufferOverflow>;
 }
@@ -233,6 +412,70 @@ where
     }
 }
 
+/// Read and write the payload data on a MIDI sysex message.
+///
+/// Payload data can be read as an iterator over the [Sysex::Byte] type.
+///
+/// ```rust
+/// use midi2::{sysex8::Sysex8, Sysex};
+///
+/// let message = Sysex8::try_from(&[
+///     0x501E_0000,
+///     0x0102_0304,
+///     0x0506_0708,
+///     0x090A_0B0C,
+///     0x5038_000D,
+///     0x0E0F_1011,
+///     0x1213_0000,
+///     0x0000_0000,
+/// ][..]).expect("Valid data");
+///
+/// assert_eq!(message.payload().collect::<Vec<u8>>(), (0..20).collect::<Vec<u8>>());
+/// ```
+///
+/// When the backing buffer implements [BufferResize](crate::buffer::BufferResize)
+/// payload data can be set using [set_payload](Sysex::set_payload).
+///
+/// ```rust
+/// use midi2::{sysex8::Sysex8, Sysex, Data};
+///
+/// let mut message = Sysex8::<Vec<u32>>::new();
+/// message.set_payload(0..20);
+///
+/// assert_eq!(message.data(), &[
+///     0x501E_0000,
+///     0x0102_0304,
+///     0x0506_0708,
+///     0x090A_0B0C,
+///     0x5038_000D,
+///     0x0E0F_1011,
+///     0x1213_0000,
+///     0x0000_0000,
+/// ]);
+/// ```
+///
+/// When the backing buffer implements [BufferTryResize](crate::buffer::BufferTryResize)
+/// payload data can be set using [try_set_payload](Sysex::try_set_payload).
+///
+/// ```rust
+/// use midi2::{sysex8::Sysex8, Sysex, Data};
+///
+/// let mut message = Sysex8::<[u32; 8]>::new();
+///
+/// assert!(message.try_set_payload(0..20).is_ok());
+/// assert_eq!(message.data(), &[
+///     0x501E_0000,
+///     0x0102_0304,
+///     0x0506_0708,
+///     0x090A_0B0C,
+///     0x5038_000D,
+///     0x0E0F_1011,
+///     0x1213_0000,
+///     0x0000_0000,
+/// ]);
+///
+/// assert!(message.try_set_payload(0..30).is_err());
+/// ```
 pub trait Sysex<B: crate::buffer::Buffer> {
     type Byte;
     type PayloadIterator<'a>: core::iter::Iterator<Item = Self::Byte>

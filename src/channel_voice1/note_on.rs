@@ -54,6 +54,17 @@ mod tests {
     }
 
     #[test]
+    fn setters_bytes() {
+        let mut message = NoteOn::<[u8; 3]>::new();
+
+        message.set_channel(u4::new(0xE));
+        message.set_note(u7::new(0x75));
+        message.set_velocity(u7::new(0x3D));
+
+        assert_eq!(message, NoteOn([0x9E, 0x75, 0x3D]));
+    }
+
+    #[test]
     fn group() {
         assert_eq!(
             NoteOn::try_from(&[0x2D9E_753D_u32][..]).unwrap().group(),
