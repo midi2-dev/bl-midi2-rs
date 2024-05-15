@@ -235,7 +235,7 @@ assert_eq!(owned.data(), &[0x4899_5E03, 0x6A14_E98A])
 
 ## Support For Classical MIDI Byte Stream Messages
 
-Messages which can be represented in classical midi byte stream format are also supported. 
+Messages which can be represented in classical MIDI byte stream format are also supported. 
 To do this simply use a backing buffer over `u8` instead of `u32`! ✨🎩
 
 ```rust
@@ -264,8 +264,8 @@ assert_eq!(message.data(), &[0x20D0_0000]);
 
 ## Cargo Features
 
-midi2 provides several compile-time features that you can enable or disable to customize
-its functionality according to your needs.
+Several compile-time features are provided that you can enable or disable to customize
+functionality according to your needs.
 
 Here's a list of available features:
 
