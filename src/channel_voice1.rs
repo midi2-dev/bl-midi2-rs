@@ -1,3 +1,5 @@
+#![doc = include_str!("channel_voice1/README.md")]
+
 use crate::detail::BitOps;
 
 mod channel_pressure;

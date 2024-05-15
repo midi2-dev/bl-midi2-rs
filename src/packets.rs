@@ -1,3 +1,7 @@
+/// Iterator type for reading the individual packets of a
+/// [Ump](crate::buffer::Ump) backed message.
+///
+/// Returned from [Packets::packets].
 #[derive(Debug, Clone)]
 pub struct PacketsIterator<'a>(pub(crate) core::slice::ChunksExact<'a, u32>);
 

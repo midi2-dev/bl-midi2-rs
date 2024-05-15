@@ -5,6 +5,9 @@ use crate::{
 
 pub(crate) const STATUS: u8 = 0b1010;
 
+/// MIDI 1.0 Channel Voice Key Pressure Message
+///
+/// See the [module docs](crate::channel_voice1) for more info.
 #[midi2_proc::generate_message(
     Via(crate::channel_voice1::ChannelVoice1),
     FixedSize,
