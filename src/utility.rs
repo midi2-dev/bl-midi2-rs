@@ -167,6 +167,7 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::
     midi2_proc::Data,
     midi2_proc::Packets,
     midi2_proc::RebufferFrom,
+    midi2_proc::RebufferFromArray,
     midi2_proc::TryRebufferFrom,
     Clone,
     Debug,
@@ -239,5 +240,13 @@ mod tests {
         let mut packets = message.packets();
         assert_eq!(packets.next(), Some(&[0x0010_1234][..]));
         assert_eq!(packets.next(), None);
+    }
+
+    #[test]
+    fn rebuffer_from() {
+        use crate::RebufferFrom;
+
+        let message = Utility::try_from(&[0x0010_1234][..]).unwrap();
+        let _ = Utility::<[u32; 1]>::rebuffer_from(message);
     }
 }

@@ -29,6 +29,7 @@ pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x2;
     midi2_proc::TryFromBytes,
     midi2_proc::TryFromUmp,
     midi2_proc::RebufferFrom,
+    midi2_proc::RebufferFromArray,
     midi2_proc::TryRebufferFrom,
     Clone,
     Debug,
@@ -182,5 +183,23 @@ mod test {
         let mut packets = message.packets();
         assert_eq!(packets.next(), Some(&[0x2FD6_0900_u32][..]));
         assert_eq!(packets.next(), None);
+    }
+
+    #[test]
+    fn rebuffer_from_array() {
+        let borrowed = ChannelVoice1::try_from(&[0x2FD6_0900_u32][..]).unwrap();
+        let _owned: ChannelVoice1<[u32; 4]> = borrowed.rebuffer_into();
+    }
+
+    #[test]
+    fn rebuffer_from_array_small() {
+        let borrowed = ChannelVoice1::try_from(&[0x2FD6_0900_u32][..]).unwrap();
+        let _owned: ChannelVoice1<[u32; 1]> = borrowed.rebuffer_into();
+    }
+
+    #[test]
+    fn rebuffer_from_array_bytes() {
+        let borrowed = ChannelVoice1::try_from(&[0xD6_u8, 0x09_u8][..]).unwrap();
+        let _owned: ChannelVoice1<[u8; 3]> = borrowed.rebuffer_into();
     }
 }

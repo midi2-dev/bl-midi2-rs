@@ -175,6 +175,7 @@ pub use tune_request::*;
     midi2_proc::TryFromBytes,
     midi2_proc::TryFromUmp,
     midi2_proc::RebufferFrom,
+    midi2_proc::RebufferFromArray,
     midi2_proc::TryRebufferFrom,
     Clone,
     Debug,
@@ -313,5 +314,21 @@ mod tests {
 
         assert_eq!(packets.next(), Some(&[0x15F1_5F00_u32][..]));
         assert_eq!(packets.next(), None);
+    }
+
+    #[test]
+    fn rebuffer_from_array() {
+        use crate::RebufferFrom;
+
+        let message = SystemCommon::try_from(&[0x15F1_5F00_u32][..]).unwrap();
+        let _ = SystemCommon::<[u32; 1]>::rebuffer_from(message);
+    }
+
+    #[test]
+    fn rebuffer_from_array_bytes() {
+        use crate::RebufferFrom;
+
+        let message = SystemCommon::try_from(&[0xF3_u8, 0x4D][..]).unwrap();
+        let _ = SystemCommon::<[u8; 3]>::rebuffer_from(message);
     }
 }

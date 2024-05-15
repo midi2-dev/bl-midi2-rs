@@ -22,6 +22,13 @@ impl BufferGeneric {
             Self::Bytes(param) => param.ident.clone(),
         }
     }
+    pub fn type_param(&self) -> syn::TypeParam {
+        match self {
+            Self::UmpOrBytes(param) => param.clone(),
+            Self::Ump(param) => param.clone(),
+            Self::Bytes(param) => param.clone(),
+        }
+    }
 }
 
 pub fn buffer_generic(generics: &syn::Generics) -> Option<BufferGeneric> {

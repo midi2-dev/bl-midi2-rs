@@ -43,6 +43,7 @@ pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x4;
     midi2_proc::Channeled,
     midi2_proc::Grouped,
     midi2_proc::RebufferFrom,
+    midi2_proc::RebufferFromArray,
     midi2_proc::TryRebufferFrom,
     Clone,
     Debug,
@@ -147,5 +148,13 @@ mod test {
         let mut packets = message.packets();
         assert_eq!(packets.next(), Some(&[0x4BAC_5900, 0xC0B83064][..]));
         assert_eq!(packets.next(), None);
+    }
+
+    #[test]
+    fn rebuffer_from_array() {
+        use crate::RebufferFrom;
+
+        let message = ChannelVoice2::try_from(&[0x4BAC_5900, 0xC0B83064][..]).unwrap();
+        let _ = ChannelVoice2::<[u32; 2]>::rebuffer_from(message);
     }
 }

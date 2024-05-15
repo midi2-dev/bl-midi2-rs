@@ -59,6 +59,11 @@ pub fn derive_rebuffer_from(item: TokenStream1) -> TokenStream1 {
     derives::rebuffer_from(item)
 }
 
+#[proc_macro_derive(RebufferFromArray)]
+pub fn derive_rebuffer_from_array(item: TokenStream1) -> TokenStream1 {
+    derives::rebuffer_from_array(item)
+}
+
 #[proc_macro_derive(TryRebufferFrom)]
 pub fn derive_try_rebuffer_from(item: TokenStream1) -> TokenStream1 {
     derives::try_rebuffer_from(item)

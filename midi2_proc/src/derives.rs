@@ -205,6 +205,33 @@ pub fn rebuffer_from(item: TokenStream1) -> TokenStream1 {
     .into()
 }
 
+pub fn rebuffer_from_array(item: TokenStream1) -> TokenStream1 {
+    let input = parse_macro_input!(item as ItemEnum);
+    let ident = &input.ident;
+    let mut match_arms = TokenStream::new();
+    for variant in &input.variants {
+        let variant_ident = &variant.ident;
+        match_arms.extend(quote! {
+            #ident::#variant_ident(m) => #ident::#variant_ident(m.rebuffer_into()),
+        });
+    }
+    let buffer_generic = common::buffer_generic(&input.generics).expect("Expected buffer generic");
+    let buffer_generic_id = buffer_generic.ident();
+    let buffer_generic_type_param = buffer_generic.type_param();
+    let arr_type = quote! { [<#buffer_generic_id as crate::buffer::Buffer>::Unit; SIZE] };
+    quote! {
+        impl<const SIZE: usize, #buffer_generic_type_param>  crate::RebufferFrom<#ident<#buffer_generic_id>> for #ident<#arr_type> {
+            fn rebuffer_from(other: #ident<#buffer_generic_id>) -> Self {
+                use crate::RebufferInto;
+                match other {
+                    #match_arms
+                }
+            }
+        }
+    }
+    .into()
+}
+
 pub fn try_rebuffer_from(item: TokenStream1) -> TokenStream1 {
     let input = parse_macro_input!(item as ItemEnum);
     let ident = &input.ident;
