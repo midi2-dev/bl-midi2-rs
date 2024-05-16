@@ -1,3 +1,13 @@
+# 0.5.0
+docs: generally improve documentation of public modules and traits
+feat: infallible constructors and converters for array backed messages
+feat: new `Packets` trait implemented by all ump messages
+fix: flex data text bytes iterator is public
+refactor!: ⚠️  remove dedicated array constructors in favour of unified generic constructors
+refactor!: ⚠️  remove redundant aggregate error type and result
+refactor!: ⚠️  rename DeltaClockstampTPQ -> DeltaClockstampTpq
+refactor: switching implementation from mod.rs to file names based on module name
+
 # 0.4.0
 feat: top level messages implement From for all messages
 fix: ⚠️  utility messages should be excluded when feature is not enabled
