@@ -5,7 +5,12 @@ use crate::{
 
 pub const STATUS: u8 = 0xF2;
 
-#[midi2_proc::generate_message(Via(system_common::SystemCommon), FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
+#[midi2_proc::generate_message(
+    Via(system_common::SystemCommon),
+    FixedSize,
+    MinSizeUmp(1),
+    MinSizeBytes(2)
+)]
 struct SongPositionPointer {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
@@ -29,14 +34,15 @@ mod tests {
 
     #[test]
     fn setters() {
-        let mut message = SongPositionPointer::new_arr();
+        let mut message = SongPositionPointer::<[u32; 4]>::new();
         message.set_group(u4::new(0xA));
         message.set_position(u14::new(0x367D));
         assert_eq!(message, SongPositionPointer([0x1AF2_7D6C, 0x0, 0x0, 0x0]),);
     }
+
     #[test]
     fn setters_bytes() {
-        let mut message = SongPositionPointer::new_arr_bytes();
+        let mut message = SongPositionPointer::<[u8; 3]>::new();
         message.set_position(u14::new(0x367D));
         assert_eq!(message, SongPositionPointer([0xF2, 0x7D, 0x6C]),);
     }
@@ -69,5 +75,16 @@ mod tests {
                 .position(),
             u14::new(0x367D),
         );
+    }
+
+    #[test]
+    fn packets() {
+        use crate::Packets;
+
+        let message = SongPositionPointer::try_from(&[0x1AF2_7D6C][..]).unwrap();
+
+        let mut packets = message.packets();
+        assert_eq!(packets.next(), Some(&[0x1AF2_7D6C][..]));
+        assert_eq!(packets.next(), None);
     }
 }

@@ -43,7 +43,7 @@ impl<B: Ump> property::Property<B> for FunctionBlockProperty {
 }
 
 impl<'a, B: Ump> property::ReadProperty<'a, B> for FunctionBlockProperty {
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         use crate::detail::BitOps;
 
         let function_block = buffer.buffer()[0].octet(2);
@@ -52,7 +52,7 @@ impl<'a, B: Ump> property::ReadProperty<'a, B> for FunctionBlockProperty {
             .chunks_exact(4)
             .all(|packet| packet[0].octet(2) == function_block)
         {
-            Err(crate::error::Error::InvalidData(
+            Err(crate::error::InvalidData(
                 "Inconsistent function block fields",
             ))
         } else {
@@ -66,7 +66,7 @@ impl<'a, B: Ump> property::ReadProperty<'a, B> for FunctionBlockProperty {
 }
 
 impl<B: Ump + BufferMut> property::WriteProperty<B> for FunctionBlockProperty {
-    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -95,7 +95,7 @@ impl<'a, B: 'a + Ump> property::ReadProperty<'a, B> for TextReadBytesProperty<'a
             offset: 1,
         }
     }
-    fn validate(_buffer: &B) -> crate::result::Result<()> {
+    fn validate(_buffer: &B) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
 }
@@ -114,10 +114,10 @@ impl<'a, B: Ump> property::ReadProperty<'a, B> for TextReadStringProperty {
         let bytes = TextReadBytesProperty::read(buffer).collect();
         std::string::String::from_utf8(bytes).unwrap()
     }
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         let bytes = TextReadBytesProperty::read(buffer).collect();
         std::string::String::from_utf8(bytes).map_err(|_| {
-            crate::error::Error::InvalidData("Payload bytes do not represent a valid utf string")
+            crate::error::InvalidData("Payload bytes do not represent a valid utf string")
         })?;
         Ok(())
     }
@@ -130,7 +130,7 @@ mod tests {
 
     #[test]
     fn set_name() {
-        let mut message = FunctionBlockName::new();
+        let mut message = FunctionBlockName::<std::vec::Vec<u32>>::new();
         message.set_name("SynthWave🌊²");
         message.set_function_block(0x09);
         assert_eq!(

@@ -1,7 +1,5 @@
 use crate::{
     detail::{schema, BitOps},
-    error::Error,
-    result::Result,
     ux::*,
 };
 
@@ -28,7 +26,7 @@ impl<S: schema::UmpSchema, B: crate::buffer::Ump> crate::detail::property::Prope
 impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B>
     for TonicProperty<schema::Ump<0x0, 0x0F00_0000, 0x0, 0x0>>
 {
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         Tonic::from_nibble(buffer.buffer()[1].nibble(1))?;
         Ok(())
     }
@@ -40,7 +38,7 @@ impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B>
 impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::WriteProperty<B>
     for TonicProperty<schema::Ump<0x0, 0x0F00_0000, 0x0, 0x0>>
 {
-    fn validate(_: &Tonic) -> crate::result::Result<()> {
+    fn validate(_: &Tonic) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -54,7 +52,7 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::
 impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B>
     for TonicProperty<schema::Ump<0x0, 0x0, 0x0, 0x0F00_0000>>
 {
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         Tonic::from_nibble(buffer.buffer()[3].nibble(1))?;
         Ok(())
     }
@@ -66,7 +64,7 @@ impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B>
 impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::WriteProperty<B>
     for TonicProperty<schema::Ump<0x0, 0x0, 0x0, 0x0F00_0000>>
 {
-    fn validate(_: &Tonic) -> crate::result::Result<()> {
+    fn validate(_: &Tonic) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -85,7 +83,7 @@ impl core::default::Default for Tonic {
 }
 
 impl Tonic {
-    fn from_nibble(nibble: u4) -> Result<Self> {
+    fn from_nibble(nibble: u4) -> Result<Self, crate::error::InvalidData> {
         use Tonic::*;
         match u8::from(nibble) {
             0x0 => Ok(NonStandard),
@@ -96,7 +94,7 @@ impl Tonic {
             0x5 => Ok(E),
             0x6 => Ok(F),
             0x7 => Ok(G),
-            _ => Err(Error::InvalidData("Couldn't interpret Tonic field")),
+            _ => Err(crate::error::InvalidData("Couldn't interpret Tonic field")),
         }
     }
 

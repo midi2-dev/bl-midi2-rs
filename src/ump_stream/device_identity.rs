@@ -68,7 +68,7 @@ mod tests {
 
     #[test]
     fn builder() {
-        let mut message = DeviceIdentity::new_arr();
+        let mut message = DeviceIdentity::<[u32; 4]>::new();
         message.set_device_manufacturer([u7::new(0x0F), u7::new(0x33), u7::new(0x28)]);
         message.set_device_family(u14::new(0xF4A));
         message.set_device_family_model_number(u14::new(0x3818));
@@ -117,5 +117,21 @@ mod tests {
                 .software_version(),
             [u7::new(0x43), u7::new(0x54), u7::new(0x32), u7::new(0x1)],
         );
+    }
+
+    #[test]
+    fn packets() {
+        use crate::Packets;
+
+        let message =
+            DeviceIdentity::try_from(&[0xF002_0000, 0x000F_3328, 0x4A1E_1870, 0x4354_3201][..])
+                .unwrap();
+        let mut packets = message.packets();
+
+        assert_eq!(
+            packets.next(),
+            Some(&[0xF002_0000, 0x000F_3328, 0x4A1E_1870, 0x4354_3201][..])
+        );
+        assert_eq!(packets.next(), None);
     }
 }

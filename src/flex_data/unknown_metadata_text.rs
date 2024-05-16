@@ -177,7 +177,7 @@ mod tests {
 
     #[test]
     fn try_set_text() {
-        let mut message = UnknownMetadataText::<[u32; 8]>::try_new().unwrap();
+        let mut message = UnknownMetadataText::<[u32; 8]>::new();
         message
             .try_set_text("Gimme some signal!")
             .expect("Shouldn't fail");
@@ -241,7 +241,7 @@ mod tests {
                     0x0000_0000,
                 ][..]
             ),
-            Err(crate::error::Error::InvalidData("Incorrect message status")),
+            Err(crate::error::InvalidData("Incorrect message status")),
         )
     }
 
@@ -260,7 +260,7 @@ mod tests {
                     0x0000_0000,
                 ][..]
             ),
-            Err(crate::error::Error::InvalidData("Incorrect message bank")),
+            Err(crate::error::InvalidData("Incorrect message bank")),
         )
     }
 
@@ -279,7 +279,7 @@ mod tests {
                     0x0000_0000,
                 ][..]
             ),
-            Err(crate::error::Error::InvalidData(
+            Err(crate::error::InvalidData(
                 crate::detail::helpers::ERR_INCONSISTENT_GROUPS
             )),
         )
@@ -300,7 +300,7 @@ mod tests {
                     0x0000_0000,
                 ][..]
             ),
-            Err(crate::error::Error::InvalidData(
+            Err(crate::error::InvalidData(
                 crate::detail::helpers::ERR_SYSEX_EXPECTED_BEGIN
             )),
         )
@@ -321,7 +321,7 @@ mod tests {
                     0x0000_0000,
                 ][..]
             ),
-            Err(crate::error::Error::InvalidData(
+            Err(crate::error::InvalidData(
                 crate::detail::helpers::ERR_SYSEX_EXPECTED_END
             )),
         )
@@ -333,7 +333,7 @@ mod tests {
             UnknownMetadataText::try_from(
                 &[0xD050_0100, 0x4769_6D6D, 0x6520_736F, 0x6D65_2073,][..]
             ),
-            Err(crate::error::Error::InvalidData(
+            Err(crate::error::InvalidData(
                 crate::detail::helpers::ERR_SYSEX_EXPECTED_COMPLETE
             )),
         )
@@ -358,7 +358,7 @@ mod tests {
                     0x6D65_2073,
                 ][..]
             ),
-            Err(crate::error::Error::InvalidData(
+            Err(crate::error::InvalidData(
                 crate::detail::helpers::ERR_SYSEX_EXPECTED_CONTINUE
             )),
         )
@@ -423,7 +423,7 @@ mod tests {
 
     #[test]
     fn set_string_multiple_of_12_length() {
-        let mut message = UnknownMetadataText::new();
+        let mut message = UnknownMetadataText::<std::vec::Vec<u32>>::new();
         message.set_text("Digital Audio Workstation - DAW36-16");
         assert_eq!(
             message,
@@ -480,5 +480,42 @@ mod tests {
                 0x362D_3136,
             ]
         );
+    }
+
+    #[test]
+    fn packets() {
+        use crate::Packets;
+
+        let message = UnknownMetadataText::try_from(
+            &[
+                0xD050_0100,
+                0x4469_6769,
+                0x7461_6C20,
+                0x4175_6469,
+                0xD090_0100,
+                0x6F20_576F,
+                0x726B_7374,
+                0x6174_696F,
+                0xD0D0_0100,
+                0x6E20_2D20,
+                0x4441_5733,
+                0x362D_3136,
+            ][..],
+        )
+        .unwrap();
+        let mut packets = message.packets();
+        assert_eq!(
+            packets.next(),
+            Some(&[0xD050_0100, 0x4469_6769, 0x7461_6C20, 0x4175_6469,][..])
+        );
+        assert_eq!(
+            packets.next(),
+            Some(&[0xD090_0100, 0x6F20_576F, 0x726B_7374, 0x6174_696F,][..])
+        );
+        assert_eq!(
+            packets.next(),
+            Some(&[0xD0D0_0100, 0x6E20_2D20, 0x4441_5733, 0x362D_3136,][..])
+        );
+        assert_eq!(packets.next(), None);
     }
 }

@@ -37,7 +37,7 @@ mod tests {
 
     #[test]
     fn builder() {
-        let mut message = EndpointDiscovery::new_arr();
+        let mut message = EndpointDiscovery::<[u32; 4]>::new();
         message.set_ump_version_major(0x1);
         message.set_ump_version_minor(0x1);
         message.set_request_endpoint_info(true);

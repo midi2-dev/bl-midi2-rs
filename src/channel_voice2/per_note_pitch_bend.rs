@@ -31,7 +31,7 @@ mod tests {
     fn builder() {
         use crate::traits::{Channeled, Grouped};
 
-        let mut message = PerNotePitchBend::new_arr();
+        let mut message = PerNotePitchBend::<[u32; 4]>::new();
         message.set_group(u4::new(0x9));
         message.set_channel(u4::new(0x2));
         message.set_note(u7::new(0x76));

@@ -30,7 +30,7 @@ mod tests {
     #[test]
     fn setters() {
         use crate::traits::{Channeled, Grouped};
-        let mut message = ControlChange::new_arr();
+        let mut message = ControlChange::<[u32; 4]>::new();
         message.set_group(u4::new(0x3));
         message.set_channel(u4::new(0x9));
         message.set_control(u7::new(0x30));

@@ -5,7 +5,12 @@ use crate::{
 
 pub const STATUS: u8 = 0xF3;
 
-#[midi2_proc::generate_message(Via(system_common::SystemCommon), FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
+#[midi2_proc::generate_message(
+    Via(system_common::SystemCommon),
+    FixedSize,
+    MinSizeUmp(1),
+    MinSizeBytes(2)
+)]
 struct SongSelect {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
@@ -29,7 +34,7 @@ mod tests {
 
     #[test]
     fn setter() {
-        let mut message = SongSelect::new_arr();
+        let mut message = SongSelect::<[u32; 4]>::new();
         message.set_group(u4::new(0xA));
         message.set_song(u7::new(0x4F));
         assert_eq!(message, SongSelect([0x1AF3_4F00, 0x0, 0x0, 0x0]),);
@@ -37,7 +42,7 @@ mod tests {
 
     #[test]
     fn setters_bytes() {
-        let mut message = SongSelect::new_arr_bytes();
+        let mut message = SongSelect::<[u8; 3]>::new();
         message.set_song(u7::new(0x4F));
         assert_eq!(message, SongSelect([0xF3, 0x4F, 0x0]),);
     }

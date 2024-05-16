@@ -5,7 +5,15 @@ use crate::{
 
 pub(crate) const STATUS: u8 = 0b1001;
 
-#[midi2_proc::generate_message(Via(crate::channel_voice1::ChannelVoice1), FixedSize, MinSizeUmp(1), MinSizeBytes(3))]
+/// MIDI 1.0 Channel Voice Note On Message
+///
+/// See the [module docs](crate::channel_voice1) for more info.
+#[midi2_proc::generate_message(
+    Via(crate::channel_voice1::ChannelVoice1),
+    FixedSize,
+    MinSizeUmp(1),
+    MinSizeBytes(3)
+)]
 struct NoteOn {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
@@ -40,12 +48,23 @@ mod tests {
 
     #[test]
     fn setters() {
-        let mut message = NoteOn::new_arr();
+        let mut message = NoteOn::<[u32; 4]>::new();
         message.set_group(u4::new(0xD));
         message.set_channel(u4::new(0xE));
         message.set_note(u7::new(0x75));
         message.set_velocity(u7::new(0x3D));
         assert_eq!(message, NoteOn([0x2D9E_753D, 0x0, 0x0, 0x0]));
+    }
+
+    #[test]
+    fn setters_bytes() {
+        let mut message = NoteOn::<[u8; 3]>::new();
+
+        message.set_channel(u4::new(0xE));
+        message.set_note(u7::new(0x75));
+        message.set_velocity(u7::new(0x3D));
+
+        assert_eq!(message, NoteOn([0x9E, 0x75, 0x3D]));
     }
 
     #[test]

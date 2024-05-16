@@ -171,12 +171,11 @@ fn parse_via_args(input: syn::parse::ParseStream) -> syn::Type {
         .parse()
         .expect("Bracketed expression should follow size arg");
 
-    let syn::Expr::Path(path) = *expr
-    else {
+    let syn::Expr::Path(path) = *expr else {
         panic!("Via argument should contain a path type");
     };
 
-    syn::Type::Path(syn::TypePath{
+    syn::Type::Path(syn::TypePath {
         qself: path.qself,
         path: path.path,
     })
@@ -320,54 +319,11 @@ fn std_only_attribute(property: &Property) -> TokenStream {
     if property.std {
         quote! {
             #[cfg(feature = "std")]
+            #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
         }
     } else {
         TokenStream::new()
     }
-}
-
-fn message_new_arr_impl(
-    root_ident: &syn::Ident,
-    args: &GenerateMessageArgs,
-    properties: &Vec<Property>,
-) -> TokenStream {
-    let arr_type = match args.representation() {
-        Representation::Bytes => arr_type_bytes(),
-        Representation::Ump => arr_type_ump(),
-        Representation::UmpOrBytes => arr_type_ump(),
-    };
-    let set_defaults = initialise_property_statements(properties, arr_type.clone());
-    quote! {
-        impl #root_ident<#arr_type> {
-            pub fn new_arr() -> Self {
-                let mut buffer: #arr_type = core::default::Default::default();
-                #set_defaults
-                #root_ident(buffer)
-            }
-        }
-    }
-}
-
-fn secondary_new_arr_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
-    let arr_type = arr_type_bytes();
-    let set_defaults = initialise_property_statements(properties, arr_type.clone());
-    quote! {
-        impl #root_ident<#arr_type> {
-            pub fn new_arr_bytes() -> Self {
-                let mut buffer: #arr_type = core::default::Default::default();
-                #set_defaults
-                #root_ident(buffer)
-            }
-        }
-    }
-}
-
-fn arr_type_ump() -> TokenStream {
-    quote! { [u32; 4] }
-}
-
-fn arr_type_bytes() -> TokenStream {
-    quote! { [u8; 3] }
 }
 
 fn size_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream {
@@ -375,7 +331,7 @@ fn size_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream
     quote! {
         impl<B: #constraint> crate::traits::Size<B> for #root_ident<B> {
             fn size(&self) -> usize {
-                <Self as crate::traits::MinSize<B>>::min_size()
+                <Self as crate::traits::MinSize<B>>::MIN_SIZE
             }
         }
     }
@@ -397,9 +353,7 @@ fn min_size_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenSt
     let constraint = generic_buffer_constraint(args);
     quote! {
         impl<B: #constraint> crate::traits::MinSize<B> for #root_ident<B> {
-            fn min_size() -> usize {
-                #body
-            }
+            const MIN_SIZE: usize = #body;
         }
     }
 }
@@ -432,6 +386,19 @@ fn data_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream
     }
 }
 
+fn packets_impl(root_ident: &syn::Ident) -> TokenStream {
+    quote! {
+        impl<B: crate::buffer::Ump> crate::Packets for #root_ident<B> {
+            fn packets(&self) -> crate::PacketsIterator {
+                crate::PacketsIterator(self
+                    .data()
+                    .chunks_exact(<Self as crate::traits::MinSize<B>>::MIN_SIZE)
+                )
+            }
+        }
+    }
+}
+
 fn try_from_slice_impl(
     root_ident: &syn::Ident,
     args: &GenerateMessageArgs,
@@ -458,10 +425,10 @@ fn try_from_slice_impl(
     }
     quote! {
         impl<'a, #generic_unit> core::convert::TryFrom<&'a [#unit_type]> for #root_ident<&'a [#unit_type]> {
-            type Error = crate::error::Error;
+            type Error = crate::error::InvalidData;
             fn try_from(buffer: &'a [#unit_type]) -> core::result::Result<Self, Self::Error> {
-                if buffer.len() < <Self as crate::traits::MinSize<&[#unit_type]>>::min_size() {
-                    return Err(crate::error::Error::InvalidData("Slice is too short"));
+                if buffer.len() < <Self as crate::traits::MinSize<&[#unit_type]>>::MIN_SIZE {
+                    return Err(crate::error::InvalidData("Slice is too short"));
                 }
                 #validation_steps
                 Ok(#root_ident(buffer))
@@ -480,6 +447,23 @@ fn rebuffer_from_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> To
                 let message_size = other.data().len();
                 buffer.resize(message_size);
                 buffer.buffer_mut()[..message_size].copy_from_slice(other.data());
+                #root_ident(buffer)
+            }
+        }
+    }
+}
+
+fn rebuffer_from_array_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream {
+    let constraint = generic_buffer_constraint(args);
+    let buffer_type = quote! { [<A as crate::buffer::Buffer>::Unit; SIZE] };
+    quote! {
+        impl<const SIZE: usize, A: #constraint> crate::traits::RebufferFrom<#root_ident<A>> for #root_ident<#buffer_type>
+        {
+            fn rebuffer_from(other: #root_ident<A>) -> Self {
+                let _valid = <Self as crate::traits::ArraySizeValid<SIZE, #buffer_type>>::VALID;
+                let mut buffer = <#buffer_type as crate::buffer::BufferDefault>::default();
+                let message_size = other.data().len();
+                buffer[..message_size].copy_from_slice(other.data());
                 #root_ident(buffer)
             }
         }
@@ -516,12 +500,47 @@ fn new_impl(
                     + crate::buffer::BufferResize
         > #root_ident<B>
         {
+            /// Create a new message backed by a resizable buffer.
             pub fn new() -> #root_ident<B>
             {
                 let mut buffer = <B as crate::buffer::BufferDefault>::default();
-                buffer.resize(<Self as crate::traits::MinSize<B>>::min_size());
+                buffer.resize(<Self as crate::traits::MinSize<B>>::MIN_SIZE);
                 #initialise_properties
                 #root_ident::<B>(buffer)
+            }
+        }
+    }
+}
+
+fn new_array_impl(
+    root_ident: &syn::Ident,
+    args: &GenerateMessageArgs,
+    properties: &Vec<Property>,
+) -> TokenStream {
+    let generics = match args.representation() {
+        Representation::UmpOrBytes => quote! { , U: crate::buffer::Unit },
+        _ => TokenStream::new(),
+    };
+    let unit_type = match args.representation() {
+        Representation::Ump => quote! { u32 },
+        Representation::Bytes => quote! { u8 },
+        Representation::UmpOrBytes => quote! { U },
+    };
+    let buffer_type = quote! { [#unit_type; SIZE] };
+    let initialise_properties = initialise_property_statements(properties, quote! { #buffer_type });
+    quote! {
+        impl<const SIZE: usize #generics> #root_ident<#buffer_type>
+        {
+            /// Create a new message backed by a simple array type buffer.
+            ///
+            /// Note: this constructor will fail to compile for `SIZE` values
+            /// which are smaller than the minimum representable message size.
+            pub fn new() -> #root_ident<#buffer_type>
+            {
+                let _valid = <Self as crate::traits::ArraySizeValid<SIZE, #buffer_type>>::VALID;
+                let mut buffer = [<#unit_type as crate::buffer::Unit>::zero(); SIZE];
+                #initialise_properties
+                #root_ident(buffer)
             }
         }
     }
@@ -541,10 +560,11 @@ fn try_new_impl(
                     + crate::buffer::BufferTryResize
         > #root_ident<B>
         {
+            /// Create a new message backed by a buffer with fallible resize.
             pub fn try_new() -> core::result::Result<#root_ident<B>, crate::error::BufferOverflow>
             {
                 let mut buffer = <B as crate::buffer::BufferDefault>::default();
-                buffer.try_resize(<Self as crate::traits::MinSize<B>>::min_size())?;
+                buffer.try_resize(<Self as crate::traits::MinSize<B>>::MIN_SIZE)?;
                 #initialise_properties
                 Ok(#root_ident::<B>(buffer))
             }
@@ -611,7 +631,7 @@ fn channeled_impl(
 }
 
 fn from_bytes_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
-    let convert_properties = convert_properties(properties);
+    let convert_properties = convert_properties(properties, &quote! { B });
     quote! {
         impl<
                 A: crate::buffer::Bytes,
@@ -623,7 +643,23 @@ fn from_bytes_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> Token
         {
             fn from_bytes(other: #root_ident<A>) -> Self {
                 let mut buffer = <B as crate::buffer::BufferDefault>::default();
-                buffer.resize(<#root_ident<B> as crate::traits::MinSize<B>>::min_size());
+                buffer.resize(<#root_ident<B> as crate::traits::MinSize<B>>::MIN_SIZE);
+                #convert_properties
+                Self(buffer)
+            }
+        }
+    }
+}
+
+fn from_bytes_array_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
+    let array_type = quote! { [u32; SIZE] };
+    let convert_properties = convert_properties(properties, &array_type);
+    quote! {
+        impl<const SIZE: usize, A: crate::buffer::Bytes> crate::traits::FromBytes<#root_ident<A>> for #root_ident<#array_type>
+        {
+            fn from_bytes(other: #root_ident<A>) -> Self {
+                let _valid = <Self as crate::traits::ArraySizeValid<SIZE, #array_type>>::VALID;
+                let mut buffer = <#array_type as crate::buffer::BufferDefault>::default();
                 #convert_properties
                 Self(buffer)
             }
@@ -632,7 +668,7 @@ fn from_bytes_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> Token
 }
 
 fn try_from_bytes_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
-    let convert_properties = convert_properties(properties);
+    let convert_properties = convert_properties(properties, &quote! { B });
     quote! {
         impl<
                 A: crate::buffer::Bytes,
@@ -644,7 +680,7 @@ fn try_from_bytes_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> T
         {
             fn try_from_bytes(other: #root_ident<A>) -> core::result::Result<Self, crate::error::BufferOverflow> {
                 let mut buffer = <B as crate::buffer::BufferDefault>::default();
-                buffer.try_resize(<#root_ident<B> as crate::traits::MinSize<B>>::min_size())?;
+                buffer.try_resize(<#root_ident<B> as crate::traits::MinSize<B>>::MIN_SIZE)?;
                 #convert_properties
                 Ok(Self(buffer))
             }
@@ -652,7 +688,7 @@ fn try_from_bytes_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> T
     }
 }
 
-fn convert_properties(properties: &Vec<Property>) -> TokenStream {
+fn convert_properties(properties: &Vec<Property>, target_buffer_type: &TokenStream) -> TokenStream {
     let mut convert_properties = TokenStream::new();
     for property in properties.iter().filter(|p| !p.readonly && !p.writeonly) {
         let std_only_attribute = std_only_attribute(property);
@@ -660,7 +696,7 @@ fn convert_properties(properties: &Vec<Property>) -> TokenStream {
 
         convert_properties.extend(quote! {
             #std_only_attribute
-            <#meta_type as crate::detail::property::WriteProperty<B>>::write(
+            <#meta_type as crate::detail::property::WriteProperty<#target_buffer_type>>::write(
                 &mut buffer,
                 <#meta_type as crate::detail::property::ReadProperty<A>>::read(&other.0)
             );
@@ -670,7 +706,7 @@ fn convert_properties(properties: &Vec<Property>) -> TokenStream {
 }
 
 fn from_ump_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
-    let convert_properties = convert_properties(properties);
+    let convert_properties = convert_properties(properties, &quote! { B });
     quote! {
         impl<
                 A: crate::buffer::Ump,
@@ -682,7 +718,23 @@ fn from_ump_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenSt
         {
             fn from_ump(other: #root_ident<A>) -> Self {
                 let mut buffer = <B as crate::buffer::BufferDefault>::default();
-                buffer.resize(<#root_ident<B> as crate::traits::MinSize<B>>::min_size());
+                buffer.resize(<#root_ident<B> as crate::traits::MinSize<B>>::MIN_SIZE);
+                #convert_properties
+                Self(buffer)
+            }
+        }
+    }
+}
+
+fn from_ump_array_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
+    let array_type = quote! { [u8; SIZE] };
+    let convert_properties = convert_properties(properties, &array_type);
+    quote! {
+        impl<const SIZE: usize, A: crate::buffer::Ump> crate::traits::FromUmp<#root_ident<A>> for #root_ident<#array_type>
+        {
+            fn from_ump(other: #root_ident<A>) -> Self {
+                let _valid = <Self as crate::traits::ArraySizeValid<SIZE, #array_type>>::VALID;
+                let mut buffer = <#array_type as crate::buffer::BufferDefault>::default();
                 #convert_properties
                 Self(buffer)
             }
@@ -691,7 +743,7 @@ fn from_ump_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenSt
 }
 
 fn try_from_ump_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
-    let convert_properties = convert_properties(properties);
+    let convert_properties = convert_properties(properties, &quote! { B });
     quote! {
         impl<
                 A: crate::buffer::Ump,
@@ -703,7 +755,7 @@ fn try_from_ump_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> Tok
         {
             fn try_from_ump(other: #root_ident<A>) -> core::result::Result<Self, crate::error::BufferOverflow> {
                 let mut buffer = <B as crate::buffer::BufferDefault>::default();
-                buffer.try_resize(<#root_ident<B> as crate::traits::MinSize<B>>::min_size())?;
+                buffer.try_resize(<#root_ident<B> as crate::traits::MinSize<B>>::MIN_SIZE)?;
                 #convert_properties
                 Ok(Self(buffer))
             }
@@ -747,6 +799,7 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     let rebuffer_from_impl = rebuffer_from_impl(root_ident, &args);
     let try_rebuffer_from_impl = try_rebuffer_from_impl(root_ident, &args);
     let new_impl = new_impl(root_ident, &args, &properties);
+    let new_array_impl = new_array_impl(root_ident, &args, &properties);
     let try_new_impl = try_new_impl(root_ident, &args, &properties);
     let clone_impl = clone_impl(root_ident, &args);
 
@@ -763,18 +816,14 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
         #rebuffer_from_impl
         #try_rebuffer_from_impl
         #new_impl
+        #new_array_impl
         #try_new_impl
         #clone_impl
     });
 
     if args.fixed_size {
-        tokens.extend(message_new_arr_impl(root_ident, &args, &properties));
-        if let Representation::UmpOrBytes = args.representation() {
-            tokens.extend(secondary_new_arr_impl(root_ident, &properties));
-        }
-    }
-    if args.fixed_size {
-        tokens.extend(size_impl(root_ident, &args))
+        tokens.extend(size_impl(root_ident, &args));
+        tokens.extend(rebuffer_from_array_impl(root_ident, &args));
     }
     if let Some(property) = properties.iter().find(|p| p.is_group()) {
         tokens.extend(grouped_impl(root_ident, property));
@@ -790,7 +839,18 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
             tokens.extend(from_ump_impl(root_ident, &properties));
             tokens.extend(try_from_bytes_impl(root_ident, &properties));
             tokens.extend(try_from_ump_impl(root_ident, &properties));
+
+            if args.fixed_size {
+                tokens.extend(from_ump_array_impl(root_ident, &properties));
+                tokens.extend(from_bytes_array_impl(root_ident, &properties));
+            }
         }
+    }
+    if matches!(
+        args.representation(),
+        Representation::Ump | Representation::UmpOrBytes
+    ) {
+        tokens.extend(packets_impl(root_ident));
     }
     if let Some(via_type) = args.via.as_ref() {
         match args.representation() {

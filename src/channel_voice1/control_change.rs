@@ -5,6 +5,9 @@ use crate::{
 
 pub(crate) const STATUS: u8 = 0b1011;
 
+/// MIDI 1.0 Channel Voice Control Change Message
+///
+/// See the [module docs](crate::channel_voice1) for more info.
 #[midi2_proc::generate_message(
     Via(crate::channel_voice1::ChannelVoice1),
     FixedSize,
@@ -37,15 +40,12 @@ struct ControlChange {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        traits::{Channeled, Grouped},
-        ux::*,
-    };
+    use crate::{ux::*, Channeled, Grouped, Packets};
     use pretty_assertions::assert_eq;
 
     #[test]
     fn setters() {
-        let mut message = ControlChange::new_arr();
+        let mut message = ControlChange::<[u32; 4]>::new();
         message.set_group(u4::new(0xA));
         message.set_channel(u4::new(0x7));
         message.set_control(u7::new(0x36));
@@ -55,7 +55,7 @@ mod tests {
 
     #[test]
     fn setters_bytes() {
-        let mut message = ControlChange::new_arr_bytes();
+        let mut message = ControlChange::<[u8; 3]>::new();
         message.set_channel(u4::new(0x7));
         message.set_control(u7::new(0x36));
         message.set_control_data(u7::new(0x37));
@@ -130,5 +130,14 @@ mod tests {
                 .control_data(),
             u7::new(0x37),
         );
+    }
+
+    #[test]
+    fn packets() {
+        let buffer = [0x2AB7_3637_u32];
+        let message = ControlChange::try_from(&buffer[..]).unwrap();
+        let mut packets = message.packets();
+        assert_eq!(packets.next(), Some(&[0x2AB7_3637_u32][..]));
+        assert_eq!(packets.next(), None);
     }
 }

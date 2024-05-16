@@ -1,4 +1,5 @@
 #![no_std]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc = include_str!("../README.md")]
 
 #[cfg(any(feature = "std", test))]
@@ -25,15 +26,16 @@ pub mod utility;
 
 pub mod buffer;
 pub mod error;
-pub mod result;
 
 mod detail;
 mod message;
+mod packets;
 mod traits;
 
 pub use ux;
 
 pub use message::*;
+pub use packets::*;
 pub use traits::*;
 
 pub mod prelude {

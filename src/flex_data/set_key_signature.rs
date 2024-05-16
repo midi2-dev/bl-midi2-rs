@@ -60,7 +60,7 @@ impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B>
             _ => unreachable!(),
         }
     }
-    fn validate(_buffer: &B) -> crate::result::Result<()> {
+    fn validate(_buffer: &B) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
 }
@@ -78,7 +78,7 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::
             },
         );
     }
-    fn validate(_: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -94,7 +94,7 @@ mod tests {
 
     #[test]
     fn setters() {
-        let mut message = SetKeySignature::new_arr();
+        let mut message = SetKeySignature::<[u32; 4]>::new();
         message.set_group(u4::new(0x4));
         message.set_tonic(flex_data::tonic::Tonic::D);
         message.set_sharps_flats(SharpsFlats::Sharps(u3::new(5)));
@@ -106,7 +106,7 @@ mod tests {
 
     #[test]
     fn set_flats() {
-        let mut message = SetKeySignature::new_arr();
+        let mut message = SetKeySignature::<[u32; 4]>::new();
         message.set_group(u4::new(0x4));
         message.set_tonic(flex_data::tonic::Tonic::D);
         message.set_sharps_flats(SharpsFlats::Flats(u3::new(5)));
@@ -118,7 +118,7 @@ mod tests {
 
     #[test]
     fn builder_non_standard() {
-        let mut message = SetKeySignature::new_arr();
+        let mut message = SetKeySignature::<[u32; 4]>::new();
         message.set_group(u4::new(0x4));
         message.set_tonic(flex_data::tonic::Tonic::NonStandard);
         message.set_sharps_flats(SharpsFlats::NonStandard);
@@ -130,7 +130,7 @@ mod tests {
 
     #[test]
     fn builder_channel() {
-        let mut message = SetKeySignature::new_arr();
+        let mut message = SetKeySignature::<[u32; 4]>::new();
         message.set_group(u4::new(0x4));
         message.set_tonic(flex_data::tonic::Tonic::NonStandard);
         message.set_sharps_flats(SharpsFlats::NonStandard);

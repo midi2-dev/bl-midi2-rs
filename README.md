@@ -3,8 +3,8 @@
 Ergonomic, versatile, strong types wrapping MIDI 2.0 message data.
 
 This implementation of MIDI 2.0 is based on the 1.1 revision of the specifications.
-For detailed midi2 specification see [the documentation](https://midi.org/)
-on which this crate is based.
+See [the official MIDI 2.0 specification](https://midi.org/)
+for more details on the data protocol standard.
 
 ## ⚠️  **Note!** ⚠️  
 
@@ -23,7 +23,7 @@ A strongly typed message wrapper is provided for every message in the MIDI 2.0 s
 use midi2::prelude::*;
 
 // Messages have a simple setter / getter interface
-let mut note_on = channel_voice2::NoteOn::new_arr();
+let mut note_on = channel_voice2::NoteOn::<[u32; 4]>::new();
 note_on.set_group(u4::new(0x8));
 note_on.set_channel(u4::new(0xA));
 note_on.set_note(u7::new(0x5E));
@@ -156,7 +156,7 @@ You'll want to setup midi2 without default features to compile
 without the `std` feature.
 
 ```toml
-midi2 = { version = "0.4.0", default-features = false, features = ["channel-voice2", "sysex7"],  }
+midi2 = { version = "0.5.0", default-features = false, features = ["channel-voice2", "sysex7"],  }
 ```
 
 ### Generic Representation
@@ -168,8 +168,7 @@ represent messages within a fixed size array.
 ```rust
 use midi2::prelude::*;
 
-let mut message = sysex8::Sysex8::<[u32; 16]>::try_new()
-    .expect("Buffer is large enough for min message size");
+let mut message = sysex8::Sysex8::<[u32; 16]>::new();
 
 // in this mode methods which would require a 
 // buffer resize are fallible
@@ -182,7 +181,7 @@ assert_eq!(message.try_set_payload(0..60), Err(midi2::error::BufferOverflow));
 
 A more advanced use case might be to make a custom buffer which
 uses an arena allocater to back your messages.
-See the [buffer](crate::buffer) docs for more info.
+See the [buffer] docs for more info.
 
 ### Borrowed Messages
 
@@ -226,7 +225,7 @@ let mut owned: NoteOn::<[u32; 4]> = {
     let buffer = [0x4898_5E03_u32, 0x6A14_E98A];
     // the borrowed message is immutable and cannot outlive `buffer`
     let borrowed = NoteOn::try_from(&buffer[..]).expect("Data is valid");
-    borrowed.try_rebuffer_into().expect("Buffer is large enough")
+    borrowed.rebuffer_into()
 };
 
 // the owned message is mutable and liberated from the buffer lifetime.
@@ -236,13 +235,13 @@ assert_eq!(owned.data(), &[0x4899_5E03, 0x6A14_E98A])
 
 ## Support For Classical MIDI Byte Stream Messages
 
-Messages which can be represented in classical midi byte stream format are also supported. 
+Messages which can be represented in classical MIDI byte stream format are also supported. 
 To do this simply use a backing buffer over `u8` instead of `u32`! ✨🎩
 
 ```rust
 use midi2::prelude::*;
 
-let mut message = channel_voice1::ChannelPressure::new_arr_bytes();
+let mut message = channel_voice1::ChannelPressure::<[u8; 3]>::new();
 message.set_channel(u4::new(0x6));
 message.set_pressure(u7::new(0x09));
 
@@ -257,22 +256,21 @@ use midi2::{
     channel_voice1::ChannelPressure,
 };
 
-let message = ChannelPressure::new_arr_bytes();
-let message: ChannelPressure<[u32; 4]> = message.try_into_ump().
-    expect("Buffer is large enough");
+let message = ChannelPressure::<[u8; 3]>::new();
+let message: ChannelPressure<[u32; 4]> = message.into_ump();
 
 assert_eq!(message.data(), &[0x20D0_0000]);
 ```
 
 ## Cargo Features
 
-midi2 provides several compile-time features that you can enable or disable to customize
-its functionality according to your needs.
+Several compile-time features are provided that you can enable or disable to customize
+functionality according to your needs.
 
 Here's a list of available features:
 
 - `default`:
-  - **std** - Include [buffer](crate::buffer) integration for `std::vec::Vec` and enable allocating getters for values which return `std::string::String` values.
+  - **std** - Include [buffer] integration for `std::vec::Vec` and enable allocating getters for values which return `std::string::String` values.
   - **channel-voice2** — Include message wrappers for the MIDI 2.0 channel voice message type.
   - **sysex7** — Include message wrappers for the MIDI 7bit system exclusive message type.
   - **ci** — 🚧 WIP 🚧

@@ -29,7 +29,7 @@ mod tests {
 
     #[test]
     fn builder() {
-        let mut message = StreamConfigurationRequest::new_arr();
+        let mut message = StreamConfigurationRequest::<[u32; 4]>::new();
         message.set_protocol(0x2);
         message.set_receive_jr_timestamps(true);
         message.set_send_jr_timestamps(true);

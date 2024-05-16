@@ -13,7 +13,7 @@ pub fn sysex_group_consistent_groups(
     buffer: &[u32],
     stride: usize,
     ump_type: crate::ux::u4,
-) -> crate::result::Result<()> {
+) -> Result<(), crate::error::InvalidData> {
     use crate::detail::BitOps;
     use group_from_packet as gfp;
     if buffer
@@ -23,7 +23,7 @@ pub fn sysex_group_consistent_groups(
     {
         Ok(())
     } else {
-        Err(crate::error::Error::InvalidData(ERR_INCONSISTENT_GROUPS))
+        Err(crate::error::InvalidData(ERR_INCONSISTENT_GROUPS))
     }
 }
 
@@ -53,8 +53,8 @@ pub fn validate_sysex_group_statuses<
     is_end: IsEnd,
     stride: usize,
     ump_type: crate::ux::u4,
-) -> crate::result::Result<()> {
-    use crate::{detail::BitOps, error::Error};
+) -> Result<(), crate::error::InvalidData> {
+    use crate::{detail::BitOps, error::InvalidData};
 
     let mut iter = buffer
         .chunks(stride)
@@ -62,27 +62,27 @@ pub fn validate_sysex_group_statuses<
         .peekable();
 
     let Some(first_packet) = iter.next() else {
-        return Err(Error::InvalidData(ERR_EMPTY_MESSAGE));
+        return Err(InvalidData(ERR_EMPTY_MESSAGE));
     };
 
     if iter.peek().is_none() {
         if is_complete(first_packet) {
             return Ok(());
         } else {
-            return Err(Error::InvalidData(ERR_SYSEX_EXPECTED_COMPLETE));
+            return Err(InvalidData(ERR_SYSEX_EXPECTED_COMPLETE));
         }
     }
 
     if !is_begin(first_packet) {
-        return Err(Error::InvalidData(ERR_SYSEX_EXPECTED_BEGIN));
+        return Err(InvalidData(ERR_SYSEX_EXPECTED_BEGIN));
     }
 
     while let Some(chunk) = iter.next() {
         if iter.peek().is_some() && !is_continue(chunk) {
-            return Err(Error::InvalidData(ERR_SYSEX_EXPECTED_CONTINUE));
+            return Err(InvalidData(ERR_SYSEX_EXPECTED_CONTINUE));
         }
         if iter.peek().is_none() && !is_end(chunk) {
-            return Err(Error::InvalidData(ERR_SYSEX_EXPECTED_END));
+            return Err(InvalidData(ERR_SYSEX_EXPECTED_END));
         }
     }
 

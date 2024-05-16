@@ -5,7 +5,15 @@ use crate::{
 
 pub(crate) const STATUS: u8 = 0b1100;
 
-#[midi2_proc::generate_message(Via(crate::channel_voice1::ChannelVoice1), FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
+/// MIDI 1.0 Channel Voice Program Change Message
+///
+/// See the [module docs](crate::channel_voice1) for more info.
+#[midi2_proc::generate_message(
+    Via(crate::channel_voice1::ChannelVoice1),
+    FixedSize,
+    MinSizeUmp(1),
+    MinSizeBytes(2)
+)]
 struct ProgramChange {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
@@ -34,7 +42,7 @@ mod tests {
 
     #[test]
     fn builder() {
-        let mut message = ProgramChange::new_arr();
+        let mut message = ProgramChange::<[u32; 4]>::new();
         message.set_group(u4::new(0x4));
         message.set_channel(u4::new(0x7));
         message.set_program(u7::new(0x63));

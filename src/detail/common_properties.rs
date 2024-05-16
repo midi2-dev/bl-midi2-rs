@@ -19,13 +19,11 @@ impl<'a, const TYPE: u8, B: Buffer> ReadProperty<'a, B> for UmpMessageTypeProper
     fn read(_buffer: &'a B) -> Self::Type {
         ()
     }
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         if <B::Unit as UnitPrivate>::UNIT_ID == UNIT_ID_U32 {
             let b = buffer.buffer().specialise_u32()[0];
             if b.nibble(0) != crate::ux::u4::new(TYPE) {
-                return Err(crate::error::Error::InvalidData(
-                    "Incorrect ump message type",
-                ));
+                return Err(crate::error::InvalidData("Incorrect ump message type"));
             }
         }
         Ok(())
@@ -40,7 +38,7 @@ impl<const TYPE: u8, B: Buffer + crate::buffer::BufferMut> WriteProperty<B>
             buffer.buffer_mut().specialise_u32_mut()[0].set_nibble(0, crate::ux::u4::new(TYPE));
         }
     }
-    fn validate(_value: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_value: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -58,7 +56,7 @@ impl<'a, const STATUS: u8, B: Buffer> ReadProperty<'a, B> for ChannelVoiceStatus
     fn read(_buffer: &'a B) -> Self::Type {
         ()
     }
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         let status = match <B::Unit as UnitPrivate>::UNIT_ID {
             UNIT_ID_U32 => {
                 let b = buffer.buffer().specialise_u32()[0];
@@ -73,7 +71,7 @@ impl<'a, const STATUS: u8, B: Buffer> ReadProperty<'a, B> for ChannelVoiceStatus
         if status == u4::new(STATUS) {
             Ok(())
         } else {
-            Err(crate::error::Error::InvalidData("Incorrect message status"))
+            Err(crate::error::InvalidData("Incorrect message status"))
         }
     }
 }
@@ -94,7 +92,7 @@ impl<const STATUS: u8, B: Buffer + crate::buffer::BufferMut> WriteProperty<B>
             _ => unreachable!(),
         }
     }
-    fn validate(_value: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_value: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -142,7 +140,7 @@ impl<
             _ => unreachable!(),
         }
     }
-    fn validate(_buffer: &B) -> crate::result::Result<()> {
+    fn validate(_buffer: &B) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
 }
@@ -154,7 +152,7 @@ impl<
         T: Default + schema::UmpSchemaRepr<UmpSchema> + schema::BytesSchemaRepr<BytesSchema>,
     > WriteProperty<B> for HybridSchemaProperty<T, BytesSchema, UmpSchema>
 {
-    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn write(buffer: &mut B, v: Self::Type) {
@@ -202,7 +200,7 @@ impl<
             _ => unreachable!(),
         }
     }
-    fn validate(_buffer: &B) -> crate::result::Result<()> {
+    fn validate(_buffer: &B) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
 }
@@ -221,7 +219,7 @@ impl<
             )
         }
     }
-    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -253,7 +251,7 @@ impl<
             _ => unreachable!(),
         }
     }
-    fn validate(_buffer: &B) -> crate::result::Result<()> {
+    fn validate(_buffer: &B) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
 }
@@ -272,7 +270,7 @@ impl<
             )
         }
     }
-    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn default() -> Self::Type {

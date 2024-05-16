@@ -14,6 +14,11 @@ pub fn derive_data(item: TokenStream1) -> TokenStream1 {
     derives::data(item)
 }
 
+#[proc_macro_derive(Packets)]
+pub fn derive_packets(item: TokenStream1) -> TokenStream1 {
+    derives::packets(item)
+}
+
 #[proc_macro_derive(Grouped)]
 pub fn derive_grouped(item: TokenStream1) -> TokenStream1 {
     derives::grouped(item)
@@ -52,6 +57,11 @@ pub fn derive_try_from_ump(item: TokenStream1) -> TokenStream1 {
 #[proc_macro_derive(RebufferFrom)]
 pub fn derive_rebuffer_from(item: TokenStream1) -> TokenStream1 {
     derives::rebuffer_from(item)
+}
+
+#[proc_macro_derive(RebufferFromArray)]
+pub fn derive_rebuffer_from_array(item: TokenStream1) -> TokenStream1 {
+    derives::rebuffer_from_array(item)
 }
 
 #[proc_macro_derive(TryRebufferFrom)]

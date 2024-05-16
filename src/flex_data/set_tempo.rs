@@ -36,7 +36,7 @@ mod tests {
 
     #[test]
     fn builder() {
-        let mut message = SetTempo::new_arr();
+        let mut message = SetTempo::<[u32; 4]>::new();
         message.set_group(u4::new(0x7));
         message.set_number_of_10_nanosecond_units_per_quarter_note(0xF751FE05);
         assert_eq!(message, SetTempo([0xD710_0000, 0xF751_FE05, 0x0, 0x0,]),);

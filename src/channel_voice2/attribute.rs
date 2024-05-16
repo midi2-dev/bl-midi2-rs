@@ -1,7 +1,4 @@
-use crate::{
-    detail::{property, BitOps, Truncate},
-    result::Result,
-};
+use crate::detail::{property, BitOps, Truncate};
 use ux::{u7, u9};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -14,13 +11,13 @@ pub enum Attribute {
 
 const ERR_INVALID_NOTE_ATTRIBUTE: &str = "Couldn't interpret note attribute";
 
-pub fn validate_ump(bytes: &[u32]) -> Result<()> {
+pub fn validate_ump(bytes: &[u32]) -> Result<(), crate::error::InvalidData> {
     match bytes[0].octet(3) {
         0x0 => Ok(()),
         0x1 => Ok(()),
         0x2 => Ok(()),
         0x3 => Ok(()),
-        _ => Err(crate::error::Error::InvalidData(ERR_INVALID_NOTE_ATTRIBUTE)),
+        _ => Err(crate::error::InvalidData(ERR_INVALID_NOTE_ATTRIBUTE)),
     }
 }
 
@@ -71,7 +68,7 @@ impl<'a, B: crate::buffer::Ump> property::ReadProperty<'a, B> for AttributePrope
     fn read(buffer: &'a B) -> Self::Type {
         from_ump(buffer.buffer())
     }
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         validate_ump(buffer.buffer())
     }
 }
@@ -79,7 +76,7 @@ impl<'a, B: crate::buffer::Ump> property::ReadProperty<'a, B> for AttributePrope
 impl<B: crate::buffer::Ump + crate::buffer::BufferMut> property::WriteProperty<B>
     for AttributeProperty
 {
-    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn write(buffer: &mut B, v: Self::Type) {
@@ -103,7 +100,7 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> property::WriteProperty<B
 mod tests {
     use super::*;
 
-    fn try_from_ump(bytes: &[u32]) -> crate::result::Result<Option<Attribute>> {
+    fn try_from_ump(bytes: &[u32]) -> Result<Option<Attribute>, crate::error::InvalidData> {
         validate_ump(bytes)?;
         Ok(from_ump(bytes))
     }
@@ -112,7 +109,7 @@ mod tests {
     fn from_packet_invalid() {
         assert_eq!(
             try_from_ump(&[0x0000_0004]),
-            Err(crate::error::Error::InvalidData(ERR_INVALID_NOTE_ATTRIBUTE)),
+            Err(crate::error::InvalidData(ERR_INVALID_NOTE_ATTRIBUTE)),
         );
     }
 

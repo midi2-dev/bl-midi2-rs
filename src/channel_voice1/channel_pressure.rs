@@ -5,7 +5,15 @@ use crate::{
 
 pub(crate) const STATUS: u8 = 0b1101;
 
-#[midi2_proc::generate_message(Via(crate::channel_voice1::ChannelVoice1), FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
+/// MIDI 1.0 Channel Voice Channel Pressure Message
+///
+/// See the [module docs](crate::channel_voice1) for more info.
+#[midi2_proc::generate_message(
+    Via(crate::channel_voice1::ChannelVoice1),
+    FixedSize,
+    MinSizeUmp(1),
+    MinSizeBytes(2)
+)]
 struct ChannelPressure {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
@@ -35,8 +43,24 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     #[test]
+    fn new_arr() {
+        assert_eq!(
+            ChannelPressure::<[u32; 1]>::new(),
+            ChannelPressure([0x20D0_0000])
+        );
+    }
+
+    #[test]
+    fn new_arr_bytes() {
+        assert_eq!(
+            ChannelPressure::<[u8; 2]>::new(),
+            ChannelPressure([0xD0, 0x00])
+        );
+    }
+
+    #[test]
     fn setters() {
-        let mut message = ChannelPressure::new_arr();
+        let mut message = ChannelPressure::<[u32; 4]>::new();
         message.set_group(u4::new(0xF));
         message.set_channel(u4::new(0x6));
         message.set_pressure(u7::new(0x09));
@@ -45,7 +69,7 @@ mod tests {
 
     #[test]
     fn setters_bytes() {
-        let mut message = ChannelPressure::new_arr_bytes();
+        let mut message = ChannelPressure::<[u8; 3]>::new();
         message.set_channel(u4::new(0x6));
         message.set_pressure(u7::new(0x09));
         assert_eq!(message, ChannelPressure([0xD6, 0x09, 0x0]));
@@ -73,7 +97,7 @@ mod tests {
     fn from_empty_data() {
         assert_eq!(
             ChannelPressure::try_from(&<[u32; 0] as Default>::default()[..]),
-            Err(crate::error::Error::InvalidData("Slice is too short")),
+            Err(crate::error::InvalidData("Slice is too short")),
         );
     }
 
@@ -139,10 +163,7 @@ mod tests {
 
     #[test]
     fn data_with_outsized_buffer() {
-        assert_eq!(
-            ChannelPressure::<[u32; 2]>::try_new().unwrap().data(),
-            &[0x20D0_0000]
-        );
+        assert_eq!(ChannelPressure::<[u32; 2]>::new().data(), &[0x20D0_0000]);
     }
 
     #[test]
@@ -176,6 +197,16 @@ mod tests {
     }
 
     #[test]
+    fn from_bytes_array() {
+        let buffer = [0xD6_u8, 0x09_u8];
+        let borrowed = ChannelPressure::try_from(&buffer[..]).unwrap();
+        assert_eq!(
+            ChannelPressure::<[u32; 1]>::from_bytes(borrowed),
+            ChannelPressure([0x20D6_0900_u32]),
+        );
+    }
+
+    #[test]
     fn try_from_ump() {
         let buffer = [0x2FD6_0900_u32];
         let borrowed = ChannelPressure::try_from(&buffer[..]).unwrap();
@@ -186,10 +217,20 @@ mod tests {
     }
 
     #[test]
+    fn from_ump_array() {
+        let buffer = [0x2FD6_0900_u32];
+        let borrowed = ChannelPressure::try_from(&buffer[..]).unwrap();
+        assert_eq!(
+            ChannelPressure::<[u8; 2]>::from_ump(borrowed),
+            ChannelPressure([0xD6_u8, 0x09_u8]),
+        );
+    }
+
+    #[test]
     fn new_with_custom_buffer() {
         assert_eq!(
             ChannelPressure::<std::vec::Vec<u32>>::new(),
-            ChannelPressure::new_arr().rebuffer_into(),
+            ChannelPressure::<[u32; 4]>::new().rebuffer_into(),
         )
     }
 
@@ -202,18 +243,18 @@ mod tests {
     }
 
     #[test]
-    fn try_new_with_custom_buffer() {
+    fn new_with_arr() {
         assert_eq!(
-            ChannelPressure::<[u32; 2]>::try_new(),
-            Ok(ChannelPressure([0x20D0_0000, 0x0]))
+            ChannelPressure::<[u32; 2]>::new(),
+            ChannelPressure([0x20D0_0000, 0x0]),
         )
     }
 
     #[test]
-    fn try_new_with_custom_buffer_bytes() {
+    fn new_with_arr_bytes() {
         assert_eq!(
-            ChannelPressure::<[u8; 3]>::try_new(),
-            Ok(ChannelPressure([0xD0, 0x00, 0x0]))
+            ChannelPressure::<[u8; 3]>::new(),
+            ChannelPressure([0xD0, 0x00, 0x0]),
         )
     }
 
@@ -267,6 +308,16 @@ mod rebuffer_tests {
         assert_eq!(
             ChannelPressure::<[u32; 1]>::try_rebuffer_from(borrowed),
             Ok(ChannelPressure([0x2FD6_0900_u32])),
+        );
+    }
+
+    #[test]
+    fn rebuffer_from_array() {
+        let buffer = [0x2FD6_0900_u32];
+        let borrowed = ChannelPressure::try_from(&buffer[..]).unwrap();
+        assert_eq!(
+            ChannelPressure::<[u32; 1]>::rebuffer_from(borrowed),
+            ChannelPressure([0x2FD6_0900_u32]),
         );
     }
 
@@ -354,7 +405,7 @@ mod rebuffer_tests {
 
     #[test]
     fn clone() {
-        let message = ChannelPressure::new_arr();
+        let message = ChannelPressure::<[u32; 4]>::new();
         let clone = message.clone();
         assert_eq!(message, clone);
     }

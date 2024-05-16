@@ -5,7 +5,15 @@ use crate::{
 
 pub(crate) const STATUS: u8 = 0b1010;
 
-#[midi2_proc::generate_message(Via(crate::channel_voice1::ChannelVoice1), FixedSize, MinSizeUmp(1), MinSizeBytes(3))]
+/// MIDI 1.0 Channel Voice Key Pressure Message
+///
+/// See the [module docs](crate::channel_voice1) for more info.
+#[midi2_proc::generate_message(
+    Via(crate::channel_voice1::ChannelVoice1),
+    FixedSize,
+    MinSizeUmp(1),
+    MinSizeBytes(3)
+)]
 struct KeyPressure {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
@@ -40,7 +48,7 @@ mod tests {
 
     #[test]
     fn setters() {
-        let mut message = KeyPressure::new_arr();
+        let mut message = KeyPressure::<[u32; 4]>::new();
         message.set_group(u4::new(0xA));
         message.set_channel(u4::new(0x3));
         message.set_note(u7::new(0x7F));

@@ -1,6 +1,7 @@
 #[derive(
     derive_more::From,
     midi2_proc::Data,
+    midi2_proc::Packets,
     midi2_proc::RebufferFrom,
     midi2_proc::TryRebufferFrom,
     Clone,
@@ -29,15 +30,13 @@ pub enum UmpMessage<B: crate::buffer::Ump> {
 }
 
 impl<'a> core::convert::TryFrom<&'a [u32]> for UmpMessage<&'a [u32]> {
-    type Error = crate::error::Error;
+    type Error = crate::error::InvalidData;
     fn try_from(buffer: &'a [u32]) -> Result<Self, Self::Error> {
         use crate::detail::BitOps;
         use UmpMessage::*;
 
         if buffer.len() < 1 {
-            return Err(crate::error::Error::InvalidData(
-                "Ump message slice is empty",
-            ));
+            return Err(crate::error::InvalidData("Ump message slice is empty"));
         }
 
         Ok(match u8::from(buffer[0].nibble(0)) {
@@ -73,7 +72,7 @@ impl<'a> core::convert::TryFrom<&'a [u32]> for UmpMessage<&'a [u32]> {
             crate::utility::UMP_MESSAGE_TYPE => {
                 Utility(crate::utility::Utility::try_from(buffer)?.into())
             }
-            _ => Err(crate::error::Error::InvalidData(
+            _ => Err(crate::error::InvalidData(
                 "Couldn't interpret ump message type",
             ))?,
         })
@@ -111,10 +110,10 @@ pub enum BytesMessage<B: crate::buffer::Bytes> {
     feature = "system-common"
 ))]
 impl<'a> core::convert::TryFrom<&'a [u8]> for BytesMessage<&'a [u8]> {
-    type Error = crate::error::Error;
+    type Error = crate::error::InvalidData;
     fn try_from(buffer: &'a [u8]) -> Result<Self, Self::Error> {
         if buffer.len() < 1 {
-            return Err(crate::error::Error::InvalidData("Bytes slice is empty"));
+            return Err(crate::error::InvalidData("Bytes slice is empty"));
         }
         use BytesMessage::*;
 
@@ -129,7 +128,7 @@ impl<'a> core::convert::TryFrom<&'a [u8]> for BytesMessage<&'a [u8]> {
             0xF1..=0xF6 | 0xF8..=0xFF => {
                 SystemCommon(crate::system_common::SystemCommon::try_from(buffer)?.into())
             }
-            _ => Err(crate::error::Error::InvalidData(
+            _ => Err(crate::error::InvalidData(
                 "Couldn't interpret bytes message type",
             ))?,
         })
@@ -244,6 +243,46 @@ mod tests {
         };
     }
 
+    #[cfg(feature = "sysex7")]
+    #[test]
+    fn packets() {
+        use crate::Packets;
+
+        let buffer = [
+            0x3E16_0001,
+            0x0203_0405,
+            0x3E26_0607,
+            0x0809_0A0B,
+            0x3E26_0C0D,
+            0x0E0F_1011,
+            0x3E26_1213,
+            0x1415_1617,
+            0x3E26_1819,
+            0x1A1B_1C1D,
+            0x3E26_1E1F,
+            0x2021_2223,
+            0x3E26_2425,
+            0x2627_2829,
+            0x3E26_2A2B,
+            0x2C2D_2E2F,
+            0x3E32_3031,
+            0x0000_0000,
+        ];
+        let message = UmpMessage::try_from(&buffer[..]).unwrap();
+        let mut packets = message.packets();
+
+        assert_eq!(packets.next(), Some(&[0x3E16_0001, 0x0203_0405,][..]));
+        assert_eq!(packets.next(), Some(&[0x3E26_0607, 0x0809_0A0B,][..]));
+        assert_eq!(packets.next(), Some(&[0x3E26_0C0D, 0x0E0F_1011,][..]));
+        assert_eq!(packets.next(), Some(&[0x3E26_1213, 0x1415_1617,][..]));
+        assert_eq!(packets.next(), Some(&[0x3E26_1819, 0x1A1B_1C1D,][..]));
+        assert_eq!(packets.next(), Some(&[0x3E26_1E1F, 0x2021_2223,][..]));
+        assert_eq!(packets.next(), Some(&[0x3E26_2425, 0x2627_2829,][..]));
+        assert_eq!(packets.next(), Some(&[0x3E26_2A2B, 0x2C2D_2E2F,][..]));
+        assert_eq!(packets.next(), Some(&[0x3E32_3031, 0x0000_0000,][..]));
+        assert_eq!(packets.next(), None);
+    }
+
     #[cfg(feature = "flex-data")]
     #[test]
     fn flex_data() {
@@ -273,7 +312,7 @@ mod tests {
     fn from_level2() {
         use crate::channel_voice1::ChannelPressure;
 
-        let level2_message = ChannelPressure::new_arr();
+        let level2_message = ChannelPressure::<[u32; 4]>::new();
         let _: UmpMessage<[u32; 4]> = level2_message.into();
     }
 
@@ -282,7 +321,7 @@ mod tests {
     fn from_level2_flex_data() {
         use crate::flex_data::Lyrics;
 
-        let level2_message = Lyrics::<[u32; 4]>::try_new().expect("Buffer large enough");
+        let level2_message = Lyrics::<[u32; 4]>::new();
         let _: UmpMessage<[u32; 4]> = level2_message.into();
     }
 
@@ -291,7 +330,7 @@ mod tests {
     fn from_level2_bytes() {
         use crate::channel_voice1::ChannelPressure;
 
-        let level2_message = ChannelPressure::new_arr_bytes();
+        let level2_message = ChannelPressure::<[u8; 3]>::new();
         let _: BytesMessage<[u8; 3]> = level2_message.into();
     }
 
@@ -300,7 +339,7 @@ mod tests {
     fn from_level2_channel_voice2() {
         use crate::channel_voice2::ChannelPressure;
 
-        let level2_message = ChannelPressure::new_arr();
+        let level2_message = ChannelPressure::<[u32; 4]>::new();
         let _: UmpMessage<[u32; 4]> = level2_message.into();
     }
 
@@ -309,16 +348,16 @@ mod tests {
     fn from_level2_ump_stream() {
         use crate::ump_stream::EndOfClip;
 
-        let level2_message = EndOfClip::new_arr();
+        let level2_message = EndOfClip::<[u32; 4]>::new();
         let _: UmpMessage<[u32; 4]> = level2_message.into();
     }
 
     #[cfg(feature = "utility")]
     #[test]
     fn from_level2_utility() {
-        use crate::utility::DeltaClockstampTPQ;
+        use crate::utility::DeltaClockstampTpq;
 
-        let level2_message = DeltaClockstampTPQ::new_arr();
+        let level2_message = DeltaClockstampTpq::<[u32; 4]>::new();
         let _: UmpMessage<[u32; 4]> = level2_message.into();
     }
 
@@ -327,7 +366,7 @@ mod tests {
     fn from_level2_system_common() {
         use crate::system_common::Stop;
 
-        let level2_message = Stop::new_arr();
+        let level2_message = Stop::<[u32; 4]>::new();
         let _: UmpMessage<[u32; 4]> = level2_message.into();
     }
 }

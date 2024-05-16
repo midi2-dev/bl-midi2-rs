@@ -1,4 +1,4 @@
-#![doc = include_str!("README.md")]
+#![doc = include_str!("system_common/README.md")]
 
 pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x1;
 
@@ -12,7 +12,12 @@ mod tune_request {
         system_common::{self, UMP_MESSAGE_TYPE},
     };
     pub(crate) const STATUS: u8 = 0xF6;
-    #[midi2_proc::generate_message(Via(system_common::SystemCommon), FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
+    #[midi2_proc::generate_message(
+        Via(system_common::SystemCommon),
+        FixedSize,
+        MinSizeUmp(1),
+        MinSizeBytes(2)
+    )]
     struct TuneRequest {
         #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
         ump_type: (),
@@ -28,7 +33,12 @@ mod timing_clock {
         system_common::{self, UMP_MESSAGE_TYPE},
     };
     pub(crate) const STATUS: u8 = 0xF8;
-    #[midi2_proc::generate_message(Via(system_common::SystemCommon), FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
+    #[midi2_proc::generate_message(
+        Via(system_common::SystemCommon),
+        FixedSize,
+        MinSizeUmp(1),
+        MinSizeBytes(2)
+    )]
     struct TimingClock {
         #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
         ump_type: (),
@@ -44,7 +54,12 @@ mod start {
         system_common::{self, UMP_MESSAGE_TYPE},
     };
     pub(crate) const STATUS: u8 = 0xFA;
-    #[midi2_proc::generate_message(Via(system_common::SystemCommon), FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
+    #[midi2_proc::generate_message(
+        Via(system_common::SystemCommon),
+        FixedSize,
+        MinSizeUmp(1),
+        MinSizeBytes(2)
+    )]
     struct Start {
         #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
         ump_type: (),
@@ -60,7 +75,12 @@ mod cont {
         system_common::{self, UMP_MESSAGE_TYPE},
     };
     pub(crate) const STATUS: u8 = 0xFB;
-    #[midi2_proc::generate_message(Via(system_common::SystemCommon), FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
+    #[midi2_proc::generate_message(
+        Via(system_common::SystemCommon),
+        FixedSize,
+        MinSizeUmp(1),
+        MinSizeBytes(2)
+    )]
     struct Continue {
         #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
         ump_type: (),
@@ -76,7 +96,12 @@ mod stop {
         system_common::{self, UMP_MESSAGE_TYPE},
     };
     pub(crate) const STATUS: u8 = 0xFC;
-    #[midi2_proc::generate_message(Via(system_common::SystemCommon), FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
+    #[midi2_proc::generate_message(
+        Via(system_common::SystemCommon),
+        FixedSize,
+        MinSizeUmp(1),
+        MinSizeBytes(2)
+    )]
     struct Stop {
         #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
         ump_type: (),
@@ -92,7 +117,12 @@ mod active_sensing {
         system_common::{self, UMP_MESSAGE_TYPE},
     };
     pub(crate) const STATUS: u8 = 0xFE;
-    #[midi2_proc::generate_message(Via(system_common::SystemCommon), FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
+    #[midi2_proc::generate_message(
+        Via(system_common::SystemCommon),
+        FixedSize,
+        MinSizeUmp(1),
+        MinSizeBytes(2)
+    )]
     struct ActiveSensing {
         #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
         ump_type: (),
@@ -108,7 +138,12 @@ mod reset {
         system_common::{self, UMP_MESSAGE_TYPE},
     };
     pub(crate) const STATUS: u8 = 0xFF;
-    #[midi2_proc::generate_message(Via(system_common::SystemCommon), FixedSize, MinSizeUmp(1), MinSizeBytes(2))]
+    #[midi2_proc::generate_message(
+        Via(system_common::SystemCommon),
+        FixedSize,
+        MinSizeUmp(1),
+        MinSizeBytes(2)
+    )]
     struct Reset {
         #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
         ump_type: (),
@@ -133,12 +168,14 @@ pub use tune_request::*;
 #[derive(
     derive_more::From,
     midi2_proc::Data,
+    midi2_proc::Packets,
     midi2_proc::Grouped,
     midi2_proc::FromBytes,
     midi2_proc::FromUmp,
     midi2_proc::TryFromBytes,
     midi2_proc::TryFromUmp,
     midi2_proc::RebufferFrom,
+    midi2_proc::RebufferFromArray,
     midi2_proc::TryRebufferFrom,
     Clone,
     Debug,
@@ -160,10 +197,10 @@ pub enum SystemCommon<B: crate::buffer::Buffer> {
 }
 
 impl<'a, U: crate::buffer::Unit> core::convert::TryFrom<&'a [U]> for SystemCommon<&'a [U]> {
-    type Error = crate::error::Error;
+    type Error = crate::error::InvalidData;
     fn try_from(buffer: &'a [U]) -> Result<Self, Self::Error> {
         if buffer.len() < 1 {
-            return Err(crate::error::Error::InvalidData("Slice is too short"));
+            return Err(crate::error::InvalidData("Slice is too short"));
         };
 
         Ok(match status(&buffer) {
@@ -179,7 +216,7 @@ impl<'a, U: crate::buffer::Unit> core::convert::TryFrom<&'a [U]> for SystemCommo
             time_code::STATUS => time_code::TimeCode::try_from(buffer)?.into(),
             timing_clock::STATUS => timing_clock::TimingClock::try_from(buffer)?.into(),
             tune_request::STATUS => tune_request::TuneRequest::try_from(buffer)?.into(),
-            _ => Err(crate::error::Error::InvalidData(
+            _ => Err(crate::error::InvalidData(
                 "Unknown midi1 channel voice status",
             ))?,
         })
@@ -200,9 +237,9 @@ impl<'a, const STATUS: u8, B: crate::buffer::Buffer> crate::detail::property::Re
     fn read(_buffer: &'a B) -> Self::Type {
         ()
     }
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         if status(buffer.buffer()) != STATUS {
-            Err(crate::error::Error::InvalidData("Incorrect status field"))
+            Err(crate::error::InvalidData("Incorrect status field"))
         } else {
             Ok(())
         }
@@ -226,7 +263,7 @@ impl<const STATUS: u8, B: crate::buffer::Buffer + crate::buffer::BufferMut>
             _ => unreachable!(),
         }
     }
-    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -266,5 +303,32 @@ mod tests {
             SystemCommon::try_from(&[0x15F1_5F00_u32][..]),
             time_code::TimeCode::try_from(&[0x15F1_5F00_u32][..]).map(|m| m.into())
         );
+    }
+
+    #[test]
+    fn packets() {
+        use crate::Packets;
+
+        let message = SystemCommon::try_from(&[0x15F1_5F00_u32][..]).unwrap();
+        let mut packets = message.packets();
+
+        assert_eq!(packets.next(), Some(&[0x15F1_5F00_u32][..]));
+        assert_eq!(packets.next(), None);
+    }
+
+    #[test]
+    fn rebuffer_from_array() {
+        use crate::RebufferFrom;
+
+        let message = SystemCommon::try_from(&[0x15F1_5F00_u32][..]).unwrap();
+        let _ = SystemCommon::<[u32; 1]>::rebuffer_from(message);
+    }
+
+    #[test]
+    fn rebuffer_from_array_bytes() {
+        use crate::RebufferFrom;
+
+        let message = SystemCommon::try_from(&[0xF3_u8, 0x4D][..]).unwrap();
+        let _ = SystemCommon::<[u8; 3]>::rebuffer_from(message);
     }
 }

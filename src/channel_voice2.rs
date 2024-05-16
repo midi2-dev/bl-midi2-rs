@@ -39,9 +39,11 @@ pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x4;
 #[derive(
     derive_more::From,
     midi2_proc::Data,
+    midi2_proc::Packets,
     midi2_proc::Channeled,
     midi2_proc::Grouped,
     midi2_proc::RebufferFrom,
+    midi2_proc::RebufferFromArray,
     midi2_proc::TryRebufferFrom,
     Clone,
     Debug,
@@ -67,10 +69,10 @@ pub enum ChannelVoice2<B: crate::buffer::Ump> {
 }
 
 impl<'a> TryFrom<&'a [u32]> for ChannelVoice2<&'a [u32]> {
-    type Error = crate::error::Error;
+    type Error = crate::error::InvalidData;
     fn try_from(buffer: &'a [u32]) -> Result<Self, Self::Error> {
         if buffer.len() < 1 {
-            return Err(crate::error::Error::InvalidData("Slice is too short"));
+            return Err(crate::error::InvalidData("Slice is too short"));
         };
 
         use crate::detail::BitOps;
@@ -113,7 +115,7 @@ impl<'a> TryFrom<&'a [u32]> for ChannelVoice2<&'a [u32]> {
                 relative_registered_controller::RelativeRegisteredController::try_from(buffer)?
                     .into()
             }
-            _ => Err(crate::error::Error::InvalidData(
+            _ => Err(crate::error::InvalidData(
                 "Unknown midi2 channel voice status",
             ))?,
         })
@@ -136,5 +138,23 @@ mod test {
                 .channel(),
             u4::new(0xC),
         );
+    }
+
+    #[test]
+    fn packets() {
+        use crate::Packets;
+
+        let message = ChannelVoice2::try_from(&[0x4BAC_5900, 0xC0B83064][..]).unwrap();
+        let mut packets = message.packets();
+        assert_eq!(packets.next(), Some(&[0x4BAC_5900, 0xC0B83064][..]));
+        assert_eq!(packets.next(), None);
+    }
+
+    #[test]
+    fn rebuffer_from_array() {
+        use crate::RebufferFrom;
+
+        let message = ChannelVoice2::try_from(&[0x4BAC_5900, 0xC0B83064][..]).unwrap();
+        let _ = ChannelVoice2::<[u32; 2]>::rebuffer_from(message);
     }
 }

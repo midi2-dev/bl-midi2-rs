@@ -67,7 +67,7 @@ mod tests {
 
     #[test]
     fn set_name_and_clear_name() {
-        let mut message = EndpointName::new();
+        let mut message = EndpointName::<std::vec::Vec<u32>>::new();
         message.set_name("Gimme some signal 🔊 🙌");
         message.set_name("");
         assert_eq!(
@@ -106,5 +106,34 @@ mod tests {
                 .collect::<std::vec::Vec<u8>>(),
             std::vec![]
         );
+    }
+
+    #[test]
+    fn packets() {
+        use crate::Packets;
+        let message = EndpointName::try_from(
+            &[
+                0xF403_4769,
+                0x6D6D_6520,
+                0x736F_6D65,
+                0x2073_6967,
+                0xFC03_6E61,
+                0x6C20_F09F,
+                0x948A_20F0,
+                0x9F99_8C00,
+            ][..],
+        )
+        .unwrap();
+        let mut packets = message.packets();
+
+        assert_eq!(
+            packets.next(),
+            Some(&[0xF403_4769, 0x6D6D_6520, 0x736F_6D65, 0x2073_6967,][..])
+        );
+        assert_eq!(
+            packets.next(),
+            Some(&[0xFC03_6E61, 0x6C20_F09F, 0x948A_20F0, 0x9F99_8C00,][..])
+        );
+        assert_eq!(packets.next(), None);
     }
 }

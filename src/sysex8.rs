@@ -42,7 +42,7 @@ impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B>
     fn read(_buffer: &'a B) -> Self::Type {
         ()
     }
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         message_helpers::validate_sysex_group_statuses(
             buffer.buffer(),
             |p| u8::from(p[0].nibble(2)) == 0x0,
@@ -63,12 +63,12 @@ impl<B: crate::buffer::Ump> crate::detail::property::Property<B> for ValidPacket
 
 impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B> for ValidPacketSizes {
     fn read(_buffer: &'a B) -> Self::Type {}
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         if buffer.buffer().chunks_exact(4).any(|p| {
             let number_bytes = u8::from(p[0].nibble(3));
             number_bytes < 1 || number_bytes > 14
         }) {
-            Err(crate::error::Error::InvalidData(
+            Err(crate::error::InvalidData(
                 ERR_INVALID_NUMBER_OF_PAYLOAD_BYTES,
             ))
         } else {
@@ -90,7 +90,7 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::
             packet[0].set_nibble(3, sz.max(ux::u4::new(1)));
         }
     }
-    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -108,7 +108,7 @@ impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B> for
     fn read(buffer: &'a B) -> Self::Type {
         buffer.buffer()[0].nibble(1)
     }
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         message_helpers::sysex_group_consistent_groups(
             buffer.buffer(),
             4,
@@ -129,7 +129,7 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::
             packet[0].set_nibble(1, group);
         }
     }
-    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -147,7 +147,7 @@ impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B> for
     fn read(buffer: &'a B) -> Self::Type {
         stream_id_from_packet(buffer.buffer())
     }
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         let sid = stream_id_from_packet;
         let buffer = buffer.buffer();
         if buffer
@@ -157,7 +157,7 @@ impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B> for
         {
             Ok(())
         } else {
-            Err(crate::error::Error::InvalidData(ERR_INCONSISTENT_STREAM_ID))
+            Err(crate::error::InvalidData(ERR_INCONSISTENT_STREAM_ID))
         }
     }
 }
@@ -178,7 +178,7 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::
             packet[0].set_octet(3, id);
         }
     }
-    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn default() -> Self::Type {
@@ -574,7 +574,7 @@ mod tests {
                     0x3031_0000,
                 ][..]
             ),
-            Err(crate::error::Error::InvalidData(
+            Err(crate::error::InvalidData(
                 ERR_INVALID_NUMBER_OF_PAYLOAD_BYTES
             )),
         );
@@ -603,7 +603,7 @@ mod tests {
                     0x3031_0000,
                 ][..]
             ),
-            Err(crate::error::Error::InvalidData(
+            Err(crate::error::InvalidData(
                 crate::detail::helpers::ERR_INCONSISTENT_GROUPS
             )),
         );
@@ -632,7 +632,7 @@ mod tests {
                     0x3031_0000,
                 ][..]
             ),
-            Err(crate::error::Error::InvalidData(ERR_INCONSISTENT_STREAM_ID,)),
+            Err(crate::error::InvalidData(ERR_INCONSISTENT_STREAM_ID,)),
         );
     }
 
@@ -659,7 +659,7 @@ mod tests {
                     0x3031_0000,
                 ][..]
             ),
-            Err(crate::error::Error::InvalidData(
+            Err(crate::error::InvalidData(
                 crate::detail::helpers::ERR_SYSEX_EXPECTED_BEGIN
             )),
         );
@@ -688,7 +688,7 @@ mod tests {
                     0x3031_0000,
                 ][..]
             ),
-            Err(crate::error::Error::InvalidData(
+            Err(crate::error::InvalidData(
                 crate::detail::helpers::ERR_SYSEX_EXPECTED_CONTINUE
             )),
         );
@@ -717,7 +717,7 @@ mod tests {
                     0x3031_0000,
                 ][..]
             ),
-            Err(crate::error::Error::InvalidData(
+            Err(crate::error::InvalidData(
                 crate::detail::helpers::ERR_SYSEX_EXPECTED_END
             )),
         );
@@ -727,7 +727,7 @@ mod tests {
     fn try_from_slice_expected_complete() {
         assert_eq!(
             Sysex8::try_from(&[0x541C_BB00, 0x0102_0304, 0x0506_0708, 0x090A_0B00,][..]),
-            Err(crate::error::Error::InvalidData(
+            Err(crate::error::InvalidData(
                 crate::detail::helpers::ERR_SYSEX_EXPECTED_COMPLETE
             )),
         );
@@ -918,7 +918,7 @@ mod tests {
     #[test]
     fn set_rubbish_payload_to_fixed_size_buffer() {
         use crate::detail::test_support::rubbish_payload_iterator::RubbishPayloadIterator;
-        let mut message = Sysex8::<[u32; 16]>::try_new().unwrap();
+        let mut message = Sysex8::<[u32; 16]>::new();
         assert_eq!(
             message.try_set_payload(RubbishPayloadIterator::new()),
             Ok(())
@@ -968,7 +968,7 @@ mod tests {
 
     #[test]
     fn set_and_reset_payload_fixed_size_buffer() {
-        let mut message = Sysex8::<[u32; 13]>::try_new().unwrap();
+        let mut message = Sysex8::<[u32; 13]>::new();
         assert_eq!(message.try_set_payload(0..30), Ok(()));
         assert_eq!(message.try_set_payload(0..20), Ok(()));
         assert_eq!(
@@ -988,7 +988,7 @@ mod tests {
 
     #[test]
     fn set_payload_to_fixed_size_buffer_with_overflow() {
-        let mut message = Sysex8::<[u32; 16]>::try_new().unwrap();
+        let mut message = Sysex8::<[u32; 16]>::new();
         assert_eq!(
             message.try_set_payload(0..60),
             Err(crate::error::BufferOverflow)
@@ -1008,5 +1008,61 @@ mod tests {
         let message = Sysex8::<std::vec::Vec<u32>>::new();
         let payload = message.payload().collect::<std::vec::Vec<u8>>();
         assert_eq!(payload, std::vec![]);
+    }
+
+    #[test]
+    fn packets() {
+        use crate::Packets;
+
+        let message = Sysex8::try_from(
+            &[
+                0x501E_0000,
+                0x0102_0304,
+                0x0506_0708,
+                0x090A_0B0C,
+                0x502E_000D,
+                0x0E0F_1011,
+                0x1213_1415,
+                0x1617_1819,
+                0x502E_001A,
+                0x1B1C_1D1E,
+                0x1F20_2122,
+                0x2324_2526,
+                0x503C_0027,
+                0x2829_2A2B,
+                0x2C2D_2E2F,
+                0x3031_0000,
+            ][..],
+        )
+        .unwrap();
+
+        let mut packets = message.packets();
+        assert_eq!(
+            packets.next(),
+            Some(&[0x501E_0000, 0x0102_0304, 0x0506_0708, 0x090A_0B0C,][..])
+        );
+        assert_eq!(
+            packets.next(),
+            Some(&[0x502E_000D, 0x0E0F_1011, 0x1213_1415, 0x1617_1819,][..])
+        );
+        assert_eq!(
+            packets.next(),
+            Some(&[0x502E_001A, 0x1B1C_1D1E, 0x1F20_2122, 0x2324_2526,][..])
+        );
+        assert_eq!(
+            packets.next(),
+            Some(&[0x503C_0027, 0x2829_2A2B, 0x2C2D_2E2F, 0x3031_0000,][..])
+        );
+        assert_eq!(packets.next(), None);
+    }
+
+    #[test]
+    fn packets_empty() {
+        use crate::Packets;
+
+        let message = Sysex8::<[u32; 4]>::new();
+        let mut packets = message.packets();
+        assert_eq!(packets.next(), Some(&[0x5001_0000, 0x0, 0x0, 0x0][..]));
+        assert_eq!(packets.next(), None);
     }
 }

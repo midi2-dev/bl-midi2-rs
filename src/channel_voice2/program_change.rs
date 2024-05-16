@@ -39,13 +39,13 @@ impl<'a, B: crate::buffer::Ump> property::ReadProperty<'a, B> for BankProperty {
             None
         }
     }
-    fn validate(_buffer: &B) -> crate::result::Result<()> {
+    fn validate(_buffer: &B) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
 }
 
 impl<B: crate::buffer::Ump + crate::buffer::BufferMut> property::WriteProperty<B> for BankProperty {
-    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn write(buffer: &mut B, v: Self::Type) {
@@ -80,7 +80,7 @@ mod tests {
     fn builder() {
         use crate::traits::{Channeled, Grouped};
 
-        let mut message = ProgramChange::new_arr();
+        let mut message = ProgramChange::<[u32; 4]>::new();
         message.set_group(u4::new(0xF));
         message.set_channel(u4::new(0xE));
         message.set_program(u7::new(0x75));
@@ -93,7 +93,7 @@ mod tests {
     fn builder_no_bank() {
         use crate::traits::{Channeled, Grouped};
 
-        let mut message = ProgramChange::new_arr();
+        let mut message = ProgramChange::<[u32; 4]>::new();
         message.set_group(u4::new(0xF));
         message.set_channel(u4::new(0xE));
         message.set_program(u7::new(0x75));

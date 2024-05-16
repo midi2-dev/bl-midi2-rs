@@ -33,7 +33,7 @@ mod tests {
     fn setters() {
         use crate::traits::{Channeled, Grouped};
 
-        let mut message = AssignableController::new_arr();
+        let mut message = AssignableController::<[u32; 4]>::new();
         message.set_group(u4::new(0xC));
         message.set_channel(u4::new(0x8));
         message.set_bank(u7::new(0x51));
@@ -97,5 +97,16 @@ mod tests {
                 .controller_data(),
             0x3F3ADD42,
         );
+    }
+
+    #[test]
+    fn packets() {
+        use crate::Packets;
+
+        let buffer = [0x4C38_5138, 0x3F3ADD42];
+        let message = AssignableController::try_from(&buffer[..]).unwrap();
+        let mut packets = message.packets();
+        assert_eq!(packets.next(), Some(&[0x4C38_5138, 0x3F3ADD42][..]));
+        assert_eq!(packets.next(), None);
     }
 }

@@ -1,3 +1,5 @@
+#![doc = include_str!("channel_voice1/README.md")]
+
 use crate::detail::BitOps;
 
 mod channel_pressure;
@@ -21,6 +23,7 @@ pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x2;
 #[derive(
     derive_more::From,
     midi2_proc::Data,
+    midi2_proc::Packets,
     midi2_proc::Channeled,
     midi2_proc::Grouped,
     midi2_proc::FromBytes,
@@ -28,6 +31,7 @@ pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x2;
     midi2_proc::TryFromBytes,
     midi2_proc::TryFromUmp,
     midi2_proc::RebufferFrom,
+    midi2_proc::RebufferFromArray,
     midi2_proc::TryRebufferFrom,
     Clone,
     Debug,
@@ -45,10 +49,10 @@ pub enum ChannelVoice1<B: crate::buffer::Buffer> {
 }
 
 impl<'a, U: crate::buffer::Unit> core::convert::TryFrom<&'a [U]> for ChannelVoice1<&'a [U]> {
-    type Error = crate::error::Error;
+    type Error = crate::error::InvalidData;
     fn try_from(buffer: &'a [U]) -> Result<Self, Self::Error> {
         if buffer.len() < 1 {
-            return Err(crate::error::Error::InvalidData("Slice is too short"));
+            return Err(crate::error::InvalidData("Slice is too short"));
         };
         Ok(match status(buffer) {
             channel_pressure::STATUS => ChannelPressure::try_from(buffer)?.into(),
@@ -58,7 +62,7 @@ impl<'a, U: crate::buffer::Unit> core::convert::TryFrom<&'a [U]> for ChannelVoic
             note_on::STATUS => NoteOn::try_from(buffer)?.into(),
             pitch_bend::STATUS => PitchBend::try_from(buffer)?.into(),
             program_change::STATUS => ProgramChange::try_from(buffer)?.into(),
-            _ => Err(crate::error::Error::InvalidData(
+            _ => Err(crate::error::InvalidData(
                 "Unknown midi1 channel voice status",
             ))?,
         })
@@ -82,11 +86,8 @@ fn status<U: crate::buffer::Unit>(buffer: &[U]) -> u8 {
 mod test {
     use super::*;
     use crate::{
-        traits::{
-            Channeled, Data, FromBytes, FromUmp, Grouped, RebufferInto, TryFromBytes, TryFromUmp,
-            TryRebufferInto,
-        },
-        ux::*,
+        ux::*, Channeled, Data, FromBytes, FromUmp, Grouped, Packets, RebufferInto, TryFromBytes,
+        TryFromUmp, TryRebufferInto,
     };
     use pretty_assertions::assert_eq;
 
@@ -176,5 +177,31 @@ mod test {
             .try_rebuffer_into()
             .unwrap();
         assert_eq!(message.data(), &[0x2FD6_0900]);
+    }
+
+    #[test]
+    fn packets() {
+        let message = ChannelVoice1::try_from(&[0x2FD6_0900_u32][..]).unwrap();
+        let mut packets = message.packets();
+        assert_eq!(packets.next(), Some(&[0x2FD6_0900_u32][..]));
+        assert_eq!(packets.next(), None);
+    }
+
+    #[test]
+    fn rebuffer_from_array() {
+        let borrowed = ChannelVoice1::try_from(&[0x2FD6_0900_u32][..]).unwrap();
+        let _owned: ChannelVoice1<[u32; 4]> = borrowed.rebuffer_into();
+    }
+
+    #[test]
+    fn rebuffer_from_array_small() {
+        let borrowed = ChannelVoice1::try_from(&[0x2FD6_0900_u32][..]).unwrap();
+        let _owned: ChannelVoice1<[u32; 1]> = borrowed.rebuffer_into();
+    }
+
+    #[test]
+    fn rebuffer_from_array_bytes() {
+        let borrowed = ChannelVoice1::try_from(&[0xD6_u8, 0x09_u8][..]).unwrap();
+        let _owned: ChannelVoice1<[u8; 3]> = borrowed.rebuffer_into();
     }
 }

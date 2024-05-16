@@ -46,7 +46,7 @@ mod tests {
 
     #[test]
     fn builder() {
-        let mut message = SetTimeSignature::new_arr();
+        let mut message = SetTimeSignature::<[u32; 4]>::new();
         message.set_group(u4::new(0xA));
         message.set_numerator(0xCD);
         message.set_denominator(0x90);

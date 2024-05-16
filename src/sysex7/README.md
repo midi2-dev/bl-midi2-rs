@@ -50,7 +50,7 @@ assert_eq!(
 
 ## Borrowed workflow
 
-You can create a [Sysex7](crate::sysex7::Sysex7) from
+You can create a [Sysex7] from
 borrowed data and avoid copying or allocating if you have the data already existing
 in a buffer.
 
@@ -109,8 +109,7 @@ Use with fixed size, or fallible buffers.
 ```rust
 use midi2::prelude::*;
 
-let mut message = sysex7::Sysex7::<[u8; 22]>::try_new()
-    .expect("Buffer is large enough");
+let mut message = sysex7::Sysex7::<[u8; 22]>::new();
 
 // only fallible methods are available
 assert_eq!(message.try_set_payload((0u8..20u8).map(u7::new)), Ok(()));

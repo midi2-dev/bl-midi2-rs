@@ -2,6 +2,43 @@
 //!
 //! All messages in midi2 are backed by a generic buffer type.
 //!
+//! ```rust
+//! use midi2::prelude::*;
+//!
+//! let buffer = [
+//!     0x3E16_0001,
+//!     0x0203_0405,
+//!     0x3E26_0607,
+//!     0x0809_0A0B,
+//!     0x3E26_0C0D,
+//!     0x0E0F_1011,
+//!     0x3E26_1213,
+//!     0x1415_1617,
+//!     0x3E26_1819,
+//!     0x1A1B_1C1D,
+//!     0x3E26_1E1F,
+//!     0x2021_2223,
+//!     0x3E26_2425,
+//!     0x2627_2829,
+//!     0x3E26_2A2B,
+//!     0x2C2D_2E2F,
+//!     0x3E32_3031,
+//!     0x0000_0000,
+//! ];
+//!
+//! // A message can be backed with a borrowed slice of data.
+//! let message: UmpMessage<&[u32]> = UmpMessage::try_from(&buffer[..]).expect("Valid data");
+//!
+//! // Or a vector
+//! let vector_backed: UmpMessage<Vec<u32>> = message.rebuffer_into();
+//!
+//! // Or a fixed size array
+//! let arr_backed: UmpMessage<[u32; 18]> = vector_backed
+//!     .try_rebuffer_into()
+//!     .expect("Buffer large enough");
+//!
+//! // (Or indeed a custom buffer, if you implement the right traits!)
+//! ```
 //! A buffer can be any data type which returns a slice of `u32` or `u8`.
 //!
 //! The buffer traits are already implemented for some typical standard rust types:
@@ -39,8 +76,7 @@
 //! ```rust
 //! use midi2::prelude::*;
 //!
-//! let mut message = sysex8::Sysex8::<[u32; 64]>::try_new()
-//!     .expect("Buffer is large enough for default size");
+//! let mut message = sysex8::Sysex8::<[u32; 64]>::new();
 //! assert_eq!(message.try_set_payload(0..20), Ok(()));
 //! ```
 //! `Vec<U>` implements [BufferMut] and [BufferResize].
@@ -63,6 +99,14 @@
 
 use crate::error::BufferOverflow;
 
+/// The generic unit type contained within [Buffer] slices.
+///
+/// This is a sealed trait.
+/// It's only implemented for [u8] and [u32].
+///
+/// A [Buffer] with `U = u8` is a [Bytes] buffer.
+///
+/// A [Buffer] with `U = u32` is a [Ump] buffer.
 #[allow(private_bounds)]
 pub trait Unit: Copy + UnitPrivate {
     fn zero() -> Self;
@@ -80,40 +124,57 @@ impl Unit for u32 {
     }
 }
 
+/// Generic data representation for MIDI message wrapper types.
+///
+/// For more info see the [buffer module docs](crate::buffer).
 pub trait Buffer {
     type Unit: Unit;
     fn buffer(&self) -> &[Self::Unit];
 }
 
+/// Buffer types which own mutable data.
 pub trait BufferMut: Buffer {
     fn buffer_mut(&mut self) -> &mut [<Self as Buffer>::Unit];
 }
 
+/// Buffer types which are default constructible.
+///
+/// For more info see the [buffer module docs](crate::buffer).
 // N.B. This is needed because core::default::Default
 // is not implemented for arrays which are generic over size
 pub trait BufferDefault {
     fn default() -> Self;
 }
 
+/// Buffer types which can support arbitrary resizing.
+///
+/// For more info see the [buffer module docs](crate::buffer).
 pub trait BufferResize {
     fn resize(&mut self, size: usize);
 }
 
-/// This trait can be implemented by buffers with
-/// fallible memory allocation.
+/// Buffer types which can resize, but with a chance of failure.
 ///
-/// It can also be implemented by buffers of a fixed size.
+/// Note: This trait is also implemented by buffers of a fixed size.
 /// In this case `try_resize` should return Ok whenever
 /// the requested size is less than or equal to the fixed
 /// size of the buffer and an Err otherwise.
+///
+/// For more info see the [buffer module docs](crate::buffer).
 pub trait BufferTryResize {
     fn try_resize(&mut self, size: usize) -> Result<(), BufferOverflow>;
 }
 
+/// Buffers with `Self::Unit = u32`.
+///
+/// For more info see the [buffer module docs](crate::buffer).
 pub trait Ump: Buffer<Unit = u32> {}
 
 impl<B: Buffer<Unit = u32>> Ump for B {}
 
+/// Buffers with `Self::Unit = u8`.
+///
+/// For more info see the [buffer module docs](crate::buffer).
 pub trait Bytes: Buffer<Unit = u8> {}
 
 impl<B: Buffer<Unit = u8>> Bytes for B {}

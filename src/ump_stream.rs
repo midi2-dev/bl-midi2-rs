@@ -38,6 +38,7 @@ const END_FORMAT: u8 = 0x3;
 #[derive(
     derive_more::From,
     midi2_proc::Data,
+    midi2_proc::Packets,
     midi2_proc::RebufferFrom,
     midi2_proc::TryRebufferFrom,
     Clone,
@@ -64,11 +65,11 @@ pub enum UmpStream<B: crate::buffer::Ump> {
 }
 
 impl<'a> TryFrom<&'a [u32]> for UmpStream<&'a [u32]> {
-    type Error = crate::error::Error;
+    type Error = crate::error::InvalidData;
     fn try_from(value: &'a [u32]) -> Result<Self, Self::Error> {
         use UmpStream::*;
         if value.len() < 1 {
-            return Err(crate::error::Error::InvalidData("Slice is too short"));
+            return Err(crate::error::InvalidData("Slice is too short"));
         };
         Ok(match status_from_buffer(value) {
             device_identity::STATUS => {
@@ -108,7 +109,7 @@ impl<'a> TryFrom<&'a [u32]> for UmpStream<&'a [u32]> {
             stream_configuration_request::STATUS => StreamConfigurationRequest(
                 stream_configuration_request::StreamConfigurationRequest::try_from(value)?.into(),
             ),
-            _ => Err(crate::error::Error::InvalidData(
+            _ => Err(crate::error::InvalidData(
                 "Couldn't interpret flex data status / bank fields",
             ))?,
         })
@@ -125,7 +126,7 @@ impl<'a, const STATUS: u16, B: Ump> property::ReadProperty<'a, B> for StatusProp
     fn read(_buffer: &'a B) -> Self::Type {
         ()
     }
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         if buffer
             .buffer()
             .chunks_exact(4)
@@ -133,13 +134,13 @@ impl<'a, const STATUS: u16, B: Ump> property::ReadProperty<'a, B> for StatusProp
         {
             Ok(())
         } else {
-            Err(crate::error::Error::InvalidData("Incorrect message status"))
+            Err(crate::error::InvalidData("Incorrect message status"))
         }
     }
 }
 
 impl<const STATUS: u16, B: Ump + BufferMut> property::WriteProperty<B> for StatusProperty<STATUS> {
-    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
     fn write(buffer: &mut B, _v: Self::Type) {
@@ -164,7 +165,7 @@ impl<'a, B: Ump> property::ReadProperty<'a, B> for ConsistentFormatsProperty {
         ()
     }
 
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         use crate::detail::helpers::validate_sysex_group_statuses;
         use crate::detail::BitOps;
 
@@ -187,7 +188,7 @@ impl<B: Ump + BufferMut> property::WriteProperty<B> for ConsistentFormatsPropert
     fn write(buffer: &mut B, _v: Self::Type) {
         set_format_fields(buffer.buffer_mut())
     }
-    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
 }
@@ -223,7 +224,7 @@ impl<'a, const OFFSET: usize, B: Ump + BufferMut> property::WriteProperty<B>
     fn default() -> Self::Type {
         ""
     }
-    fn validate(_v: &Self::Type) -> crate::result::Result<()> {
+    fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
 }
@@ -321,7 +322,7 @@ impl<'a, B: 'a + Ump> property::ReadProperty<'a, B> for TextReadBytesProperty<'a
             offset: 0,
         }
     }
-    fn validate(_buffer: &B) -> crate::result::Result<()> {
+    fn validate(_buffer: &B) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
 }
@@ -340,10 +341,10 @@ impl<'a, B: Ump> property::ReadProperty<'a, B> for TextReadStringProperty {
         let bytes = TextReadBytesProperty::read(buffer).collect();
         std::string::String::from_utf8(bytes).unwrap()
     }
-    fn validate(buffer: &B) -> crate::result::Result<()> {
+    fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         let bytes = TextReadBytesProperty::read(buffer).collect();
         std::string::String::from_utf8(bytes).map_err(|_| {
-            crate::error::Error::InvalidData("Payload bytes do not represent a valid utf string")
+            crate::error::InvalidData("Payload bytes do not represent a valid utf string")
         })?;
         Ok(())
     }
@@ -449,7 +450,7 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     #[test]
-    fn builder() {
+    fn try_from_data() {
         assert_eq!(
             UmpStream::try_from(
                 &[
@@ -495,5 +496,51 @@ mod tests {
                 .unwrap()
             ))
         );
+    }
+
+    #[test]
+    fn packets() {
+        use crate::Packets;
+
+        let message = UmpStream::try_from(
+            &[
+                0xF403_5268,
+                0x7974_686D,
+                0x5265_7665,
+                0x6C61_7469,
+                0xF803_6F6E,
+                0x3A20_4265,
+                0x6174_7320,
+                0x4265_796F,
+                0xF803_6E64,
+                0x2042_6F75,
+                0x6E64_6172,
+                0x6965_73F0,
+                0xFC03_9F8C,
+                0x8DF0_9FA5,
+                0x81F0_9F9A,
+                0x8000_0000,
+            ][..],
+        )
+        .unwrap();
+
+        let mut packets = message.packets();
+        assert_eq!(
+            packets.next(),
+            Some(&[0xF403_5268, 0x7974_686D, 0x5265_7665, 0x6C61_7469,][..])
+        );
+        assert_eq!(
+            packets.next(),
+            Some(&[0xF803_6F6E, 0x3A20_4265, 0x6174_7320, 0x4265_796F,][..])
+        );
+        assert_eq!(
+            packets.next(),
+            Some(&[0xF803_6E64, 0x2042_6F75, 0x6E64_6172, 0x6965_73F0,][..])
+        );
+        assert_eq!(
+            packets.next(),
+            Some(&[0xFC03_9F8C, 0x8DF0_9FA5, 0x81F0_9F9A, 0x8000_0000,][..])
+        );
+        assert_eq!(packets.next(), None,);
     }
 }

@@ -20,7 +20,7 @@ mod tests {
     #[test]
     fn setters() {
         assert_eq!(
-            EndOfClip::new_arr(),
+            EndOfClip::<[u32; 4]>::new(),
             EndOfClip([0xF021_0000, 0x0, 0x0, 0x0])
         );
     }
