@@ -3,8 +3,8 @@
 Ergonomic, versatile, strong types wrapping MIDI 2.0 message data.
 
 This implementation of MIDI 2.0 is based on the 1.1 revision of the specifications.
-For detailed midi2 specification see [the documentation](https://midi.org/)
-on which this crate is based.
+See [the official MIDI 2.0 specification](https://midi.org/)
+for more details on the data protocol standard.
 
 ## ⚠️  **Note!** ⚠️  
 

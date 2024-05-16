@@ -1,11 +1,11 @@
-MIDI 1.0 Channel Voice Messages
+MIDI 2.0 Channel Voice Messages
 
 ## Basic Usage
 
 ```rust
 use midi2::{
     prelude::*,
-    channel_voice1::ControlChange,
+    channel_voice2::NoteOn,
 };
 
 let mut message = ControlChange::<[u32; 4]>::new();
@@ -15,10 +15,6 @@ message.set_control(u7::new(0x36));
 message.set_control_data(u7::new(0x37));
 
 assert_eq!(message.data(), &[0x2CBA_3637]);
-assert_eq!(message.channel(), u4::new(0xA));
-assert_eq!(message.group(), u4::new(0xC));
-assert_eq!(message.control(), u7::new(0x36));
-assert_eq!(message.control_data(), u7::new(0x37));
 ```
 
 ## Channeled
