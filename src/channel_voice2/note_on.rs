@@ -9,26 +9,9 @@ use crate::{
 
 pub(crate) const STATUS: u8 = 0b1001;
 
-/// Note On MIDI 2.0 Channel Voice message.
+/// MIDI 2.0 Channel Voice Note On Message
 ///
-/// # Basic Usage
-///
-/// ```rust
-/// use midi2::prelude::*;
-/// use midi2::prelude::*;
-///
-/// let mut message = channel_voice2::NoteOn::<[u32; 4]>::new();
-/// message.set_group(u4::new(0x8));
-/// message.set_channel(u4::new(0x8));
-/// message.set_note(u7::new(0x5E));
-/// message.set_velocity(0x6A14);
-/// message.set_attribute(Some(channel_voice2::NoteAttribute::Pitch7_9 {
-///     note: u7::new(0x74),
-///     pitch_up: u9::new(0x18A),
-/// }));
-///
-/// assert_eq!(message.data(), &[0x4898_5E03, 0x6A14_E98A]);
-/// ```
+/// See the [module docs](crate::channel_voice2) for more info.
 #[midi2_proc::generate_message(Via(crate::channel_voice2::ChannelVoice2), FixedSize, MinSizeUmp(2))]
 struct NoteOn {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]

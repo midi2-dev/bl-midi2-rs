@@ -6,6 +6,9 @@ use crate::{
 
 pub(crate) const STATUS: u8 = 0b0110;
 
+/// MIDI 2.0 Channel Voice Per Note Pitch Bend Message
+///
+/// See the [module docs](crate::channel_voice2) for more info.
 #[midi2_proc::generate_message(Via(crate::channel_voice2::ChannelVoice2), FixedSize, MinSizeUmp(2))]
 struct PerNotePitchBend {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]

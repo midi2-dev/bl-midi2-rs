@@ -1,3 +1,5 @@
+#![doc = include_str!("channel_voice2/README.md")]
+
 mod assignable_controller;
 mod assignable_per_note_controller;
 mod attribute;
