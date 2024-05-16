@@ -12,6 +12,9 @@ mod tune_request {
         system_common::{self, UMP_MESSAGE_TYPE},
     };
     pub(crate) const STATUS: u8 = 0xF6;
+    /// MIDI 2.0 Channel Voice Tune Request Message
+    ///
+    /// See the [module docs](crate::system_common) for more info.
     #[midi2_proc::generate_message(
         Via(system_common::SystemCommon),
         FixedSize,
@@ -33,6 +36,9 @@ mod timing_clock {
         system_common::{self, UMP_MESSAGE_TYPE},
     };
     pub(crate) const STATUS: u8 = 0xF8;
+    /// MIDI 2.0 Channel Voice Timing Clock Message
+    ///
+    /// See the [module docs](crate::system_common) for more info.
     #[midi2_proc::generate_message(
         Via(system_common::SystemCommon),
         FixedSize,
@@ -54,6 +60,9 @@ mod start {
         system_common::{self, UMP_MESSAGE_TYPE},
     };
     pub(crate) const STATUS: u8 = 0xFA;
+    /// MIDI 2.0 Channel Voice Start Message
+    ///
+    /// See the [module docs](crate::system_common) for more info.
     #[midi2_proc::generate_message(
         Via(system_common::SystemCommon),
         FixedSize,
@@ -75,6 +84,9 @@ mod cont {
         system_common::{self, UMP_MESSAGE_TYPE},
     };
     pub(crate) const STATUS: u8 = 0xFB;
+    /// MIDI 2.0 Channel Voice Continue Message
+    ///
+    /// See the [module docs](crate::system_common) for more info.
     #[midi2_proc::generate_message(
         Via(system_common::SystemCommon),
         FixedSize,
@@ -96,6 +108,9 @@ mod stop {
         system_common::{self, UMP_MESSAGE_TYPE},
     };
     pub(crate) const STATUS: u8 = 0xFC;
+    /// MIDI 2.0 Channel Voice Stop Message
+    ///
+    /// See the [module docs](crate::system_common) for more info.
     #[midi2_proc::generate_message(
         Via(system_common::SystemCommon),
         FixedSize,
@@ -117,6 +132,9 @@ mod active_sensing {
         system_common::{self, UMP_MESSAGE_TYPE},
     };
     pub(crate) const STATUS: u8 = 0xFE;
+    /// MIDI 2.0 Channel Voice Active Sensing Message
+    ///
+    /// See the [module docs](crate::system_common) for more info.
     #[midi2_proc::generate_message(
         Via(system_common::SystemCommon),
         FixedSize,
@@ -138,6 +156,9 @@ mod reset {
         system_common::{self, UMP_MESSAGE_TYPE},
     };
     pub(crate) const STATUS: u8 = 0xFF;
+    /// MIDI 2.0 Channel Voice Reset Message
+    ///
+    /// See the [module docs](crate::system_common) for more info.
     #[midi2_proc::generate_message(
         Via(system_common::SystemCommon),
         FixedSize,

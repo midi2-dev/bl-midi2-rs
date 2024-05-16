@@ -5,6 +5,9 @@ use crate::{
 
 pub const STATUS: u8 = 0xF2;
 
+/// MIDI 2.0 Channel Voice Song Position Pointer Message
+///
+/// See the [module docs](crate::system_common) for more info.
 #[midi2_proc::generate_message(
     Via(system_common::SystemCommon),
     FixedSize,
