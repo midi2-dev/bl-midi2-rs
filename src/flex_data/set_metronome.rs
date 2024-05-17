@@ -5,6 +5,9 @@ use crate::{
 
 const STATUS: u8 = 0x2;
 
+/// MIDI 2.0 Flex Data Set Metronome Message
+///
+/// See the [module docs](crate::flex_data) for more info.
 #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), FixedSize, MinSizeUmp(3))]
 struct SetMetronome {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]

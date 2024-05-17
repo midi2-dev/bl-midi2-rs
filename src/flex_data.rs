@@ -1,3 +1,5 @@
+#![doc = include_str!("flex_data/README.md")]
+
 use crate::{
     buffer::{BufferMut, Ump},
     detail::{
@@ -21,6 +23,9 @@ mod project_name {
     const BANK: u8 = super::METADATA_TEXT_BANK;
     const STATUS: u8 = 0x1;
 
+    /// MIDI 2.0 Project Name Message
+    ///
+    /// See the [module docs](crate::flex_data) for more info.
     #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
     struct ProjectName {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
@@ -62,6 +67,9 @@ mod composition_name {
     const BANK: u8 = super::METADATA_TEXT_BANK;
     const STATUS: u8 = 0x2;
 
+    /// MIDI 2.0 Composition Name Message
+    ///
+    /// See the [module docs](crate::flex_data) for more info.
     #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
     struct CompositionName {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
@@ -103,6 +111,9 @@ mod midi_clip_name {
     const BANK: u8 = super::METADATA_TEXT_BANK;
     const STATUS: u8 = 0x3;
 
+    /// MIDI 2.0 Midi Clip Name Message
+    ///
+    /// See the [module docs](crate::flex_data) for more info.
     #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
     struct MidiClipName {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
@@ -144,6 +155,9 @@ mod copyright_notice {
     const BANK: u8 = super::METADATA_TEXT_BANK;
     const STATUS: u8 = 0x4;
 
+    /// MIDI 2.0 Copyright Notice Message
+    ///
+    /// See the [module docs](crate::flex_data) for more info.
     #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
     struct CopyrightNotice {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
@@ -185,6 +199,9 @@ mod composer_name {
     const BANK: u8 = super::METADATA_TEXT_BANK;
     const STATUS: u8 = 0x5;
 
+    /// MIDI 2.0 Composer Name Message
+    ///
+    /// See the [module docs](crate::flex_data) for more info.
     #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
     struct ComposerName {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
@@ -226,6 +243,9 @@ mod lyricist_name {
     const BANK: u8 = super::METADATA_TEXT_BANK;
     const STATUS: u8 = 0x6;
 
+    /// MIDI 2.0 Lyricist Name Message
+    ///
+    /// See the [module docs](crate::flex_data) for more info.
     #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
     struct LyricistName {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
@@ -267,6 +287,9 @@ mod arranger_name {
     const BANK: u8 = super::METADATA_TEXT_BANK;
     const STATUS: u8 = 0x7;
 
+    /// MIDI 2.0 Arranger Name Message
+    ///
+    /// See the [module docs](crate::flex_data) for more info.
     #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
     struct ArrangerName {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
@@ -308,6 +331,9 @@ mod publisher_name {
     const BANK: u8 = super::METADATA_TEXT_BANK;
     const STATUS: u8 = 0x8;
 
+    /// MIDI 2.0 Publisher Name Message
+    ///
+    /// See the [module docs](crate::flex_data) for more info.
     #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
     struct PublisherName {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
@@ -349,6 +375,9 @@ mod primary_performer_name {
     const BANK: u8 = super::METADATA_TEXT_BANK;
     const STATUS: u8 = 0x9;
 
+    /// MIDI 2.0 Primary Performer Name Message
+    ///
+    /// See the [module docs](crate::flex_data) for more info.
     #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
     struct PrimaryPerformerName {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
@@ -390,6 +419,9 @@ mod accompanying_performer_name {
     const BANK: u8 = super::METADATA_TEXT_BANK;
     const STATUS: u8 = 0xA;
 
+    /// MIDI 2.0 Accompanying Performer Name Message
+    ///
+    /// See the [module docs](crate::flex_data) for more info.
     #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
     struct AccompanyingPerformerName {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
@@ -431,6 +463,9 @@ mod recording_date {
     const BANK: u8 = super::METADATA_TEXT_BANK;
     const STATUS: u8 = 0xB;
 
+    /// MIDI 2.0 Recording Date Message
+    ///
+    /// See the [module docs](crate::flex_data) for more info.
     #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
     struct RecordingDate {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
@@ -472,6 +507,9 @@ mod recording_location {
     const BANK: u8 = super::METADATA_TEXT_BANK;
     const STATUS: u8 = 0xC;
 
+    /// MIDI 2.0 Recording Location Message
+    ///
+    /// See the [module docs](crate::flex_data) for more info.
     #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
     struct RecordingLocation {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
@@ -513,6 +551,9 @@ mod unknown_performance_text {
     const BANK: u8 = super::PERFORMANCE_TEXT_BANK;
     const STATUS: u8 = 0x0;
 
+    /// MIDI 2.0 Unknown Performance Text Message
+    ///
+    /// See the [module docs](crate::flex_data) for more info.
     #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
     struct UnknownPerformanceText {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
@@ -554,6 +595,9 @@ mod lyrics {
     const BANK: u8 = super::PERFORMANCE_TEXT_BANK;
     const STATUS: u8 = 0x1;
 
+    /// MIDI 2.0 Lyrics Message
+    ///
+    /// See the [module docs](crate::flex_data) for more info.
     #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
     struct Lyrics {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
@@ -595,6 +639,9 @@ mod lyrics_language {
     const BANK: u8 = super::PERFORMANCE_TEXT_BANK;
     const STATUS: u8 = 0x2;
 
+    /// MIDI 2.0 Lyrics Language Message
+    ///
+    /// See the [module docs](crate::flex_data) for more info.
     #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
     struct LyricsLanguage {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
@@ -636,6 +683,9 @@ mod ruby {
     const BANK: u8 = super::PERFORMANCE_TEXT_BANK;
     const STATUS: u8 = 0x3;
 
+    /// MIDI 2.0 Ruby Message
+    ///
+    /// See the [module docs](crate::flex_data) for more info.
     #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
     struct Ruby {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
@@ -677,6 +727,9 @@ mod ruby_language {
     const BANK: u8 = super::PERFORMANCE_TEXT_BANK;
     const STATUS: u8 = 0x4;
 
+    /// MIDI 2.0 Ruby Language Message
+    ///
+    /// See the [module docs](crate::flex_data) for more info.
     #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
     struct RubyLanguage {
         #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]
