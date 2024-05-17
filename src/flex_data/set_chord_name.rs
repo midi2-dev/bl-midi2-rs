@@ -6,6 +6,9 @@ use crate::{
 
 const STATUS: u8 = 0x6;
 
+/// MIDI 2.0 Flex Data Set Chord Name Message
+///
+/// See the [module docs](crate::flex_data) for more info.
 #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), FixedSize, MinSizeUmp(4))]
 struct SetChordName {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]

@@ -2,6 +2,9 @@ use crate::{detail::common_properties, flex_data};
 
 const STATUS: u8 = 0x00;
 
+/// MIDI 2.0 Flex Data Unknown Metadata Text Message
+///
+/// See the [module docs](crate::flex_data) for more info.
 #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), MinSizeUmp(4))]
 struct UnknownMetadataText {
     #[property(common_properties::UmpMessageTypeProperty<{flex_data::UMP_MESSAGE_TYPE}>)]

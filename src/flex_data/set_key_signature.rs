@@ -6,6 +6,9 @@ use crate::{
 
 const STATUS: u8 = 0x5;
 
+/// MIDI 2.0 Flex Data Set Key Signature Message
+///
+/// See the [module docs](crate::flex_data) for more info.
 #[midi2_proc::generate_message(Via(crate::flex_data::FlexData), FixedSize, MinSizeUmp(2))]
 struct SetKeySignature {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
