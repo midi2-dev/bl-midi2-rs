@@ -1,3 +1,9 @@
+# 0.5.1
+docs: flex data module docs
+docs: adds system common module docs
+docs: channel voice 2 module docs
+fix: incorrect flex_data deserialisation
+
 # 0.5.0
 docs: generally improve documentation of public modules and traits
 feat: infallible constructors and converters for array backed messages
