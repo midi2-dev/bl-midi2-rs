@@ -802,8 +802,8 @@ impl<'a> TryFrom<&'a [u32]> for FlexData<&'a [u32]> {
                 SetTimeSignature(set_time_signature::SetTimeSignature::try_from(value)?.into())
             }
             0x00_02 => SetMetronome(set_metronome::SetMetronome::try_from(value)?.into()),
-            0x00_03 => SetKeySignature(set_key_signature::SetKeySignature::try_from(value)?.into()),
-            0x00_04 => SetChordName(set_chord_name::SetChordName::try_from(value)?.into()),
+            0x00_05 => SetKeySignature(set_key_signature::SetKeySignature::try_from(value)?.into()),
+            0x00_06 => SetChordName(set_chord_name::SetChordName::try_from(value)?.into()),
             0x01_00 => UnknownMetadataText(
                 unknown_metadata_text::UnknownMetadataText::try_from(value)?.into(),
             ),
@@ -1243,5 +1243,11 @@ mod tests {
             Some(&[0xD0D0_0106, 0x6967_6E61, 0x6C21_0000, 0x0000_0000,][..])
         );
         assert_eq!(packets.next(), None);
+    }
+
+    #[test]
+    fn try_from_set_chord_name_data() {
+        let message = FlexData::try_from(&[0xD70B_0006, 0xF703_3519, 0x4B00_0000, 0x110A_0020][..]);
+        message.expect("Valid data");
     }
 }
