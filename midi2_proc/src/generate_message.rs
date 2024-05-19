@@ -1,101 +1,7 @@
-use crate::common::Representation;
+use crate::common::{self, Representation};
 use proc_macro::TokenStream as TokenStream1;
 use proc_macro2::TokenStream;
 use quote::quote;
-
-struct Property {
-    ident: syn::Ident,
-    meta_type: syn::Type,
-    ty: syn::Type,
-    constant: bool,
-    readonly: bool,
-    writeonly: bool,
-    resize: bool,
-    std: bool,
-}
-
-impl Property {
-    fn implement_via_trait(&self) -> bool {
-        self.is_group() || self.is_channel() || self.is_sysex_payload()
-    }
-    fn is_group(&self) -> bool {
-        self.ident == "group"
-    }
-    fn is_channel(&self) -> bool {
-        self.ident == "channel"
-    }
-    fn is_sysex_payload(&self) -> bool {
-        self.ident == "sysex_payload"
-    }
-}
-
-fn has_attr(field: &syn::Field, id: &str) -> bool {
-    field.attrs.iter().any(|attr| {
-        let syn::Meta::Path(path) = &attr.meta else {
-            return false;
-        };
-        path.segments
-            .last()
-            .iter()
-            .any(|&segment| segment.ident.to_string() == id)
-    })
-}
-
-fn meta_type(field: &syn::Field) -> syn::Type {
-    field
-        .attrs
-        .iter()
-        .filter_map(|attr| {
-            use syn::Meta::*;
-            match &attr.meta {
-                List(list) => Some(list),
-                _ => None,
-            }
-        })
-        .find(|list| {
-            list.path
-                .segments
-                .last()
-                .iter()
-                .any(|&segment| segment.ident.to_string() == "property")
-        })
-        .map(|list| {
-            list.parse_args::<syn::Type>()
-                .expect("Arguments to property attribute should be a valid type")
-        })
-        .expect("fields must be annotated with the property attribute")
-}
-
-fn properties(input: &syn::ItemStruct) -> Vec<Property> {
-    let syn::Fields::Named(named_fields) = &input.fields else {
-        panic!("Expected struct with named fields");
-    };
-    named_fields
-        .named
-        .iter()
-        .map(|field| Property {
-            ident: field
-                .ident
-                .as_ref()
-                .expect("Named fields should have a name")
-                .clone(),
-            ty: field.ty.clone(),
-            meta_type: meta_type(field),
-            constant: is_unit_tuple(&field.ty),
-            readonly: has_attr(field, "readonly"),
-            writeonly: has_attr(field, "writeonly"),
-            resize: has_attr(field, "resize"),
-            std: has_attr(field, "std"),
-        })
-        .collect()
-}
-
-fn is_unit_tuple(ty: &syn::Type) -> bool {
-    match ty {
-        syn::Type::Tuple(tup) => tup.elems.len() == 0,
-        _ => false,
-    }
-}
 
 #[derive(Default)]
 struct GenerateMessageArgs {
@@ -126,7 +32,7 @@ impl syn::parse::Parse for GenerateMessageArgs {
             };
 
             if ident == "Via" {
-                args.via = Some(parse_via_args(input));
+                args.via = Some(common::parse_via_args(input));
             }
             if ident == "FixedSize" {
                 args.fixed_size = true;
@@ -148,7 +54,7 @@ impl syn::parse::Parse for GenerateMessageArgs {
     }
 }
 
-fn parse_fixed_size(input: syn::parse::ParseStream) -> usize {
+pub fn parse_fixed_size(input: syn::parse::ParseStream) -> usize {
     let syn::ExprParen { expr, .. } = input
         .parse()
         .expect("Bracketed expression should follow size arg");
@@ -166,19 +72,137 @@ fn parse_fixed_size(input: syn::parse::ParseStream) -> usize {
         .expect("Valid base 10 literal size")
 }
 
-fn parse_via_args(input: syn::parse::ParseStream) -> syn::Type {
-    let syn::ExprParen { expr, .. } = input
-        .parse()
-        .expect("Bracketed expression should follow size arg");
+pub struct Property {
+    pub ident: syn::Ident,
+    pub meta_type: syn::Type,
+    pub ty: syn::Type,
+    pub constant: bool,
+    pub readonly: bool,
+    pub writeonly: bool,
+    pub resize: bool,
+    pub std: bool,
+}
 
-    let syn::Expr::Path(path) = *expr else {
-        panic!("Via argument should contain a path type");
+impl Property {
+    pub fn implement_via_trait(&self) -> bool {
+        self.is_group() || self.is_channel() || self.is_sysex_payload()
+    }
+    pub fn is_group(&self) -> bool {
+        self.ident == "group"
+    }
+    pub fn is_channel(&self) -> bool {
+        self.ident == "channel"
+    }
+    pub fn is_sysex_payload(&self) -> bool {
+        self.ident == "sysex_payload"
+    }
+}
+
+pub fn properties(input: &syn::ItemStruct) -> Vec<Property> {
+    let syn::Fields::Named(named_fields) = &input.fields else {
+        panic!("Expected struct with named fields");
     };
+    named_fields
+        .named
+        .iter()
+        .map(|field| Property {
+            ident: field
+                .ident
+                .as_ref()
+                .expect("Named fields should have a name")
+                .clone(),
+            ty: field.ty.clone(),
+            meta_type: common::meta_type(field),
+            constant: common::is_unit_tuple(&field.ty),
+            readonly: common::has_attr(field, "readonly"),
+            writeonly: common::has_attr(field, "writeonly"),
+            resize: common::has_attr(field, "resize"),
+            std: common::has_attr(field, "std"),
+        })
+        .collect()
+}
 
-    syn::Type::Path(syn::TypePath {
-        qself: path.qself,
-        path: path.path,
-    })
+pub fn initialise_property_statements(
+    properties: &Vec<Property>,
+    buffer_type: TokenStream,
+) -> TokenStream {
+    let mut initialise_properties = TokenStream::new();
+    for property in properties.iter().filter(|p| !p.readonly) {
+        let meta_type = &property.meta_type;
+        let std_only_attribute = common::std_only_attribute(property.std);
+
+        initialise_properties.extend(quote! {
+            #std_only_attribute
+            <#meta_type as crate::detail::property::WriteProperty<#buffer_type>>::write(
+                buffer_ref_mut,
+                <#meta_type as crate::detail::property::WriteProperty<#buffer_type>>::default(),
+            );
+        });
+    }
+    initialise_properties
+}
+
+fn property_getter(property: &Property, public: bool) -> TokenStream {
+    let meta_type = &property.meta_type;
+    let ident = &property.ident;
+    let ty = &property.ty;
+    let pub_token = if public {
+        quote! { pub }
+    } else {
+        TokenStream::new()
+    };
+    let std_only_attribute = common::std_only_attribute(property.std);
+
+    quote! {
+        #std_only_attribute
+        #pub_token fn #ident(&self) -> #ty {
+            <#meta_type as crate::detail::property::ReadProperty<B>>::read(self.buffer_access())
+        }
+    }
+}
+
+fn property_setter(property: &Property, public: bool) -> TokenStream {
+    let meta_type = &property.meta_type;
+    let ident = syn::Ident::new(
+        format!("set_{}", &property.ident.to_string()).as_str(),
+        proc_macro2::Span::call_site(),
+    );
+    let ty = &property.ty;
+    let pub_token = if public {
+        quote! { pub }
+    } else {
+        TokenStream::new()
+    };
+    let std_only_attribute = common::std_only_attribute(property.std);
+
+    if property.resize {
+        let fallible_ident = syn::Ident::new(
+            format!("try_{}", ident.to_string()).as_str(),
+            proc_macro2::Span::call_site(),
+        );
+        quote! {
+            #std_only_attribute
+            #pub_token fn #ident(&mut self, value: #ty) where B: crate::buffer::BufferMut + crate::buffer::BufferResize {
+                <#meta_type as crate::detail::property::ResizeProperty<B>>::resize(self.buffer_access_mut(), &value);
+                <#meta_type as crate::detail::property::WriteProperty<B>>::write(self.buffer_access_mut(), value);
+            }
+
+            #std_only_attribute
+            #pub_token fn #fallible_ident(&mut self, value: #ty) -> core::result::Result<(), crate::error::BufferOverflow>
+            where B: crate::buffer::BufferMut + crate::buffer::BufferTryResize {
+                <#meta_type as crate::detail::property::ResizeProperty<B>>::try_resize(self.buffer_access_mut(), &value)?;
+                <#meta_type as crate::detail::property::WriteProperty<B>>::write(self.buffer_access_mut(), value);
+                Ok(())
+            }
+        }
+    } else {
+        quote! {
+            #std_only_attribute
+            #pub_token fn #ident(&mut self, value: #ty) where B: crate::buffer::BufferMut {
+                <#meta_type as crate::detail::property::WriteProperty<B>>::write(self.buffer_access_mut(), value);
+            }
+        }
+    }
 }
 
 fn imports() -> TokenStream {
@@ -249,80 +273,6 @@ fn message_impl(
         impl<B: #constraint> #root_ident<B> {
             #methods
         }
-    }
-}
-
-fn property_getter(property: &Property, public: bool) -> TokenStream {
-    let meta_type = &property.meta_type;
-    let ident = &property.ident;
-    let ty = &property.ty;
-    let pub_token = if public {
-        quote! { pub }
-    } else {
-        TokenStream::new()
-    };
-    let std_only_attribute = std_only_attribute(property);
-
-    quote! {
-        #std_only_attribute
-        #pub_token fn #ident(&self) -> #ty {
-            <#meta_type as crate::detail::property::ReadProperty<B>>::read(self.buffer_access())
-        }
-    }
-}
-
-fn property_setter(property: &Property, public: bool) -> TokenStream {
-    let meta_type = &property.meta_type;
-    let ident = syn::Ident::new(
-        format!("set_{}", &property.ident.to_string()).as_str(),
-        proc_macro2::Span::call_site(),
-    );
-    let ty = &property.ty;
-    let pub_token = if public {
-        quote! { pub }
-    } else {
-        TokenStream::new()
-    };
-    let std_only_attribute = std_only_attribute(property);
-
-    if property.resize {
-        let fallible_ident = syn::Ident::new(
-            format!("try_{}", ident.to_string()).as_str(),
-            proc_macro2::Span::call_site(),
-        );
-        quote! {
-            #std_only_attribute
-            #pub_token fn #ident(&mut self, value: #ty) where B: crate::buffer::BufferMut + crate::buffer::BufferResize {
-                <#meta_type as crate::detail::property::ResizeProperty<B>>::resize(self.buffer_access_mut(), &value);
-                <#meta_type as crate::detail::property::WriteProperty<B>>::write(self.buffer_access_mut(), value);
-            }
-
-            #std_only_attribute
-            #pub_token fn #fallible_ident(&mut self, value: #ty) -> core::result::Result<(), crate::error::BufferOverflow>
-            where B: crate::buffer::BufferMut + crate::buffer::BufferTryResize {
-                <#meta_type as crate::detail::property::ResizeProperty<B>>::try_resize(self.buffer_access_mut(), &value)?;
-                <#meta_type as crate::detail::property::WriteProperty<B>>::write(self.buffer_access_mut(), value);
-                Ok(())
-            }
-        }
-    } else {
-        quote! {
-            #std_only_attribute
-            #pub_token fn #ident(&mut self, value: #ty) where B: crate::buffer::BufferMut {
-                <#meta_type as crate::detail::property::WriteProperty<B>>::write(self.buffer_access_mut(), value);
-            }
-        }
-    }
-}
-
-fn std_only_attribute(property: &Property) -> TokenStream {
-    if property.std {
-        quote! {
-            #[cfg(feature = "std")]
-            #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-        }
-    } else {
-        TokenStream::new()
     }
 }
 
@@ -416,7 +366,7 @@ fn try_from_slice_impl(
     };
     for property in properties.iter().filter(|p| !p.writeonly) {
         let meta_type = &property.meta_type;
-        let std_only_attribute = std_only_attribute(property);
+        let std_only_attribute = common::std_only_attribute(property.std);
 
         validation_steps.extend(quote! {
             #std_only_attribute
@@ -504,7 +454,8 @@ fn new_impl(
             pub fn new() -> #root_ident<B>
             {
                 let mut buffer = <B as crate::buffer::BufferDefault>::default();
-                buffer.resize(<Self as crate::traits::MinSize<B>>::MIN_SIZE);
+                let buffer_ref_mut = &mut buffer;
+                buffer_ref_mut.resize(<Self as crate::traits::MinSize<B>>::MIN_SIZE);
                 #initialise_properties
                 #root_ident::<B>(buffer)
             }
@@ -539,6 +490,7 @@ fn new_array_impl(
             {
                 let _valid = <Self as crate::traits::ArraySizeValid<SIZE, #buffer_type>>::VALID;
                 let mut buffer = [<#unit_type as crate::buffer::Unit>::zero(); SIZE];
+                let buffer_ref_mut = &mut buffer;
                 #initialise_properties
                 #root_ident(buffer)
             }
@@ -565,6 +517,7 @@ fn try_new_impl(
             {
                 let mut buffer = <B as crate::buffer::BufferDefault>::default();
                 buffer.try_resize(<Self as crate::traits::MinSize<B>>::MIN_SIZE)?;
+                let buffer_ref_mut = &mut buffer;
                 #initialise_properties
                 Ok(#root_ident::<B>(buffer))
             }
@@ -581,26 +534,6 @@ fn clone_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStrea
             }
         }
     }
-}
-
-fn initialise_property_statements(
-    properties: &Vec<Property>,
-    buffer_type: TokenStream,
-) -> TokenStream {
-    let mut initialise_properties = TokenStream::new();
-    for property in properties.iter().filter(|p| !p.readonly) {
-        let meta_type = &property.meta_type;
-        let std_only_attribute = std_only_attribute(property);
-
-        initialise_properties.extend(quote! {
-            #std_only_attribute
-            <#meta_type as crate::detail::property::WriteProperty<#buffer_type>>::write(
-                &mut buffer,
-                <#meta_type as crate::detail::property::WriteProperty<#buffer_type>>::default(),
-            );
-        });
-    }
-    initialise_properties
 }
 
 fn grouped_impl(root_ident: &syn::Ident, property: &Property) -> TokenStream {
@@ -691,7 +624,7 @@ fn try_from_bytes_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> T
 fn convert_properties(properties: &Vec<Property>, target_buffer_type: &TokenStream) -> TokenStream {
     let mut convert_properties = TokenStream::new();
     for property in properties.iter().filter(|p| !p.readonly && !p.writeonly) {
-        let std_only_attribute = std_only_attribute(property);
+        let std_only_attribute = common::std_only_attribute(property.std);
         let meta_type = &property.meta_type;
 
         convert_properties.extend(quote! {

@@ -381,10 +381,14 @@ pub fn debug(item: TokenStream1) -> TokenStream1 {
     quote! {
         impl #impl_generics core::fmt::Debug for #ident #ty_generics #where_clause {
             fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
+                use crate::BufferAccess as BufferAccessDeriveDebug;
+
                 fmt.write_fmt(format_args!("{}([", stringify!(#ident)))?;
                 match <<#buffer_id as crate::buffer::Buffer>::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
                     crate::buffer::UNIT_ID_U8 => {
-                        let buff = self.0.buffer();
+                        use crate::buffer::SpecialiseU8 as SpecialiseU8DeriveDebug;
+
+                        let buff = self.buffer_access();
                         let mut iter = buff.specialise_u8().iter().peekable();
                         while let Some(v) = iter.next() {
                             fmt.write_fmt(format_args!("{:#04X}", v))?;
@@ -394,7 +398,9 @@ pub fn debug(item: TokenStream1) -> TokenStream1 {
                         }
                     }
                     crate::buffer::UNIT_ID_U32 => {
-                        let buff = self.0.buffer();
+                        use crate::buffer::SpecialiseU32 as SpecialiseU32DeriveDebug;
+
+                        let buff = self.buffer_access();
                         let mut iter = buff.specialise_u32().iter().peekable();
                         while let Some(v) = iter.next() {
                             fmt.write_fmt(format_args!("{:#010X}", v))?;

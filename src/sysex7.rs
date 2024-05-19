@@ -836,6 +836,12 @@ mod tests {
     }
 
     #[test]
+    fn try_new_bytes() {
+        let message = Sysex7::<[u8; 2]>::try_new().expect("Buffer is large enough");
+        assert_eq!(message, Sysex7([0xF0, 0xF7]));
+    }
+
+    #[test]
     fn data_bytes() {
         let message = Sysex7::<std::vec::Vec<u8>>::new();
         assert_eq!(message.data(), &[0xF0, 0xF7]);

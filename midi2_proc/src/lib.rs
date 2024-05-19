@@ -2,11 +2,17 @@ use proc_macro::TokenStream as TokenStream1;
 
 mod common;
 mod derives;
+mod generate_ci;
 mod generate_message;
 
 #[proc_macro_attribute]
 pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1 {
     generate_message::generate_message(attrs, item)
+}
+
+#[proc_macro_attribute]
+pub fn generate_ci(attrs: TokenStream1, item: TokenStream1) -> TokenStream1 {
+    generate_ci::generate_ci(attrs, item)
 }
 
 #[proc_macro_derive(Data)]
