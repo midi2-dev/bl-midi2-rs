@@ -51,7 +51,7 @@ struct DiscoveryQuery {
     max_sysex_size: ux::u28,
     #[property(OutputPathIdProperty)]
     #[version(0x2)]
-    output_path_id: u8,
+    output_path_id: ux::u7,
 }
 
 struct DeviceManufacturerProperty;
@@ -255,7 +255,7 @@ impl<B: crate::buffer::Bytes + crate::buffer::BufferMut> property::WriteProperty
 struct OutputPathIdProperty;
 
 impl<B: crate::buffer::Bytes> property::Property<B> for OutputPathIdProperty {
-    type Type = u8;
+    type Type = ux::u7;
 }
 
 impl<'a, B: crate::buffer::Bytes> property::ReadProperty<'a, B> for OutputPathIdProperty {
@@ -263,7 +263,7 @@ impl<'a, B: crate::buffer::Bytes> property::ReadProperty<'a, B> for OutputPathId
         Ok(())
     }
     fn read(buffer: &'a B) -> Self::Type {
-        buffer.buffer()[30]
+        ux::u7::new(buffer.buffer()[30])
     }
 }
 
@@ -274,7 +274,7 @@ impl<B: crate::buffer::Bytes + crate::buffer::BufferMut> property::WriteProperty
         Ok(())
     }
     fn write(buffer: &mut B, v: Self::Type) {
-        buffer.buffer_mut()[30] = v;
+        buffer.buffer_mut()[30] = v.into();
     }
     fn default() -> Self::Type {
         Default::default()
@@ -285,6 +285,67 @@ impl<B: crate::buffer::Bytes + crate::buffer::BufferMut> property::WriteProperty
 mod tests {
     use super::*;
     use pretty_assertions::assert_eq;
+
+    #[test]
+    fn setters() {
+        use crate::Data;
+
+        let mut message = DiscoveryQuery::<0x2, std::vec::Vec<u8>>::new();
+        message.set_source(ux::u28::new(0xB48D9D9));
+        message.set_device_manufacturer([ux::u7::new(0x21), ux::u7::new(0x66), ux::u7::new(0x61)]);
+        message.set_device_family(ux::u14::new(0x278A));
+        message.set_model_number(ux::u14::new(0x2269));
+        message.set_software_version([
+            ux::u7::new(0x30),
+            ux::u7::new(0x49),
+            ux::u7::new(0xB),
+            ux::u7::new(0x63),
+        ]);
+        message.set_process_inquiry_supported(true);
+        message.set_property_exchange_supported(true);
+        message.set_profile_configuration_supported(true);
+        message.set_protocol_negotiation_supported(true);
+        message.set_max_sysex_size(ux::u28::new(0xEF6EFE2));
+        message.set_output_path_id(ux::u7::new(0x25));
+
+        assert_eq!(
+            message.data(),
+            &[
+                0xF0,
+                0x7E,
+                0x7F,
+                0x0D,
+                0x70,
+                0x02,
+                0x59,
+                0x33,
+                0x23,
+                0x5A,
+                0x7F,
+                0x7F,
+                0x7F,
+                0x7F,
+                0x21,
+                0x66,
+                0x61,
+                0x0A,
+                0x4F,
+                0x69,
+                0x44,
+                0x30,
+                0x49,
+                0x0B,
+                0x63,
+                0b0001_1110,
+                0x62,
+                0x5F,
+                0x5B,
+                0x77,
+                0x25,
+                0xF7,
+            ]
+        );
+    }
 
     #[test]
     fn new() {
@@ -416,11 +477,26 @@ mod tests {
     }
 
     #[test]
+    fn destination() {
+        use crate::ci::Ci;
+        let message = DiscoveryQuery::<0x2, std::vec::Vec<u8>>::new();
+        assert_eq!(message.destination(), ux::u28::MAX);
+    }
+
+    #[test]
+    fn device_id() {
+        use crate::ci::{Ci, DeviceId};
+        let message = DiscoveryQuery::<0x2, std::vec::Vec<u8>>::new();
+        assert_eq!(message.device_id(), DeviceId::FunctionBlock);
+    }
+
+    #[test]
     fn device_manufactuter() {
         use crate::Data;
 
-        let mut message = DiscoveryQuery::<0x2, std::vec::Vec<u8>>::new();
         let id = [ux::u7::new(0x47), ux::u7::new(0x13), ux::u7::new(0x01)];
+
+        let mut message = DiscoveryQuery::<0x2, std::vec::Vec<u8>>::new();
         message.set_device_manufacturer(id);
 
         assert_eq!(message.device_manufacturer(), id);
@@ -549,9 +625,9 @@ mod tests {
         use crate::Data;
 
         let mut message = DiscoveryQuery::<0x2, std::vec::Vec<u8>>::new();
-        let value = 0x08;
+        let value = ux::u7::new(0x08);
         message.set_output_path_id(value);
         assert_eq!(message.output_path_id(), value);
-        assert_eq!(message.data()[30], value);
+        assert_eq!(message.data()[30], value.into());
     }
 }
