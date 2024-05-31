@@ -2,7 +2,10 @@ use crate::{ci, detail::property};
 
 pub(crate) const STATUS: u8 = 0x70;
 
-#[midi2_proc::generate_ci(MinSize(31, 32))]
+#[midi2_proc::generate_ci(
+    SupportedVersion(version = 0x1, min_size = 31),
+    SupportedVersion(version = 0x2, min_size = 32)
+)]
 struct DiscoveryQuery {
     #[property(ci::common_properties::UniversalSystemExclusiveByteProperty)]
     #[version(0x1)]

@@ -3,10 +3,14 @@ use proc_macro::TokenStream as TokenStream1;
 use proc_macro2::TokenStream;
 use quote::quote;
 
+struct SupportedVersion {
+    version: u8,
+    min_size: usize,
+}
+
 #[derive(Default)]
 struct GenerateCiArgs {
-    fixed_size: bool,
-    min_size: Vec<usize>,
+    supported_versions: Vec<SupportedVersion>,
 }
 
 impl syn::parse::Parse for GenerateCiArgs {
@@ -18,11 +22,8 @@ impl syn::parse::Parse for GenerateCiArgs {
                 break;
             };
 
-            if ident == "FixedSize" {
-                args.fixed_size = true;
-            }
-            if ident == "MinSize" {
-                args.min_size = parse_fixed_size(input);
+            if ident == "SupportedVersion" {
+                args.supported_versions.push(parse_supported_version(input))
             }
 
             if let Err(_) = input.parse::<syn::Token![,]>() {
@@ -35,30 +36,57 @@ impl syn::parse::Parse for GenerateCiArgs {
     }
 }
 
-pub fn parse_fixed_size(input: syn::parse::ParseStream) -> Vec<usize> {
-    let syn::ExprTuple { elems, .. } = input
-        .parse()
-        .expect("Bracketed expression should follow size arg");
+fn parse_supported_version(input: syn::parse::ParseStream) -> SupportedVersion {
+    // E.g.
+    // (version = 0x1, min_size = 32)
 
-    let mut ret = Vec::new();
+    let syn::ExprTuple { elems, .. } = input.parse().expect("Expected bracketed tuple expression");
+
+    let mut version = None;
+    let mut min_size = None;
 
     for elem in &elems {
-        let syn::Expr::Lit(syn::ExprLit {
-            lit: syn::Lit::Int(int_lit),
-            ..
-        }) = elem.clone()
-        else {
-            panic!("Size expressions should contain int literal");
+        let syn::Expr::Assign(syn::ExprAssign { left, right, .. }) = elem.clone() else {
+            continue;
         };
 
-        ret.push(
-            int_lit
-                .base10_parse::<usize>()
-                .expect("Valid base 10 literal size"),
-        );
+        let syn::Expr::Path(syn::ExprPath { path, .. }) = *left else {
+            continue;
+        };
+
+        let Some(segment) = path.segments.first() else {
+            continue;
+        };
+
+        let syn::Expr::Lit(syn::ExprLit {
+            lit: syn::Lit::Int(lit_int),
+            ..
+        }) = *right
+        else {
+            continue;
+        };
+
+        if segment.ident == "version" {
+            version = Some(
+                lit_int
+                    .base10_parse::<u8>()
+                    .expect("Version should be a valid u8 literal"),
+            );
+        }
+
+        if segment.ident == "min_size" {
+            min_size = Some(
+                lit_int
+                    .base10_parse::<usize>()
+                    .expect("Minimum size should be a valid usize literal"),
+            );
+        }
     }
 
-    ret
+    SupportedVersion {
+        version: version.expect("Must include a version number. E.g: version = 0x1"),
+        min_size: min_size.expect("Must include a minimum size. E.g: min_size = 32"),
+    }
 }
 
 pub struct Property {
@@ -283,10 +311,8 @@ fn new_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream 
         > #root_ident<VERSION, B>
         {
             /// Create a new message backed by a resizable buffer.
-            pub fn new() -> Self
+            pub fn new() -> Self where Self: crate::ci::version::CiVersion<VERSION>
             {
-                let _ = crate::ci::version::ValidCiVersion::<VERSION>::VALID;
-
                 let mut sysex7 = crate::sysex7::Sysex7::<B>::new();
                 let payload_size = <Self as crate::traits::MinSize<B>>::MIN_SIZE - 2;
                 <crate::sysex7::Sysex7<B> as crate::SysexInternal<B>>::resize(&mut sysex7, payload_size);
@@ -313,10 +339,8 @@ fn try_new_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStr
         > #root_ident<VERSION, B>
         {
             /// Create a new message backed by a buffer with fallible resize.
-            pub fn try_new() -> Result<Self, crate::error::BufferOverflow>
+            pub fn try_new() -> Result<Self, crate::error::BufferOverflow> where Self: crate::ci::version::CiVersion<VERSION>
             {
-                let _ = crate::ci::version::ValidCiVersion::<VERSION>::VALID;
-
                 let mut sysex7 = crate::sysex7::Sysex7::<B>::try_new()?;
                 let payload_size = <Self as crate::traits::MinSize<B>>::MIN_SIZE - 2;
                 <crate::sysex7::Sysex7<B> as crate::SysexInternal<B>>::try_resize(&mut sysex7, payload_size)?;
@@ -330,24 +354,35 @@ fn try_new_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStr
     }
 }
 
-fn ci_version_impls(root_ident: &syn::Ident) -> TokenStream {
-    quote! {
-        impl<B: crate::buffer::Bytes> crate::ci::version::CiVersion<0x1> for #root_ident<0x1, B> {}
-        impl<B: crate::buffer::Bytes> crate::ci::version::CiVersion<0x2> for #root_ident<0x2, B> {}
+fn ci_version_impls(root_ident: &syn::Ident, args: &GenerateCiArgs) -> TokenStream {
+    let mut ret = TokenStream::new();
+
+    for supported_version in &args.supported_versions {
+        let version_lit = supported_version.version;
+        ret.extend(quote!{
+            impl<B: crate::buffer::Bytes> crate::ci::version::CiVersion<#version_lit> for #root_ident<#version_lit, B> {}
+        });
     }
+
+    ret
 }
 
 fn min_size_impl(root_ident: &syn::Ident, args: &GenerateCiArgs) -> TokenStream {
-    if args.min_size.len() != 2 {
-        panic!("Expected a min size for each CI version");
+    // each supported version defines a min size
+    let mut match_arms = TokenStream::new();
+    for supported_version in &args.supported_versions {
+        let version_lit = supported_version.version;
+        let min_size = supported_version.min_size;
+
+        match_arms.extend(quote! {
+            #version_lit => #min_size,
+        });
     }
-    let size_v1_1 = args.min_size[0];
-    let size_v1_2 = args.min_size[1];
+
     quote! {
         impl<const VERSION: u8, B: crate::buffer::Bytes> crate::traits::MinSize<B> for #root_ident<VERSION, B> {
             const MIN_SIZE: usize = match VERSION {
-                0x1 => #size_v1_1,
-                0x2 => #size_v1_2,
+                #match_arms
                 _ => <crate::sysex7::Sysex7<B> as crate::traits::MinSize<B>>::MIN_SIZE,
             };
         }
@@ -509,7 +544,7 @@ pub fn generate_ci(attrs: TokenStream1, item: TokenStream1) -> TokenStream1 {
     let min_size_impl = min_size_impl(root_ident, &args);
     let new_impl = new_impl(root_ident, &properties);
     let try_new_impl = try_new_impl(root_ident, &properties);
-    let ci_version_impls = ci_version_impls(root_ident);
+    let ci_version_impls = ci_version_impls(root_ident, &args);
     let deref_sysex7_impl = deref_sysex7_impl(root_ident);
     let message_impl = message_impl(root_ident, &properties);
     let ci_impl = ci_impl(root_ident);
