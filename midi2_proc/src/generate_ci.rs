@@ -357,11 +357,17 @@ fn try_new_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStr
 fn ci_version_impls(root_ident: &syn::Ident, args: &GenerateCiArgs) -> TokenStream {
     let mut ret = TokenStream::new();
 
-    for supported_version in &args.supported_versions {
-        let version_lit = supported_version.version;
-        ret.extend(quote!{
-            impl<B: crate::buffer::Bytes> crate::ci::version::CiVersion<#version_lit> for #root_ident<#version_lit, B> {}
-        });
+    for version in args.supported_versions.iter().map(|v| v.version) {
+        for compatible_version in args
+            .supported_versions
+            .iter()
+            .filter(|v| v.version <= version)
+            .map(|v| v.version)
+        {
+            ret.extend(quote!{
+                impl<B: crate::buffer::Bytes> crate::ci::version::CiVersion<#compatible_version> for #root_ident<#version, B> {}
+            });
+        }
     }
 
     ret
