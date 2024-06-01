@@ -20,7 +20,7 @@ struct KeyPressure {
     #[property(common_properties::GroupProperty)]
     group: u4,
     #[property(common_properties::UmpSchemaProperty<u7, schema::Ump<0x0000_7F00, 0x0, 0x0, 0x0>>)]
-    note: u7,
+    note_number: u7,
     #[property(common_properties::UmpSchemaProperty<u32, schema::Ump<0x0000_0000, 0xFFFF_FFFF, 0x0, 0x0>>)]
     key_pressure_data: u32,
 }
@@ -37,17 +37,17 @@ mod tests {
         let mut message = KeyPressure::<[u32; 4]>::new();
         message.set_group(u4::new(0xB));
         message.set_channel(u4::new(0xC));
-        message.set_note(u7::new(0x59));
+        message.set_note_number(u7::new(0x59));
         message.set_key_pressure_data(0xC0B83064);
         assert_eq!(message, KeyPressure([0x4BAC_5900, 0xC0B83064, 0x0, 0x0]),);
     }
 
     #[test]
-    fn note() {
+    fn note_number() {
         assert_eq!(
             KeyPressure::try_from(&[0x4BAC_5900, 0xC0B83064][..])
                 .unwrap()
-                .note(),
+                .note_number(),
             u7::new(0x59),
         );
     }

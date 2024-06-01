@@ -63,10 +63,10 @@
 //! let mut message: NoteOn<&[u32]> = NoteOn::try_from(&[0x2D9E_753D][..]).expect("Valid data");
 //!
 //! // the immutable api is available
-//! assert_eq!(message.note(), u7::default());
+//! assert_eq!(message.note_number(), u7::default());
 //!
 //! // error[E0277]: the trait bound `&[u32]: BufferMut` is not satisfied
-//! message.set_note(u7::new(0x60));
+//! message.set_note_number(u7::new(0x60));
 //! ```
 //!
 //! `[U: SIZE]` buffers implement [BufferMut], but only

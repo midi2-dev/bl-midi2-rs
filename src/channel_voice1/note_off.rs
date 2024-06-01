@@ -28,7 +28,7 @@ struct NoteOff {
         schema::Bytes<0x00, 0x7F, 0x0>,
         schema::Ump<0x0000_7F00, 0x0, 0x0, 0x0>,
     >)]
-    note: crate::ux::u7,
+    note_number: crate::ux::u7,
     #[property(common_properties::HybridSchemaProperty<
         crate::ux::u7,
         schema::Bytes<0x00, 0x0, 0x7F>,
@@ -50,7 +50,7 @@ struct NoteOff {
 //         BytesSchema<0xF0, 0x0, 0x0>,
 //     >,
 //     channel: Property<u4, UmpSchema<0x000F_0000, 0x0, 0x0, 0x0>, BytesSchema<0x0F, 0x0, 0x0>>,
-//     note: Property<u7, UmpSchema<0x0000_7F00, 0x0, 0x0, 0x0>, BytesSchema<0x0, 0x7F, 0x0>>,
+//     note_number: Property<u7, UmpSchema<0x0000_7F00, 0x0, 0x0, 0x0>, BytesSchema<0x0, 0x7F, 0x0>>,
 //     velocity: Property<u7, UmpSchema<0x0000_007F, 0x0, 0x0, 0x0>, BytesSchema<0x0, 0x0, 0x7F>>,
 // }
 
@@ -68,7 +68,7 @@ mod tests {
         let mut message = NoteOff::<[u32; 4]>::new();
         message.set_group(u4::new(0x1));
         message.set_channel(u4::new(0xA));
-        message.set_note(u7::new(0x68));
+        message.set_note_number(u7::new(0x68));
         message.set_velocity(u7::new(0x1B));
         assert_eq!(message, NoteOff([0x218A_681B, 0x0, 0x0, 0x0]));
     }
@@ -90,9 +90,11 @@ mod tests {
     }
 
     #[test]
-    fn note() {
+    fn note_number() {
         assert_eq!(
-            NoteOff::try_from(&[0x218A_681B_u32][..]).unwrap().note(),
+            NoteOff::try_from(&[0x218A_681B_u32][..])
+                .unwrap()
+                .note_number(),
             u7::new(0x68),
         );
     }

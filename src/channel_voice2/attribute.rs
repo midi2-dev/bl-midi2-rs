@@ -6,8 +6,6 @@ pub enum Attribute {
     ManufacturerSpecific(u16),
     ProfileSpecific(u16),
     Pitch7_9(crate::num::Fixed7_9),
-    // Pitch7_25 is also defined
-    // Pitch7_14??
 }
 
 const ERR_INVALID_NOTE_ATTRIBUTE: &str = "Couldn't interpret note attribute";

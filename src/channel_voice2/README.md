@@ -12,14 +12,14 @@ use midi2::{
 let mut message = NoteOn::<[u32; 4]>::new();
 message.set_group(u4::new(0x8));
 message.set_channel(u4::new(0x8));
-message.set_note(u7::new(0x5E));
+message.set_note_number(u7::new(0x5E));
 message.set_velocity(0x6A14);
 message.set_attribute(Some(NoteAttribute::Pitch7_9(Fixed7_9::from_num(70.52))));
 
 assert_eq!(message.data(), &[0x4898_5E03, 0x6A14_8D0A]);
 assert_eq!(message.group(), u4::new(0x8));
 assert_eq!(message.channel(), u4::new(0x8));
-assert_eq!(message.note(), u7::new(0x5E));
+assert_eq!(message.note_number(), u7::new(0x5E));
 assert_eq!(message.velocity(), 0x6A14);
 assert_eq!(
     message.attribute(), 

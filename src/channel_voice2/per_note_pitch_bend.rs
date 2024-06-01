@@ -20,7 +20,7 @@ struct PerNotePitchBend {
     #[property(common_properties::GroupProperty)]
     group: u4,
     #[property(common_properties::UmpSchemaProperty<u7, schema::Ump<0x0000_7F00, 0x0, 0x0, 0x0>>)]
-    note: u7,
+    note_number: u7,
     #[property(common_properties::UmpSchemaProperty<u32, schema::Ump<0x0000_0000, 0xFFFF_FFFF, 0x0, 0x0>>)]
     pitch_bend_data: u32,
 }
@@ -37,7 +37,7 @@ mod tests {
         let mut message = PerNotePitchBend::<[u32; 4]>::new();
         message.set_group(u4::new(0x9));
         message.set_channel(u4::new(0x2));
-        message.set_note(u7::new(0x76));
+        message.set_note_number(u7::new(0x76));
         message.set_pitch_bend_data(0x2AD74672);
 
         assert_eq!(
@@ -47,11 +47,11 @@ mod tests {
     }
 
     #[test]
-    fn note() {
+    fn note_number() {
         assert_eq!(
             PerNotePitchBend::try_from(&[0x4962_7600, 0x2AD74672][..])
                 .unwrap()
-                .note(),
+                .note_number(),
             u7::new(0x76),
         );
     }
