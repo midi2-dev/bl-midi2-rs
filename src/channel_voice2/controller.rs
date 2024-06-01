@@ -1,15 +1,14 @@
 use crate::{
-    detail::{property, BitOps, Truncate},
+    detail::{property, BitOps},
     error::InvalidData,
 };
-use ux::{u25, u7};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum Controller {
     Modulation(u32),
     Breath(u32),
-    Pitch7_25 { note: u7, pitch_up: u25 },
+    Pitch7_25(crate::num::Fixed7_25),
     Volume(u32),
     Balance(u32),
     Pan(u32),
@@ -62,10 +61,7 @@ pub fn from_index_and_data(index: u8, data: u32) -> Controller {
     match index {
         1 => Controller::Modulation(data),
         2 => Controller::Breath(data),
-        3 => Controller::Pitch7_25 {
-            note: u7::try_from(data >> 25).unwrap(),
-            pitch_up: data.truncate(),
-        },
+        3 => Controller::Pitch7_25(crate::num::Fixed7_25::from_bits(data)),
         7 => Controller::Volume(data),
         8 => Controller::Balance(data),
         10 => Controller::Pan(data),
@@ -93,9 +89,7 @@ pub fn to_index_and_data(c: Controller) -> (u8, u32) {
     match c {
         Controller::Modulation(data) => (1, data),
         Controller::Breath(data) => (2, data),
-        Controller::Pitch7_25 { note, pitch_up } => {
-            (3, u32::from(note << 25) | u32::from(pitch_up))
-        }
+        Controller::Pitch7_25(pitch) => (3, pitch.to_bits()),
         Controller::Volume(data) => (7, data),
         Controller::Balance(data) => (8, data),
         Controller::Pan(data) => (10, data),

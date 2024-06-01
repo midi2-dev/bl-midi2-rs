@@ -631,6 +631,6 @@ mod tests {
         let value = ux::u7::new(0x08);
         message.set_output_path_id(value);
         assert_eq!(message.output_path_id(), value);
-        assert_eq!(message.data()[30], value.into());
+        assert_eq!(message.data()[30], u8::from(value));
     }
 }

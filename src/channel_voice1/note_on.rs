@@ -3,6 +3,9 @@ use crate::{
     detail::{common_properties, schema},
 };
 
+// need to check out running statuses for full support
+// of the MIDI 1.0 byte stream protocol
+
 pub(crate) const STATUS: u8 = 0b1001;
 
 /// MIDI 1.0 Channel Voice Note On Message

@@ -1007,7 +1007,7 @@ mod tests {
     fn payload_of_empty_message() {
         let message = Sysex8::<std::vec::Vec<u32>>::new();
         let payload = message.payload().collect::<std::vec::Vec<u8>>();
-        assert_eq!(payload, std::vec![]);
+        assert_eq!(payload, std::vec::Vec::<u8>::new());
     }
 
     #[test]

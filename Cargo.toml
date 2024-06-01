@@ -36,6 +36,7 @@ utility = []
 
 [dependencies]
 derive_more = { version = "0.99.17", features = ["from"], default-features = false }
+fixed = "1.27.0"
 midi2_proc = { version = "0.5.4", path = "midi2_proc" }
 ux = "0.1.6"
 

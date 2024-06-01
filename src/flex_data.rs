@@ -997,7 +997,7 @@ impl<'a, const FORMAT: u8, B: Ump> ReadProperty<'a, B> for FormatProperty<FORMAT
         ()
     }
     fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
-        if FORMAT == buffer.buffer()[0].crumb(4).into() {
+        if FORMAT == u8::from(buffer.buffer()[0].crumb(4)) {
             Ok(())
         } else {
             Err(crate::error::InvalidData("Incorrect message format"))

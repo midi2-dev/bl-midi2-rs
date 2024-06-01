@@ -23,6 +23,8 @@ struct NoteOn {
     #[property(common_properties::GroupProperty)]
     group: u4,
     #[property(common_properties::UmpSchemaProperty<u7, schema::Ump<0x0000_7F00, 0x0, 0x0, 0x0>>)]
+    // should be named "note_nr" or "note_number"
+    // look up the MIDI Tuning Standard
     note: u7,
     #[property(common_properties::UmpSchemaProperty<u16, schema::Ump<0x0, 0xFFFF_0000, 0x0, 0x0>>)]
     velocity: u16,
@@ -37,18 +39,17 @@ mod tests {
 
     #[test]
     fn builder() {
+        use crate::num::Fixed7_9;
         use crate::traits::{Channeled, Grouped};
-        use crate::ux::u9;
 
         let mut message = NoteOn::<[u32; 4]>::new();
         message.set_group(u4::new(0x8));
         message.set_channel(u4::new(0x8));
         message.set_note(u7::new(0x5E));
         message.set_velocity(0x6A14);
-        message.set_attribute(Some(Attribute::Pitch7_9 {
-            note: u7::new(0x74),
-            pitch_up: u9::new(0x18A),
-        }));
+        message.set_attribute(Some(Attribute::Pitch7_9(Fixed7_9::from_bits(
+            0b1110100110001010,
+        ))));
 
         assert_eq!(message, NoteOn([0x4898_5E03, 0x6A14_E98A, 0x0, 0x0]),);
     }
@@ -88,14 +89,13 @@ mod tests {
 
     #[test]
     fn attribute() {
+        use crate::num::Fixed7_9;
+
         assert_eq!(
             NoteOn::try_from(&[0x4898_5E03, 0x6A14_E98A][..])
                 .unwrap()
                 .attribute(),
-            Some(Attribute::Pitch7_9 {
-                note: u7::new(0x74),
-                pitch_up: crate::ux::u9::new(0x18A),
-            }),
+            Some(Attribute::Pitch7_9(Fixed7_9::from_bits(0b1110100110001010))),
         );
     }
 }
