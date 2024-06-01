@@ -28,7 +28,7 @@ struct KeyPressure {
         schema::Bytes<0x00, 0x7F, 0x0>,
         schema::Ump<0x0000_7F00, 0x0, 0x0, 0x0>,
     >)]
-    note: crate::ux::u7,
+    note_number: crate::ux::u7,
     #[property(common_properties::HybridSchemaProperty<
         crate::ux::u7,
         schema::Bytes<0x00, 0x0, 0x7F>,
@@ -51,7 +51,7 @@ mod tests {
         let mut message = KeyPressure::<[u32; 4]>::new();
         message.set_group(u4::new(0xA));
         message.set_channel(u4::new(0x3));
-        message.set_note(u7::new(0x7F));
+        message.set_note_number(u7::new(0x7F));
         message.set_pressure(u7::new(0x5C));
         assert_eq!(message, KeyPressure([0x2AA3_7F5C, 0x0, 0x0, 0x0]));
     }
@@ -77,11 +77,11 @@ mod tests {
     }
 
     #[test]
-    fn note() {
+    fn note_number() {
         assert_eq!(
             KeyPressure::try_from(&[0x2AA3_7F5C_u32][..])
                 .unwrap()
-                .note(),
+                .note_number(),
             u7::new(0x7F),
         );
     }
