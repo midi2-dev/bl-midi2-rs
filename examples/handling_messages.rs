@@ -14,6 +14,7 @@ fn handle_message(buffer: &[u32]) {
                 _ => {}
             }
         }
+        #[cfg(feature = "sysex7")]
         Ok(UmpMessage::Sysex7(m)) => {
             println!(
                 "Sysex 7bit: payload: {:?}",
