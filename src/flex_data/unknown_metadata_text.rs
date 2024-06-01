@@ -398,7 +398,7 @@ mod tests {
             UnknownMetadataText::<std::vec::Vec<u32>>::new()
                 .text_bytes()
                 .collect::<std::vec::Vec<u8>>(),
-            std::vec![],
+            std::vec::Vec::<u8>::new(),
         )
     }
 
