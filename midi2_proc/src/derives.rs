@@ -375,16 +375,25 @@ pub fn debug(item: TokenStream1) -> TokenStream1 {
         _ => panic!("Only enums and structs supported"),
     };
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
-    let buffer_id = common::buffer_generic(generics)
-        .expect("Expected buffer generic")
-        .ident();
+
+    let buffer_id = if ident == "Packet" {
+        // special handling
+        // always a u32 slice
+        quote! {crate::buffer::UNIT_ID_U32}
+    } else {
+        let buffer_ident = common::buffer_generic(generics)
+            .expect("Expected buffer generic")
+            .ident();
+        quote! {<<#buffer_ident as crate::buffer::Buffer>::Unit as crate::buffer::UnitPrivate>::UNIT_ID}
+    };
+
     quote! {
         impl #impl_generics core::fmt::Debug for #ident #ty_generics #where_clause {
             fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
                 use crate::BufferAccess as BufferAccessDeriveDebug;
 
                 fmt.write_fmt(format_args!("{}([", stringify!(#ident)))?;
-                match <<#buffer_id as crate::buffer::Buffer>::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
+                match #buffer_id {
                     crate::buffer::UNIT_ID_U8 => {
                         use crate::buffer::SpecialiseU8 as SpecialiseU8DeriveDebug;
 

@@ -4,6 +4,10 @@ use crate::{
     ux,
 };
 
+mod packet;
+
+pub use packet::Packet;
+
 pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x5;
 
 const ERR_INVALID_NUMBER_OF_PAYLOAD_BYTES: &str = "Invalid number of payload bytes in packet";
@@ -1226,20 +1230,20 @@ mod tests {
 
         let mut packets = message.packets();
         assert_eq!(
-            packets.next(),
-            Some(&[0x501E_0000, 0x0102_0304, 0x0506_0708, 0x090A_0B0C,][..])
+            &*packets.next().unwrap(),
+            &[0x501E_0000, 0x0102_0304, 0x0506_0708, 0x090A_0B0C,][..]
         );
         assert_eq!(
-            packets.next(),
-            Some(&[0x502E_000D, 0x0E0F_1011, 0x1213_1415, 0x1617_1819,][..])
+            &*packets.next().unwrap(),
+            &[0x502E_000D, 0x0E0F_1011, 0x1213_1415, 0x1617_1819,][..]
         );
         assert_eq!(
-            packets.next(),
-            Some(&[0x502E_001A, 0x1B1C_1D1E, 0x1F20_2122, 0x2324_2526,][..])
+            &*packets.next().unwrap(),
+            &[0x502E_001A, 0x1B1C_1D1E, 0x1F20_2122, 0x2324_2526,][..]
         );
         assert_eq!(
-            packets.next(),
-            Some(&[0x503C_0027, 0x2829_2A2B, 0x2C2D_2E2F, 0x3031_0000,][..])
+            &*packets.next().unwrap(),
+            &[0x503C_0027, 0x2829_2A2B, 0x2C2D_2E2F, 0x3031_0000,][..]
         );
         assert_eq!(packets.next(), None);
     }
@@ -1250,7 +1254,7 @@ mod tests {
 
         let message = Sysex8::<[u32; 4]>::new();
         let mut packets = message.packets();
-        assert_eq!(packets.next(), Some(&[0x5001_0000, 0x0, 0x0, 0x0][..]));
+        assert_eq!(&*packets.next().unwrap(), &[0x5001_0000, 0x0, 0x0, 0x0][..]);
         assert_eq!(packets.next(), None);
     }
 }

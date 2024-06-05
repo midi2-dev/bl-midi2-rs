@@ -137,7 +137,7 @@ mod tests {
         let buffer = [0x2AB7_3637_u32];
         let message = ControlChange::try_from(&buffer[..]).unwrap();
         let mut packets = message.packets();
-        assert_eq!(packets.next(), Some(&[0x2AB7_3637_u32][..]));
+        assert_eq!(&*packets.next().unwrap(), &[0x2AB7_3637_u32][..]);
         assert_eq!(packets.next(), None);
     }
 }

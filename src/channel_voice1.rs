@@ -7,6 +7,7 @@ mod control_change;
 mod key_pressure;
 mod note_off;
 mod note_on;
+mod packet;
 mod pitch_bend;
 mod program_change;
 
@@ -15,6 +16,7 @@ pub use control_change::*;
 pub use key_pressure::*;
 pub use note_off::*;
 pub use note_on::*;
+pub use packet::Packet;
 pub use pitch_bend::*;
 pub use program_change::*;
 
@@ -52,7 +54,9 @@ impl<'a, U: crate::buffer::Unit> core::convert::TryFrom<&'a [U]> for ChannelVoic
     type Error = crate::error::InvalidData;
     fn try_from(buffer: &'a [U]) -> Result<Self, Self::Error> {
         if buffer.is_empty() {
-            return Err(crate::error::InvalidData("Slice is too short"));
+            return Err(crate::error::InvalidData(
+                crate::detail::common_err_strings::ERR_SLICE_TOO_SHORT,
+            ));
         };
         Ok(match status(buffer) {
             channel_pressure::STATUS => ChannelPressure::try_from(buffer)?.into(),
@@ -183,7 +187,7 @@ mod test {
     fn packets() {
         let message = ChannelVoice1::try_from(&[0x2FD6_0900_u32][..]).unwrap();
         let mut packets = message.packets();
-        assert_eq!(packets.next(), Some(&[0x2FD6_0900_u32][..]));
+        assert_eq!(&*packets.next().unwrap(), &[0x2FD6_0900_u32][..]);
         assert_eq!(packets.next(), None);
     }
 

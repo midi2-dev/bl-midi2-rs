@@ -2,6 +2,7 @@
 
 pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x1;
 
+mod packet;
 mod song_position_pointer;
 mod song_select;
 mod time_code;
@@ -177,6 +178,7 @@ mod reset {
 
 pub use active_sensing::*;
 pub use cont::*;
+pub use packet::Packet;
 pub use reset::*;
 pub use song_position_pointer::*;
 pub use song_select::*;
@@ -331,7 +333,7 @@ mod tests {
         let message = SystemCommon::try_from(&[0x15F1_5F00_u32][..]).unwrap();
         let mut packets = message.packets();
 
-        assert_eq!(packets.next(), Some(&[0x15F1_5F00_u32][..]));
+        assert_eq!(&*packets.next().unwrap(), &[0x15F1_5F00_u32][..]);
         assert_eq!(packets.next(), None);
     }
 

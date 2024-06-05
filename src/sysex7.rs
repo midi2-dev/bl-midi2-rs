@@ -6,6 +6,10 @@ use crate::{
     ux::{self, u7},
 };
 
+mod packet;
+
+pub use packet::Packet;
+
 pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x3;
 
 #[midi2_proc::generate_message(MinSizeUmp(2), MinSizeBytes(2))]
@@ -1633,11 +1637,11 @@ mod tests {
         let message = Sysex7::try_from(&buffer[..]).unwrap();
         let mut packets = message.packets();
 
-        assert_eq!(packets.next(), Some(&[0x3016_0001, 0x0203_0405,][..]));
-        assert_eq!(packets.next(), Some(&[0x3026_0607, 0x0809_0A0B,][..]));
-        assert_eq!(packets.next(), Some(&[0x3026_0C0D, 0x0E0F_1011,][..]));
-        assert_eq!(packets.next(), Some(&[0x3026_1213, 0x1415_1617,][..]));
-        assert_eq!(packets.next(), Some(&[0x3036_1819, 0x1A1B_1C1D,][..]));
+        assert_eq!(&*packets.next().unwrap(), &[0x3016_0001, 0x0203_0405,][..]);
+        assert_eq!(&*packets.next().unwrap(), &[0x3026_0607, 0x0809_0A0B,][..]);
+        assert_eq!(&*packets.next().unwrap(), &[0x3026_0C0D, 0x0E0F_1011,][..]);
+        assert_eq!(&*packets.next().unwrap(), &[0x3026_1213, 0x1415_1617,][..]);
+        assert_eq!(&*packets.next().unwrap(), &[0x3036_1819, 0x1A1B_1C1D,][..]);
         assert_eq!(packets.next(), None);
     }
 
@@ -1648,7 +1652,7 @@ mod tests {
         let message = Sysex7::<[u32; 2]>::new();
         let mut packets = message.packets();
 
-        assert_eq!(packets.next(), Some(&[0x3000_0000, 0x0][..]));
+        assert_eq!(&*packets.next().unwrap(), &[0x3000_0000, 0x0][..]);
         assert_eq!(packets.next(), None);
     }
 }

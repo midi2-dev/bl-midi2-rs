@@ -87,7 +87,7 @@ mod tests {
         let message = SongPositionPointer::try_from(&[0x1AF2_7D6C][..]).unwrap();
 
         let mut packets = message.packets();
-        assert_eq!(packets.next(), Some(&[0x1AF2_7D6C][..]));
+        assert_eq!(&*packets.next().unwrap(), &[0x1AF2_7D6C][..]);
         assert_eq!(packets.next(), None);
     }
 }

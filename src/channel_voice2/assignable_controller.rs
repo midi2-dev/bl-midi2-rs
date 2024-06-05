@@ -109,7 +109,7 @@ mod tests {
         let buffer = [0x4C38_5138, 0x3F3ADD42];
         let message = AssignableController::try_from(&buffer[..]).unwrap();
         let mut packets = message.packets();
-        assert_eq!(packets.next(), Some(&[0x4C38_5138, 0x3F3ADD42][..]));
+        assert_eq!(&*packets.next().unwrap(), &[0x4C38_5138, 0x3F3ADD42][..]);
         assert_eq!(packets.next(), None);
     }
 }

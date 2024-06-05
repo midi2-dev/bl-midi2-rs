@@ -542,7 +542,7 @@ fn try_from_slice_impl(root_ident: &syn::Ident, properties: &[Property]) -> Toke
             type Error = crate::error::InvalidData;
             fn try_from(buffer: &'a [u8]) -> core::result::Result<Self, Self::Error> {
                 if buffer.len() < <Self as crate::traits::MinSize<&[u8]>>::MIN_SIZE {
-                    return Err(crate::error::InvalidData("Slice is too short"));
+                    return Err(crate::error::InvalidData(crate::detail::common_err_strings::ERR_SLICE_TOO_SHORT));
                 }
                 if buffer[5] != VERSION {
                     return Err(crate::error::InvalidData("Incorrect CI version"));

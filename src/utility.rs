@@ -129,6 +129,7 @@ pub use clock::Clock;
 pub use delta_clockstamp::DeltaClockstamp;
 pub use delta_clockstamp_tpq::DeltaClockstampTpq;
 pub use no_op::NoOp;
+pub use packet::Packet;
 pub use timestamp::Timestamp;
 
 struct DataProperty;
@@ -187,7 +188,9 @@ impl<'a> core::convert::TryFrom<&'a [u32]> for Utility<&'a [u32]> {
     type Error = crate::error::InvalidData;
     fn try_from(buffer: &'a [u32]) -> Result<Self, Self::Error> {
         if buffer.is_empty() {
-            return Err(crate::error::InvalidData("Slice is too short"));
+            return Err(crate::error::InvalidData(
+                crate::detail::common_err_strings::ERR_SLICE_TOO_SHORT,
+            ));
         };
         Ok(match status(buffer) {
             no_op::STATUS => no_op::NoOp::try_from(buffer)?.into(),
@@ -215,6 +218,7 @@ fn status<U: crate::buffer::Unit>(buffer: &[U]) -> u8 {
     }
     .into()
 }
+mod packet;
 
 #[cfg(test)]
 mod tests {
@@ -238,7 +242,7 @@ mod tests {
         let message = Utility::try_from(&[0x0010_1234][..]).unwrap();
 
         let mut packets = message.packets();
-        assert_eq!(packets.next(), Some(&[0x0010_1234][..]));
+        assert_eq!(&*packets.next().unwrap(), &[0x0010_1234][..]);
         assert_eq!(packets.next(), None);
     }
 
