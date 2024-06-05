@@ -1,6 +1,6 @@
 [package]
 name = "midi2"
-version = "0.5.3"
+version = "0.5.4"
 description = "Ergonomic, versatile, strong types wrapping MIDI 2.0 message data."
 edition = "2021"
 readme = "README.md"
@@ -8,7 +8,7 @@ license = "MIT OR Apache-2.0"
 authors = [
     "Ben Leadbetter <ben.leadbetter@hotmail.com>",
 ]
-repository = "https://github.com/BenLeadbetter/midi2.git"
+repository = "https://github.com/midi2-dev/bl-midi2-rs.git"
 
 [workspace]
 members = [
@@ -36,7 +36,7 @@ utility = []
 
 [dependencies]
 derive_more = { version = "0.99.17", features = ["from"], default-features = false }
-midi2_proc = { version = "0.5.3", path = "midi2_proc" }
+midi2_proc = { version = "0.5.4", path = "midi2_proc" }
 ux = "0.1.6"
 
 [dev-dependencies]
