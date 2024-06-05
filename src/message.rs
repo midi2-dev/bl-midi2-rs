@@ -263,15 +263,15 @@ mod tests {
         let message = UmpMessage::try_from(&buffer[..]).unwrap();
         let mut packets = message.packets();
 
-        assert_eq!(packets.next(), Some(&[0x3E16_0001, 0x0203_0405,][..]));
-        assert_eq!(packets.next(), Some(&[0x3E26_0607, 0x0809_0A0B,][..]));
-        assert_eq!(packets.next(), Some(&[0x3E26_0C0D, 0x0E0F_1011,][..]));
-        assert_eq!(packets.next(), Some(&[0x3E26_1213, 0x1415_1617,][..]));
-        assert_eq!(packets.next(), Some(&[0x3E26_1819, 0x1A1B_1C1D,][..]));
-        assert_eq!(packets.next(), Some(&[0x3E26_1E1F, 0x2021_2223,][..]));
-        assert_eq!(packets.next(), Some(&[0x3E26_2425, 0x2627_2829,][..]));
-        assert_eq!(packets.next(), Some(&[0x3E26_2A2B, 0x2C2D_2E2F,][..]));
-        assert_eq!(packets.next(), Some(&[0x3E32_3031, 0x0000_0000,][..]));
+        assert_eq!(&*packets.next().unwrap(), &[0x3E16_0001, 0x0203_0405,][..]);
+        assert_eq!(&*packets.next().unwrap(), &[0x3E26_0607, 0x0809_0A0B,][..]);
+        assert_eq!(&*packets.next().unwrap(), &[0x3E26_0C0D, 0x0E0F_1011,][..]);
+        assert_eq!(&*packets.next().unwrap(), &[0x3E26_1213, 0x1415_1617,][..]);
+        assert_eq!(&*packets.next().unwrap(), &[0x3E26_1819, 0x1A1B_1C1D,][..]);
+        assert_eq!(&*packets.next().unwrap(), &[0x3E26_1E1F, 0x2021_2223,][..]);
+        assert_eq!(&*packets.next().unwrap(), &[0x3E26_2425, 0x2627_2829,][..]);
+        assert_eq!(&*packets.next().unwrap(), &[0x3E26_2A2B, 0x2C2D_2E2F,][..]);
+        assert_eq!(&*packets.next().unwrap(), &[0x3E32_3031, 0x0000_0000,][..]);
         assert_eq!(packets.next(), None);
     }
 

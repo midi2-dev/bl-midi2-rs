@@ -129,8 +129,8 @@ mod tests {
         let mut packets = message.packets();
 
         assert_eq!(
-            packets.next(),
-            Some(&[0xF002_0000, 0x000F_3328, 0x4A1E_1870, 0x4354_3201][..])
+            &*packets.next().unwrap(),
+            &[0xF002_0000, 0x000F_3328, 0x4A1E_1870, 0x4354_3201][..],
         );
         assert_eq!(packets.next(), None);
     }

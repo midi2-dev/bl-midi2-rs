@@ -11,6 +11,7 @@ mod endpoint_name;
 mod function_block_discovery;
 mod function_block_info;
 mod function_block_name;
+mod packet;
 mod product_instance_id;
 mod start_of_clip;
 mod stream_configuration_notification;
@@ -24,6 +25,7 @@ pub use endpoint_name::*;
 pub use function_block_discovery::*;
 pub use function_block_info::*;
 pub use function_block_name::FunctionBlockName;
+pub use packet::{Format, Packet};
 pub use product_instance_id::*;
 pub use start_of_clip::*;
 pub use stream_configuration_notification::*;
@@ -69,7 +71,9 @@ impl<'a> TryFrom<&'a [u32]> for UmpStream<&'a [u32]> {
     fn try_from(value: &'a [u32]) -> Result<Self, Self::Error> {
         use UmpStream::*;
         if value.is_empty() {
-            return Err(crate::error::InvalidData("Slice is too short"));
+            return Err(crate::error::InvalidData(
+                crate::detail::common_err_strings::ERR_SLICE_TOO_SHORT,
+            ));
         };
         Ok(match status_from_buffer(value) {
             device_identity::STATUS => {
@@ -511,20 +515,20 @@ mod tests {
 
         let mut packets = message.packets();
         assert_eq!(
-            packets.next(),
-            Some(&[0xF403_5268, 0x7974_686D, 0x5265_7665, 0x6C61_7469,][..])
+            &*packets.next().unwrap(),
+            &[0xF403_5268, 0x7974_686D, 0x5265_7665, 0x6C61_7469,][..],
         );
         assert_eq!(
-            packets.next(),
-            Some(&[0xF803_6F6E, 0x3A20_4265, 0x6174_7320, 0x4265_796F,][..])
+            &*packets.next().unwrap(),
+            &[0xF803_6F6E, 0x3A20_4265, 0x6174_7320, 0x4265_796F,][..],
         );
         assert_eq!(
-            packets.next(),
-            Some(&[0xF803_6E64, 0x2042_6F75, 0x6E64_6172, 0x6965_73F0,][..])
+            &*packets.next().unwrap(),
+            &[0xF803_6E64, 0x2042_6F75, 0x6E64_6172, 0x6965_73F0,][..],
         );
         assert_eq!(
-            packets.next(),
-            Some(&[0xFC03_9F8C, 0x8DF0_9FA5, 0x81F0_9F9A, 0x8000_0000,][..])
+            &*packets.next().unwrap(),
+            &[0xFC03_9F8C, 0x8DF0_9FA5, 0x81F0_9F9A, 0x8000_0000,][..],
         );
         assert_eq!(packets.next(), None,);
     }
