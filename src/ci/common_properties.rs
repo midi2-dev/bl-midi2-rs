@@ -12,9 +12,7 @@ impl<B: Bytes> property::Property<B> for UniversalSystemExclusiveByteProperty {
 }
 
 impl<'a, B: Bytes> property::ReadProperty<'a, B> for UniversalSystemExclusiveByteProperty {
-    fn read(_buffer: &'a B) -> Self::Type {
-        ()
-    }
+    fn read(_buffer: &'a B) -> Self::Type {}
     fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         if buffer.buffer()[1] == 0x7E {
             Ok(())
@@ -33,9 +31,7 @@ impl<B: Bytes + BufferMut> property::WriteProperty<B> for UniversalSystemExclusi
     fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
-    fn default() -> Self::Type {
-        ()
-    }
+    fn default() -> Self::Type {}
 }
 
 pub struct DeviceIdProperty;
@@ -82,18 +78,14 @@ impl<'a, B: Bytes> property::ReadProperty<'a, B> for DeviceIdToFunctionBlockProp
             ))
         }
     }
-    fn read(_buffer: &'a B) -> Self::Type {
-        ()
-    }
+    fn read(_buffer: &'a B) -> Self::Type {}
 }
 
 impl<B: Bytes + BufferMut> property::WriteProperty<B> for DeviceIdToFunctionBlockProperty {
     fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
-    fn default() -> Self::Type {
-        ()
-    }
+    fn default() -> Self::Type {}
     fn write(buffer: &mut B, _v: Self::Type) {
         buffer.buffer_mut()[2] = 0x7F;
     }
@@ -115,18 +107,14 @@ impl<'a, B: Bytes> property::ReadProperty<'a, B> for UniversalSysexSubId1MidiCi 
             ))
         }
     }
-    fn read(_buffer: &'a B) -> Self::Type {
-        ()
-    }
+    fn read(_buffer: &'a B) -> Self::Type {}
 }
 
 impl<B: Bytes + BufferMut> property::WriteProperty<B> for UniversalSysexSubId1MidiCi {
     fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
-    fn default() -> Self::Type {
-        ()
-    }
+    fn default() -> Self::Type {}
     fn write(buffer: &mut B, _v: Self::Type) {
         buffer.buffer_mut()[3] = 0x0D;
     }
@@ -150,9 +138,7 @@ impl<'a, const STATUS: u8, B: Bytes> property::ReadProperty<'a, B>
             ))
         }
     }
-    fn read(_buffer: &'a B) -> Self::Type {
-        ()
-    }
+    fn read(_buffer: &'a B) -> Self::Type {}
 }
 
 impl<const STATUS: u8, B: Bytes + BufferMut> property::WriteProperty<B>
@@ -161,9 +147,7 @@ impl<const STATUS: u8, B: Bytes + BufferMut> property::WriteProperty<B>
     fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
-    fn default() -> Self::Type {
-        ()
-    }
+    fn default() -> Self::Type {}
     fn write(buffer: &mut B, _v: Self::Type) {
         buffer.buffer_mut()[4] = STATUS;
     }
@@ -245,9 +229,7 @@ impl<'a, B: Bytes> property::ReadProperty<'a, B> for BroadcastDestinationPropert
             ))
         }
     }
-    fn read(_buffer: &'a B) -> Self::Type {
-        ()
-    }
+    fn read(_buffer: &'a B) -> Self::Type {}
 }
 
 impl<B: Bytes + BufferMut> property::WriteProperty<B> for BroadcastDestinationProperty {

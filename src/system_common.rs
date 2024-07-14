@@ -220,11 +220,11 @@ pub enum SystemCommon<B: crate::buffer::Buffer> {
 impl<'a, U: crate::buffer::Unit> core::convert::TryFrom<&'a [U]> for SystemCommon<&'a [U]> {
     type Error = crate::error::InvalidData;
     fn try_from(buffer: &'a [U]) -> Result<Self, Self::Error> {
-        if buffer.len() < 1 {
+        if buffer.is_empty() {
             return Err(crate::error::InvalidData("Slice is too short"));
         };
 
-        Ok(match status(&buffer) {
+        Ok(match status(buffer) {
             active_sensing::STATUS => active_sensing::ActiveSensing::try_from(buffer)?.into(),
             cont::STATUS => cont::Continue::try_from(buffer)?.into(),
             reset::STATUS => reset::Reset::try_from(buffer)?.into(),
@@ -255,9 +255,7 @@ impl<const STATUS: u8, B: crate::buffer::Buffer> crate::detail::property::Proper
 impl<'a, const STATUS: u8, B: crate::buffer::Buffer> crate::detail::property::ReadProperty<'a, B>
     for SystemCommonStatus<STATUS>
 {
-    fn read(_buffer: &'a B) -> Self::Type {
-        ()
-    }
+    fn read(_buffer: &'a B) -> Self::Type {}
     fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         if status(buffer.buffer()) != STATUS {
             Err(crate::error::InvalidData("Incorrect status field"))

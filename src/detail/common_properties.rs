@@ -16,9 +16,7 @@ impl<const TYPE: u8, B: Buffer> Property<B> for UmpMessageTypeProperty<TYPE> {
 }
 
 impl<'a, const TYPE: u8, B: Buffer> ReadProperty<'a, B> for UmpMessageTypeProperty<TYPE> {
-    fn read(_buffer: &'a B) -> Self::Type {
-        ()
-    }
+    fn read(_buffer: &'a B) -> Self::Type {}
     fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         if <B::Unit as UnitPrivate>::UNIT_ID == UNIT_ID_U32 {
             let b = buffer.buffer().specialise_u32()[0];
@@ -41,9 +39,7 @@ impl<const TYPE: u8, B: Buffer + crate::buffer::BufferMut> WriteProperty<B>
     fn validate(_value: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
-    fn default() -> Self::Type {
-        ()
-    }
+    fn default() -> Self::Type {}
 }
 
 pub struct ChannelVoiceStatusProperty<const STATUS: u8>;
@@ -53,9 +49,7 @@ impl<const STATUS: u8, B: Buffer> Property<B> for ChannelVoiceStatusProperty<STA
 }
 
 impl<'a, const STATUS: u8, B: Buffer> ReadProperty<'a, B> for ChannelVoiceStatusProperty<STATUS> {
-    fn read(_buffer: &'a B) -> Self::Type {
-        ()
-    }
+    fn read(_buffer: &'a B) -> Self::Type {}
     fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         let status = match <B::Unit as UnitPrivate>::UNIT_ID {
             UNIT_ID_U32 => {
@@ -95,9 +89,7 @@ impl<const STATUS: u8, B: Buffer + crate::buffer::BufferMut> WriteProperty<B>
     fn validate(_value: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
-    fn default() -> Self::Type {
-        ()
-    }
+    fn default() -> Self::Type {}
 }
 
 pub type ChannelProperty = HybridSchemaProperty<

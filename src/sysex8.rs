@@ -39,9 +39,7 @@ impl<B: crate::buffer::Ump> crate::detail::property::Property<B> for ConsistentS
 impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B>
     for ConsistentStatuses
 {
-    fn read(_buffer: &'a B) -> Self::Type {
-        ()
-    }
+    fn read(_buffer: &'a B) -> Self::Type {}
     fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         message_helpers::validate_sysex_group_statuses(
             buffer.buffer(),
@@ -66,7 +64,7 @@ impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B> for
     fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         if buffer.buffer().chunks_exact(4).any(|p| {
             let number_bytes = u8::from(p[0].nibble(3));
-            number_bytes < 1 || number_bytes > 14
+            !(1..=14).contains(&number_bytes)
         }) {
             Err(crate::error::InvalidData(
                 ERR_INVALID_NUMBER_OF_PAYLOAD_BYTES,
@@ -264,7 +262,7 @@ impl<'a> core::iter::Iterator for PayloadIterator<'a> {
         };
 
         let ret = do_nth();
-        if let None = ret {
+        if ret.is_none() {
             // if we failed it means we ran out of data
             // so we set the iterator into finished state
             self.packet_index = self.data.len() / 2;
@@ -333,7 +331,7 @@ impl<B: crate::buffer::Ump> Sysex<B> for Sysex8<B> {
             size_cache: self
                 .data()
                 .chunks_exact(4)
-                .map(|packet| PayloadIterator::packet_size(packet))
+                .map(PayloadIterator::packet_size)
                 .sum(),
         }
     }
@@ -407,7 +405,7 @@ fn try_resize<
 
     let mut buffer_size = buffer_size_from_payload_size(payload_size);
     let resize_result = try_resize_buffer(sysex, buffer_size);
-    if let Err(_) = resize_result {
+    if resize_result.is_err() {
         // resize failed. We make do with what we've got
         buffer_size = sysex.0.buffer().len();
         payload_size = buffer_size * 13 / 4;
@@ -863,9 +861,9 @@ mod tests {
         assert_eq!(payload.len(), 7);
         assert_eq!(payload.nth(5), Some(0x30));
         assert_eq!(payload.len(), 1);
-        assert_eq!(payload.nth(0), Some(0x31));
+        assert_eq!(payload.next(), Some(0x31));
         assert_eq!(payload.len(), 0);
-        assert_eq!(payload.nth(0), None);
+        assert_eq!(payload.next(), None);
     }
 
     #[test]

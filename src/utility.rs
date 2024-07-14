@@ -186,7 +186,7 @@ pub enum Utility<B: crate::buffer::Ump> {
 impl<'a> core::convert::TryFrom<&'a [u32]> for Utility<&'a [u32]> {
     type Error = crate::error::InvalidData;
     fn try_from(buffer: &'a [u32]) -> Result<Self, Self::Error> {
-        if buffer.len() < 1 {
+        if buffer.is_empty() {
             return Err(crate::error::InvalidData("Slice is too short"));
         };
         Ok(match status(buffer) {

@@ -44,7 +44,7 @@ impl syn::parse::Parse for GenerateMessageArgs {
                 args.min_size_bytes = Some(parse_fixed_size(input));
             }
 
-            if let Err(_) = input.parse::<syn::Token![,]>() {
+            if input.parse::<syn::Token![,]>().is_err() {
                 assert!(input.is_empty());
                 break;
             }
@@ -123,7 +123,7 @@ pub fn properties(input: &syn::ItemStruct) -> Vec<Property> {
 }
 
 pub fn initialise_property_statements(
-    properties: &Vec<Property>,
+    properties: &[Property],
     buffer_type: TokenStream,
 ) -> TokenStream {
     let mut initialise_properties = TokenStream::new();
@@ -177,7 +177,7 @@ fn property_setter(property: &Property, public: bool) -> TokenStream {
 
     if property.resize {
         let fallible_ident = syn::Ident::new(
-            format!("try_{}", ident.to_string()).as_str(),
+            format!("try_{}", ident).as_str(),
             proc_macro2::Span::call_site(),
         );
         quote! {
@@ -227,7 +227,7 @@ fn generic_buffer_constraint(args: &GenerateMessageArgs) -> TokenStream {
 fn message(
     root_ident: &syn::Ident,
     args: &GenerateMessageArgs,
-    attributes: &Vec<syn::Attribute>,
+    attributes: &[syn::Attribute],
 ) -> TokenStream {
     let constraint = generic_buffer_constraint(args);
 
@@ -252,7 +252,7 @@ fn message(
 fn message_impl(
     root_ident: &syn::Ident,
     args: &GenerateMessageArgs,
-    properties: &Vec<Property>,
+    properties: &[Property],
 ) -> TokenStream {
     let constraint = generic_buffer_constraint(args);
 
@@ -352,7 +352,7 @@ fn packets_impl(root_ident: &syn::Ident) -> TokenStream {
 fn try_from_slice_impl(
     root_ident: &syn::Ident,
     args: &GenerateMessageArgs,
-    properties: &Vec<Property>,
+    properties: &[Property],
 ) -> TokenStream {
     let mut validation_steps = TokenStream::new();
     let generic_unit = match args.representation() {
@@ -439,7 +439,7 @@ fn try_rebuffer_from_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -
 fn new_impl(
     root_ident: &syn::Ident,
     args: &GenerateMessageArgs,
-    properties: &Vec<Property>,
+    properties: &[Property],
 ) -> TokenStream {
     let constraint = generic_buffer_constraint(args);
     let initialise_properties = initialise_property_statements(properties, quote! {B});
@@ -466,7 +466,7 @@ fn new_impl(
 fn new_array_impl(
     root_ident: &syn::Ident,
     args: &GenerateMessageArgs,
-    properties: &Vec<Property>,
+    properties: &[Property],
 ) -> TokenStream {
     let generics = match args.representation() {
         Representation::UmpOrBytes => quote! { , U: crate::buffer::Unit },
@@ -501,7 +501,7 @@ fn new_array_impl(
 fn try_new_impl(
     root_ident: &syn::Ident,
     args: &GenerateMessageArgs,
-    properties: &Vec<Property>,
+    properties: &[Property],
 ) -> TokenStream {
     let constraint = generic_buffer_constraint(args);
     let initialise_properties = initialise_property_statements(properties, quote! {B});
@@ -563,7 +563,7 @@ fn channeled_impl(
     }
 }
 
-fn from_bytes_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
+fn from_bytes_impl(root_ident: &syn::Ident, properties: &[Property]) -> TokenStream {
     let convert_properties = convert_properties(properties, &quote! { B });
     quote! {
         impl<
@@ -584,7 +584,7 @@ fn from_bytes_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> Token
     }
 }
 
-fn from_bytes_array_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
+fn from_bytes_array_impl(root_ident: &syn::Ident, properties: &[Property]) -> TokenStream {
     let array_type = quote! { [u32; SIZE] };
     let convert_properties = convert_properties(properties, &array_type);
     quote! {
@@ -600,7 +600,7 @@ fn from_bytes_array_impl(root_ident: &syn::Ident, properties: &Vec<Property>) ->
     }
 }
 
-fn try_from_bytes_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
+fn try_from_bytes_impl(root_ident: &syn::Ident, properties: &[Property]) -> TokenStream {
     let convert_properties = convert_properties(properties, &quote! { B });
     quote! {
         impl<
@@ -621,7 +621,7 @@ fn try_from_bytes_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> T
     }
 }
 
-fn convert_properties(properties: &Vec<Property>, target_buffer_type: &TokenStream) -> TokenStream {
+fn convert_properties(properties: &[Property], target_buffer_type: &TokenStream) -> TokenStream {
     let mut convert_properties = TokenStream::new();
     for property in properties.iter().filter(|p| !p.readonly && !p.writeonly) {
         let std_only_attribute = common::std_only_attribute(property.std);
@@ -638,7 +638,7 @@ fn convert_properties(properties: &Vec<Property>, target_buffer_type: &TokenStre
     convert_properties
 }
 
-fn from_ump_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
+fn from_ump_impl(root_ident: &syn::Ident, properties: &[Property]) -> TokenStream {
     let convert_properties = convert_properties(properties, &quote! { B });
     quote! {
         impl<
@@ -659,7 +659,7 @@ fn from_ump_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenSt
     }
 }
 
-fn from_ump_array_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
+fn from_ump_array_impl(root_ident: &syn::Ident, properties: &[Property]) -> TokenStream {
     let array_type = quote! { [u8; SIZE] };
     let convert_properties = convert_properties(properties, &array_type);
     quote! {
@@ -675,7 +675,7 @@ fn from_ump_array_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> T
     }
 }
 
-fn try_from_ump_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
+fn try_from_ump_impl(root_ident: &syn::Ident, properties: &[Property]) -> TokenStream {
     let convert_properties = convert_properties(properties, &quote! { B });
     quote! {
         impl<
@@ -787,11 +787,11 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     }
     if let Some(via_type) = args.via.as_ref() {
         match args.representation() {
-            Representation::Ump => tokens.extend(ump_message_via(root_ident, &via_type)),
-            Representation::Bytes => tokens.extend(bytes_message_via(root_ident, &via_type)),
+            Representation::Ump => tokens.extend(ump_message_via(root_ident, via_type)),
+            Representation::Bytes => tokens.extend(bytes_message_via(root_ident, via_type)),
             Representation::UmpOrBytes => {
-                tokens.extend(ump_message_via(root_ident, &via_type));
-                tokens.extend(bytes_message_via(root_ident, &via_type));
+                tokens.extend(ump_message_via(root_ident, via_type));
+                tokens.extend(bytes_message_via(root_ident, via_type));
             }
         }
     }

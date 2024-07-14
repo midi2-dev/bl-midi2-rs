@@ -375,7 +375,7 @@ pub fn debug(item: TokenStream1) -> TokenStream1 {
         _ => panic!("Only enums and structs supported"),
     };
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
-    let buffer_id = common::buffer_generic(&generics)
+    let buffer_id = common::buffer_generic(generics)
         .expect("Expected buffer generic")
         .ident();
     quote! {

@@ -39,7 +39,7 @@ pub fn has_attr(field: &syn::Field, id: &str) -> bool {
         path.segments
             .last()
             .iter()
-            .any(|&segment| segment.ident.to_string() == id)
+            .any(|&segment| segment.ident == id)
     })
 }
 
@@ -59,7 +59,7 @@ pub fn meta_type(field: &syn::Field) -> syn::Type {
                 .segments
                 .last()
                 .iter()
-                .any(|&segment| segment.ident.to_string() == "property")
+                .any(|&segment| segment.ident == "property")
         })
         .map(|list| {
             list.parse_args::<syn::Type>()
@@ -70,7 +70,7 @@ pub fn meta_type(field: &syn::Field) -> syn::Type {
 
 pub fn is_unit_tuple(ty: &syn::Type) -> bool {
     match ty {
-        syn::Type::Tuple(tup) => tup.elems.len() == 0,
+        syn::Type::Tuple(tup) => tup.elems.is_empty(),
         _ => false,
     }
 }
@@ -90,34 +90,34 @@ pub fn buffer_generic(generics: &syn::Generics) -> Option<BufferGeneric> {
             None
         }
     };
-    let buffer_bound = |id: &'static str| {
-        move |bound: &syn::TraitBound| match bound.path.segments.last().as_ref() {
+    let is_buffer_bound = |id: &'static str| {
+        move |bound: syn::TraitBound| match bound.path.segments.last().as_ref() {
             Some(segment) => segment.ident == id,
             None => false,
         }
     };
     for param in generics.params.iter().filter_map(type_param) {
-        if let Some(_) = param
+        if param
             .bounds
             .iter()
             .filter_map(trait_bound)
-            .find(buffer_bound("Ump"))
+            .any(is_buffer_bound("Ump"))
         {
             return Some(BufferGeneric::Ump(param.clone()));
         };
-        if let Some(_) = param
+        if param
             .bounds
             .iter()
             .filter_map(trait_bound)
-            .find(buffer_bound("Bytes"))
+            .any(is_buffer_bound("Bytes"))
         {
             return Some(BufferGeneric::Bytes(param.clone()));
         };
-        if let Some(_) = param
+        if param
             .bounds
             .iter()
             .filter_map(trait_bound)
-            .find(buffer_bound("Buffer"))
+            .any(is_buffer_bound("Buffer"))
         {
             return Some(BufferGeneric::UmpOrBytes(param.clone()));
         };

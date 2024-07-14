@@ -26,7 +26,7 @@ impl syn::parse::Parse for GenerateCiArgs {
                 args.supported_versions.push(parse_supported_version(input))
             }
 
-            if let Err(_) = input.parse::<syn::Token![,]>() {
+            if input.parse::<syn::Token![,]>().is_err() {
                 assert!(input.is_empty());
                 break;
             }
@@ -148,7 +148,7 @@ fn parse_version(field: &syn::Field) -> u8 {
                 .segments
                 .last()
                 .iter()
-                .any(|&segment| segment.ident.to_string() == "version")
+                .any(|&segment| segment.ident == "version")
         })
         .map(|list| {
             list.parse_args::<syn::LitInt>()
@@ -160,7 +160,7 @@ fn parse_version(field: &syn::Field) -> u8 {
 }
 
 fn initialise_property_statements(
-    properties: &Vec<Property>,
+    properties: &[Property],
     buffer_type: TokenStream,
 ) -> TokenStream {
     let mut initialise_properties = TokenStream::new();
@@ -220,7 +220,7 @@ fn property_setter(property: &Property, public: bool) -> TokenStream {
 
     if property.resize {
         let fallible_ident = syn::Ident::new(
-            format!("try_{}", ident.to_string()).as_str(),
+            format!("try_{}", ident).as_str(),
             proc_macro2::Span::call_site(),
         );
         quote! {
@@ -265,7 +265,7 @@ fn imports() -> TokenStream {
     }
 }
 
-fn message(root_ident: &syn::Ident, attributes: &Vec<syn::Attribute>) -> TokenStream {
+fn message(root_ident: &syn::Ident, attributes: &[syn::Attribute]) -> TokenStream {
     let mut doc_attributes = TokenStream::new();
     for attribute in attributes.iter() {
         if let syn::Meta::NameValue(syn::MetaNameValue { path, .. }) = &attribute.meta {
@@ -300,7 +300,7 @@ fn buffer_access_impl(root_ident: &syn::Ident) -> TokenStream {
     }
 }
 
-fn new_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
+fn new_impl(root_ident: &syn::Ident, properties: &[Property]) -> TokenStream {
     let initialise_properties = initialise_property_statements(properties, quote! {B});
     quote! {
         impl<const VERSION: u8,
@@ -328,7 +328,7 @@ fn new_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream 
     }
 }
 
-fn try_new_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
+fn try_new_impl(root_ident: &syn::Ident, properties: &[Property]) -> TokenStream {
     let initialise_properties = initialise_property_statements(properties, quote! {B});
     quote! {
         impl<const VERSION: u8,
@@ -407,7 +407,7 @@ fn deref_sysex7_impl(root_ident: &syn::Ident) -> TokenStream {
     }
 }
 
-fn message_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
+fn message_impl(root_ident: &syn::Ident, properties: &[Property]) -> TokenStream {
     let mut methods = TokenStream::new();
     for property in properties.iter().filter(|p| !p.constant) {
         if !property.writeonly && !property.implement_getter_via_trait() {
@@ -470,7 +470,7 @@ fn ci_impl(root_ident: &syn::Ident) -> TokenStream {
     }
 }
 
-fn try_from_slice_impl(root_ident: &syn::Ident, properties: &Vec<Property>) -> TokenStream {
+fn try_from_slice_impl(root_ident: &syn::Ident, properties: &[Property]) -> TokenStream {
     let mut validation_steps = TokenStream::new();
     for property in properties.iter().filter(|p| !p.writeonly) {
         let meta_type = &property.meta_type;

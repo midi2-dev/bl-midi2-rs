@@ -62,9 +62,7 @@ impl<'a, B: crate::buffer::Buffer> crate::detail::property::ReadProperty<'a, B>
             _ => unreachable!(),
         }
     }
-    fn read(_buffer: &'a B) -> Self::Type {
-        ()
-    }
+    fn read(_buffer: &'a B) -> Self::Type {}
 }
 
 impl<B: crate::buffer::Buffer + crate::buffer::BufferMut> crate::detail::property::WriteProperty<B>
@@ -78,9 +76,7 @@ impl<B: crate::buffer::Buffer + crate::buffer::BufferMut> crate::detail::propert
     fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
-    fn default() -> Self::Type {
-        ()
-    }
+    fn default() -> Self::Type {}
 }
 
 struct Sysex7BytesEndByte;
@@ -92,9 +88,7 @@ impl<B: crate::buffer::Buffer> crate::detail::property::Property<B> for Sysex7By
 impl<'a, B: crate::buffer::Buffer> crate::detail::property::ReadProperty<'a, B>
     for Sysex7BytesEndByte
 {
-    fn read(_buffer: &'a B) -> Self::Type {
-        ()
-    }
+    fn read(_buffer: &'a B) -> Self::Type {}
     fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
             crate::buffer::UNIT_ID_U8 => buffer
@@ -121,9 +115,7 @@ impl<B: crate::buffer::Buffer + crate::buffer::BufferMut> crate::detail::propert
     fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
-    fn default() -> Self::Type {
-        ()
-    }
+    fn default() -> Self::Type {}
 }
 struct ConsistentStatuses;
 
@@ -134,9 +126,7 @@ impl<B: crate::buffer::Buffer> crate::detail::property::Property<B> for Consiste
 impl<'a, B: crate::buffer::Buffer> crate::detail::property::ReadProperty<'a, B>
     for ConsistentStatuses
 {
-    fn read(_buffer: &'a B) -> Self::Type {
-        ()
-    }
+    fn read(_buffer: &'a B) -> Self::Type {}
     fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U32 {
             message_helpers::validate_sysex_group_statuses(
@@ -160,9 +150,7 @@ impl<B: crate::buffer::Buffer + crate::buffer::BufferMut> crate::detail::propert
     fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
-    fn default() -> Self::Type {
-        ()
-    }
+    fn default() -> Self::Type {}
 }
 
 struct ValidPacketSizes;
@@ -174,9 +162,7 @@ impl<B: crate::buffer::Buffer> crate::detail::property::Property<B> for ValidPac
 impl<'a, B: crate::buffer::Buffer> crate::detail::property::ReadProperty<'a, B>
     for ValidPacketSizes
 {
-    fn read(_buffer: &'a B) -> Self::Type {
-        ()
-    }
+    fn read(_buffer: &'a B) -> Self::Type {}
     fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U32 {
             if buffer
@@ -201,9 +187,7 @@ impl<B: crate::buffer::Buffer + crate::buffer::BufferMut> crate::detail::propert
     fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
-    fn default() -> Self::Type {
-        ()
-    }
+    fn default() -> Self::Type {}
 }
 
 struct GroupProperty;
@@ -256,6 +240,7 @@ impl<B: crate::buffer::Buffer + crate::buffer::BufferMut> crate::detail::propert
     }
 }
 
+#[allow(dead_code)]
 struct SysexPayloadPlaceholder;
 
 impl<B: crate::buffer::Buffer> crate::detail::property::Property<B> for SysexPayloadPlaceholder {
@@ -749,7 +734,7 @@ impl<'a, U: crate::buffer::Unit> core::iter::Iterator for PayloadIterator<'a, U>
                 };
 
                 let ret = do_nth();
-                if let None = ret {
+                if ret.is_none() {
                     // if we failed it means we ran out of data
                     // so we set the iterator into finished state
                     self.packet_index = self.data.len() / 2;
@@ -1346,6 +1331,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::iter_nth_zero)]
     fn payload_bytes_nth() {
         let buffer = [
             0xF0_u8, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C,
@@ -1408,6 +1394,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::iter_nth_zero)]
     fn payload_ump_nth() {
         let buffer = [
             0x3016_0001_u32,
@@ -1437,6 +1424,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::iter_nth_zero)]
     fn payload_ump_nth_non_contiguous_oversized() {
         let buffer = [
             0x3010_0000_u32,
