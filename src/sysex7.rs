@@ -228,7 +228,7 @@ impl<'a, B: crate::buffer::Buffer> crate::detail::property::ReadProperty<'a, B> 
                 crate::ux::u4::new(UMP_MESSAGE_TYPE),
             )
         } else {
-            Ok(Default::default())
+            Ok(())
         }
     }
 }
@@ -566,7 +566,7 @@ fn try_resize_ump<
 
     let mut buffer_size = buffer_size_from_payload_size_ump(payload_size);
     let resize_result = try_resize_buffer(sysex, buffer_size);
-    if let Err(_) = resize_result {
+    if resize_result.is_err() {
         buffer_size = sysex.0.buffer().len();
         payload_size = (buffer_size / 2) * 6;
     }
