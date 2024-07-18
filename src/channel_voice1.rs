@@ -51,7 +51,7 @@ pub enum ChannelVoice1<B: crate::buffer::Buffer> {
 impl<'a, U: crate::buffer::Unit> core::convert::TryFrom<&'a [U]> for ChannelVoice1<&'a [U]> {
     type Error = crate::error::InvalidData;
     fn try_from(buffer: &'a [U]) -> Result<Self, Self::Error> {
-        if buffer.len() < 1 {
+        if buffer.is_empty() {
             return Err(crate::error::InvalidData("Slice is too short"));
         };
         Ok(match status(buffer) {

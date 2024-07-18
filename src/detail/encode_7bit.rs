@@ -1,42 +1,98 @@
-use crate::detail::Truncate;
-use ux::*;
+use ux::{u14, u21, u28, u7};
 
-pub trait Encode7Bit<const N: usize>:
-    Sized
-    + core::default::Default
-    + core::convert::From<u8>
-    + core::convert::From<u7>
-    + core::ops::BitOrAssign<Self>
-    + core::ops::BitAnd<Self, Output = Self>
-    + core::ops::Shl<usize, Output = Self>
-    + core::ops::Shr<usize, Output = Self>
-    + Truncate
-    + core::marker::Copy
-where
-    u7: core::convert::TryFrom<Self>,
-    <u7 as core::convert::TryFrom<Self>>::Error: core::fmt::Debug,
-{
-    fn from_u7s<T>(u7s: &[T]) -> Self
-    where
-        Self: core::convert::From<T>,
-        T: Copy,
-    {
-        assert_eq!(u7s.len(), N);
-        let mut ret: Self = Default::default();
-        for (i, v) in u7s.iter().enumerate() {
-            ret |= (Self::from(*v) & Self::from(0b0111_1111_u8)) << (7_usize * i);
-        }
-        ret
+pub trait Byte: Copy {
+    fn to_u8(self) -> u8;
+    fn from_u8(v: u8) -> Self;
+}
+
+impl Byte for u7 {
+    fn to_u8(self) -> u8 {
+        self.into()
     }
-
-    fn to_u7s(&self, data: &mut [u7]) {
-        assert_eq!(data.len(), N);
-        for (i, v) in data.iter_mut().enumerate() {
-            *v = (*self >> (i * 7_usize)).truncate()
-        }
+    fn from_u8(v: u8) -> Self {
+        u7::new(v & 0x7F)
     }
 }
 
-impl Encode7Bit<4> for u28 {}
-impl Encode7Bit<3> for u21 {}
-impl Encode7Bit<2> for u14 {}
+impl Byte for u8 {
+    fn from_u8(v: u8) -> Self {
+        v & 0x7F
+    }
+    fn to_u8(self) -> u8 {
+        self & 0x7F
+    }
+}
+
+pub trait Encode7Bit {
+    fn from_u7s<T: Byte>(u7s: &[T]) -> Self;
+    fn to_u7s<T: Byte>(&self, data: &mut [T]);
+}
+
+impl Encode7Bit for u28 {
+    fn to_u7s<T: Byte>(&self, data: &mut [T]) {
+        debug_assert!(data.len() == 4);
+
+        let v = u32::from(*self);
+
+        data[0] = T::from_u8(v as u8);
+        data[1] = T::from_u8((v >> 7) as u8);
+        data[2] = T::from_u8((v >> (7 * 2)) as u8);
+        data[3] = T::from_u8((v >> (7 * 3)) as u8);
+    }
+    fn from_u7s<T: Byte>(u7s: &[T]) -> Self {
+        debug_assert!(u7s.len() == 4);
+
+        let mut ret: u28 = Default::default();
+
+        ret |= u28::from(u7s[0].to_u8() & 0x7F);
+        ret |= u28::from(u7s[1].to_u8() & 0x7F) << 7;
+        ret |= u28::from(u7s[2].to_u8() & 0x7F) << (7 * 2);
+        ret |= u28::from(u7s[3].to_u8() & 0x7F) << (7 * 3);
+
+        ret
+    }
+}
+
+impl Encode7Bit for u21 {
+    fn to_u7s<T: Byte>(&self, data: &mut [T]) {
+        debug_assert!(data.len() == 3);
+
+        let v = u32::from(*self);
+
+        data[0] = T::from_u8(v as u8);
+        data[1] = T::from_u8((v >> 7) as u8);
+        data[2] = T::from_u8((v >> (7 * 2)) as u8);
+    }
+    fn from_u7s<T: Byte>(u7s: &[T]) -> Self {
+        debug_assert!(u7s.len() == 3);
+
+        let mut ret: u21 = Default::default();
+
+        ret |= u21::from(u7s[0].to_u8() & 0x7F);
+        ret |= u21::from(u7s[1].to_u8() & 0x7F) << 7;
+        ret |= u21::from(u7s[2].to_u8() & 0x7F) << (7 * 2);
+
+        ret
+    }
+}
+
+impl Encode7Bit for u14 {
+    fn to_u7s<T: Byte>(&self, data: &mut [T]) {
+        debug_assert!(data.len() == 2);
+
+        let v = u16::from(*self);
+
+        data[0] = T::from_u8(v as u8);
+        data[1] = T::from_u8((v >> 7) as u8);
+    }
+    fn from_u7s<T: Byte>(u7s: &[T]) -> Self {
+        debug_assert!(u7s.len() == 2);
+
+        let mut ret: u14 = Default::default();
+
+        ret |= u14::from(u7s[0].to_u8() & 0x7F);
+        ret |= u14::from(u7s[1].to_u8() & 0x7F) << 7;
+
+        ret
+    }
+}

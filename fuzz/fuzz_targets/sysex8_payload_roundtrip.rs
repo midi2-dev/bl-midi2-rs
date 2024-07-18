@@ -9,7 +9,7 @@ fuzz_target!(|data: &[u8]| {
 
     // payload is unchanged
     let payload = message.payload().collect::<Vec<u8>>();
-    assert_eq!(payload, data.iter().cloned().collect::<Vec<u8>>());
+    assert_eq!(payload, data.to_vec());
 
     // message is in a valid state
     let mut buffer = Vec::new();

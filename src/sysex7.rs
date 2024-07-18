@@ -62,9 +62,7 @@ impl<'a, B: crate::buffer::Buffer> crate::detail::property::ReadProperty<'a, B>
             _ => unreachable!(),
         }
     }
-    fn read(_buffer: &'a B) -> Self::Type {
-        ()
-    }
+    fn read(_buffer: &'a B) -> Self::Type {}
 }
 
 impl<B: crate::buffer::Buffer + crate::buffer::BufferMut> crate::detail::property::WriteProperty<B>
@@ -78,9 +76,7 @@ impl<B: crate::buffer::Buffer + crate::buffer::BufferMut> crate::detail::propert
     fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
-    fn default() -> Self::Type {
-        ()
-    }
+    fn default() -> Self::Type {}
 }
 
 struct Sysex7BytesEndByte;
@@ -92,9 +88,7 @@ impl<B: crate::buffer::Buffer> crate::detail::property::Property<B> for Sysex7By
 impl<'a, B: crate::buffer::Buffer> crate::detail::property::ReadProperty<'a, B>
     for Sysex7BytesEndByte
 {
-    fn read(_buffer: &'a B) -> Self::Type {
-        ()
-    }
+    fn read(_buffer: &'a B) -> Self::Type {}
     fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
             crate::buffer::UNIT_ID_U8 => buffer
@@ -121,9 +115,7 @@ impl<B: crate::buffer::Buffer + crate::buffer::BufferMut> crate::detail::propert
     fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
-    fn default() -> Self::Type {
-        ()
-    }
+    fn default() -> Self::Type {}
 }
 struct ConsistentStatuses;
 
@@ -134,9 +126,7 @@ impl<B: crate::buffer::Buffer> crate::detail::property::Property<B> for Consiste
 impl<'a, B: crate::buffer::Buffer> crate::detail::property::ReadProperty<'a, B>
     for ConsistentStatuses
 {
-    fn read(_buffer: &'a B) -> Self::Type {
-        ()
-    }
+    fn read(_buffer: &'a B) -> Self::Type {}
     fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U32 {
             message_helpers::validate_sysex_group_statuses(
@@ -160,9 +150,7 @@ impl<B: crate::buffer::Buffer + crate::buffer::BufferMut> crate::detail::propert
     fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
-    fn default() -> Self::Type {
-        ()
-    }
+    fn default() -> Self::Type {}
 }
 
 struct ValidPacketSizes;
@@ -174,9 +162,7 @@ impl<B: crate::buffer::Buffer> crate::detail::property::Property<B> for ValidPac
 impl<'a, B: crate::buffer::Buffer> crate::detail::property::ReadProperty<'a, B>
     for ValidPacketSizes
 {
-    fn read(_buffer: &'a B) -> Self::Type {
-        ()
-    }
+    fn read(_buffer: &'a B) -> Self::Type {}
     fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U32 {
             if buffer
@@ -201,9 +187,7 @@ impl<B: crate::buffer::Buffer + crate::buffer::BufferMut> crate::detail::propert
     fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
-    fn default() -> Self::Type {
-        ()
-    }
+    fn default() -> Self::Type {}
 }
 
 struct GroupProperty;
@@ -228,7 +212,7 @@ impl<'a, B: crate::buffer::Buffer> crate::detail::property::ReadProperty<'a, B> 
                 crate::ux::u4::new(UMP_MESSAGE_TYPE),
             )
         } else {
-            Ok(Default::default())
+            Ok(())
         }
     }
 }
@@ -256,6 +240,7 @@ impl<B: crate::buffer::Buffer + crate::buffer::BufferMut> crate::detail::propert
     }
 }
 
+#[allow(dead_code)]
 struct SysexPayloadPlaceholder;
 
 impl<B: crate::buffer::Buffer> crate::detail::property::Property<B> for SysexPayloadPlaceholder {
@@ -566,7 +551,7 @@ fn try_resize_ump<
 
     let mut buffer_size = buffer_size_from_payload_size_ump(payload_size);
     let resize_result = try_resize_buffer(sysex, buffer_size);
-    if let Err(_) = resize_result {
+    if resize_result.is_err() {
         buffer_size = sysex.0.buffer().len();
         payload_size = (buffer_size / 2) * 6;
     }
@@ -690,8 +675,11 @@ impl<'a, U: crate::buffer::Unit> core::iter::Iterator for PayloadIterator<'a, U>
                     return None;
                 }
 
+                self.skip_empty_packets_ump();
+
                 let ret = Some(self.value_ump());
                 self.advance_ump();
+
                 ret
             }
             _ => unreachable!(),
@@ -749,7 +737,7 @@ impl<'a, U: crate::buffer::Unit> core::iter::Iterator for PayloadIterator<'a, U>
                 };
 
                 let ret = do_nth();
-                if let None = ret {
+                if ret.is_none() {
                     // if we failed it means we ran out of data
                     // so we set the iterator into finished state
                     self.packet_index = self.data.len() / 2;
@@ -788,19 +776,30 @@ impl<'a, U: crate::buffer::Unit> PayloadIterator<'a, U> {
         self.size_cache == 0
     }
 
+    fn skip_empty_packets_ump(&mut self) {
+        while !self.finished_ump() && self.current_packet_size_ump() == 0 {
+            self.payload_index = 0;
+            self.packet_index += 1;
+        }
+    }
+
     fn advance_ump(&mut self) {
         self.payload_index += 1;
         if !self.finished_ump() {
             self.size_cache -= 1;
         }
 
-        let current_packet_size =
-            Self::packet_size(&self.data_ump()[self.packet_index * 2..self.packet_index * 2 + 2]);
-        if self.payload_index == current_packet_size {
+        if self.payload_index == self.current_packet_size_ump() {
             // end of packet
             self.packet_index += 1;
             self.payload_index = 0;
         }
+
+        self.skip_empty_packets_ump();
+    }
+
+    fn current_packet_size_ump(&self) -> usize {
+        Self::packet_size(&self.data_ump()[self.packet_index * 2..self.packet_index * 2 + 2])
     }
 
     fn packet_size(packet: &[u32]) -> usize {
@@ -833,6 +832,12 @@ mod tests {
     fn new_bytes() {
         let message = Sysex7::<std::vec::Vec<u8>>::new();
         assert_eq!(message, Sysex7(std::vec![0xF0, 0xF7]));
+    }
+
+    #[test]
+    fn try_new_bytes() {
+        let message = Sysex7::<[u8; 2]>::try_new().expect("Buffer is large enough");
+        assert_eq!(message, Sysex7([0xF0, 0xF7]));
     }
 
     #[test]
@@ -1340,6 +1345,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::iter_nth_zero)]
     fn payload_bytes_nth() {
         let buffer = [
             0xF0_u8, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C,
@@ -1353,6 +1359,52 @@ mod tests {
         assert_eq!(payload.nth(12), Some(u7::new(0x12)));
         assert_eq!(payload.nth(10), Some(u7::new(0x1D)));
         assert_eq!(payload.nth(0), None);
+    }
+
+    #[test]
+    fn payload_bytes_nth_with_empty_packets() {
+        let buffer = [
+            0x3010_0000_u32,
+            0x0000_0000,
+            0x3021_0000,
+            0x0000_0000,
+            0x3022_0102,
+            0x0000_0000,
+            0x3020_0000,
+            0x0000_0000,
+            0x3020_0000,
+            0x0000_0000,
+            0x3023_0304,
+            0x0500_0000,
+            0x3024_0607,
+            0x0809_0000,
+            0x3025_0A0B,
+            0x0C0D_0E00,
+            0x3026_0F10,
+            0x1112_1314,
+            0x3025_1516,
+            0x1718_1900,
+            0x3034_1A1B,
+            0x1C1D_0000,
+            0x0000_0000,
+            0x0000_0000,
+            0x0000_0000,
+            0x0000_0000,
+            0x0000_0000,
+        ];
+        let message = Sysex7::try_from(&buffer[..]).unwrap();
+        let mut payload = message.payload();
+        assert_eq!(payload.len(), 30);
+        assert_eq!(payload.next(), Some(u7::new(0x0)));
+        assert_eq!(payload.len(), 29);
+        assert_eq!(payload.nth(4), Some(u7::new(0x5)));
+        assert_eq!(payload.len(), 24);
+        assert_eq!(payload.nth(12), Some(u7::new(0x12)));
+        assert_eq!(payload.len(), 11);
+        assert_eq!(payload.nth(10), Some(u7::new(0x1D)));
+        assert_eq!(payload.len(), 0);
+        assert_eq!(payload.next(), None);
+        assert_eq!(payload.len(), 0);
     }
 
     #[test]
@@ -1402,6 +1454,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::iter_nth_zero)]
     fn payload_ump_nth() {
         let buffer = [
             0x3016_0001_u32,
@@ -1431,6 +1484,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::iter_nth_zero)]
     fn payload_ump_nth_non_contiguous_oversized() {
         let buffer = [
             0x3010_0000_u32,

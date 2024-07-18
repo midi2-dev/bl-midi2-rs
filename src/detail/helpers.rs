@@ -101,7 +101,9 @@ pub fn try_set_sysex_data<
         Err(e) => {
             // if the write failed we reset the message
             // back to zero data
-            sysex.try_resize(0).map_err(|_| Default::default())?;
+            sysex
+                .try_resize(0)
+                .map_err(|_| crate::error::BufferOverflow)?;
             Err(e)
         }
         Ok(()) => Ok(()),
@@ -185,7 +187,7 @@ mod detail {
 
         if written < running_data_size_estimate {
             // we shrink the buffer back down to the correct size
-            resize(sysex, written).map_err(|_| Default::default())?;
+            resize(sysex, written).map_err(|_| crate::error::BufferOverflow)?;
         }
 
         Ok(())

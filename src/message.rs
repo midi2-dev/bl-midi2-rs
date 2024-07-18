@@ -35,43 +35,37 @@ impl<'a> core::convert::TryFrom<&'a [u32]> for UmpMessage<&'a [u32]> {
         use crate::detail::BitOps;
         use UmpMessage::*;
 
-        if buffer.len() < 1 {
+        if buffer.is_empty() {
             return Err(crate::error::InvalidData("Ump message slice is empty"));
         }
 
         Ok(match u8::from(buffer[0].nibble(0)) {
             #[cfg(feature = "flex-data")]
             crate::flex_data::UMP_MESSAGE_TYPE => {
-                FlexData(crate::flex_data::FlexData::try_from(buffer)?.into())
+                FlexData(crate::flex_data::FlexData::try_from(buffer)?)
             }
             #[cfg(feature = "channel-voice1")]
             crate::channel_voice1::UMP_MESSAGE_TYPE => {
-                ChannelVoice1(crate::channel_voice1::ChannelVoice1::try_from(buffer)?.into())
+                ChannelVoice1(crate::channel_voice1::ChannelVoice1::try_from(buffer)?)
             }
             #[cfg(feature = "channel-voice2")]
             crate::channel_voice2::UMP_MESSAGE_TYPE => {
-                ChannelVoice2(crate::channel_voice2::ChannelVoice2::try_from(buffer)?.into())
+                ChannelVoice2(crate::channel_voice2::ChannelVoice2::try_from(buffer)?)
             }
             #[cfg(feature = "sysex7")]
-            crate::sysex7::UMP_MESSAGE_TYPE => {
-                Sysex7(crate::sysex7::Sysex7::try_from(buffer)?.into())
-            }
+            crate::sysex7::UMP_MESSAGE_TYPE => Sysex7(crate::sysex7::Sysex7::try_from(buffer)?),
             #[cfg(feature = "sysex8")]
-            crate::sysex8::UMP_MESSAGE_TYPE => {
-                Sysex8(crate::sysex8::Sysex8::try_from(buffer)?.into())
-            }
+            crate::sysex8::UMP_MESSAGE_TYPE => Sysex8(crate::sysex8::Sysex8::try_from(buffer)?),
             #[cfg(feature = "system-common")]
             crate::system_common::UMP_MESSAGE_TYPE => {
-                SystemCommon(crate::system_common::SystemCommon::try_from(buffer)?.into())
+                SystemCommon(crate::system_common::SystemCommon::try_from(buffer)?)
             }
             #[cfg(feature = "ump-stream")]
             crate::ump_stream::UMP_MESSAGE_TYPE => {
-                UmpStream(crate::ump_stream::UmpStream::try_from(buffer)?.into())
+                UmpStream(crate::ump_stream::UmpStream::try_from(buffer)?)
             }
             #[cfg(feature = "utility")]
-            crate::utility::UMP_MESSAGE_TYPE => {
-                Utility(crate::utility::Utility::try_from(buffer)?.into())
-            }
+            crate::utility::UMP_MESSAGE_TYPE => Utility(crate::utility::Utility::try_from(buffer)?),
             _ => Err(crate::error::InvalidData(
                 "Couldn't interpret ump message type",
             ))?,
@@ -112,21 +106,19 @@ pub enum BytesMessage<B: crate::buffer::Bytes> {
 impl<'a> core::convert::TryFrom<&'a [u8]> for BytesMessage<&'a [u8]> {
     type Error = crate::error::InvalidData;
     fn try_from(buffer: &'a [u8]) -> Result<Self, Self::Error> {
-        if buffer.len() < 1 {
+        if buffer.is_empty() {
             return Err(crate::error::InvalidData("Bytes slice is empty"));
         }
         use BytesMessage::*;
 
         Ok(match buffer[0] {
             #[cfg(feature = "channel-voice1")]
-            0x80..=0xEF => {
-                ChannelVoice1(crate::channel_voice1::ChannelVoice1::try_from(buffer)?.into())
-            }
+            0x80..=0xEF => ChannelVoice1(crate::channel_voice1::ChannelVoice1::try_from(buffer)?),
             #[cfg(feature = "sysex7")]
-            0xF0 => Sysex7(crate::sysex7::Sysex7::try_from(buffer)?.into()),
+            0xF0 => Sysex7(crate::sysex7::Sysex7::try_from(buffer)?),
             #[cfg(feature = "system-common")]
             0xF1..=0xF6 | 0xF8..=0xFF => {
-                SystemCommon(crate::system_common::SystemCommon::try_from(buffer)?.into())
+                SystemCommon(crate::system_common::SystemCommon::try_from(buffer)?)
             }
             _ => Err(crate::error::InvalidData(
                 "Couldn't interpret bytes message type",

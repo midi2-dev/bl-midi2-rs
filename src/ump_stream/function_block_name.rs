@@ -197,7 +197,7 @@ mod tests {
             FunctionBlockName::<std::vec::Vec<u32>>::new()
                 .name_bytes()
                 .collect::<std::vec::Vec<u8>>(),
-            std::vec![],
+            std::vec::Vec::<u8>::new(),
         );
     }
 }

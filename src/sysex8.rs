@@ -39,9 +39,7 @@ impl<B: crate::buffer::Ump> crate::detail::property::Property<B> for ConsistentS
 impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B>
     for ConsistentStatuses
 {
-    fn read(_buffer: &'a B) -> Self::Type {
-        ()
-    }
+    fn read(_buffer: &'a B) -> Self::Type {}
     fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         message_helpers::validate_sysex_group_statuses(
             buffer.buffer(),
@@ -66,7 +64,7 @@ impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B> for
     fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         if buffer.buffer().chunks_exact(4).any(|p| {
             let number_bytes = u8::from(p[0].nibble(3));
-            number_bytes < 1 || number_bytes > 14
+            !(1..=14).contains(&number_bytes)
         }) {
             Err(crate::error::InvalidData(
                 ERR_INVALID_NUMBER_OF_PAYLOAD_BYTES,
@@ -216,6 +214,13 @@ impl<'a> core::iter::Iterator for PayloadIterator<'a> {
         if self.finished() {
             return None;
         }
+
+        // skip empty packets
+        while !self.finished() && self.size_of_current_packet() == 0 {
+            self.payload_index = 0;
+            self.packet_index += 1;
+        }
+
         let ret = Some(self.value());
         self.advance();
         ret
@@ -264,7 +269,7 @@ impl<'a> core::iter::Iterator for PayloadIterator<'a> {
         };
 
         let ret = do_nth();
-        if let None = ret {
+        if ret.is_none() {
             // if we failed it means we ran out of data
             // so we set the iterator into finished state
             self.packet_index = self.data.len() / 2;
@@ -333,7 +338,7 @@ impl<B: crate::buffer::Ump> Sysex<B> for Sysex8<B> {
             size_cache: self
                 .data()
                 .chunks_exact(4)
-                .map(|packet| PayloadIterator::packet_size(packet))
+                .map(PayloadIterator::packet_size)
                 .sum(),
         }
     }
@@ -407,7 +412,7 @@ fn try_resize<
 
     let mut buffer_size = buffer_size_from_payload_size(payload_size);
     let resize_result = try_resize_buffer(sysex, buffer_size);
-    if let Err(_) = resize_result {
+    if resize_result.is_err() {
         // resize failed. We make do with what we've got
         buffer_size = sysex.0.buffer().len();
         payload_size = buffer_size * 13 / 4;
@@ -863,9 +868,157 @@ mod tests {
         assert_eq!(payload.len(), 7);
         assert_eq!(payload.nth(5), Some(0x30));
         assert_eq!(payload.len(), 1);
-        assert_eq!(payload.nth(0), Some(0x31));
+        assert_eq!(payload.next(), Some(0x31));
         assert_eq!(payload.len(), 0);
-        assert_eq!(payload.nth(0), None);
+        assert_eq!(payload.next(), None);
+    }
+
+    #[test]
+    fn payload_nth_non_contiguous_payload() {
+        let message = Sysex8::try_from(
+            &[
+                // empty
+                0x5411_BB00,
+                0x0000_0000,
+                0x0000_0000,
+                0x0000_0000,
+                0x5422_BB00,
+                0x0000_0000,
+                0x0000_0000,
+                0x0000_0000,
+                0x5423_BB01,
+                0x0200_0000,
+                0x0000_0000,
+                0x0000_0000,
+                // empty
+                0x5421_BB00,
+                0x0000_0000,
+                0x0000_0000,
+                0x0000_0000,
+                // empty
+                0x5421_BB00,
+                0x0000_0000,
+                0x0000_0000,
+                0x0000_0000,
+                0x5424_BB03,
+                0x0405_0000,
+                0x0000_0000,
+                0x0000_0000,
+                0x5425_BB06,
+                0x0708_0900,
+                0x0000_0000,
+                0x0000_0000,
+                0x5426_BB0A,
+                0x0B0C_0D0E,
+                0x0000_0000,
+                0x0000_0000,
+                0x5427_BB0F,
+                0x1011_1213,
+                0x1400_0000,
+                0x0000_0000,
+                0x5428_BB15,
+                0x1617_1819,
+                0x1A1B_0000,
+                0x0000_0000,
+                0x5429_BB1C,
+                0x1D1E_1F20,
+                0x2122_2300,
+                0x0000_0000,
+                0x542A_BB24,
+                0x2526_2728,
+                0x292A_2B2C,
+                0x0000_0000,
+                0x5436_BB2D,
+                0x2E2F_3031,
+                0x0000_0000,
+                0x0000_0000,
+            ][..],
+        )
+        .unwrap();
+        let mut payload = message.payload();
+        assert_eq!(payload.len(), 50);
+        assert_eq!(payload.nth(13), Some(0x0D));
+        assert_eq!(payload.len(), 36);
+        assert_eq!(payload.nth(11), Some(0x19));
+        assert_eq!(payload.len(), 24);
+        assert_eq!(payload.nth(11), Some(0x25));
+        assert_eq!(payload.len(), 12);
+        assert_eq!(payload.nth(4), Some(0x2A));
+        assert_eq!(payload.len(), 7);
+        assert_eq!(payload.nth(5), Some(0x30));
+        assert_eq!(payload.len(), 1);
+        assert_eq!(payload.next(), Some(0x31));
+        assert_eq!(payload.len(), 0);
+        assert_eq!(payload.next(), None);
+    }
+
+    #[test]
+    fn payload_next_non_contiguous_payload() {
+        let message = Sysex8::try_from(
+            &[
+                // empty
+                0x5411_BB00,
+                0x0000_0000,
+                0x0000_0000,
+                0x0000_0000,
+                0x5422_BB00,
+                0x0000_0000,
+                0x0000_0000,
+                0x0000_0000,
+                0x5423_BB01,
+                0x0200_0000,
+                0x0000_0000,
+                0x0000_0000,
+                // empty
+                0x5421_BB00,
+                0x0000_0000,
+                0x0000_0000,
+                0x0000_0000,
+                // empty
+                0x5421_BB00,
+                0x0000_0000,
+                0x0000_0000,
+                0x0000_0000,
+                0x5424_BB03,
+                0x0405_0000,
+                0x0000_0000,
+                0x0000_0000,
+                0x5425_BB06,
+                0x0708_0900,
+                0x0000_0000,
+                0x0000_0000,
+                0x5426_BB0A,
+                0x0B0C_0D0E,
+                0x0000_0000,
+                0x0000_0000,
+                0x5427_BB0F,
+                0x1011_1213,
+                0x1400_0000,
+                0x0000_0000,
+                0x5428_BB15,
+                0x1617_1819,
+                0x1A1B_0000,
+                0x0000_0000,
+                0x5429_BB1C,
+                0x1D1E_1F20,
+                0x2122_2300,
+                0x0000_0000,
+                0x542A_BB24,
+                0x2526_2728,
+                0x292A_2B2C,
+                0x0000_0000,
+                0x5436_BB2D,
+                0x2E2F_3031,
+                0x0000_0000,
+                0x0000_0000,
+            ][..],
+        )
+        .unwrap();
+        let mut payload = message.payload();
+        for i in 0..50 {
+            assert_eq!(payload.len(), 50 - i);
+            assert_eq!(payload.next(), Some(i as u8));
+        }
     }
 
     #[test]
@@ -1007,7 +1160,7 @@ mod tests {
     fn payload_of_empty_message() {
         let message = Sysex8::<std::vec::Vec<u32>>::new();
         let payload = message.payload().collect::<std::vec::Vec<u8>>();
-        assert_eq!(payload, std::vec![]);
+        assert_eq!(payload, std::vec::Vec::<u8>::new());
     }
 
     #[test]

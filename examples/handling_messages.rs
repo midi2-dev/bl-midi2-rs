@@ -6,14 +6,23 @@ fn handle_message(buffer: &[u32]) {
             println!("Channel Voice2: channel: {}", m.channel());
             match m {
                 channel_voice2::ChannelVoice2::NoteOn(m) => {
-                    println!("Note On! note: {}, velocity: {}", m.note(), m.velocity());
+                    println!(
+                        "Note On! note: {}, velocity: {}",
+                        m.note_number(),
+                        m.velocity()
+                    );
                 }
                 channel_voice2::ChannelVoice2::NoteOff(m) => {
-                    println!("Note Off! note: {}, velocity: {}", m.note(), m.velocity());
+                    println!(
+                        "Note Off! note: {}, velocity: {}",
+                        m.note_number(),
+                        m.velocity()
+                    );
                 }
                 _ => {}
             }
         }
+        #[cfg(feature = "sysex7")]
         Ok(UmpMessage::Sysex7(m)) => {
             println!(
                 "Sysex 7bit: payload: {:?}",

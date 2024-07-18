@@ -20,7 +20,7 @@ struct AssignablePerNoteController {
     #[property(common_properties::GroupProperty)]
     group: u4,
     #[property(common_properties::UmpSchemaProperty<u7, schema::Ump<0x0000_7F00, 0x0, 0x0, 0x0>>)]
-    note: u7,
+    note_number: u7,
     #[property(common_properties::UmpSchemaProperty<u8, schema::Ump<0x0000_00FF, 0x0, 0x0, 0x0>>)]
     index: u8,
     #[property(common_properties::UmpSchemaProperty<u32, schema::Ump<0x0000_0000, 0xFFFF_FFFF, 0x0, 0x0>>)]
@@ -39,7 +39,7 @@ mod tests {
         let mut message = AssignablePerNoteController::<[u32; 4]>::new();
         message.set_group(u4::new(0x2));
         message.set_channel(u4::new(0x4));
-        message.set_note(u7::new(0x6F));
+        message.set_note_number(u7::new(0x6F));
         message.set_index(0xB1);
         message.set_controller_data(0x46105EE5);
 
@@ -72,11 +72,11 @@ mod tests {
     }
 
     #[test]
-    fn note() {
+    fn note_number() {
         assert_eq!(
             AssignablePerNoteController::try_from(&[0x4214_6FB1, 0x46105EE5][..])
                 .unwrap()
-                .note(),
+                .note_number(),
             u7::new(0x6F),
         );
     }

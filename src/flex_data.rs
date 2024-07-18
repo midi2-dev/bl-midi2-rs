@@ -846,45 +846,41 @@ impl<'a> TryFrom<&'a [u32]> for FlexData<&'a [u32]> {
     type Error = crate::error::InvalidData;
     fn try_from(value: &'a [u32]) -> Result<Self, Self::Error> {
         use FlexData::*;
-        if value.len() < 1 {
+        if value.is_empty() {
             return Err(crate::error::InvalidData("Slice is too short"));
         };
         Ok(match value[0].word(1) {
-            0x00_00 => SetTempo(set_tempo::SetTempo::try_from(value)?.into()),
-            0x00_01 => {
-                SetTimeSignature(set_time_signature::SetTimeSignature::try_from(value)?.into())
+            0x00_00 => SetTempo(set_tempo::SetTempo::try_from(value)?),
+            0x00_01 => SetTimeSignature(set_time_signature::SetTimeSignature::try_from(value)?),
+            0x00_02 => SetMetronome(set_metronome::SetMetronome::try_from(value)?),
+            0x00_05 => SetKeySignature(set_key_signature::SetKeySignature::try_from(value)?),
+            0x00_06 => SetChordName(set_chord_name::SetChordName::try_from(value)?),
+            0x01_00 => {
+                UnknownMetadataText(unknown_metadata_text::UnknownMetadataText::try_from(value)?)
             }
-            0x00_02 => SetMetronome(set_metronome::SetMetronome::try_from(value)?.into()),
-            0x00_05 => SetKeySignature(set_key_signature::SetKeySignature::try_from(value)?.into()),
-            0x00_06 => SetChordName(set_chord_name::SetChordName::try_from(value)?.into()),
-            0x01_00 => UnknownMetadataText(
-                unknown_metadata_text::UnknownMetadataText::try_from(value)?.into(),
-            ),
-            0x01_01 => ProjectName(project_name::ProjectName::try_from(value)?.into()),
-            0x01_02 => CompositionName(composition_name::CompositionName::try_from(value)?.into()),
-            0x01_03 => MidiClipName(midi_clip_name::MidiClipName::try_from(value)?.into()),
-            0x01_04 => CopyrightNotice(copyright_notice::CopyrightNotice::try_from(value)?.into()),
-            0x01_05 => ComposerName(composer_name::ComposerName::try_from(value)?.into()),
-            0x01_06 => LyricistName(lyricist_name::LyricistName::try_from(value)?.into()),
-            0x01_07 => ArrangerName(arranger_name::ArrangerName::try_from(value)?.into()),
-            0x01_08 => PublisherName(publisher_name::PublisherName::try_from(value)?.into()),
+            0x01_01 => ProjectName(project_name::ProjectName::try_from(value)?),
+            0x01_02 => CompositionName(composition_name::CompositionName::try_from(value)?),
+            0x01_03 => MidiClipName(midi_clip_name::MidiClipName::try_from(value)?),
+            0x01_04 => CopyrightNotice(copyright_notice::CopyrightNotice::try_from(value)?),
+            0x01_05 => ComposerName(composer_name::ComposerName::try_from(value)?),
+            0x01_06 => LyricistName(lyricist_name::LyricistName::try_from(value)?),
+            0x01_07 => ArrangerName(arranger_name::ArrangerName::try_from(value)?),
+            0x01_08 => PublisherName(publisher_name::PublisherName::try_from(value)?),
             0x01_09 => PrimaryPerformerName(
-                primary_performer_name::PrimaryPerformerName::try_from(value)?.into(),
+                primary_performer_name::PrimaryPerformerName::try_from(value)?,
             ),
             0x01_10 => AccompanyingPerformerName(
-                accompanying_performer_name::AccompanyingPerformerName::try_from(value)?.into(),
+                accompanying_performer_name::AccompanyingPerformerName::try_from(value)?,
             ),
-            0x01_11 => RecordingDate(recording_date::RecordingDate::try_from(value)?.into()),
-            0x01_12 => {
-                RecordingLocation(recording_location::RecordingLocation::try_from(value)?.into())
-            }
+            0x01_11 => RecordingDate(recording_date::RecordingDate::try_from(value)?),
+            0x01_12 => RecordingLocation(recording_location::RecordingLocation::try_from(value)?),
             0x02_00 => UnknownPerformanceText(
-                unknown_performance_text::UnknownPerformanceText::try_from(value)?.into(),
+                unknown_performance_text::UnknownPerformanceText::try_from(value)?,
             ),
-            0x02_01 => Lyrics(lyrics::Lyrics::try_from(value)?.into()),
-            0x02_02 => LyricsLanguage(lyrics_language::LyricsLanguage::try_from(value)?.into()),
-            0x02_03 => Ruby(ruby::Ruby::try_from(value)?.into()),
-            0x02_04 => RubyLanguage(ruby_language::RubyLanguage::try_from(value)?.into()),
+            0x02_01 => Lyrics(lyrics::Lyrics::try_from(value)?),
+            0x02_02 => LyricsLanguage(lyrics_language::LyricsLanguage::try_from(value)?),
+            0x02_03 => Ruby(ruby::Ruby::try_from(value)?),
+            0x02_04 => RubyLanguage(ruby_language::RubyLanguage::try_from(value)?),
             _ => Err(crate::error::InvalidData(
                 "Couldn't interpret flex data status / bank fields",
             ))?,
@@ -923,9 +919,7 @@ impl<const STATUS: u8, B: Ump> Property<B> for StatusProperty<STATUS> {
 }
 
 impl<'a, const STATUS: u8, B: Ump> ReadProperty<'a, B> for StatusProperty<STATUS> {
-    fn read(_buffer: &'a B) -> Self::Type {
-        ()
-    }
+    fn read(_buffer: &'a B) -> Self::Type {}
     fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         if buffer
             .buffer()
@@ -946,9 +940,7 @@ impl<const STATUS: u8, B: Ump + BufferMut> WriteProperty<B> for StatusProperty<S
     fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
-    fn default() -> Self::Type {
-        ()
-    }
+    fn default() -> Self::Type {}
 }
 
 struct BankProperty<const BANK: u8>;
@@ -958,9 +950,7 @@ impl<const BANK: u8, B: Ump> Property<B> for BankProperty<BANK> {
 }
 
 impl<'a, const BANK: u8, B: Ump> ReadProperty<'a, B> for BankProperty<BANK> {
-    fn read(_buffer: &'a B) -> Self::Type {
-        ()
-    }
+    fn read(_buffer: &'a B) -> Self::Type {}
     fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         if buffer
             .buffer()
@@ -981,9 +971,7 @@ impl<const BANK: u8, B: Ump + BufferMut> WriteProperty<B> for BankProperty<BANK>
     fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
-    fn default() -> Self::Type {
-        ()
-    }
+    fn default() -> Self::Type {}
 }
 
 struct FormatProperty<const FORMAT: u8>;
@@ -993,11 +981,9 @@ impl<const FORMAT: u8, B: Ump> Property<B> for FormatProperty<FORMAT> {
 }
 
 impl<'a, const FORMAT: u8, B: Ump> ReadProperty<'a, B> for FormatProperty<FORMAT> {
-    fn read(_buffer: &'a B) -> Self::Type {
-        ()
-    }
+    fn read(_buffer: &'a B) -> Self::Type {}
     fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
-        if FORMAT == buffer.buffer()[0].crumb(4).into() {
+        if FORMAT == u8::from(buffer.buffer()[0].crumb(4)) {
             Ok(())
         } else {
             Err(crate::error::InvalidData("Incorrect message format"))
@@ -1012,9 +998,7 @@ impl<const FORMAT: u8, B: Ump + BufferMut> WriteProperty<B> for FormatProperty<F
     fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
         Ok(())
     }
-    fn default() -> Self::Type {
-        ()
-    }
+    fn default() -> Self::Type {}
 }
 
 struct OptionalChannelProperty;
@@ -1075,9 +1059,7 @@ impl<B: Ump> Property<B> for NoChannelProperty {
 }
 
 impl<'a, B: Ump> ReadProperty<'a, B> for NoChannelProperty {
-    fn read(_buffer: &'a B) -> Self::Type {
-        ()
-    }
+    fn read(_buffer: &'a B) -> Self::Type {}
     fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         use crate::ux::u2;
         if buffer.buffer()[0].crumb(5) != u2::new(0x0) {
@@ -1114,9 +1096,7 @@ impl<B: Ump> Property<B> for ConsistentFormatsProperty {
 }
 
 impl<'a, B: Ump> ReadProperty<'a, B> for ConsistentFormatsProperty {
-    fn read(_buffer: &'a B) -> Self::Type {
-        ()
-    }
+    fn read(_buffer: &'a B) -> Self::Type {}
 
     fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         use crate::detail::helpers::validate_sysex_group_statuses;

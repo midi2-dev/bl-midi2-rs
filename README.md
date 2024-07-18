@@ -26,12 +26,12 @@ use midi2::prelude::*;
 let mut note_on = channel_voice2::NoteOn::<[u32; 4]>::new();
 note_on.set_group(u4::new(0x8));
 note_on.set_channel(u4::new(0xA));
-note_on.set_note(u7::new(0x5E));
+note_on.set_note_number(u7::new(0x5E));
 note_on.set_velocity(0x6A14);
 
 assert_eq!(note_on.group(), u4::new(0x8));
 assert_eq!(note_on.channel(), u4::new(0xA));
-assert_eq!(note_on.note(), u7::new(0x5E));
+assert_eq!(note_on.note_number(), u7::new(0x5E));
 assert_eq!(note_on.velocity(), 0x6A14);
 
 // Messages wrap an underlying buffer of data which can be read as an
@@ -69,10 +69,10 @@ fn handle_message(buffer: &[u32]) {
             println!("Channel Voice2: channel: {}", m.channel());
             match m {
                 channel_voice2::ChannelVoice2::NoteOn(m) => {
-                    println!("Note On! note: {}, velocity: {}", m.note(), m.velocity());
+                    println!("Note On! note: {}, velocity: {}", m.note_number(), m.velocity());
                 }
                 channel_voice2::ChannelVoice2::NoteOff(m) => {
-                    println!("Note Off! note: {}, velocity: {}", m.note(), m.velocity());
+                    println!("Note Off! note: {}, velocity: {}", m.note_number(), m.velocity());
                 }
                 _ => {}
             }
@@ -156,7 +156,7 @@ You'll want to setup midi2 without default features to compile
 without the `std` feature.
 
 ```toml
-midi2 = { version = "0.5.4", default-features = false, features = ["channel-voice2", "sysex7"],  }
+midi2 = { version = "0.6.0", default-features = false, features = ["channel-voice2", "sysex7"],  }
 ```
 
 ### Generic Representation

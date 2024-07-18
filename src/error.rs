@@ -23,3 +23,9 @@ impl std::fmt::Display for InvalidData {
         <Self as std::fmt::Debug>::fmt(self, f)
     }
 }
+
+impl core::convert::From<crate::traits::SysexTryResizeError> for BufferOverflow {
+    fn from(_value: crate::traits::SysexTryResizeError) -> Self {
+        BufferOverflow
+    }
+}

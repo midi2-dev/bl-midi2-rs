@@ -20,7 +20,7 @@ struct PerNoteManagement {
     #[property(common_properties::GroupProperty)]
     group: u4,
     #[property(common_properties::UmpSchemaProperty<u7, schema::Ump<0x0000_7F00, 0x0, 0x0, 0x0>>)]
-    note: u7,
+    note_number: u7,
     #[property(common_properties::UmpSchemaProperty<bool, schema::Ump<0x0000_0001, 0x0, 0x0, 0x0>>)]
     detach: bool,
     #[property(common_properties::UmpSchemaProperty<bool, schema::Ump<0x0000_0002, 0x0, 0x0, 0x0>>)]
@@ -39,7 +39,7 @@ mod tests {
         let mut message = PerNoteManagement::<[u32; 4]>::new();
         message.set_group(u4::new(0xB));
         message.set_channel(u4::new(0x9));
-        message.set_note(u7::new(0x1C));
+        message.set_note_number(u7::new(0x1C));
         message.set_detach(true);
         message.set_reset(true);
 
@@ -47,11 +47,11 @@ mod tests {
     }
 
     #[test]
-    fn note() {
+    fn note_number() {
         assert_eq!(
             PerNoteManagement::try_from(&[0x4BF9_1C03][..])
                 .unwrap()
-                .note(),
+                .note_number(),
             u7::new(0x1C),
         );
     }

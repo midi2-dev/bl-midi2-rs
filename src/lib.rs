@@ -38,6 +38,12 @@ pub use message::*;
 pub use packets::*;
 pub use traits::*;
 
+pub mod num {
+    pub use ux::*;
+    pub type Fixed7_9 = fixed::FixedU16<fixed::types::extra::U9>;
+    pub type Fixed7_25 = fixed::FixedU32<fixed::types::extra::U25>;
+}
+
 pub mod prelude {
     pub use super::*;
     pub use crate::ux::*;

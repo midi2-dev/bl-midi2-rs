@@ -20,7 +20,7 @@ struct RegisteredPerNoteController {
     #[property(common_properties::GroupProperty)]
     group: u4,
     #[property(common_properties::UmpSchemaProperty<u7, schema::Ump<0x0000_7F00, 0x0, 0x0, 0x0>>)]
-    note: u7,
+    note_number: u7,
     #[property(controller::ControllerProperty)]
     controller: controller::Controller,
 }
@@ -37,7 +37,7 @@ mod tests {
         let mut message = RegisteredPerNoteController::<[u32; 4]>::new();
         message.set_group(u4::new(0x4));
         message.set_channel(u4::new(0x5));
-        message.set_note(u7::new(0x6C));
+        message.set_note_number(u7::new(0x6C));
         message.set_controller(controller::Controller::Volume(0xE1E35E92));
 
         assert_eq!(
@@ -47,11 +47,11 @@ mod tests {
     }
 
     #[test]
-    fn note() {
+    fn note_number() {
         assert_eq!(
             RegisteredPerNoteController::try_from(&[0x4405_6C07, 0xE1E35E92][..])
                 .unwrap()
-                .note(),
+                .note_number(),
             u7::new(0x6C),
         );
     }

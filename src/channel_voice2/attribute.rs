@@ -1,12 +1,11 @@
-use crate::detail::{property, BitOps, Truncate};
-use ux::{u7, u9};
+use crate::detail::{property, BitOps};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum Attribute {
     ManufacturerSpecific(u16),
     ProfileSpecific(u16),
-    Pitch7_9 { note: u7, pitch_up: u9 },
+    Pitch7_9(crate::num::Fixed7_9),
 }
 
 const ERR_INVALID_NOTE_ATTRIBUTE: &str = "Couldn't interpret note attribute";
@@ -21,15 +20,14 @@ pub fn validate_ump(bytes: &[u32]) -> Result<(), crate::error::InvalidData> {
     }
 }
 
-pub fn from_ump(bytes: &[u32]) -> Option<Attribute> {
-    match bytes[0].octet(3) {
+pub fn from_ump(buffer: &[u32]) -> Option<Attribute> {
+    match buffer[0].octet(3) {
         0x0 => None,
-        0x1 => Some(Attribute::ManufacturerSpecific(bytes[1].word(1))),
-        0x2 => Some(Attribute::ProfileSpecific(bytes[1].word(1))),
-        0x3 => Some(Attribute::Pitch7_9 {
-            note: (bytes[1].word(1) >> 9).truncate(),
-            pitch_up: (bytes[1].word(1)).truncate(),
-        }),
+        0x1 => Some(Attribute::ManufacturerSpecific(buffer[1].word(1))),
+        0x2 => Some(Attribute::ProfileSpecific(buffer[1].word(1))),
+        0x3 => Some(Attribute::Pitch7_9(crate::num::Fixed7_9::from_bits(
+            buffer[1].word(1),
+        ))),
         _ => panic!("Invalid status"),
     }
 }
@@ -48,10 +46,9 @@ pub fn write_attribute(bytes: &mut [u32], attr: Option<Attribute>) -> &mut [u32]
                 bytes[0].set_octet(3, 0x2);
                 bytes[1].set_word(1, d);
             }
-            Attribute::Pitch7_9 { note, pitch_up } => {
-                let d = (u16::from(note) << 9) | u16::from(pitch_up);
+            Attribute::Pitch7_9(fixed) => {
                 bytes[0].set_octet(3, 0x3);
-                bytes[1].set_word(1, d);
+                bytes[1].set_word(1, fixed.to_bits());
             }
         },
     }
@@ -130,10 +127,9 @@ mod tests {
     fn from_packet_pitch7_9() {
         assert_eq!(
             try_from_ump(&[0x0000_0003, 0b0000_0000_0000_0000_0011_0011_0011_0011]),
-            Ok(Some(Attribute::Pitch7_9 {
-                note: u7::new(0b0011001),
-                pitch_up: u9::new(0b100110011)
-            })),
+            Ok(Some(Attribute::Pitch7_9(crate::num::Fixed7_9::from_bits(
+                0b0011_0011_0011_0011
+            )))),
         );
     }
 
@@ -152,10 +148,7 @@ mod tests {
 
     #[test]
     fn write_attribute_pitch7_9() {
-        let attribute = Attribute::Pitch7_9 {
-            note: u7::new(0b1011100),
-            pitch_up: u9::new(0b100010111),
-        };
+        let attribute = Attribute::Pitch7_9(crate::num::Fixed7_9::from_bits(0b1011_1001_0001_0111));
         assert_eq!(
             write_attribute(&mut [0x0, 0x0], Some(attribute)),
             &[0x0000_0003, 0b0000_0000_0000_0000_1011_1001_0001_0111]

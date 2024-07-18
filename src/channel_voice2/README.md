@@ -5,31 +5,26 @@ MIDI 2.0 Channel Voice Messages
 ```rust
 use midi2::{
     prelude::*,
-    channel_voice2::NoteOn,
+    num::Fixed7_9,
+    channel_voice2::{NoteAttribute, NoteOn},
 };
 
 let mut message = NoteOn::<[u32; 4]>::new();
 message.set_group(u4::new(0x8));
 message.set_channel(u4::new(0x8));
-message.set_note(u7::new(0x5E));
+message.set_note_number(u7::new(0x5E));
 message.set_velocity(0x6A14);
-message.set_attribute(Some(channel_voice2::NoteAttribute::Pitch7_9 {
-    note: u7::new(0x74),
-    pitch_up: u9::new(0x18A),
-}));
+message.set_attribute(Some(NoteAttribute::Pitch7_9(Fixed7_9::from_num(70.52))));
 
-assert_eq!(message.data(), &[0x4898_5E03, 0x6A14_E98A]);
+assert_eq!(message.data(), &[0x4898_5E03, 0x6A14_8D0A]);
 assert_eq!(message.group(), u4::new(0x8));
 assert_eq!(message.channel(), u4::new(0x8));
-assert_eq!(message.note(), u7::new(0x5E));
+assert_eq!(message.note_number(), u7::new(0x5E));
 assert_eq!(message.velocity(), 0x6A14);
 assert_eq!(
     message.attribute(), 
-    Some(channel_voice2::NoteAttribute::Pitch7_9 {
-        note: u7::new(0x74),
-        pitch_up: u9::new(0x18A),
-    }
-));
+    Some(NoteAttribute::Pitch7_9(Fixed7_9::from_num(70.52)))
+);
 ```
 
 ## Channeled

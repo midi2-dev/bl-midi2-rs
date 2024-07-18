@@ -68,46 +68,39 @@ impl<'a> TryFrom<&'a [u32]> for UmpStream<&'a [u32]> {
     type Error = crate::error::InvalidData;
     fn try_from(value: &'a [u32]) -> Result<Self, Self::Error> {
         use UmpStream::*;
-        if value.len() < 1 {
+        if value.is_empty() {
             return Err(crate::error::InvalidData("Slice is too short"));
         };
         Ok(match status_from_buffer(value) {
             device_identity::STATUS => {
-                DeviceIdentity(device_identity::DeviceIdentity::try_from(value)?.into())
+                DeviceIdentity(device_identity::DeviceIdentity::try_from(value)?)
             }
-            end_of_clip::STATUS => EndOfClip(end_of_clip::EndOfClip::try_from(value)?.into()),
+            end_of_clip::STATUS => EndOfClip(end_of_clip::EndOfClip::try_from(value)?),
             endpoint_discovery::STATUS => {
-                EndpointDiscovery(endpoint_discovery::EndpointDiscovery::try_from(value)?.into())
+                EndpointDiscovery(endpoint_discovery::EndpointDiscovery::try_from(value)?)
             }
-            endpoint_info::STATUS => {
-                EndpointInfo(endpoint_info::EndpointInfo::try_from(value)?.into())
-            }
-            endpoint_name::STATUS => {
-                EndpointName(endpoint_name::EndpointName::try_from(value)?.into())
-            }
+            endpoint_info::STATUS => EndpointInfo(endpoint_info::EndpointInfo::try_from(value)?),
+            endpoint_name::STATUS => EndpointName(endpoint_name::EndpointName::try_from(value)?),
             function_block_discovery::STATUS => FunctionBlockDiscovery(
-                function_block_discovery::FunctionBlockDiscovery::try_from(value)?.into(),
+                function_block_discovery::FunctionBlockDiscovery::try_from(value)?,
             ),
             function_block_info::STATUS => {
-                FunctionBlockInfo(function_block_info::FunctionBlockInfo::try_from(value)?.into())
+                FunctionBlockInfo(function_block_info::FunctionBlockInfo::try_from(value)?)
             }
             function_block_name::STATUS => {
-                FunctionBlockName(function_block_name::FunctionBlockName::try_from(value)?.into())
+                FunctionBlockName(function_block_name::FunctionBlockName::try_from(value)?)
             }
             product_instance_id::STATUS => {
-                ProductInstanceId(product_instance_id::ProductInstanceId::try_from(value)?.into())
+                ProductInstanceId(product_instance_id::ProductInstanceId::try_from(value)?)
             }
-            start_of_clip::STATUS => {
-                StartOfClip(start_of_clip::StartOfClip::try_from(value)?.into())
-            }
+            start_of_clip::STATUS => StartOfClip(start_of_clip::StartOfClip::try_from(value)?),
             stream_configuration_notification::STATUS => StreamConfigurationNotification(
                 stream_configuration_notification::StreamConfigurationNotification::try_from(
                     value,
-                )?
-                .into(),
+                )?,
             ),
             stream_configuration_request::STATUS => StreamConfigurationRequest(
-                stream_configuration_request::StreamConfigurationRequest::try_from(value)?.into(),
+                stream_configuration_request::StreamConfigurationRequest::try_from(value)?,
             ),
             _ => Err(crate::error::InvalidData(
                 "Couldn't interpret flex data status / bank fields",
@@ -123,9 +116,7 @@ impl<const STATUS: u16, B: Ump> property::Property<B> for StatusProperty<STATUS>
 }
 
 impl<'a, const STATUS: u16, B: Ump> property::ReadProperty<'a, B> for StatusProperty<STATUS> {
-    fn read(_buffer: &'a B) -> Self::Type {
-        ()
-    }
+    fn read(_buffer: &'a B) -> Self::Type {}
     fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         if buffer
             .buffer()
@@ -149,9 +140,7 @@ impl<const STATUS: u16, B: Ump + BufferMut> property::WriteProperty<B> for Statu
             packet[0] |= (STATUS as u32) << 16;
         }
     }
-    fn default() -> Self::Type {
-        ()
-    }
+    fn default() -> Self::Type {}
 }
 
 struct ConsistentFormatsProperty;
@@ -161,9 +150,7 @@ impl<B: Ump> property::Property<B> for ConsistentFormatsProperty {
 }
 
 impl<'a, B: Ump> property::ReadProperty<'a, B> for ConsistentFormatsProperty {
-    fn read(_buffer: &'a B) -> Self::Type {
-        ()
-    }
+    fn read(_buffer: &'a B) -> Self::Type {}
 
     fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         use crate::detail::helpers::validate_sysex_group_statuses;
@@ -182,9 +169,7 @@ impl<'a, B: Ump> property::ReadProperty<'a, B> for ConsistentFormatsProperty {
 }
 
 impl<B: Ump + BufferMut> property::WriteProperty<B> for ConsistentFormatsProperty {
-    fn default() -> Self::Type {
-        ()
-    }
+    fn default() -> Self::Type {}
     fn write(buffer: &mut B, _v: Self::Type) {
         set_format_fields(buffer.buffer_mut())
     }
