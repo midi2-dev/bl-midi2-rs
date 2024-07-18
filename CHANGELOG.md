@@ -1,4 +1,15 @@
 # 0.5.4
+* feat: generate MIDI CI messages
+    * strongly typed MIDI CI version
+    * implement MIDI CI discovery
+* fix: fixes sysex next impl broken with 'empty' packets
+* fix: some clippy warnings
+* refactor!: ci is no longer a default feature
+* refactor!: rename `note` properties to `note_number`
+* refactor!: `pitch7_9` and `pitch7_25` used fixed number type
+    * pull in `fixed` crate
+
+# 0.5.4
 * ci: update remote repo url to midi2-dev
 
 # 0.5.3
