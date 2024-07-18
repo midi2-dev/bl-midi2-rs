@@ -214,6 +214,13 @@ impl<'a> core::iter::Iterator for PayloadIterator<'a> {
         if self.finished() {
             return None;
         }
+
+        // skip empty packets
+        while !self.finished() && self.size_of_current_packet() == 0 {
+            self.payload_index = 0;
+            self.packet_index += 1;
+        }
+
         let ret = Some(self.value());
         self.advance();
         ret
@@ -864,6 +871,154 @@ mod tests {
         assert_eq!(payload.next(), Some(0x31));
         assert_eq!(payload.len(), 0);
         assert_eq!(payload.next(), None);
+    }
+
+    #[test]
+    fn payload_nth_non_contiguous_payload() {
+        let message = Sysex8::try_from(
+            &[
+                // empty
+                0x5411_BB00,
+                0x0000_0000,
+                0x0000_0000,
+                0x0000_0000,
+                0x5422_BB00,
+                0x0000_0000,
+                0x0000_0000,
+                0x0000_0000,
+                0x5423_BB01,
+                0x0200_0000,
+                0x0000_0000,
+                0x0000_0000,
+                // empty
+                0x5421_BB00,
+                0x0000_0000,
+                0x0000_0000,
+                0x0000_0000,
+                // empty
+                0x5421_BB00,
+                0x0000_0000,
+                0x0000_0000,
+                0x0000_0000,
+                0x5424_BB03,
+                0x0405_0000,
+                0x0000_0000,
+                0x0000_0000,
+                0x5425_BB06,
+                0x0708_0900,
+                0x0000_0000,
+                0x0000_0000,
+                0x5426_BB0A,
+                0x0B0C_0D0E,
+                0x0000_0000,
+                0x0000_0000,
+                0x5427_BB0F,
+                0x1011_1213,
+                0x1400_0000,
+                0x0000_0000,
+                0x5428_BB15,
+                0x1617_1819,
+                0x1A1B_0000,
+                0x0000_0000,
+                0x5429_BB1C,
+                0x1D1E_1F20,
+                0x2122_2300,
+                0x0000_0000,
+                0x542A_BB24,
+                0x2526_2728,
+                0x292A_2B2C,
+                0x0000_0000,
+                0x5436_BB2D,
+                0x2E2F_3031,
+                0x0000_0000,
+                0x0000_0000,
+            ][..],
+        )
+        .unwrap();
+        let mut payload = message.payload();
+        assert_eq!(payload.len(), 50);
+        assert_eq!(payload.nth(13), Some(0x0D));
+        assert_eq!(payload.len(), 36);
+        assert_eq!(payload.nth(11), Some(0x19));
+        assert_eq!(payload.len(), 24);
+        assert_eq!(payload.nth(11), Some(0x25));
+        assert_eq!(payload.len(), 12);
+        assert_eq!(payload.nth(4), Some(0x2A));
+        assert_eq!(payload.len(), 7);
+        assert_eq!(payload.nth(5), Some(0x30));
+        assert_eq!(payload.len(), 1);
+        assert_eq!(payload.next(), Some(0x31));
+        assert_eq!(payload.len(), 0);
+        assert_eq!(payload.next(), None);
+    }
+
+    #[test]
+    fn payload_next_non_contiguous_payload() {
+        let message = Sysex8::try_from(
+            &[
+                // empty
+                0x5411_BB00,
+                0x0000_0000,
+                0x0000_0000,
+                0x0000_0000,
+                0x5422_BB00,
+                0x0000_0000,
+                0x0000_0000,
+                0x0000_0000,
+                0x5423_BB01,
+                0x0200_0000,
+                0x0000_0000,
+                0x0000_0000,
+                // empty
+                0x5421_BB00,
+                0x0000_0000,
+                0x0000_0000,
+                0x0000_0000,
+                // empty
+                0x5421_BB00,
+                0x0000_0000,
+                0x0000_0000,
+                0x0000_0000,
+                0x5424_BB03,
+                0x0405_0000,
+                0x0000_0000,
+                0x0000_0000,
+                0x5425_BB06,
+                0x0708_0900,
+                0x0000_0000,
+                0x0000_0000,
+                0x5426_BB0A,
+                0x0B0C_0D0E,
+                0x0000_0000,
+                0x0000_0000,
+                0x5427_BB0F,
+                0x1011_1213,
+                0x1400_0000,
+                0x0000_0000,
+                0x5428_BB15,
+                0x1617_1819,
+                0x1A1B_0000,
+                0x0000_0000,
+                0x5429_BB1C,
+                0x1D1E_1F20,
+                0x2122_2300,
+                0x0000_0000,
+                0x542A_BB24,
+                0x2526_2728,
+                0x292A_2B2C,
+                0x0000_0000,
+                0x5436_BB2D,
+                0x2E2F_3031,
+                0x0000_0000,
+                0x0000_0000,
+            ][..],
+        )
+        .unwrap();
+        let mut payload = message.payload();
+        for i in 0..50 {
+            assert_eq!(payload.len(), 50 - i);
+            assert_eq!(payload.next(), Some(i as u8));
+        }
     }
 
     #[test]
