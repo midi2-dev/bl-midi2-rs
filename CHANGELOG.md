@@ -1,4 +1,4 @@
-# 0.5.4
+# 0.6.1
 * feat: generate MIDI CI messages
     * strongly typed MIDI CI version
     * implement MIDI CI discovery
