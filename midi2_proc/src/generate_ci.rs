@@ -328,6 +328,33 @@ fn new_impl(root_ident: &syn::Ident, properties: &[Property]) -> TokenStream {
     }
 }
 
+fn new_with_buffer_impl(root_ident: &syn::Ident, properties: &[Property]) -> TokenStream {
+    let initialise_properties = initialise_property_statements(properties, quote! {B});
+    quote! {
+        impl<const VERSION: u8,
+            B: crate::buffer::Bytes
+                + crate::buffer::BufferMut
+                + crate::buffer::BufferResize
+        > #root_ident<VERSION, B>
+        {
+            /// Create a new message backed by a resizable buffer.
+            pub fn new_with_buffer(buffer: B) -> Self where Self: crate::ci::version::CiVersion<VERSION>
+            {
+                let mut sysex7 = crate::sysex7::Sysex7::<B>::new_with_buffer(buffer);
+                let payload_size = <Self as crate::traits::MinSize<B>>::MIN_SIZE - 2;
+                <crate::sysex7::Sysex7<B> as crate::SysexInternal<B>>::resize(&mut sysex7, payload_size);
+                let buffer_ref_mut = <crate::sysex7::Sysex7<B> as crate::BufferAccess<B>>::buffer_access_mut(&mut sysex7);
+                if buffer_ref_mut.buffer().len() > 5 {
+                    // write the version
+                    buffer_ref_mut.buffer_mut()[5] = VERSION;
+                }
+                #initialise_properties
+                #root_ident::<VERSION, B>(sysex7)
+            }
+        }
+    }
+}
+
 fn try_new_impl(root_ident: &syn::Ident, properties: &[Property]) -> TokenStream {
     let initialise_properties = initialise_property_statements(properties, quote! {B});
     quote! {
@@ -342,6 +369,31 @@ fn try_new_impl(root_ident: &syn::Ident, properties: &[Property]) -> TokenStream
             pub fn try_new() -> Result<Self, crate::error::BufferOverflow> where Self: crate::ci::version::CiVersion<VERSION>
             {
                 let mut sysex7 = crate::sysex7::Sysex7::<B>::try_new()?;
+                let payload_size = <Self as crate::traits::MinSize<B>>::MIN_SIZE - 2;
+                <crate::sysex7::Sysex7<B> as crate::SysexInternal<B>>::try_resize(&mut sysex7, payload_size)?;
+                let buffer_ref_mut = <crate::sysex7::Sysex7<B> as crate::BufferAccess<B>>::buffer_access_mut(&mut sysex7);
+                // write the version
+                buffer_ref_mut.buffer_mut()[5] = VERSION;
+                #initialise_properties
+                Ok(#root_ident::<VERSION, B>(sysex7))
+            }
+        }
+    }
+}
+
+fn try_new_with_buffer_impl(root_ident: &syn::Ident, properties: &[Property]) -> TokenStream {
+    let initialise_properties = initialise_property_statements(properties, quote! {B});
+    quote! {
+        impl<const VERSION: u8,
+            B: crate::buffer::Bytes
+                + crate::buffer::BufferMut
+                + crate::buffer::BufferTryResize
+        > #root_ident<VERSION, B>
+        {
+            /// Create a new message backed by a buffer with fallible resize.
+            pub fn try_new_with_buffer(buffer: B) -> Result<Self, crate::error::BufferOverflow> where Self: crate::ci::version::CiVersion<VERSION>
+            {
+                let mut sysex7 = crate::sysex7::Sysex7::<B>::try_new_with_buffer(buffer)?;
                 let payload_size = <Self as crate::traits::MinSize<B>>::MIN_SIZE - 2;
                 <crate::sysex7::Sysex7<B> as crate::SysexInternal<B>>::try_resize(&mut sysex7, payload_size)?;
                 let buffer_ref_mut = <crate::sysex7::Sysex7<B> as crate::BufferAccess<B>>::buffer_access_mut(&mut sysex7);
@@ -550,6 +602,8 @@ pub fn generate_ci(attrs: TokenStream1, item: TokenStream1) -> TokenStream1 {
     let min_size_impl = min_size_impl(root_ident, &args);
     let new_impl = new_impl(root_ident, &properties);
     let try_new_impl = try_new_impl(root_ident, &properties);
+    let new_with_buffer = new_with_buffer_impl(root_ident, &properties);
+    let try_new_with_buffer = try_new_with_buffer_impl(root_ident, &properties);
     let ci_version_impls = ci_version_impls(root_ident, &args);
     let deref_sysex7_impl = deref_sysex7_impl(root_ident);
     let message_impl = message_impl(root_ident, &properties);
@@ -574,6 +628,8 @@ pub fn generate_ci(attrs: TokenStream1, item: TokenStream1) -> TokenStream1 {
         #ci_version_impls
         #rebuffer_from_impl
         #try_rebuffer_from_impl
+        #new_with_buffer
+        #try_new_with_buffer
     });
 
     tokens.into()

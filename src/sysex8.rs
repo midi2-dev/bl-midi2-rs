@@ -501,6 +501,41 @@ mod tests {
     }
 
     #[test]
+    fn try_new_with_buffer() {
+        let mut buffer = [0x0_u32; 16];
+        let message = Sysex8::try_new_with_buffer(&mut buffer[..]).unwrap();
+        assert_eq!(
+            message.data(),
+            &[0x5001_0000, 0x0000_0000, 0x0000_0000, 0x0000_0000,]
+        );
+    }
+
+    #[test]
+    fn try_new_with_buffer_undersized_buffer() {
+        let mut buffer = [0x0_u32; 2];
+        let result = Sysex8::try_new_with_buffer(&mut buffer[..]);
+        assert_eq!(result, Err(crate::error::BufferOverflow));
+    }
+
+    #[test]
+    fn try_new_with_buffer_write_payload() {
+        let mut buffer = [0x0_u32; 16];
+        let mut message = Sysex8::try_new_with_buffer(&mut buffer[..]).unwrap();
+        message.try_set_payload(0..10).unwrap();
+        assert_eq!(
+            message.data(),
+            &[0x500B_0000, 0x0102_0304, 0x0506_0708, 0x0900_0000,][..]
+        );
+    }
+
+    #[test]
+    fn new_with_buffer_buffer_is_zeroed() {
+        let mut buffer = (0_u32..4).collect::<std::vec::Vec<u32>>();
+        let _ = Sysex8::new_with_buffer(&mut buffer);
+        assert_eq!(buffer, std::vec![0x5001_0000, 0x0, 0x0, 0x0]);
+    }
+
+    #[test]
     fn new_set_group() {
         use crate::traits::Grouped;
 

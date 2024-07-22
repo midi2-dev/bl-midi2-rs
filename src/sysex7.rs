@@ -108,8 +108,9 @@ impl<B: crate::buffer::Buffer + crate::buffer::BufferMut> crate::detail::propert
 {
     fn write(buffer: &mut B, _: Self::Type) {
         if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U8 {
-            let last = buffer.buffer().len() - 1;
-            buffer.specialise_u8_mut()[last] = END_BYTE;
+            // only called at initialization time.
+            // the payload will be empty
+            buffer.specialise_u8_mut()[1] = END_BYTE;
         }
     }
     fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
@@ -832,6 +833,24 @@ mod tests {
     fn new_bytes() {
         let message = Sysex7::<std::vec::Vec<u8>>::new();
         assert_eq!(message, Sysex7(std::vec![0xF0, 0xF7]));
+    }
+
+    #[test]
+    fn bytes_try_new_with_buffer() {
+        let mut buffer = [0x0_u8; 50];
+        let message = Sysex7::try_new_with_buffer(&mut buffer[..]);
+        assert_eq!(message.unwrap().data(), &[0xF0, 0xF7][..]);
+    }
+
+    #[test]
+    fn bytes_try_new_with_buffer_write_payload_data() {
+        let mut buffer = [0x0_u8; 50];
+        let mut message = Sysex7::try_new_with_buffer(&mut buffer[..]).unwrap();
+        message.try_set_payload((0..10).map(u7::new)).unwrap();
+        assert_eq!(
+            message.data(),
+            &[0xF0, 0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xF7][..]
+        );
     }
 
     #[test]
