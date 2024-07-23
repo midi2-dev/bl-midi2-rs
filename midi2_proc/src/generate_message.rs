@@ -481,7 +481,11 @@ fn new_with_buffer_impl(
             pub fn new_with_buffer(mut buffer: B) -> #root_ident<B>
             {
                 let buffer_ref_mut = &mut buffer;
-                buffer_ref_mut.resize(<Self as crate::traits::MinSize<B>>::MIN_SIZE);
+                let sz = <Self as crate::traits::MinSize<B>>::MIN_SIZE;
+                buffer_ref_mut.resize(sz);
+                for b in &mut buffer_ref_mut.buffer_mut()[..sz] {
+                    *b = <<B as crate::buffer::Buffer>::Unit as crate::buffer::Unit>::zero();
+                }
                 #initialise_properties
                 #root_ident::<B>(buffer)
             }
@@ -507,7 +511,11 @@ fn try_new_with_buffer_impl(
             pub fn try_new_with_buffer(mut buffer: B) -> Result<#root_ident<B>, crate::error::BufferOverflow>
             {
                 let buffer_ref_mut = &mut buffer;
-                buffer_ref_mut.try_resize(<Self as crate::traits::MinSize<B>>::MIN_SIZE)?;
+                let sz = <Self as crate::traits::MinSize<B>>::MIN_SIZE;
+                buffer_ref_mut.try_resize(sz)?;
+                for b in &mut buffer_ref_mut.buffer_mut()[..sz] {
+                    *b = <<B as crate::buffer::Buffer>::Unit as crate::buffer::Unit>::zero();
+                }
                 #initialise_properties
                 Ok(#root_ident::<B>(buffer))
             }
