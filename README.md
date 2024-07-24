@@ -6,10 +6,10 @@ This implementation of MIDI 2.0 is based on the 1.1 revision of the specificatio
 See [the official MIDI 2.0 specification](https://midi.org/)
 for more details on the data protocol standard.
 
-## ⚠️  **Note!** ⚠️  
-
-This crate is still in its alpha phase and is not
-recommended for production.
+> [!CAUTION]
+> 
+> This project is still in early development.  
+> Expect breaking changes and bugs, and please report any issues you encounter.
 
 We would welcome contributions! 
 Please refer to the [CONTRIBUTOR.md](CONTRIBUTOR.md)
