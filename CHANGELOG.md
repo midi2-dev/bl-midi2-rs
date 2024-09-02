@@ -1,3 +1,6 @@
+# 0.6.2
+* fix: incorrect status of delta clockstamp tpq message
+
 # 0.6.1
 * feat: generate MIDI CI messages
     * strongly typed MIDI CI version
