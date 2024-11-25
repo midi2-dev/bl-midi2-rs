@@ -97,7 +97,7 @@ mod timestamp {
 mod delta_clockstamp {
     use crate::detail::common_properties;
     use crate::utility;
-    pub const STATUS: u8 = 0b0010;
+    pub const STATUS: u8 = 0b0100;
     #[midi2_proc::generate_message(Via(crate::utility::Utility), FixedSize, MinSizeUmp(1))]
     struct DeltaClockstamp {
         #[property(common_properties::UmpMessageTypeProperty<{utility::UMP_MESSAGE_TYPE}>)]
@@ -252,6 +252,16 @@ mod tests {
 
     #[test]
     fn delta_clock_stamp_try_from() {
-        DeltaClockstamp::try_from(&[0x0020_0000][..]).unwrap();
+        DeltaClockstamp::try_from(&[0x0040_0000][..]).unwrap();
+    }
+
+    #[test]
+    fn delta_clock_stamp_tpq_try_from() {
+        DeltaClockstampTpq::try_from(&[0x0030_0000][..]).unwrap();
+    }
+
+    #[test]
+    fn time_stamp_try_from() {
+        Timestamp::try_from(&[0x0020_0000][..]).unwrap();
     }
 }
