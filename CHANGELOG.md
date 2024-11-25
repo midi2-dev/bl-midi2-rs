@@ -1,3 +1,6 @@
+# 0.6.3
+* fix: correct delta clock stamp status code
+
 # 0.6.2
 * fix: incorrect status of delta clockstamp tpq message
 
