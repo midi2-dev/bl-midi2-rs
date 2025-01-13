@@ -1,3 +1,6 @@
+# 0.6.4
+* fix: realtime bytes messages should have no data bytes
+
 # 0.6.3
 * fix: correct delta clock stamp status code
 
