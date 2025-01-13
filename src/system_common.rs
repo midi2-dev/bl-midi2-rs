@@ -13,7 +13,7 @@ mod tune_request {
         system_common::{self, UMP_MESSAGE_TYPE},
     };
     pub(crate) const STATUS: u8 = 0xF6;
-    /// MIDI 2.0 Channel Voice Tune Request Message
+    /// Tune Request Message
     ///
     /// See the [module docs](crate::system_common) for more info.
     #[midi2_proc::generate_message(
@@ -37,14 +37,14 @@ mod timing_clock {
         system_common::{self, UMP_MESSAGE_TYPE},
     };
     pub(crate) const STATUS: u8 = 0xF8;
-    /// MIDI 2.0 Channel Voice Timing Clock Message
+    /// Timing Clock Message
     ///
     /// See the [module docs](crate::system_common) for more info.
     #[midi2_proc::generate_message(
         Via(system_common::SystemCommon),
         FixedSize,
         MinSizeUmp(1),
-        MinSizeBytes(2)
+        MinSizeBytes(1)
     )]
     struct TimingClock {
         #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
@@ -61,14 +61,14 @@ mod start {
         system_common::{self, UMP_MESSAGE_TYPE},
     };
     pub(crate) const STATUS: u8 = 0xFA;
-    /// MIDI 2.0 Channel Voice Start Message
+    /// Start Message
     ///
     /// See the [module docs](crate::system_common) for more info.
     #[midi2_proc::generate_message(
         Via(system_common::SystemCommon),
         FixedSize,
         MinSizeUmp(1),
-        MinSizeBytes(2)
+        MinSizeBytes(1)
     )]
     struct Start {
         #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
@@ -85,14 +85,14 @@ mod cont {
         system_common::{self, UMP_MESSAGE_TYPE},
     };
     pub(crate) const STATUS: u8 = 0xFB;
-    /// MIDI 2.0 Channel Voice Continue Message
+    /// Continue Message
     ///
     /// See the [module docs](crate::system_common) for more info.
     #[midi2_proc::generate_message(
         Via(system_common::SystemCommon),
         FixedSize,
         MinSizeUmp(1),
-        MinSizeBytes(2)
+        MinSizeBytes(1)
     )]
     struct Continue {
         #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
@@ -109,14 +109,14 @@ mod stop {
         system_common::{self, UMP_MESSAGE_TYPE},
     };
     pub(crate) const STATUS: u8 = 0xFC;
-    /// MIDI 2.0 Channel Voice Stop Message
+    /// Stop Message
     ///
     /// See the [module docs](crate::system_common) for more info.
     #[midi2_proc::generate_message(
         Via(system_common::SystemCommon),
         FixedSize,
         MinSizeUmp(1),
-        MinSizeBytes(2)
+        MinSizeBytes(1)
     )]
     struct Stop {
         #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
@@ -133,14 +133,14 @@ mod active_sensing {
         system_common::{self, UMP_MESSAGE_TYPE},
     };
     pub(crate) const STATUS: u8 = 0xFE;
-    /// MIDI 2.0 Channel Voice Active Sensing Message
+    /// Active Sensing Message
     ///
     /// See the [module docs](crate::system_common) for more info.
     #[midi2_proc::generate_message(
         Via(system_common::SystemCommon),
         FixedSize,
         MinSizeUmp(1),
-        MinSizeBytes(2)
+        MinSizeBytes(1)
     )]
     struct ActiveSensing {
         #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
@@ -157,14 +157,14 @@ mod reset {
         system_common::{self, UMP_MESSAGE_TYPE},
     };
     pub(crate) const STATUS: u8 = 0xFF;
-    /// MIDI 2.0 Channel Voice Reset Message
+    /// Reset Message
     ///
     /// See the [module docs](crate::system_common) for more info.
     #[midi2_proc::generate_message(
         Via(system_common::SystemCommon),
         FixedSize,
         MinSizeUmp(1),
-        MinSizeBytes(2)
+        MinSizeBytes(1)
     )]
     struct Reset {
         #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
@@ -309,6 +309,60 @@ fn status<U: crate::buffer::Unit>(buffer: &[U]) -> u8 {
 mod tests {
     use super::*;
     use pretty_assertions::assert_eq;
+
+    #[test]
+    fn timing_clock_bytes_data() {
+        use crate::Data;
+        assert_eq!(
+            TimingClock::try_from(&[0xF8_u8][..]).unwrap().data(),
+            &[0xF8_u8][..]
+        );
+    }
+
+    #[test]
+    fn start_bytes_data() {
+        use crate::Data;
+        assert_eq!(
+            Start::try_from(&[0xFA_u8][..]).unwrap().data(),
+            &[0xFA_u8][..]
+        );
+    }
+
+    #[test]
+    fn continue_bytes_data() {
+        use crate::Data;
+        assert_eq!(
+            Continue::try_from(&[0xFB_u8][..]).unwrap().data(),
+            &[0xFB_u8][..]
+        );
+    }
+
+    #[test]
+    fn stop_bytes_data() {
+        use crate::Data;
+        assert_eq!(
+            Stop::try_from(&[0xFC_u8][..]).unwrap().data(),
+            &[0xFC_u8][..]
+        );
+    }
+
+    #[test]
+    fn active_sensing_bytes_data() {
+        use crate::Data;
+        assert_eq!(
+            ActiveSensing::try_from(&[0xFE_u8][..]).unwrap().data(),
+            &[0xFE_u8][..]
+        );
+    }
+
+    #[test]
+    fn reset_bytes_data() {
+        use crate::Data;
+        assert_eq!(
+            Reset::try_from(&[0xFF_u8][..]).unwrap().data(),
+            &[0xFF_u8][..]
+        );
+    }
 
     #[test]
     fn from_byte_data() {
