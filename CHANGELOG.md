@@ -1,3 +1,6 @@
+# 0.6.5
+* docs: improve readme example
+
 # 0.6.4
 * fix: realtime bytes messages should have no data bytes
 
