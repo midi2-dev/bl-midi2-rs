@@ -33,6 +33,7 @@ assert_eq!(note_on.group(), u4::new(0x8));
 assert_eq!(note_on.channel(), u4::new(0xA));
 assert_eq!(note_on.note_number(), u7::new(0x5E));
 assert_eq!(note_on.velocity(), 0x6A14);
+assert_eq!(note_on.data(), &[0x489A_5E00, 0x6A14_0000]);
 
 // Messages wrap an underlying buffer of data which can be read as an
 // ordinary slice.
@@ -49,8 +50,8 @@ assert_eq!(
         0x7665_7265,
         0x6C69_7374,
         0x0000_0000,
-]);
-
+    ]
+);
 ```
 
 ## Aggregate Message Types
@@ -156,7 +157,7 @@ You'll want to setup midi2 without default features to compile
 without the `std` feature.
 
 ```toml
-midi2 = { version = "0.6.4", default-features = false, features = ["channel-voice2", "sysex7"],  }
+midi2 = { version = "0.6.5", default-features = false, features = ["channel-voice2", "sysex7"],  }
 ```
 
 ### Generic Representation
