@@ -463,6 +463,66 @@ fn new_impl(
     }
 }
 
+fn new_with_buffer_impl(
+    root_ident: &syn::Ident,
+    args: &GenerateMessageArgs,
+    properties: &[Property],
+) -> TokenStream {
+    let constraint = generic_buffer_constraint(args);
+    let initialise_properties = initialise_property_statements(properties, quote! {B});
+    quote! {
+        impl<B: #constraint
+                    + crate::buffer::BufferMut
+                    + crate::buffer::BufferResize
+        > #root_ident<B>
+        {
+            /// Create a new message backed by the provided resizable buffer.
+            /// The provided buffer will be zeroed at initialization.
+            pub fn new_with_buffer(mut buffer: B) -> #root_ident<B>
+            {
+                let buffer_ref_mut = &mut buffer;
+                let sz = <Self as crate::traits::MinSize<B>>::MIN_SIZE;
+                buffer_ref_mut.resize(sz);
+                for b in &mut buffer_ref_mut.buffer_mut()[..sz] {
+                    *b = <<B as crate::buffer::Buffer>::Unit as crate::buffer::Unit>::zero();
+                }
+                #initialise_properties
+                #root_ident::<B>(buffer)
+            }
+        }
+    }
+}
+
+fn try_new_with_buffer_impl(
+    root_ident: &syn::Ident,
+    args: &GenerateMessageArgs,
+    properties: &[Property],
+) -> TokenStream {
+    let constraint = generic_buffer_constraint(args);
+    let initialise_properties = initialise_property_statements(properties, quote! {B});
+    quote! {
+        impl<B: #constraint
+                    + crate::buffer::BufferMut
+                    + crate::buffer::BufferTryResize
+        > #root_ident<B>
+        {
+            /// Create a new message backed by the provided buffer.
+            /// The provided buffer will be zeroed at initialization.
+            pub fn try_new_with_buffer(mut buffer: B) -> Result<#root_ident<B>, crate::error::BufferOverflow>
+            {
+                let buffer_ref_mut = &mut buffer;
+                let sz = <Self as crate::traits::MinSize<B>>::MIN_SIZE;
+                buffer_ref_mut.try_resize(sz)?;
+                for b in &mut buffer_ref_mut.buffer_mut()[..sz] {
+                    *b = <<B as crate::buffer::Buffer>::Unit as crate::buffer::Unit>::zero();
+                }
+                #initialise_properties
+                Ok(#root_ident::<B>(buffer))
+            }
+        }
+    }
+}
+
 fn new_array_impl(
     root_ident: &syn::Ident,
     args: &GenerateMessageArgs,
@@ -732,6 +792,8 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     let rebuffer_from_impl = rebuffer_from_impl(root_ident, &args);
     let try_rebuffer_from_impl = try_rebuffer_from_impl(root_ident, &args);
     let new_impl = new_impl(root_ident, &args, &properties);
+    let new_with_buffer_impl = new_with_buffer_impl(root_ident, &args, &properties);
+    let try_new_with_buffer_impl = try_new_with_buffer_impl(root_ident, &args, &properties);
     let new_array_impl = new_array_impl(root_ident, &args, &properties);
     let try_new_impl = try_new_impl(root_ident, &args, &properties);
     let clone_impl = clone_impl(root_ident, &args);
@@ -749,6 +811,8 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
         #rebuffer_from_impl
         #try_rebuffer_from_impl
         #new_impl
+        #new_with_buffer_impl
+        #try_new_with_buffer_impl
         #new_array_impl
         #try_new_impl
         #clone_impl

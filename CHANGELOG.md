@@ -1,3 +1,12 @@
+# 0.7.0 
+* feat!: packet types
+    * Packet types for each ump message type.
+    * Messages are formed of packets.
+    * The Packets trait has Item = Packet. (breaking change)
+* feat: allow messages to be created with external backing buffers
+* docs: improve warning formatting in top level readme
+* docs: improve readme example
+
 # 0.6.5
 * docs: improve readme example
 

@@ -10,6 +10,7 @@ mod controller;
 mod key_pressure;
 mod note_off;
 mod note_on;
+mod packet;
 mod per_note_management;
 mod per_note_pitch_bend;
 mod program_change;
@@ -28,6 +29,7 @@ pub use controller::Controller;
 pub use key_pressure::*;
 pub use note_off::*;
 pub use note_on::*;
+pub use packet::Packet;
 pub use per_note_management::*;
 pub use per_note_pitch_bend::*;
 pub use program_change::*;
@@ -74,7 +76,9 @@ impl<'a> TryFrom<&'a [u32]> for ChannelVoice2<&'a [u32]> {
     type Error = crate::error::InvalidData;
     fn try_from(buffer: &'a [u32]) -> Result<Self, Self::Error> {
         if buffer.is_empty() {
-            return Err(crate::error::InvalidData("Slice is too short"));
+            return Err(crate::error::InvalidData(
+                crate::detail::common_err_strings::ERR_SLICE_TOO_SHORT,
+            ));
         };
 
         use crate::detail::BitOps;
@@ -148,7 +152,7 @@ mod test {
 
         let message = ChannelVoice2::try_from(&[0x4BAC_5900, 0xC0B83064][..]).unwrap();
         let mut packets = message.packets();
-        assert_eq!(packets.next(), Some(&[0x4BAC_5900, 0xC0B83064][..]));
+        assert_eq!(&*packets.next().unwrap(), &[0x4BAC_5900, 0xC0B83064][..]);
         assert_eq!(packets.next(), None);
     }
 

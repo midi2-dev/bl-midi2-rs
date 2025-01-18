@@ -228,6 +228,16 @@ impl<const SIZE: usize, U: Unit> BufferTryResize for [U; SIZE] {
     }
 }
 
+impl<U: Unit> BufferTryResize for &mut [U] {
+    fn try_resize(&mut self, size: usize) -> Result<(), BufferOverflow> {
+        if size > self.len() {
+            Err(BufferOverflow)
+        } else {
+            Ok(())
+        }
+    }
+}
+
 #[cfg(any(feature = "std", test))]
 impl<U: Unit> Buffer for std::vec::Vec<U> {
     type Unit = U;
@@ -254,6 +264,28 @@ impl<U: Unit> BufferResize for std::vec::Vec<U> {
 impl<U: Unit> BufferDefault for std::vec::Vec<U> {
     fn default() -> Self {
         Default::default()
+    }
+}
+
+#[cfg(any(feature = "std", test))]
+impl<U: Unit> Buffer for &mut std::vec::Vec<U> {
+    type Unit = U;
+    fn buffer(&self) -> &[Self::Unit] {
+        self
+    }
+}
+
+#[cfg(any(feature = "std", test))]
+impl<U: Unit> BufferMut for &mut std::vec::Vec<U> {
+    fn buffer_mut(&mut self) -> &mut [<Self as Buffer>::Unit] {
+        self
+    }
+}
+
+#[cfg(any(feature = "std", test))]
+impl<U: Unit> BufferResize for &mut std::vec::Vec<U> {
+    fn resize(&mut self, size: usize) {
+        std::vec::Vec::resize(*self, size, U::zero());
     }
 }
 

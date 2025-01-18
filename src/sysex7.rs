@@ -6,6 +6,10 @@ use crate::{
     ux::{self, u7},
 };
 
+mod packet;
+
+pub use packet::Packet;
+
 pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x3;
 
 #[midi2_proc::generate_message(MinSizeUmp(2), MinSizeBytes(2))]
@@ -108,8 +112,9 @@ impl<B: crate::buffer::Buffer + crate::buffer::BufferMut> crate::detail::propert
 {
     fn write(buffer: &mut B, _: Self::Type) {
         if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U8 {
-            let last = buffer.buffer().len() - 1;
-            buffer.specialise_u8_mut()[last] = END_BYTE;
+            // only called at initialization time.
+            // the payload will be empty
+            buffer.specialise_u8_mut()[1] = END_BYTE;
         }
     }
     fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
@@ -832,6 +837,24 @@ mod tests {
     fn new_bytes() {
         let message = Sysex7::<std::vec::Vec<u8>>::new();
         assert_eq!(message, Sysex7(std::vec![0xF0, 0xF7]));
+    }
+
+    #[test]
+    fn bytes_try_new_with_buffer() {
+        let mut buffer = [0x0_u8; 50];
+        let message = Sysex7::try_new_with_buffer(&mut buffer[..]);
+        assert_eq!(message.unwrap().data(), &[0xF0, 0xF7][..]);
+    }
+
+    #[test]
+    fn bytes_try_new_with_buffer_write_payload_data() {
+        let mut buffer = [0x0_u8; 50];
+        let mut message = Sysex7::try_new_with_buffer(&mut buffer[..]).unwrap();
+        message.try_set_payload((0..10).map(u7::new)).unwrap();
+        assert_eq!(
+            message.data(),
+            &[0xF0, 0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xF7][..]
+        );
     }
 
     #[test]
@@ -1614,11 +1637,11 @@ mod tests {
         let message = Sysex7::try_from(&buffer[..]).unwrap();
         let mut packets = message.packets();
 
-        assert_eq!(packets.next(), Some(&[0x3016_0001, 0x0203_0405,][..]));
-        assert_eq!(packets.next(), Some(&[0x3026_0607, 0x0809_0A0B,][..]));
-        assert_eq!(packets.next(), Some(&[0x3026_0C0D, 0x0E0F_1011,][..]));
-        assert_eq!(packets.next(), Some(&[0x3026_1213, 0x1415_1617,][..]));
-        assert_eq!(packets.next(), Some(&[0x3036_1819, 0x1A1B_1C1D,][..]));
+        assert_eq!(&*packets.next().unwrap(), &[0x3016_0001, 0x0203_0405,][..]);
+        assert_eq!(&*packets.next().unwrap(), &[0x3026_0607, 0x0809_0A0B,][..]);
+        assert_eq!(&*packets.next().unwrap(), &[0x3026_0C0D, 0x0E0F_1011,][..]);
+        assert_eq!(&*packets.next().unwrap(), &[0x3026_1213, 0x1415_1617,][..]);
+        assert_eq!(&*packets.next().unwrap(), &[0x3036_1819, 0x1A1B_1C1D,][..]);
         assert_eq!(packets.next(), None);
     }
 
@@ -1629,7 +1652,7 @@ mod tests {
         let message = Sysex7::<[u32; 2]>::new();
         let mut packets = message.packets();
 
-        assert_eq!(packets.next(), Some(&[0x3000_0000, 0x0][..]));
+        assert_eq!(&*packets.next().unwrap(), &[0x3000_0000, 0x0][..]);
         assert_eq!(packets.next(), None);
     }
 }

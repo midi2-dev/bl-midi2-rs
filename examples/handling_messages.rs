@@ -2,6 +2,7 @@ use midi2::prelude::*;
 
 fn handle_message(buffer: &[u32]) {
     match UmpMessage::try_from(buffer) {
+        #[cfg(feature = "channel-voice2")]
         Ok(UmpMessage::ChannelVoice2(m)) => {
             println!("Channel Voice2: channel: {}", m.channel());
             match m {

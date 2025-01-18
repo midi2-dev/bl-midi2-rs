@@ -29,6 +29,7 @@ pub mod error;
 
 mod detail;
 mod message;
+mod packet;
 mod packets;
 mod traits;
 

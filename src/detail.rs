@@ -1,6 +1,7 @@
 mod bit_ops;
 mod encode_7bit;
 
+pub mod common_err_strings;
 pub mod common_properties;
 pub mod helpers;
 pub mod property;

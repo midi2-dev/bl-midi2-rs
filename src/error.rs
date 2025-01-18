@@ -1,3 +1,21 @@
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Error {
+    BufferOverflow,
+    InvalidData(InvalidData),
+}
+
+impl core::convert::From<BufferOverflow> for Error {
+    fn from(_value: BufferOverflow) -> Self {
+        Error::BufferOverflow
+    }
+}
+
+impl core::convert::From<InvalidData> for Error {
+    fn from(value: InvalidData) -> Self {
+        Error::InvalidData(value)
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct BufferOverflow;
 
