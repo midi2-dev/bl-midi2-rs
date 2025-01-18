@@ -33,7 +33,8 @@ impl<'a> core::convert::TryFrom<&'a [u32]> for Packet {
 
         Ok(Packet({
             let mut buffer = [0x0; 2];
-            buffer[..data.len()].copy_from_slice(data);
+            let sz = 2.min(data.len());
+            buffer[..sz].copy_from_slice(&data[..sz]);
             buffer
         }))
     }
@@ -77,11 +78,20 @@ impl crate::Channeled<[u32; 2]> for Packet {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use pretty_assertions::assert_eq;
 
     #[test]
     fn construction() {
         assert!(Packet::try_from(&[0x4000_0000][..]).is_ok());
+    }
+
+    #[test]
+    fn construction_slice_size2() {
+        assert!(Packet::try_from(&[0x4000_0000, 0x0][..]).is_ok());
+    }
+
+    #[test]
+    fn construction_slice_size4() {
+        assert!(Packet::try_from(&[0x4000_0000, 0x0, 0x0, 0x0][..]).is_ok());
     }
 
     #[test]
@@ -102,5 +112,39 @@ mod tests {
                 crate::detail::common_err_strings::ERR_SLICE_TOO_SHORT
             )),
         );
+    }
+
+    #[test]
+    fn channel() {
+        use crate::Channeled;
+        assert_eq!(
+            Packet::try_from(&[0x4008_0000][..]).unwrap().channel(),
+            ux::u4::new(0x8)
+        );
+    }
+
+    #[test]
+    fn set_channel() {
+        use crate::Channeled;
+        let mut packet = Packet::try_from(&[0x4000_0000][..]).unwrap();
+        packet.set_channel(ux::u4::new(0x8));
+        assert_eq!(&*packet, &[0x4008_0000, 0x0][..]);
+    }
+
+    #[test]
+    fn group() {
+        use crate::Grouped;
+        assert_eq!(
+            Packet::try_from(&[0x4A00_0000][..]).unwrap().group(),
+            ux::u4::new(0xA)
+        );
+    }
+
+    #[test]
+    fn set_group() {
+        use crate::Grouped;
+        let mut packet = Packet::try_from(&[0x4000_0000][..]).unwrap();
+        packet.set_group(ux::u4::new(0xA));
+        assert_eq!(&*packet, &[0x4A00_0000, 0x0][..]);
     }
 }

@@ -108,6 +108,16 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "sysex8")]
+    fn construction_from_long_slice() {
+        let data = [0x5001_0000, 0x0, 0x0, 0x0, 0x0];
+        assert_eq!(
+            &*Packet::try_from(&data[..]).unwrap(),
+            &[0x5001_0000, 0x0, 0x0, 0x0]
+        );
+    }
+
+    #[test]
     fn construction_from_empty_data() {
         let data = [];
         assert_eq!(

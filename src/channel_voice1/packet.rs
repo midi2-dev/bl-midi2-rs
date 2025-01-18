@@ -33,7 +33,7 @@ impl<'a> core::convert::TryFrom<&'a [u32]> for Packet {
 
         Ok(Packet({
             let mut buffer = [0x0; 1];
-            buffer[..data.len()].copy_from_slice(data);
+            buffer[0] = data[0];
             buffer
         }))
     }
@@ -85,6 +85,16 @@ mod tests {
     }
 
     #[test]
+    fn construction_long_slice() {
+        assert!(Packet::try_from(&[0x2000_0000, 0x0, 0x0, 0x0][..]).is_ok());
+    }
+
+    #[test]
+    fn construction_very_long_slice() {
+        assert!(Packet::try_from(&[0x2000_0000, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0][..]).is_ok());
+    }
+
+    #[test]
     fn construction_incorrect_ump_message_type() {
         assert_eq!(
             Packet::try_from(&[0x0000_0000][..]),
@@ -92,6 +102,40 @@ mod tests {
                 crate::detail::common_err_strings::ERR_INCORRECT_UMP_MESSAGE_TYPE
             )),
         );
+    }
+
+    #[test]
+    fn channel() {
+        use crate::Channeled;
+        assert_eq!(
+            Packet::try_from(&[0x2008_0000][..]).unwrap().channel(),
+            ux::u4::new(0x8)
+        );
+    }
+
+    #[test]
+    fn set_channel() {
+        use crate::Channeled;
+        let mut packet = Packet::try_from(&[0x2000_0000][..]).unwrap();
+        packet.set_channel(ux::u4::new(0x8));
+        assert_eq!(&*packet, &[0x2008_0000][..]);
+    }
+
+    #[test]
+    fn group() {
+        use crate::Grouped;
+        assert_eq!(
+            Packet::try_from(&[0x2A00_0000][..]).unwrap().group(),
+            ux::u4::new(0xA)
+        );
+    }
+
+    #[test]
+    fn set_group() {
+        use crate::Grouped;
+        let mut packet = Packet::try_from(&[0x2000_0000][..]).unwrap();
+        packet.set_group(ux::u4::new(0xA));
+        assert_eq!(&*packet, &[0x2A00_0000][..]);
     }
 
     #[test]

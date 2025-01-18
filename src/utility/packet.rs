@@ -57,6 +57,11 @@ mod tests {
     }
 
     #[test]
+    fn construction_long_slice() {
+        assert!(Packet::try_from(&[0x0000_0000, 0x0][..]).is_ok());
+    }
+
+    #[test]
     fn construction_incorrect_ump_message_type() {
         assert_eq!(
             Packet::try_from(&[0x1000_0000][..]),

@@ -35,7 +35,8 @@ impl<'a> core::convert::TryFrom<&'a [u32]> for Packet {
 
         Ok(Packet({
             let mut buffer = [0x0; 4];
-            buffer[..data.len()].copy_from_slice(data);
+            let sz = 4.min(data.len());
+            buffer[..sz].copy_from_slice(&data[..sz]);
             buffer
         }))
     }
@@ -118,6 +119,14 @@ mod tests {
     fn construction() {
         assert!(
             Packet::try_from(&[0x5001_0000, 0x0000_0000, 0x0000_0000, 0x0000_0000,][..]).is_ok()
+        );
+    }
+
+    #[test]
+    fn construction_long_slice() {
+        assert!(
+            Packet::try_from(&[0x5001_0000, 0x0000_0000, 0x0000_0000, 0x0000_0000, 0x0][..])
+                .is_ok()
         );
     }
 
