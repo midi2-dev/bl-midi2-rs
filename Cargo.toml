@@ -1,6 +1,6 @@
 [package]
 name = "midi2"
-version = "0.6.5"
+version = "0.7.0"
 description = "Ergonomic, versatile, strong types wrapping MIDI 2.0 message data."
 edition = "2021"
 readme = "README.md"
@@ -37,7 +37,7 @@ utility = []
 [dependencies]
 derive_more = { version = "0.99.17", features = ["from"], default-features = false }
 fixed = "1.27.0"
-midi2_proc = { version = "0.6.5", path = "midi2_proc" }
+midi2_proc = { version = "0.7.0", path = "midi2_proc" }
 ux = "0.1.6"
 
 [dev-dependencies]
