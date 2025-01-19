@@ -31,3 +31,9 @@ repos:
   hooks:
   - id: codespell
     args: [-I, codespell-ignore]
+ci:
+  autofix_commit_msg: |
+      ci: [pre-commit.ci] auto fixes from pre-commit.com hooks
+
+      for more information, see https://pre-commit.ci
+  autoupdate_commit_msg: 'ci: [pre-commit.ci] pre-commit autoupdate'
