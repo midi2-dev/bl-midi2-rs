@@ -31,7 +31,7 @@ match message {
         // string properties of flex_data messages carrying string data
         // can be read as a std::string::String (std feature enabled)
         println!("Name {:?}", m.name());
-        // or as an iterator over the utf-8 bytes (no_std freindly)
+        // or as an iterator over the utf-8 bytes (no_std friendly)
         println!("Name bytes {:?}", m.name_bytes().collect::<Vec<u8>>());
     }
     FlexData::SetKeySignature(m) => println!("Set Key Signature {:?}", m.data()),
