@@ -411,7 +411,8 @@ fn convert_generated_properties<
 
 impl<B: crate::buffer::Buffer> Sysex<B> for Sysex7<B> {
     type Byte = ux::u7;
-    type PayloadIterator<'a> = PayloadIterator<'a, B::Unit>
+    type PayloadIterator<'a>
+        = PayloadIterator<'a, B::Unit>
     where
         B::Unit: 'a,
         Self: 'a;
