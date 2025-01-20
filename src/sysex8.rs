@@ -330,7 +330,10 @@ impl<'a> PayloadIterator<'a> {
 
 impl<B: crate::buffer::Ump> Sysex<B> for Sysex8<B> {
     type Byte = u8;
-    type PayloadIterator<'a> = PayloadIterator<'a> where B: 'a;
+    type PayloadIterator<'a>
+        = PayloadIterator<'a>
+    where
+        B: 'a;
     fn payload<'a>(&'a self) -> Self::PayloadIterator<'a>
     where
         <B as crate::buffer::Buffer>::Unit: 'a,
