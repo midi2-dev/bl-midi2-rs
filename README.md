@@ -1,7 +1,7 @@
 # 🎹 MIDI2 🎹
 
-![crates.io](https://img.shields.io/crates/v/midi2.svg)
-![docs.rs](https://docs.rs/midi2/badge.svg)
+[![crates.io](https://img.shields.io/crates/v/midi2.svg)](https://crates.io/crates/midi2)
+[![docs.rs](https://docs.rs/midi2/badge.svg)](https://docs.rs/midi2)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-%23FE5196?logo=conventionalcommits&logoColor=white)](https://conventionalcommits.org)
 ![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)
