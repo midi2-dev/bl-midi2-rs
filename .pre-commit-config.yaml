@@ -5,12 +5,12 @@ repos:
   - id: cargo-fmt
     stages: [pre-commit]
 - repo: https://github.com/compilerla/conventional-pre-commit
-  rev: v3.2.0
+  rev: v4.0.0
   hooks:
   - id: conventional-pre-commit
     stages: [commit-msg]
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.4.0
+  rev: v5.0.0
   hooks:
   - id: check-added-large-files
     stages: [pre-commit]
@@ -27,7 +27,7 @@ repos:
   - id: mixed-line-ending
     stages: [pre-commit]
 - repo: https://github.com/codespell-project/codespell
-  rev: v2.2.4
+  rev: v2.4.0
   hooks:
   - id: codespell
     args: [-I, codespell-ignore]
