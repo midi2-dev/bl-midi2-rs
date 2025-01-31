@@ -30,7 +30,7 @@ repos:
   rev: v2.4.0
   hooks:
   - id: codespell
-    args: [-I, codespell-ignore]
+    args: [-I, codespell-ignore, -w]
 ci:
   autofix_commit_msg: |
       ci: [pre-commit.ci] auto fixes from pre-commit.com hooks
