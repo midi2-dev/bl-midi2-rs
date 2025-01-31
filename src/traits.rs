@@ -192,7 +192,7 @@ pub trait FromBytes<T>: Sized {
 /// ```
 ///
 /// Note that this is the reciprocal trait to [FromBytes].
-/// Any implementor of [FromBytes] automatically implements [IntoUmp],
+/// Any implementer of [FromBytes] automatically implements [IntoUmp],
 /// similar to the [core::convert::Into] trait.
 pub trait IntoUmp<T> {
     fn into_ump(self) -> T;
@@ -241,7 +241,7 @@ pub trait FromUmp<T>: Sized {
 /// assert_eq!(bytes_message.data(), &[0x9E, 0x75, 0x3D]);
 /// ```
 /// This is the reciprocal trait to [FromUmp].
-/// Any implementor of [FromUmp] automatically implements [IntoBytes],
+/// Any implementer of [FromUmp] automatically implements [IntoBytes],
 /// similar to the [core::convert::Into] trait.
 pub trait IntoBytes<T> {
     fn into_bytes(self) -> T;
@@ -315,7 +315,7 @@ pub trait TryFromBytes<T>: Sized {
 /// ```
 ///
 /// Note that this is the reciprocal trait to [TryFromBytes].
-/// Any implementor of [TryFromBytes] automatically implements [IntoUmp],
+/// Any implementer of [TryFromBytes] automatically implements [IntoUmp],
 /// similar to the [core::convert::TryInto] trait.
 pub trait TryIntoUmp<T> {
     fn try_into_ump(self) -> Result<T, crate::error::BufferOverflow>;
@@ -397,7 +397,7 @@ pub trait TryFromUmp<T>: Sized {
 /// ```
 ///
 /// This is the reciprocal trait to [TryFromUmp].
-/// Any implementor of [TryFromUmp] automatically implements [TryIntoBytes],
+/// Any implementer of [TryFromUmp] automatically implements [TryIntoBytes],
 /// similar to the [core::convert::TryInto] trait.
 pub trait TryIntoBytes<T> {
     fn try_into_bytes(self) -> Result<T, crate::error::BufferOverflow>;

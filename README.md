@@ -187,7 +187,7 @@ assert_eq!(message.try_set_payload(0..60), Err(midi2::error::BufferOverflow));
 ```
 
 A more advanced use case might be to make a custom buffer which
-uses an arena allocater to back your messages.
+uses an arena allocator to back your messages.
 See the [buffer] docs for more info.
 
 ### Borrowed Messages
