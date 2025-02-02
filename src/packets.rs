@@ -7,7 +7,7 @@ use crate::packet::Packet;
 #[derive(Debug, Clone)]
 pub struct PacketsIterator<'a>(pub(crate) core::slice::ChunksExact<'a, u32>);
 
-impl<'a> core::iter::Iterator for PacketsIterator<'a> {
+impl core::iter::Iterator for PacketsIterator<'_> {
     type Item = crate::packet::Packet;
     fn next(&mut self) -> Option<Self::Item> {
         self.0.next().map(|data| Packet::try_from(data).unwrap())
@@ -26,9 +26,9 @@ impl<'a> core::iter::Iterator for PacketsIterator<'a> {
     }
 }
 
-impl<'a> core::iter::FusedIterator for PacketsIterator<'a> {}
+impl core::iter::FusedIterator for PacketsIterator<'_> {}
 
-impl<'a> core::iter::ExactSizeIterator for PacketsIterator<'a> {
+impl core::iter::ExactSizeIterator for PacketsIterator<'_> {
     fn len(&self) -> usize {
         self.0.len()
     }

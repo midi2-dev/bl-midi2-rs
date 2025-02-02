@@ -661,7 +661,7 @@ pub struct PayloadIterator<'a, U: crate::buffer::Unit> {
     size_cache: usize,
 }
 
-impl<'a, U: crate::buffer::Unit> core::iter::Iterator for PayloadIterator<'a, U> {
+impl<U: crate::buffer::Unit> core::iter::Iterator for PayloadIterator<'_, U> {
     type Item = ux::u7;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -813,9 +813,9 @@ impl<'a, U: crate::buffer::Unit> PayloadIterator<'a, U> {
     }
 }
 
-impl<'a, U: crate::buffer::Unit> core::iter::FusedIterator for PayloadIterator<'a, U> {}
+impl<U: crate::buffer::Unit> core::iter::FusedIterator for PayloadIterator<'_, U> {}
 
-impl<'a, U: crate::buffer::Unit> core::iter::ExactSizeIterator for PayloadIterator<'a, U> {
+impl<U: crate::buffer::Unit> core::iter::ExactSizeIterator for PayloadIterator<'_, U> {
     fn len(&self) -> usize {
         match U::UNIT_ID {
             crate::buffer::UNIT_ID_U8 => self.data[self.payload_index..].len(),

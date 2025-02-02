@@ -10,7 +10,7 @@ impl<'a, B: Ump> Property<B> for TextWriteStrProperty<'a> {
     type Type = &'a str;
 }
 
-impl<'a, B: Ump + BufferMut> WriteProperty<B> for TextWriteStrProperty<'a> {
+impl<B: Ump + BufferMut> WriteProperty<B> for TextWriteStrProperty<'_> {
     fn write(buffer: &mut B, text: Self::Type) {
         use crate::detail::BitOps;
 
@@ -38,7 +38,7 @@ impl<'a, B: Ump + BufferMut> WriteProperty<B> for TextWriteStrProperty<'a> {
     }
 }
 
-impl<'a, B: Ump + BufferMut> ResizeProperty<B> for TextWriteStrProperty<'a> {
+impl<B: Ump + BufferMut> ResizeProperty<B> for TextWriteStrProperty<'_> {
     fn resize(buffer: &mut B, value: &Self::Type)
     where
         B: crate::buffer::BufferResize,
@@ -62,7 +62,7 @@ impl<'a, B: Ump + BufferMut> ResizeProperty<B> for TextWriteStrProperty<'a> {
 }
 
 fn ump_buffer_size_for_str(s: &str) -> usize {
-    let str_size = s.as_bytes().len();
+    let str_size = s.len();
     if str_size % 12 == 0 {
         if str_size == 0 {
             4
@@ -120,7 +120,7 @@ pub struct TextBytesIterator<'a> {
     byte_index: usize,
 }
 
-impl<'a> core::iter::Iterator for TextBytesIterator<'a> {
+impl core::iter::Iterator for TextBytesIterator<'_> {
     type Item = u8;
     fn next(&mut self) -> Option<Self::Item> {
         while !self.finished() && self.value() == 0 {
@@ -139,9 +139,9 @@ impl<'a> core::iter::Iterator for TextBytesIterator<'a> {
     }
 }
 
-impl<'a> core::iter::FusedIterator for TextBytesIterator<'a> {}
+impl core::iter::FusedIterator for TextBytesIterator<'_> {}
 
-impl<'a> TextBytesIterator<'a> {
+impl TextBytesIterator<'_> {
     fn finished(&self) -> bool {
         self.packet_index == self.buffer.len() / 4 - 1 && self.byte_index == 11
     }
