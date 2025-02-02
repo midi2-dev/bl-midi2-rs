@@ -188,8 +188,8 @@ impl<'a, const OFFSET: usize, B: Ump> property::Property<B> for TextWriteStrProp
     type Type = &'a str;
 }
 
-impl<'a, const OFFSET: usize, B: Ump + BufferMut> property::WriteProperty<B>
-    for TextWriteStrProperty<'a, OFFSET>
+impl<const OFFSET: usize, B: Ump + BufferMut> property::WriteProperty<B>
+    for TextWriteStrProperty<'_, OFFSET>
 {
     fn write(buffer: &mut B, text: Self::Type) {
         use crate::detail::BitOps;
@@ -218,8 +218,8 @@ impl<'a, const OFFSET: usize, B: Ump + BufferMut> property::WriteProperty<B>
     }
 }
 
-impl<'a, const OFFSET: usize, B: Ump + BufferMut> property::ResizeProperty<B>
-    for TextWriteStrProperty<'a, OFFSET>
+impl<const OFFSET: usize, B: Ump + BufferMut> property::ResizeProperty<B>
+    for TextWriteStrProperty<'_, OFFSET>
 {
     fn resize(buffer: &mut B, value: &Self::Type)
     where
@@ -255,7 +255,7 @@ pub struct TextBytesIterator<'a> {
     offset: usize,
 }
 
-impl<'a> core::iter::Iterator for TextBytesIterator<'a> {
+impl core::iter::Iterator for TextBytesIterator<'_> {
     type Item = u8;
     fn next(&mut self) -> Option<Self::Item> {
         while !self.finished() && self.value() == 0 {
@@ -274,9 +274,9 @@ impl<'a> core::iter::Iterator for TextBytesIterator<'a> {
     }
 }
 
-impl<'a> core::iter::FusedIterator for TextBytesIterator<'a> {}
+impl core::iter::FusedIterator for TextBytesIterator<'_> {}
 
-impl<'a> TextBytesIterator<'a> {
+impl TextBytesIterator<'_> {
     fn finished(&self) -> bool {
         self.buffer.len() / 4 <= self.packet_index
     }
@@ -384,7 +384,7 @@ fn clear_payload<const OFFSET: usize>(buffer: &mut [u32]) {
 }
 
 fn required_buffer_size_for_str<const OFFSET: usize>(s: &str) -> usize {
-    let str_size = s.as_bytes().len();
+    let str_size = s.len();
     let packet_capacity = 14 - OFFSET;
     if str_size % packet_capacity == 0 {
         if str_size == 0 {

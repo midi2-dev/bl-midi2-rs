@@ -179,21 +179,21 @@ pub trait Bytes: Buffer<Unit = u8> {}
 
 impl<B: Buffer<Unit = u8>> Bytes for B {}
 
-impl<'a, U: Unit> Buffer for &'a [U] {
+impl<U: Unit> Buffer for &[U] {
     type Unit = U;
     fn buffer(&self) -> &[Self::Unit] {
         self
     }
 }
 
-impl<'a, U: Unit> Buffer for &'a mut [U] {
+impl<U: Unit> Buffer for &mut [U] {
     type Unit = U;
     fn buffer(&self) -> &[Self::Unit] {
         self
     }
 }
 
-impl<'a, U: Unit> BufferMut for &'a mut [U] {
+impl<U: Unit> BufferMut for &mut [U] {
     fn buffer_mut(&mut self) -> &mut [<Self as Buffer>::Unit] {
         self
     }

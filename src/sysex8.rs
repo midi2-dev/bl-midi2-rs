@@ -211,7 +211,7 @@ pub struct PayloadIterator<'a> {
     size_cache: usize,
 }
 
-impl<'a> core::iter::Iterator for PayloadIterator<'a> {
+impl core::iter::Iterator for PayloadIterator<'_> {
     type Item = u8;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -294,13 +294,13 @@ impl<'a> core::iter::Iterator for PayloadIterator<'a> {
     }
 }
 
-impl<'a> core::iter::ExactSizeIterator for PayloadIterator<'a> {
+impl core::iter::ExactSizeIterator for PayloadIterator<'_> {
     fn len(&self) -> usize {
         self.size_cache
     }
 }
 
-impl<'a> PayloadIterator<'a> {
+impl PayloadIterator<'_> {
     fn value(&self) -> u8 {
         let buffer_index = self.packet_index * 4 + (self.payload_index + 3) / 4;
         let octet_index = (self.payload_index + 3) % 4;
