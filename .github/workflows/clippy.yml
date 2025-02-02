@@ -13,5 +13,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install Clippy
         run: rustup component add clippy
+      - name: Clippy version
+        run: cargo clippy --version
       - name: Run Clippy
         run: cargo clippy --all-features -- -D warnings
