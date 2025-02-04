@@ -403,6 +403,33 @@ fn rebuffer_from_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> To
     }
 }
 
+fn rebuffer_slice_from_mut_slice_impl(
+    root_ident: &syn::Ident,
+    args: &GenerateMessageArgs,
+) -> TokenStream {
+    use crate::common::Representation::*;
+
+    let repr = args.representation();
+    let generics = if let UmpOrBytes = repr {
+        quote! { <'a, U: crate::buffer::Unit> }
+    } else {
+        quote! { <'a> }
+    };
+    let buffer = match repr {
+        Ump => quote! { [u32] },
+        Bytes => quote! { [u8] },
+        UmpOrBytes => quote! { [U] },
+    };
+    quote! {
+        impl #generics crate::traits::RebufferFrom<#root_ident<&'a mut #buffer>> for #root_ident<&'a #buffer>
+        {
+            fn rebuffer_from(other: #root_ident<&'a mut #buffer>) -> Self {
+                #root_ident(other.0)
+            }
+        }
+    }
+}
+
 fn rebuffer_from_array_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream {
     let constraint = generic_buffer_constraint(args);
     let buffer_type = quote! { [<A as crate::buffer::Buffer>::Unit; SIZE] };
@@ -790,6 +817,7 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     let buffer_access_impl = buffer_access_impl(root_ident, &args);
     let try_from_slice_impl = try_from_slice_impl(root_ident, &args, &properties);
     let rebuffer_from_impl = rebuffer_from_impl(root_ident, &args);
+    let rebuffer_slice_from_mut_slice_impl = rebuffer_slice_from_mut_slice_impl(root_ident, &args);
     let try_rebuffer_from_impl = try_rebuffer_from_impl(root_ident, &args);
     let new_impl = new_impl(root_ident, &args, &properties);
     let new_with_buffer_impl = new_with_buffer_impl(root_ident, &args, &properties);
@@ -809,6 +837,7 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
         #buffer_access_impl
         #try_from_slice_impl
         #rebuffer_from_impl
+        #rebuffer_slice_from_mut_slice_impl
         #try_rebuffer_from_impl
         #new_impl
         #new_with_buffer_impl

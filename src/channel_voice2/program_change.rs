@@ -133,4 +133,14 @@ mod tests {
             None,
         )
     }
+
+    #[test]
+    fn rebuffer_mut_slice_to_slice() {
+        use crate::RebufferInto;
+        let mut buffer = [0x0; 4];
+        let mut mut_slice_message = ProgramChange::try_new_with_buffer(&mut buffer[..]).unwrap();
+        mut_slice_message.set_program(u7::new(0x4F));
+        let slice_message: ProgramChange<&[u32]> = mut_slice_message.rebuffer_into();
+        assert_eq!(slice_message.data(), &[0x40C0_0000, 0x4F00_0000][..]);
+    }
 }
