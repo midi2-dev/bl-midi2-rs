@@ -279,12 +279,12 @@ Here's a list of available features:
 - `default`:
   - **std** - Include [buffer] integration for `std::vec::Vec` and enable allocating getters for values which return `std::string::String` values.
   - **channel-voice2** — Include message wrappers for the MIDI 2.0 channel voice message type.
-  - **sysex7** — Include message wrappers for the MIDI 7bit system exclusive message type.
-  - **ci** — 🚧 WIP 🚧
 
 - `optional`: These features are not enabled by default and can be included by adding them to your `Cargo.toml`.
   - **flex-data** - Include message wrappers for the MIDI 2.0 Flex Data message type.
   - **channel-voice1** - Include message wrappers for the classical MIDI channel voice message type.
+  - **sysex7** — Include message wrappers for the MIDI 7bit system exclusive message type.
   - **sysex8** - Include message wrappers for the MIDI 2.0 System Exclusive 8bit message type.
   - **system-common** - Include message wrappers for the MIDI 2.0 System Common / System Real Time message type.
   - **ump-stream** - Include message wrappers for the MIDI 2.0 Ump Stream message type.
+  - **ci** — 🚧 WIP 🚧
