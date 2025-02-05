@@ -146,6 +146,23 @@ mod tests {
         };
     }
 
+    #[cfg(feature = "channel-voice1")]
+    #[test]
+    fn rebuffer_slice_from_mut_slice_impl() {
+        use crate::channel_voice1::ChannelPressure;
+        use crate::Data;
+        use crate::RebufferInto;
+
+        let mut buffer = [0x0_u32, 0x0];
+
+        let message_mut_slice: UmpMessage<&mut [u32]> =
+            ChannelPressure::try_new_with_buffer(&mut buffer[..])
+                .unwrap()
+                .into();
+        let message_slice: UmpMessage<&[u32]> = message_mut_slice.rebuffer_into();
+        assert_eq!(message_slice.data(), &[0x20D0_0000_u32][..]);
+    }
+
     #[cfg(feature = "ump-stream")]
     #[test]
     fn ump_stream() {
