@@ -174,7 +174,7 @@ pub fn try_from_ump(item: TokenStream1) -> TokenStream1 {
     .into()
 }
 
-pub fn rebuffer_from(item: TokenStream1) -> TokenStream1 {
+pub fn rebuffer_from_for_resizable_buffer(item: TokenStream1) -> TokenStream1 {
     let input = parse_macro_input!(item as ItemEnum);
     let ident = &input.ident;
     let mut match_arms = TokenStream::new();
@@ -203,6 +203,73 @@ pub fn rebuffer_from(item: TokenStream1) -> TokenStream1 {
         }
     }
     .into()
+}
+
+pub fn rebuffer_from_for_mut_slice_to_slice(item: TokenStream1) -> TokenStream1 {
+    use crate::common::Representation::*;
+
+    let input = parse_macro_input!(item as ItemEnum);
+    let ident = &input.ident;
+    let repr = match common::buffer_generic(&input.generics)
+        .expect("Message should have generic buffer type.")
+    {
+        common::BufferGeneric::Ump(_) => common::Representation::Ump,
+        common::BufferGeneric::Bytes(_) => common::Representation::Bytes,
+        common::BufferGeneric::UmpOrBytes(_) => common::Representation::UmpOrBytes,
+    };
+    let generics = if let UmpOrBytes = repr {
+        quote! { <'a, U: crate::buffer::Unit> }
+    } else {
+        quote! { <'a> }
+    };
+    let buffer = match repr {
+        Ump => quote! { [u32] },
+        Bytes => quote! { [u8] },
+        UmpOrBytes => quote! { [U] },
+    };
+    let mut match_arms = TokenStream::new();
+    for variant in &input.variants {
+        let variant_ident = &variant.ident;
+        let message_type = {
+            let syn::Fields::Unnamed(fields) = &variant.fields else {
+                panic!("Expected enum variant with unnamed fields");
+            };
+            let Some(syn::Field { ty, .. }) = fields.unnamed.last() else {
+                panic!("Expected an unnamed field in the enum variant");
+            };
+            let syn::Type::Path(syn::TypePath { path, .. }) = ty else {
+                panic!("Expected a 'path' type");
+            };
+            let mut path = path.clone();
+            path.segments.last_mut().unwrap().arguments = syn::PathArguments::None;
+            quote! {
+                #path::<&#buffer>
+            }
+        };
+
+        match_arms.extend(quote! {
+            #ident::#variant_ident(m) => #message_type::rebuffer_from(m).into(),
+        });
+    }
+
+    quote! {
+        impl #generics crate::traits::RebufferFrom<#ident<&'a mut #buffer>> for #ident<&'a #buffer>
+        {
+            fn rebuffer_from(other: #ident<&'a mut #buffer>) -> Self {
+                match other {
+                    #match_arms
+                }
+            }
+        }
+    }
+    .into()
+}
+
+pub fn rebuffer_from(item: TokenStream1) -> TokenStream1 {
+    let mut ret = TokenStream1::new();
+    ret.extend(rebuffer_from_for_resizable_buffer(item.clone()));
+    ret.extend(rebuffer_from_for_mut_slice_to_slice(item.clone()));
+    ret
 }
 
 pub fn rebuffer_from_array(item: TokenStream1) -> TokenStream1 {
