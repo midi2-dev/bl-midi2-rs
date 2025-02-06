@@ -5,6 +5,7 @@
     midi2_proc::RebufferFrom,
     midi2_proc::TryRebufferFrom,
     Clone,
+    Copy,
     Debug,
     PartialEq,
     Eq,
@@ -79,6 +80,7 @@ impl<'a> core::convert::TryFrom<&'a [u32]> for UmpMessage<&'a [u32]> {
     midi2_proc::RebufferFrom,
     midi2_proc::TryRebufferFrom,
     Clone,
+    Copy,
     Debug,
     PartialEq,
     Eq,
@@ -133,6 +135,11 @@ mod tests {
     use super::*;
     #[allow(unused_imports)]
     use pretty_assertions::assert_eq;
+
+    static_assertions::assert_impl_all!(BytesMessage<&[u8]>: Copy);
+    static_assertions::assert_impl_all!(BytesMessage<[u8; 3]>: Copy);
+    static_assertions::assert_impl_all!(UmpMessage<&[u32]>: Copy);
+    static_assertions::assert_impl_all!(UmpMessage<[u32; 4]>: Copy);
 
     #[test]
     #[cfg(feature = "channel-voice1")]

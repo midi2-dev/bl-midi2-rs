@@ -813,6 +813,7 @@ pub(crate) const PERFORMANCE_TEXT_BANK: u8 = 0x2;
     midi2_proc::RebufferFrom,
     midi2_proc::TryRebufferFrom,
     Clone,
+    Copy,
     Debug,
     PartialEq,
     Eq,

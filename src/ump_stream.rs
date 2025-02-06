@@ -44,6 +44,7 @@ const END_FORMAT: u8 = 0x3;
     midi2_proc::RebufferFrom,
     midi2_proc::TryRebufferFrom,
     Clone,
+    Copy,
     Debug,
     PartialEq,
     Eq,

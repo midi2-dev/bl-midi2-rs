@@ -46,6 +46,9 @@ mod tests {
     };
     use pretty_assertions::assert_eq;
 
+    static_assertions::assert_impl_all!(NoteOn<&[u32]>: Clone);
+    static_assertions::assert_impl_all!(NoteOn<&[u32]>: Copy);
+
     #[test]
     fn setters() {
         let mut message = NoteOn::<[u32; 4]>::new();
