@@ -35,9 +35,7 @@ struct ChannelPressure {
 mod tests {
     use super::*;
     use crate::{
-        traits::{
-            Channeled, Data, FromBytes, FromUmp, Grouped, RebufferInto, TryFromBytes, TryFromUmp,
-        },
+        traits::{Channeled, Data, FromBytes, FromUmp, Grouped, TryFromBytes, TryFromUmp},
         ux::*,
     };
     use pretty_assertions::assert_eq;
@@ -230,10 +228,9 @@ mod tests {
 
     #[test]
     fn new_with_custom_buffer() {
-        assert_eq!(
-            ChannelPressure::<std::vec::Vec<u32>>::new(),
-            ChannelPressure::<[u32; 4]>::new().rebuffer_into(),
-        )
+        let vec_backed = ChannelPressure::<std::vec::Vec<u32>>::new();
+        let arr_backed = ChannelPressure::<[u32; 4]>::new();
+        assert_eq!(vec_backed.data(), arr_backed.data());
     }
 
     #[test]
@@ -280,7 +277,9 @@ mod tests {
 #[cfg(test)]
 mod rebuffer_tests {
     use super::*;
-    use crate::traits::{RebufferFrom, RebufferInto, TryRebufferFrom, TryRebufferInto};
+    use crate::traits::{
+        ArrayRebufferFrom, RebufferFrom, RebufferInto, TryRebufferFrom, TryRebufferInto,
+    };
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -318,7 +317,7 @@ mod rebuffer_tests {
         let buffer = [0x2FD6_0900_u32];
         let borrowed = ChannelPressure::try_from(&buffer[..]).unwrap();
         assert_eq!(
-            ChannelPressure::<[u32; 1]>::rebuffer_from(borrowed),
+            ChannelPressure::<[u32; 1]>::array_rebuffer_from(borrowed),
             ChannelPressure([0x2FD6_0900_u32]),
         );
     }
@@ -407,16 +406,16 @@ mod rebuffer_tests {
 
     #[test]
     fn clone() {
-        let message = ChannelPressure::<[u32; 4]>::new();
+        let message = ChannelPressure::<std::vec::Vec<u32>>::new();
         let clone = message.clone();
         assert_eq!(message, clone);
     }
 
     #[test]
-    fn clone_borrowed() {
+    fn copy() {
         let buffer = [0x2FD6_0900_u32];
         let borrowed = ChannelPressure::try_from(&buffer[..]).unwrap();
-        let clone = borrowed.clone();
-        assert_eq!(borrowed, clone);
+        let copy = borrowed;
+        assert_eq!(borrowed, copy);
     }
 }

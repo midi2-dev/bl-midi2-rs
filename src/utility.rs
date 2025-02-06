@@ -90,7 +90,7 @@ mod timestamp {
         fn rebuffer_into() {
             let message = Timestamp::<[u32; 4]>::new();
             let rebuffered: Timestamp<std::vec::Vec<u32>> = message.rebuffer_into();
-            assert_eq!(rebuffered, Timestamp(std::vec![0x0020_0000]));
+            assert_eq!(rebuffered.data(), Timestamp(std::vec![0x0020_0000]).data());
         }
     }
 }
@@ -249,10 +249,10 @@ mod tests {
 
     #[test]
     fn rebuffer_from() {
-        use crate::RebufferFrom;
+        use crate::ArrayRebufferFrom;
 
         let message = Utility::try_from(&[0x0010_1234][..]).unwrap();
-        let _ = Utility::<[u32; 1]>::rebuffer_from(message);
+        let _ = Utility::<[u32; 1]>::array_rebuffer_from(message);
     }
 
     #[test]

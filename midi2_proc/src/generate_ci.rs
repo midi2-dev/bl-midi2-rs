@@ -561,10 +561,7 @@ fn rebuffer_from_impl(root_ident: &syn::Ident) -> TokenStream {
         impl<
                 const VERSION: u8,
                 A: crate::buffer::Bytes,
-                B: crate::buffer::Bytes
-                    + crate::buffer::BufferMut
-                    + crate::buffer::BufferDefault
-                    + crate::buffer::BufferResize,
+                B: crate::buffer::Bytes + crate::buffer::FromBuffer<A>,
             > crate::traits::RebufferFrom<#root_ident<VERSION, A>> for #root_ident<VERSION, B> {
             fn rebuffer_from(other: #root_ident<VERSION, A>) -> Self {
                 #root_ident(crate::sysex7::Sysex7::rebuffer_from(other.0))
@@ -578,10 +575,7 @@ fn try_rebuffer_from_impl(root_ident: &syn::Ident) -> TokenStream {
         impl<
                 const VERSION: u8,
                 A: crate::buffer::Bytes,
-                B: crate::buffer::Bytes
-                    + crate::buffer::BufferMut
-                    + crate::buffer::BufferDefault
-                    + crate::buffer::BufferTryResize,
+                B: crate::buffer::Bytes + crate::buffer::TryFromBuffer<A>,
             > crate::traits::TryRebufferFrom<#root_ident<VERSION, A>> for #root_ident<VERSION, B> {
             fn try_rebuffer_from(other: #root_ident<VERSION, A>) -> Result<Self, crate::error::BufferOverflow> {
                 Ok(#root_ident(crate::sysex7::Sysex7::try_rebuffer_from(other.0)?))

@@ -232,7 +232,7 @@ let mut owned: NoteOn::<[u32; 4]> = {
     let buffer = [0x4898_5E03_u32, 0x6A14_E98A];
     // the borrowed message is immutable and cannot outlive `buffer`
     let borrowed = NoteOn::try_from(&buffer[..]).expect("Data is valid");
-    borrowed.rebuffer_into()
+    borrowed.array_rebuffer_into()
 };
 
 // the owned message is mutable and liberated from the buffer lifetime.

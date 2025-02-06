@@ -394,17 +394,17 @@ mod tests {
 
     #[test]
     fn rebuffer_from_array() {
-        use crate::RebufferFrom;
+        use crate::ArrayRebufferFrom;
 
         let message = SystemCommon::try_from(&[0x15F1_5F00_u32][..]).unwrap();
-        let _ = SystemCommon::<[u32; 1]>::rebuffer_from(message);
+        let _ = SystemCommon::<[u32; 1]>::array_rebuffer_from(message);
     }
 
     #[test]
     fn rebuffer_from_array_bytes() {
-        use crate::RebufferFrom;
+        use crate::ArrayRebufferFrom;
 
         let message = SystemCommon::try_from(&[0xF3_u8, 0x4D][..]).unwrap();
-        let _ = SystemCommon::<[u8; 3]>::rebuffer_from(message);
+        let _ = SystemCommon::<[u8; 3]>::array_rebuffer_from(message);
     }
 }
