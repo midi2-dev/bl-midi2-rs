@@ -1,0 +1,10 @@
+[package]
+name = "handling_messages"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+midi2 = { path = "../../midi2", default-features = false, features = [
+    "channel-voice2",
+    "sysex7",
+] }
