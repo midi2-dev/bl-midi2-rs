@@ -1,4 +1,4 @@
-name: Rust
+name: ci
 
 on:
   push:
@@ -10,20 +10,17 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  test:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
     - uses: actions/checkout@v4
-    - name: Build
-      run: cargo build --verbose --all-features
     - name: Run tests
       run: cargo test --verbose --all-features
 
-  deny-check:
-    name: cargo-deny check
+  deny:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -31,3 +28,14 @@ jobs:
         with:
           command: check all
           manifest-path: midi2/Cargo.toml
+
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Clippy
+        run: rustup component add clippy
+      - name: Clippy version
+        run: cargo clippy --version
+      - name: Run Clippy
+        run: cargo clippy --all-features -- -D warnings
