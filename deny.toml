@@ -1,0 +1,12 @@
+[licenses]
+allow = ["MIT", "Apache-2.0", "Unicode-DFS-2016"]
+
+[licenses.private]
+ignore = true
+
+[bans]
+multiple-versions = "deny"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
