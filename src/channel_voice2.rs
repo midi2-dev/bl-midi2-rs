@@ -50,6 +50,7 @@ pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x4;
     midi2_proc::RebufferFromArray,
     midi2_proc::TryRebufferFrom,
     Clone,
+    Copy,
     Debug,
     PartialEq,
     Eq,

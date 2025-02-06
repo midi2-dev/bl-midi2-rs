@@ -42,6 +42,7 @@ ux = "0.1.6"
 
 [dev-dependencies]
 pretty_assertions = "1.4.0"
+static_assertions = "1.1.0"
 
 [package.metadata.docs.rs]
 all-features = true

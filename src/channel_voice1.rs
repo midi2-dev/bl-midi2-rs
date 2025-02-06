@@ -36,6 +36,7 @@ pub(crate) const UMP_MESSAGE_TYPE: u8 = 0x2;
     midi2_proc::RebufferFromArray,
     midi2_proc::TryRebufferFrom,
     Clone,
+    Copy,
     Debug,
     PartialEq,
     Eq,
@@ -94,6 +95,9 @@ mod test {
         TryFromUmp, TryRebufferInto,
     };
     use pretty_assertions::assert_eq;
+
+    static_assertions::assert_impl_all!(ChannelVoice1<&[u32]>: Clone);
+    static_assertions::assert_impl_all!(ChannelVoice1<&[u32]>: Copy);
 
     #[test]
     fn channel() {
@@ -158,11 +162,11 @@ mod test {
     }
 
     #[test]
-    fn clone() {
+    fn copy() {
         let buffer = [0x20D6_0900_u32];
         let borrowed = ChannelVoice1::try_from(&buffer[..]).unwrap();
-        let cloned = borrowed.clone();
-        assert_eq!(borrowed.data(), cloned.data());
+        let copied = borrowed;
+        assert_eq!(borrowed.data(), copied.data());
     }
 
     #[test]

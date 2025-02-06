@@ -171,6 +171,7 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::
     midi2_proc::RebufferFromArray,
     midi2_proc::TryRebufferFrom,
     Clone,
+    Copy,
     Debug,
     PartialEq,
     Eq,

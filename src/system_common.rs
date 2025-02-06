@@ -201,6 +201,7 @@ pub use tune_request::*;
     midi2_proc::RebufferFromArray,
     midi2_proc::TryRebufferFrom,
     Clone,
+    Copy,
     Debug,
     PartialEq,
     Eq,

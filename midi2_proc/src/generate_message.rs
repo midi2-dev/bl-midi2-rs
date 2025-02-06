@@ -243,7 +243,7 @@ fn message(
     }
 
     quote! {
-        #[derive(PartialEq, Eq, midi2_proc::Debug)]
+        #[derive(PartialEq, Eq, Clone, Copy, midi2_proc::Debug)]
         #doc_attributes
         pub struct #root_ident<B: #constraint>(B);
     }
@@ -612,17 +612,6 @@ fn try_new_impl(
     }
 }
 
-fn clone_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream {
-    let constraint = generic_buffer_constraint(args);
-    quote! {
-        impl<B: #constraint + core::clone::Clone> core::clone::Clone for #root_ident<B> {
-            fn clone(&self) -> Self {
-                Self(self.buffer_access().clone())
-            }
-        }
-    }
-}
-
 fn grouped_impl(root_ident: &syn::Ident, property: &Property) -> TokenStream {
     let setter = property_setter(property, false);
     let getter = property_getter(property, false);
@@ -824,7 +813,6 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     let try_new_with_buffer_impl = try_new_with_buffer_impl(root_ident, &args, &properties);
     let new_array_impl = new_array_impl(root_ident, &args, &properties);
     let try_new_impl = try_new_impl(root_ident, &args, &properties);
-    let clone_impl = clone_impl(root_ident, &args);
 
     let mut tokens = TokenStream::new();
 
@@ -844,7 +832,6 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
         #try_new_with_buffer_impl
         #new_array_impl
         #try_new_impl
-        #clone_impl
     });
 
     if args.fixed_size {
