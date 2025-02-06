@@ -1,7 +1,8 @@
 [package]
+edition = "2021"
 name = "midi2-fuzz"
 publish = false
-edition = "2021"
+version = "0.0.0"
 
 [package.metadata]
 cargo-fuzz = true

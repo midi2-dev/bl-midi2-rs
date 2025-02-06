@@ -2,3 +2,6 @@
 members = ["midi2", "midi2_proc", "examples/*", "fuzz"]
 default-members = ["midi2"]
 resolver = "2"
+
+[workspace.metadata]
+licenses = ["Unicode-3.0"]

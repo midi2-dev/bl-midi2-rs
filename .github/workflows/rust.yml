@@ -11,15 +11,23 @@ env:
 
 jobs:
   build:
-
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-
     steps:
     - uses: actions/checkout@v4
     - name: Build
       run: cargo build --verbose --all-features
     - name: Run tests
       run: cargo test --verbose --all-features
+
+  deny-check:
+    name: cargo-deny check
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: EmbarkStudios/cargo-deny-action@v1
+        with:
+          command: check all
+          manifest-path: midi2/Cargo.toml

@@ -1,7 +1,8 @@
 [package]
+edition = "2021"
 name = "handling_messages"
 publish = false
-edition = "2021"
+version = "0.0.0"
 
 [dependencies]
 midi2 = { path = "../../midi2", default-features = false, features = [
