@@ -69,7 +69,7 @@ pub trait Channeled<B: Buffer> {
 /// use midi2::{RebufferFrom, Data, channel_voice1::NoteOn};
 ///
 /// let borrowed: NoteOn<&[u32]> = NoteOn::try_from(&[0x2D9E_753D_u32][..]).expect("Valid data");
-/// let owned = NoteOn::<[u32; 4]>::rebuffer_from(borrowed);
+/// let owned = NoteOn::<std::vec::Vec<u32>>::rebuffer_from(borrowed);
 ///
 /// assert_eq!(owned.data(), &[0x2D9E_753D]);
 /// ```
@@ -83,7 +83,7 @@ pub trait RebufferFrom<T>: Sized {
 /// use midi2::{RebufferInto, Data, channel_voice1::NoteOn};
 ///
 /// let borrowed: NoteOn<&[u32]> = NoteOn::try_from(&[0x2D9E_753D_u32][..]).expect("Valid data");
-/// let owned: NoteOn<[u32; 4]> = borrowed.rebuffer_into();
+/// let owned: NoteOn<std::vec::Vec<u32>> = borrowed.rebuffer_into();
 ///
 /// assert_eq!(owned.data(), &[0x2D9E_753D]);
 /// ```
@@ -100,6 +100,53 @@ where
 {
     fn rebuffer_into(self) -> V {
         <V as RebufferFrom<T>>::rebuffer_from(self)
+    }
+}
+
+/// Convert from a generic message to an array-backed one.
+///
+/// Implementers this trait do some compile-time magic to ensure
+/// that the target array buffer is large enough to fit the min size of the
+/// fixed size message.
+///
+/// ```rust
+/// use midi2::{ArrayRebufferFrom, Data, channel_voice1::NoteOn};
+///
+/// let borrowed: NoteOn<&[u32]> = NoteOn::try_from(&[0x2D9E_753D_u32][..]).expect("Valid data");
+/// let owned = NoteOn::<[u32; 4]>::array_rebuffer_from(borrowed);
+///
+/// assert_eq!(owned.data(), &[0x2D9E_753D]);
+/// ```
+pub trait ArrayRebufferFrom<T>: Sized {
+    fn array_rebuffer_from(value: T) -> Self;
+}
+
+/// Convert a generic message into an array-backed specialisation.
+///
+/// Implementers this trait do some compile-time magic to ensure
+/// that the target array buffer is large enough to fit the min size of the
+/// fixed size message.
+///
+/// ```rust
+/// use midi2::{ArrayRebufferInto, Data, channel_voice1::NoteOn};
+///
+/// let borrowed: NoteOn<&[u32]> = NoteOn::try_from(&[0x2D9E_753D_u32][..]).expect("Valid data");
+/// let owned: NoteOn<[u32; 4]> = borrowed.array_rebuffer_into();
+///
+/// assert_eq!(owned.data(), &[0x2D9E_753D]);
+/// ```
+///
+/// Note that this trait has a blanket implementation for all messages which implement
+/// [RebufferFrom] (similar to the standard [core::convert::Into] trait)
+pub trait ArrayRebufferInto<T>: Sized {
+    fn array_rebuffer_into(self) -> T;
+}
+impl<T, V> ArrayRebufferInto<V> for T
+where
+    V: ArrayRebufferFrom<T>,
+{
+    fn array_rebuffer_into(self) -> V {
+        <V as ArrayRebufferFrom<T>>::array_rebuffer_from(self)
     }
 }
 

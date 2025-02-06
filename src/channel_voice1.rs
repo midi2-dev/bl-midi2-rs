@@ -91,8 +91,8 @@ fn status<U: crate::buffer::Unit>(buffer: &[U]) -> u8 {
 mod test {
     use super::*;
     use crate::{
-        ux::*, Channeled, Data, FromBytes, FromUmp, Grouped, Packets, RebufferInto, TryFromBytes,
-        TryFromUmp, TryRebufferInto,
+        ux::*, ArrayRebufferInto, Channeled, Data, FromBytes, FromUmp, Grouped, Packets,
+        RebufferInto, TryFromBytes, TryFromUmp, TryRebufferInto,
     };
     use pretty_assertions::assert_eq;
 
@@ -198,18 +198,18 @@ mod test {
     #[test]
     fn rebuffer_from_array() {
         let borrowed = ChannelVoice1::try_from(&[0x2FD6_0900_u32][..]).unwrap();
-        let _owned: ChannelVoice1<[u32; 4]> = borrowed.rebuffer_into();
+        let _owned: ChannelVoice1<[u32; 4]> = borrowed.array_rebuffer_into();
     }
 
     #[test]
     fn rebuffer_from_array_small() {
         let borrowed = ChannelVoice1::try_from(&[0x2FD6_0900_u32][..]).unwrap();
-        let _owned: ChannelVoice1<[u32; 1]> = borrowed.rebuffer_into();
+        let _owned: ChannelVoice1<[u32; 1]> = borrowed.array_rebuffer_into();
     }
 
     #[test]
     fn rebuffer_from_array_bytes() {
         let borrowed = ChannelVoice1::try_from(&[0xD6_u8, 0x09_u8][..]).unwrap();
-        let _owned: ChannelVoice1<[u8; 3]> = borrowed.rebuffer_into();
+        let _owned: ChannelVoice1<[u8; 3]> = borrowed.array_rebuffer_into();
     }
 }

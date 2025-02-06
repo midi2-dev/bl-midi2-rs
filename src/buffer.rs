@@ -165,6 +165,78 @@ pub trait BufferTryResize {
     fn try_resize(&mut self, size: usize) -> Result<(), BufferOverflow>;
 }
 
+/// Allow messages to convert between different backing buffers.
+///
+/// If a buffer `A` implements [`FromBuffer<B>`] then messages backed by `A`
+/// can created from messages backed by `B` with the
+/// [`RebufferFrom`](crate::RebufferFrom) trait.
+///
+/// For more info see the [buffer module docs](crate::buffer).
+pub trait FromBuffer<T>: Sized {
+    fn from_buffer(value: T) -> Self;
+}
+
+/// Allow messages to convert between different backing buffers.
+///
+/// If a buffer `A` implements `IntoBuffer<B>` then messages backed by `A`
+/// can be converted into messages backed by `B` with the
+/// [`RebufferInto`](crate::RebufferInto) trait.
+///
+/// Note that one should implement [`FromBuffer`]
+/// and automatically get [`IntoBuffer`] for free from the blanket implementation
+/// (similarly to [core::convert::Into]).
+///
+/// For more info see the [buffer module docs](crate::buffer).
+pub trait IntoBuffer<T>: Sized {
+    fn into_buffer(self) -> T;
+}
+
+impl<T, U> IntoBuffer<U> for T
+where
+    U: FromBuffer<T>,
+{
+    fn into_buffer(self) -> U {
+        U::from_buffer(self)
+    }
+}
+
+/// Allow messages to convert between different backing buffers with the possibility
+/// of overflow.
+///
+/// If a buffer `A` implements [`TryFromBuffer<B>`] then messages backed by `A`
+/// can created from messages backed by `B` with the
+/// [`TryRebufferFrom`](crate::TryRebufferFrom) trait.
+///
+/// For more info see the [buffer module docs](crate::buffer).
+pub trait TryFromBuffer<T>: Sized {
+    fn try_from_buffer(value: T) -> Result<Self, crate::error::BufferOverflow>;
+}
+
+/// Allow messages to convert between different backing buffers with the possibility
+/// of overflow.
+///
+/// If a buffer `A` implements `TryIntoBuffer<B>` then messages backed by `A`
+/// can be converted into messages backed by `B` with the
+/// [`TryRebufferInto`](crate::TryRebufferInto) trait.
+///
+/// Note that one should implement [`TryFromBuffer`]
+/// and automatically get [`TryIntoBuffer`] for free from the blanket implementation
+/// (similarly to [core::convert::Into]).
+///
+/// For more info see the [buffer module docs](crate::buffer).
+pub trait TryIntoBuffer<T>: Sized {
+    fn try_into_buffer(self) -> Result<T, crate::error::BufferOverflow>;
+}
+
+impl<T, U> TryIntoBuffer<U> for T
+where
+    U: TryFromBuffer<T>,
+{
+    fn try_into_buffer(self) -> Result<U, crate::error::BufferOverflow> {
+        U::try_from_buffer(self)
+    }
+}
+
 /// Buffers with `Self::Unit = u32`.
 ///
 /// For more info see the [buffer module docs](crate::buffer).
@@ -288,6 +360,75 @@ impl<U: Unit> BufferResize for &mut std::vec::Vec<U> {
         std::vec::Vec::resize(*self, size, U::zero());
     }
 }
+
+//
+// conversion
+//
+
+impl<const SIZE: usize, U: Unit> TryFromBuffer<&[U]> for [U; SIZE] {
+    fn try_from_buffer(value: &[U]) -> Result<Self, crate::error::BufferOverflow> {
+        if value.len() > SIZE {
+            return Err(crate::error::BufferOverflow);
+        }
+        let mut buffer = [U::zero(); SIZE];
+        buffer[..value.len()].copy_from_slice(value);
+        Ok(buffer)
+    }
+}
+
+impl<const SIZE: usize, U: Unit> TryFromBuffer<&mut [U]> for [U; SIZE] {
+    fn try_from_buffer(value: &mut [U]) -> Result<Self, crate::error::BufferOverflow> {
+        if value.len() > SIZE {
+            return Err(crate::error::BufferOverflow);
+        }
+        let mut buffer = [U::zero(); SIZE];
+        buffer[..value.len()].copy_from_slice(value);
+        Ok(buffer)
+    }
+}
+
+#[cfg(any(feature = "std", test))]
+impl<const SIZE: usize, U: Unit> TryFromBuffer<std::vec::Vec<U>> for [U; SIZE] {
+    fn try_from_buffer(value: std::vec::Vec<U>) -> Result<Self, crate::error::BufferOverflow> {
+        if value.len() > SIZE {
+            return Err(crate::error::BufferOverflow);
+        }
+        let mut buffer = [U::zero(); SIZE];
+        buffer[..value.len()].copy_from_slice(&value[..]);
+        Ok(buffer)
+    }
+}
+
+impl<'a, U: Unit> FromBuffer<&'a mut [U]> for &'a [U] {
+    fn from_buffer(value: &'a mut [U]) -> Self {
+        value
+    }
+}
+
+#[cfg(any(feature = "std", test))]
+impl<U: Unit, const SIZE: usize> FromBuffer<[U; SIZE]> for std::vec::Vec<U> {
+    fn from_buffer(value: [U; SIZE]) -> Self {
+        value.to_vec()
+    }
+}
+
+#[cfg(any(feature = "std", test))]
+impl<U: Unit> FromBuffer<&[U]> for std::vec::Vec<U> {
+    fn from_buffer(value: &[U]) -> Self {
+        value.to_vec()
+    }
+}
+
+#[cfg(any(feature = "std", test))]
+impl<U: Unit> FromBuffer<&mut [U]> for std::vec::Vec<U> {
+    fn from_buffer(value: &mut [U]) -> Self {
+        value.to_vec()
+    }
+}
+
+//
+// private
+//
 
 pub(crate) const UNIT_ID_U8: u8 = 0;
 pub(crate) const UNIT_ID_U32: u8 = 1;

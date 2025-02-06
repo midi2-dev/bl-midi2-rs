@@ -159,9 +159,9 @@ mod test {
 
     #[test]
     fn rebuffer_from_array() {
-        use crate::RebufferFrom;
+        use crate::ArrayRebufferFrom;
 
         let message = ChannelVoice2::try_from(&[0x4BAC_5900, 0xC0B83064][..]).unwrap();
-        let _ = ChannelVoice2::<[u32; 2]>::rebuffer_from(message);
+        let _ = ChannelVoice2::<[u32; 2]>::array_rebuffer_from(message);
     }
 }
