@@ -1,0 +1,10 @@
+[package]
+name = "no_std_dynamic_message_generator"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+midi2 = { path = "../../midi2", default-features = false, features = [
+    "channel-voice1",
+    "sysex7",
+] }

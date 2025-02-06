@@ -136,7 +136,17 @@ mod tests {
     #[allow(unused_imports)]
     use pretty_assertions::assert_eq;
 
+    #[cfg(any(
+        feature = "channel-voice1",
+        feature = "sysex7",
+        feature = "system-common"
+    ))]
     static_assertions::assert_impl_all!(BytesMessage<&[u8]>: Copy);
+    #[cfg(any(
+        feature = "channel-voice1",
+        feature = "sysex7",
+        feature = "system-common"
+    ))]
     static_assertions::assert_impl_all!(BytesMessage<[u8; 3]>: Copy);
     static_assertions::assert_impl_all!(UmpMessage<&[u32]>: Copy);
     static_assertions::assert_impl_all!(UmpMessage<[u32; 4]>: Copy);

@@ -11,7 +11,7 @@ cargo-fuzz = true
 libfuzzer-sys = "0.4"
 
 [dependencies.midi2]
-path = ".."
+path = "../midi2"
 default-features = false
 features = [
     "std",
