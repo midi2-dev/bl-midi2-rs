@@ -1,0 +1,55 @@
+name: Start release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Semver version to release
+        required: true
+
+jobs:
+  release-start:
+    name: Release start
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup git-flow
+        run: ./.github/scripts/setup-git-flow.sh
+      - name: Start release
+        run: git flow release start ${{ github.event.inputs.version }}
+      - name: Determine last release
+        run: echo "LAST_RELEASE=$(./.github/scripts/last-released-version.sh)" >> $GITHUB_ENV
+      - name: Bump version
+        run: ./.github/scripts/bump-version.sh $LAST_RELEASE ${{ github.event.inputs.version }}
+      - name: Update changelog
+        uses: orhun/git-cliff-action@v3
+        with:
+          args: --prepend CHANGELOG.md --tag ${{ github.event.inputs.version }} --github-token ${{ secrets.GITHUB_TOKEN }} $LAST_RELEASE..${{ github.event.inputs.version }}
+      - name: Commit release prep changes
+        run: |
+          git add .
+          git commit -m "chore(release): prepare ${{ github.event.inputs.version }}"
+      - name: Push branch
+        run: git push origin HEAD
+
+  hotfix-start:
+    name: Release start
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup git-flow
+        run: ./.github/scripts/setup-git-flow.sh
+      - name: Start release
+        run: git flow hotfix start ${{ github.event.inputs.version }}
+      - name: Determine last release
+        run: echo "LAST_RELEASE=$(./.github/scripts/last-released-version.sh)" >> $GITHUB_ENV
+      - name: Bump version
+        run: ./.github/scripts/bump-version.sh $LAST_RELEASE ${{ github.event.inputs.version }}
+      - name: Commit release prep changes
+        run: |
+          git add .
+          git commit -m "chore(release): prepare ${{ github.event.inputs.version }}"
+      - name: Push branch
+        run: git push origin HEAD
