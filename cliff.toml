@@ -5,6 +5,7 @@ repo = "bl-midi2-rs"
 [changelog]
 header = """
 # Changelog
+
 """
 body = """
 {%- macro remote_url() -%}
