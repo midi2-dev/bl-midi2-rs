@@ -1,4 +1,5 @@
 # Changelog
+
 ## [0.7.0](https://github.com/midi2-dev/bl-midi2-rs/compare/0.6.5..0.7.0) - 2025-01-18
 
 ### 🐛 Fixes
@@ -77,7 +78,7 @@
 - Fix further clippy warnings - ([4dddc34](https://github.com/midi2-dev/bl-midi2-rs/commit/4dddc34d172135af23d3ba64a169854694aaf95c))
 - A couple of clippy warnings - ([2a46540](https://github.com/midi2-dev/bl-midi2-rs/commit/2a465404535c39c1f2485a6c9710600f88f614a5))
 
-### 🛠️ 3 Refactor
+### 🛠️ Refactor
 
 - [**breaking**] Rename *note properties to note_number - ([7f18e1f](https://github.com/midi2-dev/bl-midi2-rs/commit/7f18e1fb19a83d8f52023ab9b067408dd95fbb1f))
 - [**breaking**] Pitch7_9 and pitch7_25 used fixed number type - ([eaaf529](https://github.com/midi2-dev/bl-midi2-rs/commit/eaaf529e0bec60e96e80d718ea612c19166bb312))
@@ -97,7 +98,7 @@
 
 - Deiscovery property type - ([2367796](https://github.com/midi2-dev/bl-midi2-rs/commit/23677960dee53e9db57460cb2647b176580a287b))
 
-### 🛠️ 3 Refactor
+### 🛠️ Refactor
 
 - *(proc)* Improve gen ci supported version attributes - ([e6e3ad9](https://github.com/midi2-dev/bl-midi2-rs/commit/e6e3ad9b8d603374d5183f1aa1944ca8fc27c822))
 - [**breaking**] Ci is no longer a default feature - ([a9c15d1](https://github.com/midi2-dev/bl-midi2-rs/commit/a9c15d1bb1056e7c252d84ca49bebd3883567dc2))
@@ -145,7 +146,7 @@
 
 - Flex data text bytes iterator is public - ([92696d7](https://github.com/midi2-dev/bl-midi2-rs/commit/92696d7ac80a613ded754fc248cfc2918b667f72))
 
-### 🛠️ 3 Refactor
+### 🛠️ Refactor
 
 - [**breaking**] Remove aggregate error type and result - ([b14a368](https://github.com/midi2-dev/bl-midi2-rs/commit/b14a3683adc2a966381982fc0914492ad32e6a6b))
 - [**breaking**] Rename DeltaClockstampTPQ -> DeltaClockstampTpq - ([2b60154](https://github.com/midi2-dev/bl-midi2-rs/commit/2b60154e1f551e719b71f9f3a57cb06c742f17c9))
@@ -178,7 +179,7 @@
 
 - Utility messages should be excluded when feature is not enabled - ([24925c0](https://github.com/midi2-dev/bl-midi2-rs/commit/24925c003c0459cd6f7a64fd3b0b5000a8bf15ad))
 
-### 🛠️ 3 Refactor
+### 🛠️ Refactor
 
 - Fix unused code warnings - ([db3c1df](https://github.com/midi2-dev/bl-midi2-rs/commit/db3c1dfb6cb1305728d360bba4d5156b141b95e1))
 - Fix public exports of utility module - ([7269e6b](https://github.com/midi2-dev/bl-midi2-rs/commit/7269e6be852d90e6804f835817273fe3a38d6968))
@@ -187,7 +188,7 @@
 
 - Update changelog - ([feb34da](https://github.com/midi2-dev/bl-midi2-rs/commit/feb34dac7380ef37f3b1e367bab642bb384f5d62))
 
-### ◀️🔙 3 Revert
+### ◀️🔙 Revert
 
 - Remove redundant jitter reduction derive - ([e36f505](https://github.com/midi2-dev/bl-midi2-rs/commit/e36f5057355f10d7f71f92fceb7fc2fa4a2dbadc))
 
@@ -219,7 +220,7 @@
 - Hide further private types - ([a688bbf](https://github.com/midi2-dev/bl-midi2-rs/commit/a688bbfe72cb041db7e6ad55539e6f3d98bada2e))
 - Hide some private types - ([1604a28](https://github.com/midi2-dev/bl-midi2-rs/commit/1604a284c6ce313e8b429eeb888f398a8b0ba18e))
 
-### 🛠️ 3 Refactor
+### 🛠️ Refactor
 
 - Remove unused constants - ([4e59841](https://github.com/midi2-dev/bl-midi2-rs/commit/4e5984174459b4ee8e75400b8e7f6f6390dbfe90))
 - Remove jr timestamp headers and trait - ([01870cb](https://github.com/midi2-dev/bl-midi2-rs/commit/01870cbf9d23fccc44cfe79b98a2e2b09237c19e))
@@ -273,7 +274,7 @@
 - Repo url must be http - ([3ff7ecb](https://github.com/midi2-dev/bl-midi2-rs/commit/3ff7ecb6959aac847b95feefc6c7be7e5438e050))
 - Repository url must be http - ([6576eae](https://github.com/midi2-dev/bl-midi2-rs/commit/6576eae79537d4f7e845e517f3edb8a855ad5130))
 
-### 🛠️ 3 Refactor
+### 🛠️ Refactor
 
 - Repo is handled as a cargo workspace - ([2dc06c0](https://github.com/midi2-dev/bl-midi2-rs/commit/2dc06c0ed567c6b85b3c703990ed11c555451545))
 
@@ -392,7 +393,7 @@
 - Improve generated debug impl - ([75a2f58](https://github.com/midi2-dev/bl-midi2-rs/commit/75a2f58064483b745ff79b84a44f32f2239e722a))
 - New clippy warnings - ([68cf681](https://github.com/midi2-dev/bl-midi2-rs/commit/68cf68182185bd7fc3c5dd32dffc4e5f189f0ed8))
 
-### 🛠️ 3 Refactor
+### 🛠️ Refactor
 
 - Simplify prelude - ([ac4d761](https://github.com/midi2-dev/bl-midi2-rs/commit/ac4d7618bb0402ec3169cbf137f6b018fdb687e8))
 - Remove numeric types submod - ([26e693f](https://github.com/midi2-dev/bl-midi2-rs/commit/26e693f85e77e002626baad8ceb5313cf5f72cae))
