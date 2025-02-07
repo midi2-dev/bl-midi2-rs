@@ -1,0 +1,53 @@
+name: Start release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Semver version to release
+        required: true
+      type:
+        description: What type of release
+        required: true
+        default: release
+        options:
+          - release
+          - hotfix
+
+jobs:
+  release-start:
+    name: Release start
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          ref: ${{ github.ref }}
+      - name: Setup git-flow
+        run: ./.github/scripts/setup-git-flow.sh
+      - name: Start release
+        run: git flow ${{ github.event.inputs.type }} start ${{ github.event.inputs.version }}
+      - name: Determine last release
+        run: echo "LAST_RELEASE=$(./.github/scripts/last-released-version.sh)" >> $GITHUB_ENV
+      - name: Debug
+        run: cat ./.github/scripts/bump-version.sh
+      - name: Bump version
+        run: ./.github/scripts/bump-version.sh $LAST_RELEASE ${{ github.event.inputs.version }}
+      - name: Update changelog
+        if: ${{ github.event.inputs.type == 'release' }}
+        uses: orhun/git-cliff-action@v4
+        with:
+          args: --unreleased --prepend CHANGELOG.md --tag ${{ github.event.inputs.version }} --github-token ${{ secrets.GITHUB_TOKEN }}
+      - name: Commit release prep changes
+        run: |
+          git add CHANGELOG.md
+          cat .github/scripts/files-with-current-version-string | xargs -I % git add %
+          git commit -m "chore(release): prepare ${{ github.event.inputs.version }}"
+      - name: Push branch
+        run: git push origin HEAD
+      - name: Create Pull Request
+        run: gh pr create --base main --head release/${{ github.event.inputs.version }} --title "Release | ${{ github.event.inputs.version }}" --body "Prepare release of version ${{ github.event.inputs.version }}."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

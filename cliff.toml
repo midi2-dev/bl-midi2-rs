@@ -82,6 +82,3 @@ commit_parsers = [
 
 tag_pattern = "^[0-9]+\\.[0-9]+\\.[0-9]+$"
 sort_commits = "newest"
-
-# command for appending the latest changes to the changelog
-# git cliff --prepend CHANGELOG.md --tag <new version> --github-token <token> <old version>..<new version>
