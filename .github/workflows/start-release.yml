@@ -23,16 +23,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          fetch-tags: true
-          ref: ${{ github.ref }}
       - name: Setup git-flow
         run: ./.github/scripts/setup-git-flow.sh
       - name: Start release
         run: git flow ${{ github.event.inputs.type }} start ${{ github.event.inputs.version }}
       - name: Determine last release
         run: echo "LAST_RELEASE=$(./.github/scripts/last-released-version.sh)" >> $GITHUB_ENV
-      - name: Debug
-        run: cat ./.github/scripts/bump-version.sh
       - name: Bump version
         run: ./.github/scripts/bump-version.sh $LAST_RELEASE ${{ github.event.inputs.version }}
       - name: Update changelog
