@@ -15,6 +15,9 @@ on:
           - release
           - hotfix
 
+permissions:
+  contents: write
+
 jobs:
   release-start:
     name: Release start
