@@ -18,7 +18,7 @@ pub trait BitOps {
 impl BitOps for u32 {
     fn bit(&self, index: usize) -> bool {
         assert!(index < 32);
-        self >> (31 - index) & 0b1 != 0
+        (self >> (31 - index)) & 0b1 != 0
     }
 
     fn set_bit(&mut self, index: usize, v: bool) -> &mut Self {
@@ -32,7 +32,7 @@ impl BitOps for u32 {
 
     fn crumb(&self, index: usize) -> u2 {
         assert!(index < 16);
-        (self >> (30 - index * 2) & 0b11).try_into().unwrap()
+        ((self >> (30 - index * 2)) & 0b11).try_into().unwrap()
     }
 
     fn set_crumb(&mut self, index: usize, v: u2) -> &mut Self {
@@ -58,7 +58,7 @@ impl BitOps for u32 {
 
     fn septet(&self, index: usize) -> u7 {
         assert!(index < 4);
-        (self >> (24 - index * 8) & 0x7F).try_into().unwrap()
+        ((self >> (24 - index * 8)) & 0x7F).try_into().unwrap()
     }
 
     fn set_septet(&mut self, index: usize, v: u7) -> &mut Self {
@@ -71,7 +71,7 @@ impl BitOps for u32 {
 
     fn octet(&self, index: usize) -> u8 {
         assert!(index < 4);
-        (self >> (24 - index * 8) & 0xFF).try_into().unwrap()
+        ((self >> (24 - index * 8)) & 0xFF).try_into().unwrap()
     }
 
     fn set_octet(&mut self, index: usize, v: u8) -> &mut Self {
@@ -84,7 +84,7 @@ impl BitOps for u32 {
 
     fn word(&self, index: usize) -> u16 {
         assert!(index < 2);
-        (self >> (16 - index * 16) & 0xFFFF).try_into().unwrap()
+        ((self >> (16 - index * 16)) & 0xFFFF).try_into().unwrap()
     }
 
     fn set_word(&mut self, index: usize, v: u16) -> &mut Self {
@@ -99,7 +99,7 @@ impl BitOps for u32 {
 impl BitOps for u7 {
     fn bit(&self, index: usize) -> bool {
         assert!(index < 7);
-        *self >> (6 - index) & u7::new(0b1) != u7::new(0)
+        (*self >> (6 - index)) & u7::new(0b1) != u7::new(0)
     }
     fn set_bit(&mut self, index: usize, v: bool) -> &mut Self {
         assert!(index < 7);
@@ -144,7 +144,7 @@ impl BitOps for u7 {
 impl BitOps for u8 {
     fn bit(&self, index: usize) -> bool {
         assert!(index < 8);
-        self >> (7 - index) & 0b1 != 0
+        (self >> (7 - index)) & 0b1 != 0
     }
     fn set_bit(&mut self, index: usize, v: bool) -> &mut Self {
         assert!(index < 8);
