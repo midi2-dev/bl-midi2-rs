@@ -48,7 +48,8 @@ jobs:
           git commit -m "chore(release): prepare ${{ github.event.inputs.version }}"
       - name: Push branch
         run: git push origin HEAD
-      - name: Create Pull Request
-        run: gh pr create --base main --head release/${{ github.event.inputs.version }} --title "Release | ${{ github.event.inputs.version }}" --body "Prepare release of version ${{ github.event.inputs.version }}."
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # waiting on org level permissions for this step
+      # - name: Create Pull Request
+      #   run: gh pr create --base main --head release/${{ github.event.inputs.version }} --title "Release | ${{ github.event.inputs.version }}" --body "Prepare release of version ${{ github.event.inputs.version }}."
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
