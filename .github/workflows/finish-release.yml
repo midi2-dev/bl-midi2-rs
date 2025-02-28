@@ -15,6 +15,9 @@ on:
           - release
           - hotfix
 
+permissions:
+  contents: write
+
 jobs:
   release-finish:
     name: Finish release
