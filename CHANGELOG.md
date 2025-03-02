@@ -1,5 +1,41 @@
 # Changelog
 
+## [0.8.0](https://github.com/midi2-dev/bl-midi2-rs/compare/0.7.0..0.8.0) - 2025-02-28
+
+### ✨ Features
+
+- Adds workflows releases branches - ([c2a40f3](https://github.com/midi2-dev/bl-midi2-rs/compare/97c22bc5ab13aa9cad8ea9f4f900ca7bac6b8dc3..1c662098f0391d5d101432a381db8453d9d5fe6f))
+- Adds git cliff config - ([374770c](https://github.com/midi2-dev/bl-midi2-rs/commit/374770c79aefbf6b2514ae86e29de26d38695202))
+- Adds cargo deny config (passing) - ([a0f50a8](https://github.com/midi2-dev/bl-midi2-rs/commit/a0f50a85f42b47dda618afc9a7ad150c3d06acb8))
+- [**breaking**] Messages implement Copy when the underlying buffer does too - ([9d501ac](https://github.com/midi2-dev/bl-midi2-rs/commit/9d501aca5a6f2be9a21a0a06b251e9efde68dc9b))
+- Messages implement Copy when the underlying buffer does too - ([bb3888e](https://github.com/midi2-dev/bl-midi2-rs/commit/bb3888e338abfc88035cc3ea84b49c494e9d466a))
+- Rebuffer from exclusive to shared slice for aggregates - ([05af663](https://github.com/midi2-dev/bl-midi2-rs/commit/05af663f4c01c652891b5610871ce44def16c411))
+- Rebuffer slice from mut slice - ([cb58c00](https://github.com/midi2-dev/bl-midi2-rs/commit/cb58c00dbe1d2f10860f7a611f5d5ca238007138))
+- Adds clippy ci check - ([3444e9b](https://github.com/midi2-dev/bl-midi2-rs/commit/3444e9bd564600a8c61108044913287f5f3e27be))
+- Fix typos automatically in the codespell hook - ([1627c4b](https://github.com/midi2-dev/bl-midi2-rs/commit/1627c4bfa0ee18b8e13a3ae197a225df73e87e0e))
+- Replace rust git hooks with ci-friendly alternative - ([134cdac](https://github.com/midi2-dev/bl-midi2-rs/commit/134cdac38fe956bc6acbb2cf62fc3b094cf3583a))
+
+### 🐛 Fixes
+
+- Comment typo - ([8d6ddd9](https://github.com/midi2-dev/bl-midi2-rs/commit/8d6ddd9fb98a9dbb92a4416c526b6b83fbc3211c))
+- Apply latest clippy lint fixes - ([6e2058e](https://github.com/midi2-dev/bl-midi2-rs/commit/6e2058e1a11432cce003f462c80e937bf99ab0e2))
+- Comment typo - ([3537b05](https://github.com/midi2-dev/bl-midi2-rs/commit/3537b0513f98ae11cedeb33d27cdcb8ad471a8da))
+
+### 🛠️ Refactor
+
+- Github actions - ([8d7c599](https://github.com/midi2-dev/bl-midi2-rs/commit/8d7c599185ca879c280f4b73dc0207cc4b2b7cad))
+- Restructure the workspace - ([e46ac36](https://github.com/midi2-dev/bl-midi2-rs/commit/e46ac360c50182b2b64e813c6d2c788e8a3f00ca))
+
+### 📚 Documentation
+
+- Correct docs for default features - ([b84e8e5](https://github.com/midi2-dev/bl-midi2-rs/commit/b84e8e5adbf944a8b195c635392106bde141b4a7))
+- Add readme badges - ([9d59452](https://github.com/midi2-dev/bl-midi2-rs/commit/9d594520bcbe663c365692329fc41d1c9fccd30d))
+
+## New Contributors ❤️
+
+* @pre-commit-ci[bot] made their first contribution in [#41](https://github.com/midi2-dev/bl-midi2-rs/pull/41)
+* @Philipp-M made their first contribution in [#38](https://github.com/midi2-dev/bl-midi2-rs/pull/38)
+
 ## [0.7.0](https://github.com/midi2-dev/bl-midi2-rs/compare/0.6.5..0.7.0) - 2025-01-18
 
 ### 🐛 Fixes
