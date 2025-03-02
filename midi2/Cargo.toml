@@ -3,7 +3,7 @@ name = "midi2"
 version = "0.8.0"
 description = "Ergonomic, versatile, strong types wrapping MIDI 2.0 message data."
 edition = "2021"
-readme = "README.md"
+readme = "../README.md"
 license = "MIT OR Apache-2.0"
 authors = [
     "Ben Leadbetter <ben.leadbetter@hotmail.com>",
