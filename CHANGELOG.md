@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.2](https://github.com/midi2-dev/bl-midi2-rs/compare/0.8.1..0.8.2) - 2025-03-02
+
+### 🐛 Fixes
+
+- Publish broken because can't find midi2 readme - ([db24585](https://github.com/midi2-dev/bl-midi2-rs/commit/db245851aa931e2dbc37b18c34e7c6712d562dfd))
+
+
 ## [0.8.1](https://github.com/midi2-dev/bl-midi2-rs/compare/0.8.0..0.8.1) - 2025-03-02
 
 ### 🐛 Fixes
