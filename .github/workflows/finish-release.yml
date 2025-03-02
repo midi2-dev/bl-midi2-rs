@@ -35,6 +35,8 @@ jobs:
           verbose: true
       - name: Setup git-flow
         run: ./.github/scripts/setup-git-flow.sh
+      - name: Configure PAT for release
+        run: ./.github/scripts/configure-release-pat.sh ${{ secrets.RELEASE_PAT }}
       - name: Finish release
         run: git flow ${{ github.event.inputs.type }} finish ${{ github.event.inputs.version }} -m ${{ github.event.inputs.version }} --push
       - name: Publish midi2_proc
