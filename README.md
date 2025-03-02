@@ -1,5 +1,11 @@
 # 🎹 MIDI2 🎹
 
+[![crates.io](https://img.shields.io/crates/v/midi2.svg)](https://crates.io/crates/midi2)
+[![docs.rs](https://docs.rs/midi2/badge.svg)](https://docs.rs/midi2)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-%23FE5196?logo=conventionalcommits&logoColor=white)](https://conventionalcommits.org)
+![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)
+
 Ergonomic, versatile, strong types wrapping MIDI 2.0 message data.
 
 This implementation of MIDI 2.0 is based on the 1.1 revision of the specifications.
@@ -157,7 +163,7 @@ You'll want to setup midi2 without default features to compile
 without the `std` feature.
 
 ```toml
-midi2 = { version = "0.7.0", default-features = false, features = ["channel-voice2", "sysex7"],  }
+midi2 = { version = "0.8.0", default-features = false, features = ["channel-voice2", "sysex7"],  }
 ```
 
 ### Generic Representation
@@ -181,7 +187,7 @@ assert_eq!(message.try_set_payload(0..60), Err(midi2::error::BufferOverflow));
 ```
 
 A more advanced use case might be to make a custom buffer which
-uses an arena allocater to back your messages.
+uses an arena allocator to back your messages.
 See the [buffer] docs for more info.
 
 ### Borrowed Messages
@@ -226,7 +232,7 @@ let mut owned: NoteOn::<[u32; 4]> = {
     let buffer = [0x4898_5E03_u32, 0x6A14_E98A];
     // the borrowed message is immutable and cannot outlive `buffer`
     let borrowed = NoteOn::try_from(&buffer[..]).expect("Data is valid");
-    borrowed.rebuffer_into()
+    borrowed.array_rebuffer_into()
 };
 
 // the owned message is mutable and liberated from the buffer lifetime.
@@ -273,12 +279,12 @@ Here's a list of available features:
 - `default`:
   - **std** - Include [buffer] integration for `std::vec::Vec` and enable allocating getters for values which return `std::string::String` values.
   - **channel-voice2** — Include message wrappers for the MIDI 2.0 channel voice message type.
-  - **sysex7** — Include message wrappers for the MIDI 7bit system exclusive message type.
-  - **ci** — 🚧 WIP 🚧
 
 - `optional`: These features are not enabled by default and can be included by adding them to your `Cargo.toml`.
   - **flex-data** - Include message wrappers for the MIDI 2.0 Flex Data message type.
   - **channel-voice1** - Include message wrappers for the classical MIDI channel voice message type.
+  - **sysex7** — Include message wrappers for the MIDI 7bit system exclusive message type.
   - **sysex8** - Include message wrappers for the MIDI 2.0 System Exclusive 8bit message type.
   - **system-common** - Include message wrappers for the MIDI 2.0 System Common / System Real Time message type.
   - **ump-stream** - Include message wrappers for the MIDI 2.0 Ump Stream message type.
+  - **ci** — 🚧 WIP 🚧

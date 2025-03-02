@@ -1,0 +1,49 @@
+name: Finish release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Semver version to release
+        required: true
+      type:
+        description: What type of release
+        required: true
+        default: 'release'
+        type: choice
+        options:
+          - release
+          - hotfix
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-finish:
+    name: Finish release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.inputs.type }}/${{ github.event.inputs.version }}
+      - name: Check semver
+        uses: obi1kenobi/cargo-semver-checks-action@v2
+        with:
+          verbose: true
+      - name: Setup git-flow
+        run: ./.github/scripts/setup-git-flow.sh
+      - name: Finish release
+        run: git flow ${{ github.event.inputs.type }} finish ${{ github.event.inputs.version }} -m ${{ github.event.inputs.version }} --push
+      - name: Publish midi2_proc
+        uses: ryohidaka/action-cargo-publish@v0.1.0
+        with:
+          path: midi2_proc
+          token: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+      - name: Publish midi2
+        uses: ryohidaka/action-cargo-publish@v0.1.0
+        with:
+          path: midi2
+          token: ${{ secrets.CARGO_REGISTRY_TOKEN }}

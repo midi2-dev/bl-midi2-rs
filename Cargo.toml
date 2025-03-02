@@ -1,48 +1,7 @@
-[package]
-name = "midi2"
-version = "0.7.0"
-description = "Ergonomic, versatile, strong types wrapping MIDI 2.0 message data."
-edition = "2021"
-readme = "README.md"
-license = "MIT OR Apache-2.0"
-authors = [
-    "Ben Leadbetter <ben.leadbetter@hotmail.com>",
-]
-repository = "https://github.com/midi2-dev/bl-midi2-rs.git"
-
 [workspace]
-members = [
-    "midi2_proc",
-    "fuzz",
-]
+members = ["midi2", "midi2_proc", "examples/*", "fuzz"]
+default-members = ["midi2"]
+resolver = "2"
 
-[lib]
-name = "midi2"
-path = "src/lib.rs" 
-
-[features]
-default = ["std", "channel-voice2"]
-# wip
-ci = ["sysex7"]
-flex-data = []
-channel-voice1 = []
-channel-voice2 = []
-std = []
-sysex7 = []
-sysex8 = []
-system-common = []
-ump-stream = []
-utility = []
-
-[dependencies]
-derive_more = { version = "0.99.17", features = ["from"], default-features = false }
-fixed = "1.27.0"
-midi2_proc = { version = "0.7.0", path = "midi2_proc" }
-ux = "0.1.6"
-
-[dev-dependencies]
-pretty_assertions = "1.4.0"
-
-[package.metadata.docs.rs]
-all-features = true
-rustdoc-args = ["--cfg", "docsrs"]
+[workspace.metadata]
+licenses = ["Unicode-3.0"]

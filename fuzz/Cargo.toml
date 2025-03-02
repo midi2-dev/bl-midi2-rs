@@ -1,8 +1,8 @@
 [package]
-name = "midi2-fuzz"
-version = "0.0.0"
-publish = false
 edition = "2021"
+name = "midi2-fuzz"
+publish = false
+version = "0.0.0"
 
 [package.metadata]
 cargo-fuzz = true
@@ -11,7 +11,7 @@ cargo-fuzz = true
 libfuzzer-sys = "0.4"
 
 [dependencies.midi2]
-path = ".."
+path = "../midi2"
 default-features = false
 features = [
     "std",

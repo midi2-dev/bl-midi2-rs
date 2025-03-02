@@ -243,7 +243,7 @@ fn message(
     }
 
     quote! {
-        #[derive(PartialEq, Eq, midi2_proc::Debug)]
+        #[derive(PartialEq, Eq, Clone, Copy, midi2_proc::Debug)]
         #doc_attributes
         pub struct #root_ident<B: #constraint>(B);
     }
@@ -388,16 +388,64 @@ fn try_from_slice_impl(
 }
 
 fn rebuffer_from_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream {
-    let generics = crate::common::rebuffer_generics(args.representation());
+    let generics = match args.representation() {
+        Representation::Ump => quote! {
+            <
+                A: crate::buffer::Ump,
+                B: crate::buffer::Ump + crate::buffer::FromBuffer<A>,
+            >
+        },
+        Representation::Bytes => quote! {
+            <
+                A: crate::buffer::Bytes,
+                B: crate::buffer::Bytes + crate::buffer::FromBuffer<A>,
+            >
+        },
+        Representation::UmpOrBytes => quote! {
+            <
+                U: crate::buffer::Unit,
+                A: crate::buffer::Buffer<Unit = U>,
+                B: crate::buffer::Buffer<Unit = U> + crate::buffer::FromBuffer<A>,
+            >
+        },
+    };
     quote! {
         impl #generics crate::traits::RebufferFrom<#root_ident<A>> for #root_ident<B>
         {
             fn rebuffer_from(other: #root_ident<A>) -> Self {
-                let mut buffer = <B as crate::buffer::BufferDefault>::default();
-                let message_size = other.data().len();
-                buffer.resize(message_size);
-                buffer.buffer_mut()[..message_size].copy_from_slice(other.data());
-                #root_ident(buffer)
+                #root_ident(<B as crate::buffer::FromBuffer<A>>::from_buffer(other.0))
+            }
+        }
+    }
+}
+
+fn try_rebuffer_from_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream {
+    let generics = match args.representation() {
+        Representation::Ump => quote! {
+            <
+                A: crate::buffer::Ump,
+                B: crate::buffer::Ump + crate::buffer::TryFromBuffer<A>,
+            >
+        },
+        Representation::Bytes => quote! {
+            <
+                A: crate::buffer::Bytes,
+                B: crate::buffer::Bytes + crate::buffer::TryFromBuffer<A>,
+            >
+        },
+        Representation::UmpOrBytes => quote! {
+            <
+                U: crate::buffer::Unit,
+                A: crate::buffer::Buffer<Unit = U>,
+                B: crate::buffer::Buffer<Unit = U> + crate::buffer::TryFromBuffer<A>,
+            >
+        },
+    };
+    quote! {
+        impl #generics crate::traits::TryRebufferFrom<#root_ident<A>> for #root_ident<B>
+        {
+            fn try_rebuffer_from(other: #root_ident<A>) -> core::result::Result<Self, crate::error::BufferOverflow> {
+                Ok(#root_ident(<B as crate::buffer::TryFromBuffer<A>>::try_from_buffer(other.0)?))
             }
         }
     }
@@ -407,30 +455,13 @@ fn rebuffer_from_array_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs)
     let constraint = generic_buffer_constraint(args);
     let buffer_type = quote! { [<A as crate::buffer::Buffer>::Unit; SIZE] };
     quote! {
-        impl<const SIZE: usize, A: #constraint> crate::traits::RebufferFrom<#root_ident<A>> for #root_ident<#buffer_type>
-        {
-            fn rebuffer_from(other: #root_ident<A>) -> Self {
+        impl<const SIZE: usize, A: #constraint> crate::traits::ArrayRebufferFrom<#root_ident<A>> for #root_ident<#buffer_type> {
+            fn array_rebuffer_from(other: #root_ident<A>) -> Self {
                 let _valid = <Self as crate::traits::ArraySizeValid<SIZE, #buffer_type>>::VALID;
                 let mut buffer = <#buffer_type as crate::buffer::BufferDefault>::default();
                 let message_size = other.data().len();
                 buffer[..message_size].copy_from_slice(other.data());
                 #root_ident(buffer)
-            }
-        }
-    }
-}
-
-fn try_rebuffer_from_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream {
-    let generics = crate::common::try_rebuffer_generics(args.representation());
-    quote! {
-        impl #generics crate::traits::TryRebufferFrom<#root_ident<A>> for #root_ident<B>
-        {
-            fn try_rebuffer_from(other: #root_ident<A>) -> core::result::Result<Self, crate::error::BufferOverflow> {
-                let mut buffer = <B as crate::buffer::BufferDefault>::default();
-                let message_size = other.data().len();
-                buffer.try_resize(message_size)?;
-                buffer.buffer_mut()[..message_size].copy_from_slice(other.data());
-                Ok(#root_ident(buffer))
             }
         }
     }
@@ -580,17 +611,6 @@ fn try_new_impl(
                 let buffer_ref_mut = &mut buffer;
                 #initialise_properties
                 Ok(#root_ident::<B>(buffer))
-            }
-        }
-    }
-}
-
-fn clone_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream {
-    let constraint = generic_buffer_constraint(args);
-    quote! {
-        impl<B: #constraint + core::clone::Clone> core::clone::Clone for #root_ident<B> {
-            fn clone(&self) -> Self {
-                Self(self.buffer_access().clone())
             }
         }
     }
@@ -791,12 +811,12 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
     let try_from_slice_impl = try_from_slice_impl(root_ident, &args, &properties);
     let rebuffer_from_impl = rebuffer_from_impl(root_ident, &args);
     let try_rebuffer_from_impl = try_rebuffer_from_impl(root_ident, &args);
+    let rebuffer_from_array_impl = rebuffer_from_array_impl(root_ident, &args);
     let new_impl = new_impl(root_ident, &args, &properties);
     let new_with_buffer_impl = new_with_buffer_impl(root_ident, &args, &properties);
     let try_new_with_buffer_impl = try_new_with_buffer_impl(root_ident, &args, &properties);
     let new_array_impl = new_array_impl(root_ident, &args, &properties);
     let try_new_impl = try_new_impl(root_ident, &args, &properties);
-    let clone_impl = clone_impl(root_ident, &args);
 
     let mut tokens = TokenStream::new();
 
@@ -810,17 +830,16 @@ pub fn generate_message(attrs: TokenStream1, item: TokenStream1) -> TokenStream1
         #try_from_slice_impl
         #rebuffer_from_impl
         #try_rebuffer_from_impl
+        #rebuffer_from_array_impl
         #new_impl
         #new_with_buffer_impl
         #try_new_with_buffer_impl
         #new_array_impl
         #try_new_impl
-        #clone_impl
     });
 
     if args.fixed_size {
         tokens.extend(size_impl(root_ident, &args));
-        tokens.extend(rebuffer_from_array_impl(root_ident, &args));
     }
     if let Some(property) = properties.iter().find(|p| p.is_group()) {
         tokens.extend(grouped_impl(root_ident, property));

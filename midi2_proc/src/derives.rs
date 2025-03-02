@@ -185,44 +185,37 @@ pub fn rebuffer_from(item: TokenStream1) -> TokenStream1 {
             #ident::#variant_ident(m) => #message_type::rebuffer_from(m).into(),
         });
     }
-    let generics = common::rebuffer_generics(
-        match common::buffer_generic(&input.generics).expect("No buffer generic found.") {
-            common::BufferGeneric::Ump(_) => common::Representation::Ump,
-            common::BufferGeneric::Bytes(_) => common::Representation::Bytes,
-            common::BufferGeneric::UmpOrBytes(_) => common::Representation::UmpOrBytes,
+    let repr = match common::buffer_generic(&input.generics).expect("No buffer generic found.") {
+        common::BufferGeneric::Ump(_) => common::Representation::Ump,
+        common::BufferGeneric::Bytes(_) => common::Representation::Bytes,
+        common::BufferGeneric::UmpOrBytes(_) => common::Representation::UmpOrBytes,
+    };
+    use common::Representation;
+    let generics = match repr {
+        Representation::Ump => quote! {
+            <
+                A: crate::buffer::Ump,
+                B: crate::buffer::Ump + crate::buffer::FromBuffer<A>,
+            >
         },
-    );
+        Representation::Bytes => quote! {
+            <
+                A: crate::buffer::Bytes,
+                B: crate::buffer::Bytes + crate::buffer::FromBuffer<A>,
+            >
+        },
+        Representation::UmpOrBytes => quote! {
+            <
+                U: crate::buffer::Unit,
+                A: crate::buffer::Buffer<Unit = U>,
+                B: crate::buffer::Buffer<Unit = U> + crate::buffer::FromBuffer<A>,
+            >
+        },
+    };
     quote! {
         impl #generics crate::traits::RebufferFrom<#ident<A>> for #ident<B>
         {
             fn rebuffer_from(other: #ident<A>) -> Self {
-                match other {
-                    #match_arms
-                }
-            }
-        }
-    }
-    .into()
-}
-
-pub fn rebuffer_from_array(item: TokenStream1) -> TokenStream1 {
-    let input = parse_macro_input!(item as ItemEnum);
-    let ident = &input.ident;
-    let mut match_arms = TokenStream::new();
-    for variant in &input.variants {
-        let variant_ident = &variant.ident;
-        match_arms.extend(quote! {
-            #ident::#variant_ident(m) => #ident::#variant_ident(m.rebuffer_into()),
-        });
-    }
-    let buffer_generic = common::buffer_generic(&input.generics).expect("Expected buffer generic");
-    let buffer_generic_id = buffer_generic.ident();
-    let buffer_generic_type_param = buffer_generic.type_param();
-    let arr_type = quote! { [<#buffer_generic_id as crate::buffer::Buffer>::Unit; SIZE] };
-    quote! {
-        impl<const SIZE: usize, #buffer_generic_type_param>  crate::RebufferFrom<#ident<#buffer_generic_id>> for #ident<#arr_type> {
-            fn rebuffer_from(other: #ident<#buffer_generic_id>) -> Self {
-                use crate::RebufferInto;
                 match other {
                     #match_arms
                 }
@@ -243,13 +236,33 @@ pub fn try_rebuffer_from(item: TokenStream1) -> TokenStream1 {
             #ident::#variant_ident(m) => #message_type::try_rebuffer_from(m)?.into(),
         });
     }
-    let generics = common::try_rebuffer_generics(
-        match common::buffer_generic(&input.generics).expect("No buffer generic found.") {
-            common::BufferGeneric::Ump(_) => common::Representation::Ump,
-            common::BufferGeneric::Bytes(_) => common::Representation::Bytes,
-            common::BufferGeneric::UmpOrBytes(_) => common::Representation::UmpOrBytes,
+    let repr = match common::buffer_generic(&input.generics).expect("No buffer generic found.") {
+        common::BufferGeneric::Ump(_) => common::Representation::Ump,
+        common::BufferGeneric::Bytes(_) => common::Representation::Bytes,
+        common::BufferGeneric::UmpOrBytes(_) => common::Representation::UmpOrBytes,
+    };
+    use common::Representation;
+    let generics = match repr {
+        Representation::Ump => quote! {
+            <
+                A: crate::buffer::Ump,
+                B: crate::buffer::Ump + crate::buffer::TryFromBuffer<A>,
+            >
         },
-    );
+        Representation::Bytes => quote! {
+            <
+                A: crate::buffer::Bytes,
+                B: crate::buffer::Bytes + crate::buffer::TryFromBuffer<A>,
+            >
+        },
+        Representation::UmpOrBytes => quote! {
+            <
+                U: crate::buffer::Unit,
+                A: crate::buffer::Buffer<Unit = U>,
+                B: crate::buffer::Buffer<Unit = U> + crate::buffer::TryFromBuffer<A>,
+            >
+        },
+    };
     quote! {
         impl #generics crate::traits::TryRebufferFrom<#ident<A>> for #ident<B>
         {
@@ -257,6 +270,33 @@ pub fn try_rebuffer_from(item: TokenStream1) -> TokenStream1 {
                 Ok(match other {
                     #match_arms
                 })
+            }
+        }
+    }
+    .into()
+}
+
+pub fn rebuffer_from_array(item: TokenStream1) -> TokenStream1 {
+    let input = parse_macro_input!(item as ItemEnum);
+    let ident = &input.ident;
+    let mut match_arms = TokenStream::new();
+    for variant in &input.variants {
+        let variant_ident = &variant.ident;
+        match_arms.extend(quote! {
+            #ident::#variant_ident(m) => #ident::#variant_ident(m.array_rebuffer_into()),
+        });
+    }
+    let buffer_generic = common::buffer_generic(&input.generics).expect("Expected buffer generic");
+    let buffer_generic_id = buffer_generic.ident();
+    let buffer_generic_type_param = buffer_generic.type_param();
+    let arr_type = quote! { [<#buffer_generic_id as crate::buffer::Buffer>::Unit; SIZE] };
+    quote! {
+        impl<const SIZE: usize, #buffer_generic_type_param>  crate::ArrayRebufferFrom<#ident<#buffer_generic_id>> for #ident<#arr_type> {
+            fn array_rebuffer_from(other: #ident<#buffer_generic_id>) -> Self {
+                use crate::ArrayRebufferInto;
+                match other {
+                    #match_arms
+                }
             }
         }
     }
