@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/midi2-dev/bl-midi2-rs/compare/0.8.0..0.8.1) - 2025-03-02
+
+### 🐛 Fixes
+
+- Midi2 crate has no readme - ([ca05654..282e1f8](https://github.com/midi2-dev/bl-midi2-rs/compare/ca056540bcb27b57040d8d0860aa4f97a02e0eeb..282e1f8fd938b663be0bc663eabad989b0b3f377))
+
+
 ## [0.8.0](https://github.com/midi2-dev/bl-midi2-rs/compare/0.7.0..0.8.0) - 2025-02-28
 
 ### ✨ Features
