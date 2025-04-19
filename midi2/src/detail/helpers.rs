@@ -89,15 +89,16 @@ pub fn validate_sysex_group_statuses<
     Ok(())
 }
 
-pub fn try_set_sysex_data<
+pub fn try_insert_sysex_data<
     B: crate::buffer::Buffer + crate::buffer::BufferMut + crate::buffer::BufferTryResize,
     S: SysexInternal<B>,
     D: core::iter::Iterator<Item = <S as crate::traits::Sysex<B>>::Byte>,
 >(
     sysex: &mut S,
     data: D,
+    before: usize,
 ) -> core::result::Result<(), crate::error::BufferOverflow> {
-    match detail::try_set_sysex_data(sysex, data, |s, sz| s.try_resize(sz)) {
+    match detail::try_insert_sysex_data(sysex, data, |s, sz| s.try_resize(sz), before) {
         Err(e) => {
             // if the write failed we reset the message
             // back to zero data
@@ -110,25 +111,33 @@ pub fn try_set_sysex_data<
     }
 }
 
-pub fn set_sysex_data<
+pub fn insert_sysex_data<
     B: crate::buffer::Buffer + crate::buffer::BufferMut + crate::buffer::BufferResize,
     S: SysexInternal<B>,
     D: core::iter::Iterator<Item = <S as crate::traits::Sysex<B>>::Byte>,
 >(
     sysex: &mut S,
     data: D,
+    before: usize,
 ) {
-    detail::try_set_sysex_data(sysex, data, |s, sz| {
-        s.resize(sz);
-        Ok(())
-    })
+    detail::try_insert_sysex_data(
+        sysex,
+        data,
+        |s, sz| {
+            s.resize(sz);
+            Ok(())
+        },
+        before,
+    )
     .expect("Resizable buffers should not fail here")
 }
 
 mod detail {
+    use crate::error::BufferOverflow;
+
     use super::*;
 
-    pub fn try_set_sysex_data<
+    pub fn try_insert_sysex_data<
         B: crate::buffer::Buffer + crate::buffer::BufferMut,
         S: crate::traits::SysexInternal<B>,
         D: core::iter::Iterator<Item = <S as crate::traits::Sysex<B>>::Byte>,
@@ -137,8 +146,14 @@ mod detail {
         sysex: &mut S,
         data: D,
         resize: R,
+        before: usize,
     ) -> core::result::Result<(), crate::error::BufferOverflow> {
+        // reformat first to ensure data is optimally filling the
+        // underlying buffer
+        sysex.compact();
+
         // get an initial estimate for the size of the data
+        let initial_size = sysex.payload_size();
         let mut running_data_size_estimate = match data.size_hint() {
             (_, Some(upper)) => upper,
             // not the optimal case - could lead to additional copying
@@ -149,16 +164,26 @@ mod detail {
         let mut data = data.peekable();
 
         // initial buffer resize
-        if let Err(SysexTryResizeError(sz)) = resize(sysex, running_data_size_estimate) {
+        if let Err(SysexTryResizeError(sz)) =
+            resize(sysex, running_data_size_estimate + initial_size)
+        {
             // failed. we'll work with what we've got
-            running_data_size_estimate = sz;
+            running_data_size_estimate = sz.saturating_sub(initial_size);
         };
+
+        debug_assert_eq!(
+            sysex.payload_size(),
+            running_data_size_estimate + initial_size
+        );
+
+        let mut tail = before + running_data_size_estimate;
+        sysex.move_payload_tail(before, tail);
 
         'main: loop {
             while written < running_data_size_estimate {
                 match data.next() {
                     Some(v) => {
-                        sysex.write_datum(v, written);
+                        sysex.write_datum(v, before + written);
                         written += 1;
                     }
                     None => {
@@ -166,28 +191,35 @@ mod detail {
                     }
                 }
             }
-            assert_eq!(written, running_data_size_estimate);
+            debug_assert_eq!(written, running_data_size_estimate);
+
+            if data.peek().is_none() {
+                // done
+                break;
+            }
 
             // we underestimated.
             // resize to make more space
             running_data_size_estimate += additional_size_for_overflow;
+            if let Err(SysexTryResizeError(sz)) =
+                resize(sysex, running_data_size_estimate + initial_size)
+            {
+                // failed. we'll work with what we've got
+                running_data_size_estimate = sz.saturating_sub(initial_size);
+            };
+            sysex.move_payload_tail(tail, before + running_data_size_estimate);
+            tail = before + running_data_size_estimate;
             additional_size_for_overflow *= 2;
 
-            if data.peek().is_some() {
-                if let Err(SysexTryResizeError(sz)) = resize(sysex, running_data_size_estimate) {
-                    // failed. we'll work with what we've got
-                    running_data_size_estimate = sz;
-                };
-            }
-
             if written >= running_data_size_estimate {
-                return Err(Default::default());
+                return Err(BufferOverflow);
             }
         }
 
         if written < running_data_size_estimate {
             // we shrink the buffer back down to the correct size
-            resize(sysex, written).map_err(|_| crate::error::BufferOverflow)?;
+            sysex.move_payload_tail(tail, before + written);
+            resize(sysex, written + initial_size).map_err(|_| crate::error::BufferOverflow)?;
         }
 
         Ok(())
