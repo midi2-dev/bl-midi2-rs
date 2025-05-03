@@ -102,12 +102,74 @@ fn status_from_data(data: &[u32]) -> Result<Status, error::InvalidData> {
     }
 }
 
+pub struct PayloadIterator<'a> {
+    data: &'a [u32; 4],
+    index: usize,
+}
+
+impl core::iter::Iterator for PayloadIterator<'_> {
+    type Item = u8;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        use crate::detail::BitOps;
+        if self.index >= self.packet_size() {
+            return None;
+        }
+        let v = self.data[(self.index + 3) / 4].octet((self.index + 3) % 4);
+        self.index += 1;
+        Some(v)
+    }
+
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        use crate::detail::BitOps;
+        if self.index + n >= self.packet_size() {
+            self.index += n;
+            return None;
+        }
+        let v = self.data[(self.index + n + 3) / 4].octet((self.index + n + 3) % 4);
+        self.index = (self.index + n).min(13);
+        Some(v)
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let len = self.len();
+        (len, Some(len))
+    }
+
+    fn count(self) -> usize {
+        self.len()
+    }
+}
+
+impl core::iter::FusedIterator for PayloadIterator<'_> {}
+
+impl core::iter::ExactSizeIterator for PayloadIterator<'_> {
+    fn len(&self) -> usize {
+        self.packet_size() - self.index
+    }
+}
+
+impl PayloadIterator<'_> {
+    fn packet_size(&self) -> usize {
+        use crate::detail::BitOps;
+        let len = u8::from(self.data[0].nibble(3)) as usize - 1;
+        debug_assert!(len <= 13);
+        len
+    }
+}
+
 impl Packet {
     pub fn status(&self) -> Status {
         status_from_data(&self.0[..]).unwrap()
     }
     pub fn stream_id(&self) -> u8 {
         sysex8::stream_id_from_packet(&self.0[..])
+    }
+    pub fn payload(&self) -> PayloadIterator {
+        PayloadIterator {
+            data: &self.0,
+            index: 0,
+        }
     }
 }
 
@@ -230,5 +292,148 @@ mod tests {
                 .group(),
             crate::num::u4::new(0xA),
         );
+    }
+
+    #[test]
+    fn payload_empty() {
+        assert_eq!(
+            Packet::try_from(&[0x5001_0000, 0x0000_0000, 0x0000_0000, 0x0000_0000][..])
+                .unwrap()
+                .payload()
+                .collect::<std::vec::Vec<u8>>(),
+            std::vec::Vec::<u8>::new(),
+        );
+    }
+
+    #[test]
+    fn payload_one_item() {
+        assert_eq!(
+            Packet::try_from(&[0x5002_0001, 0x0000_0000, 0x0000_0000, 0x0000_0000][..])
+                .unwrap()
+                .payload()
+                .collect::<std::vec::Vec<u8>>(),
+            std::vec![0x01,]
+        );
+    }
+
+    #[test]
+    fn payload_two_items() {
+        assert_eq!(
+            Packet::try_from(&[0x5003_0001, 0x0200_0000, 0x0000_0000, 0x0000_0000][..])
+                .unwrap()
+                .payload()
+                .collect::<std::vec::Vec<u8>>(),
+            std::vec![0x01, 0x02,]
+        );
+    }
+
+    #[test]
+    fn payload_full() {
+        assert_eq!(
+            Packet::try_from(&[0x500E_0001, 0x0203_0405, 0x0607_0809, 0x0A0B_0C0D][..])
+                .unwrap()
+                .payload()
+                .collect::<std::vec::Vec<u8>>(),
+            std::vec![
+                0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D,
+            ]
+        );
+    }
+
+    #[test]
+    #[allow(clippy::iter_nth_zero)]
+    fn payload_nth_0() {
+        assert_eq!(
+            Packet::try_from(&[0x500E_0001, 0x0203_0405, 0x0607_0809, 0x0A0B_0C0D][..])
+                .unwrap()
+                .payload()
+                .nth(0),
+            Some(0x01),
+        );
+    }
+
+    #[test]
+    fn payload_nth_1() {
+        assert_eq!(
+            Packet::try_from(&[0x500E_0001, 0x0203_0405, 0x0607_0809, 0x0A0B_0C0D][..])
+                .unwrap()
+                .payload()
+                .nth(1),
+            Some(0x02),
+        );
+    }
+
+    #[test]
+    fn payload_nth_5() {
+        assert_eq!(
+            Packet::try_from(&[0x500E_0001, 0x0203_0405, 0x0607_0809, 0x0A0B_0C0D][..])
+                .unwrap()
+                .payload()
+                .nth(5),
+            Some(0x06),
+        );
+    }
+
+    #[test]
+    fn payload_nth_8() {
+        assert_eq!(
+            Packet::try_from(&[0x500E_0001, 0x0203_0405, 0x0607_0809, 0x0A0B_0C0D][..])
+                .unwrap()
+                .payload()
+                .nth(8),
+            Some(0x09),
+        );
+    }
+
+    #[test]
+    fn payload_nth_11() {
+        assert_eq!(
+            Packet::try_from(&[0x500E_0001, 0x0203_0405, 0x0607_0809, 0x0A0B_0C0D][..])
+                .unwrap()
+                .payload()
+                .nth(11),
+            Some(0x0C),
+        );
+    }
+
+    #[test]
+    fn payload_nth_12() {
+        assert_eq!(
+            Packet::try_from(&[0x500E_0001, 0x0203_0405, 0x0607_0809, 0x0A0B_0C0D][..])
+                .unwrap()
+                .payload()
+                .nth(12),
+            Some(0x0D),
+        );
+    }
+
+    #[test]
+    fn payload_nth_13() {
+        assert_eq!(
+            Packet::try_from(&[0x500E_0001, 0x0203_0405, 0x0607_0809, 0x0A0B_0C0D][..])
+                .unwrap()
+                .payload()
+                .nth(13),
+            None,
+        );
+    }
+
+    #[test]
+    fn payload_nth_13_followed_by_next_should_return_none() {
+        let buffer = [0x500E_0001, 0x0203_0405, 0x0607_0809, 0x0A0B_0C0D];
+        let message = Packet::try_from(&buffer[..]).unwrap();
+        let mut iter = message.payload();
+        assert_eq!(iter.nth(13), None);
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn payload_call_next_and_the_iterator_length_should_be_one_fewer() {
+        let buffer = [0x500E_0001, 0x0203_0405, 0x0607_0809, 0x0A0B_0C0D];
+        let message = Packet::try_from(&buffer[..]).unwrap();
+        let mut iter = message.payload();
+        assert_eq!(iter.len(), 13);
+        iter.next();
+        assert_eq!(iter.len(), 12);
     }
 }
