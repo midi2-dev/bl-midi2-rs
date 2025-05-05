@@ -31,6 +31,10 @@ impl<'a> core::convert::TryFrom<&'a [u32]> for Packet {
             ));
         }
 
+        if u8::from(data[0].nibble(3)) > 6 {
+            return Err(error::InvalidData(sysex7::ERR_INVALID_PACKET_SIZE));
+        }
+
         status_from_data(data)?;
 
         Ok(Packet({
@@ -126,6 +130,14 @@ mod tests {
             Err(error::InvalidData(
                 crate::detail::common_err_strings::ERR_INCORRECT_UMP_MESSAGE_TYPE
             )),
+        );
+    }
+
+    #[test]
+    fn construction_invalid_payload_size() {
+        assert_eq!(
+            Packet::try_from(&[0x3007_0000, 0x0, 0x0, 0x0][..]),
+            Err(error::InvalidData(sysex7::ERR_INVALID_PACKET_SIZE)),
         );
     }
 
