@@ -9,6 +9,10 @@ cargo-fuzz = true
 
 [dependencies]
 libfuzzer-sys = "0.4"
+arbitrary = { version = "1.0", features = [
+    "derive",
+] }
+rand = "0.9.1"
 
 [dependencies.midi2]
 path = "../midi2"
@@ -29,6 +33,13 @@ bench = false
 [[bin]]
 name = "sysex7_payload_roundtrip"
 path = "./fuzz_targets/sysex7_payload_roundtrip.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "generic_sysex_inserting_payloads"
+path = "./fuzz_targets/generic_sysex_inserting_payloads.rs"
 test = false
 doc = false
 bench = false
