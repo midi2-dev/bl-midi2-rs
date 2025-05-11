@@ -613,7 +613,7 @@ pub trait Sysex<B: crate::buffer::Buffer> {
     where
         B: crate::buffer::BufferMut + crate::buffer::BufferResize,
     {
-        self.insert_payload(std::iter::once(byte), self.payload_size());
+        self.insert_payload(core::iter::once(byte), self.payload_size());
     }
 
     /// Pushes the provided byte into the back of the
@@ -629,7 +629,7 @@ pub trait Sysex<B: crate::buffer::Buffer> {
     where
         B: crate::buffer::BufferMut + crate::buffer::BufferTryResize,
     {
-        self.try_insert_payload(std::iter::once(byte), self.payload_size())
+        self.try_insert_payload(core::iter::once(byte), self.payload_size())
     }
 }
 
