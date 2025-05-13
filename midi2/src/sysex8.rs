@@ -354,7 +354,8 @@ impl<B: crate::buffer::Ump> Sysex<B> for Sysex8<B> {
         D: core::iter::Iterator<Item = Self::Byte>,
         B: crate::buffer::BufferMut + crate::buffer::BufferResize,
     {
-        message_helpers::set_sysex_data(self, data)
+        <Self as SysexInternal<B>>::resize(self, 0);
+        self.insert_payload(data, 0);
     }
     fn try_set_payload<D>(
         &mut self,
@@ -364,7 +365,50 @@ impl<B: crate::buffer::Ump> Sysex<B> for Sysex8<B> {
         D: core::iter::Iterator<Item = Self::Byte>,
         B: crate::buffer::BufferMut + crate::buffer::BufferTryResize,
     {
-        message_helpers::try_set_sysex_data(self, data)
+        <Self as SysexInternal<B>>::try_resize(self, 0)?;
+        self.try_insert_payload(data, 0)
+    }
+    fn payload_size(&self) -> usize {
+        self.payload().len()
+    }
+    fn set_byte(&mut self, byte: u8, mut index: usize)
+    where
+        B: crate::buffer::BufferMut,
+    {
+        // can't assume a compact payload here:
+        // linear complexity
+
+        let buffer = self.buffer_access_mut().buffer_mut();
+        let mut packet_index = 0;
+
+        loop {
+            let sz = (u8::from(buffer[packet_index * 4].nibble(3)) - 1) as usize;
+            if index < sz {
+                buffer[packet_index * 4 + (index + 3) / 4].set_octet((index + 3) % 4, byte);
+                break;
+            }
+
+            index -= sz;
+            packet_index += 1;
+        }
+    }
+    fn insert_payload<D>(&mut self, data: D, index: usize)
+    where
+        D: core::iter::Iterator<Item = Self::Byte>,
+        B: crate::buffer::BufferMut + crate::buffer::BufferResize,
+    {
+        message_helpers::insert_sysex_data(self, data, index)
+    }
+    fn try_insert_payload<D>(
+        &mut self,
+        data: D,
+        index: usize,
+    ) -> core::result::Result<(), crate::error::BufferOverflow>
+    where
+        D: core::iter::Iterator<Item = Self::Byte>,
+        B: crate::buffer::BufferMut + crate::buffer::BufferTryResize,
+    {
+        message_helpers::try_insert_sysex_data(self, data, index)
     }
 }
 
@@ -402,8 +446,46 @@ impl<B: crate::buffer::Ump> SysexInternal<B> for Sysex8<B> {
             .set_octet((byte_index + 3) % 4, datum);
     }
 
-    fn payload_size(&self) -> usize {
-        self.payload().len()
+    fn move_payload_tail(&mut self, tail: usize, to: usize)
+    where
+        B: crate::buffer::BufferMut,
+    {
+        debug_assert!(is_compact(self));
+        let payload_size = self.payload_size();
+        let buffer = self.buffer_access_mut().buffer_mut();
+        let index = |payload_index| {
+            let byte_index = payload_index + 3 * (1 + payload_index / 13);
+            (byte_index / 4, byte_index % 4)
+        };
+        match to.cmp(&tail) {
+            core::cmp::Ordering::Greater => {
+                let d = to - tail;
+                for (src, dst) in (tail..(payload_size - d))
+                    .rev()
+                    .map(|i| (index(i), index(i + d)))
+                {
+                    let v = buffer[src.0].octet(src.1);
+                    buffer[dst.0].set_octet(dst.1, v);
+                }
+            }
+            core::cmp::Ordering::Less => {
+                let d = tail - to;
+                for (src, dst) in (tail..payload_size).map(|i| (index(i), index(i - d))) {
+                    let v = buffer[src.0].octet(src.1);
+                    buffer[dst.0].set_octet(dst.1, v);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    fn compact(&mut self)
+    where
+        B: crate::buffer::BufferMut,
+    {
+        if !is_compact(self) {
+            compact(self);
+        }
     }
 }
 
@@ -422,7 +504,7 @@ fn try_resize<
     if resize_result.is_err() {
         // resize failed. We make do with what we've got
         buffer_size = sysex.0.buffer().len();
-        payload_size = buffer_size * 13 / 4;
+        payload_size = (buffer_size / 4) * 13;
     }
 
     let mut iter = sysex
@@ -492,6 +574,72 @@ fn buffer_size_from_payload_size(payload_size: usize) -> usize {
     } else {
         4 * (payload_size / 13 + 1)
     }
+}
+
+// will determine whether the payload data in the message is maximally
+// compact in the underlying buffer
+fn is_compact<B: crate::buffer::Buffer<Unit = u32>>(sysex: &Sysex8<B>) -> bool {
+    for chunk in sysex
+        .0
+        .buffer()
+        .chunks_exact(4)
+        .take_while(|packet| u8::from(packet[0].nibble(0)) == UMP_MESSAGE_TYPE)
+    {
+        let status: u8 = chunk[0].nibble(2).into();
+        let is_begin = status == 0x1;
+        let is_continue = status == 0x2;
+        let payload_size_in_packet: u8 = chunk[0].nibble(3).into();
+        if (is_begin || is_continue) && payload_size_in_packet != 14 {
+            return false;
+        }
+    }
+    true
+}
+
+// move the payload bytes in-place so that they maximally fill the
+// underlying buffer
+fn compact<B: crate::buffer::Buffer<Unit = u32> + crate::buffer::BufferMut>(sysex: &mut Sysex8<B>) {
+    use crate::{detail::BitOps, BufferAccess};
+
+    let payload_size = sysex.payload_size();
+    let buffer = sysex.buffer_access_mut().buffer_mut();
+    let mut src_packet_index: usize = 0;
+    let mut dst_packet_index = 0;
+    let mut dst_payload_index = 0;
+
+    // copy the data in place
+    loop {
+        // loop through the packets
+
+        let status: u8 = buffer[src_packet_index * 4].nibble(2).into();
+
+        if status == 0x0 {
+            break;
+        }
+
+        let size: u8 = buffer[src_packet_index * 4].nibble(3).into();
+
+        for i in 0..(size - 1) as usize {
+            // loop through the payload within the current packet
+            let v = buffer[src_packet_index * 4 + (i + 3) / 4].octet((i + 3) % 4);
+            buffer[dst_packet_index * 4 + (dst_payload_index + 3) / 4]
+                .set_octet((dst_payload_index + 3) % 4, v);
+            dst_payload_index += 1;
+            if dst_payload_index == 13 {
+                dst_packet_index += 1;
+                dst_payload_index = 0;
+            }
+        }
+
+        src_packet_index += 1;
+
+        if status == 0x3 {
+            break;
+        }
+    }
+
+    // reset the statuses of the packets
+    try_resize(sysex, payload_size, |_, _| Ok(())).expect("Resizing down should never fail");
 }
 
 #[cfg(test)]
@@ -1064,6 +1212,78 @@ mod tests {
     }
 
     #[test]
+    fn collect_payload_non_contiguous() {
+        let message = Sysex8::try_from(
+            &[
+                // empty
+                0x5411_BB00,
+                0x0000_0000,
+                0x0000_0000,
+                0x0000_0000,
+                0x5422_BB00,
+                0x0000_0000,
+                0x0000_0000,
+                0x0000_0000,
+                0x5423_BB01,
+                0x0200_0000,
+                0x0000_0000,
+                0x0000_0000,
+                // empty
+                0x5421_BB00,
+                0x0000_0000,
+                0x0000_0000,
+                0x0000_0000,
+                // empty
+                0x5421_BB00,
+                0x0000_0000,
+                0x0000_0000,
+                0x0000_0000,
+                0x5424_BB03,
+                0x0405_0000,
+                0x0000_0000,
+                0x0000_0000,
+                0x5425_BB06,
+                0x0708_0900,
+                0x0000_0000,
+                0x0000_0000,
+                0x5426_BB0A,
+                0x0B0C_0D0E,
+                0x0000_0000,
+                0x0000_0000,
+                0x5427_BB0F,
+                0x1011_1213,
+                0x1400_0000,
+                0x0000_0000,
+                0x5428_BB15,
+                0x1617_1819,
+                0x1A1B_0000,
+                0x0000_0000,
+                0x5429_BB1C,
+                0x1D1E_1F20,
+                0x2122_2300,
+                0x0000_0000,
+                0x542A_BB24,
+                0x2526_2728,
+                0x292A_2B2C,
+                0x0000_0000,
+                0x5436_BB2D,
+                0x2E2F_3031,
+                0x0000_0000,
+                0x0000_0000,
+            ][..],
+        )
+        .unwrap();
+        assert_eq!(
+            message.payload().collect::<std::vec::Vec<u8>>(),
+            std::vec![
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+                23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43,
+                44, 45, 46, 47, 48, 49,
+            ]
+        );
+    }
+
+    #[test]
     fn set_payload() {
         let mut message = Sysex8::<std::vec::Vec<u32>>::new();
         message.set_payload(0..20);
@@ -1182,6 +1402,71 @@ mod tests {
     }
 
     #[test]
+    fn insert_payload() {
+        let mut message = Sysex8::<std::vec::Vec<u32>>::new();
+        message.set_payload(0..20);
+        message.insert_payload(0..10, 10);
+        assert_eq!(
+            message.payload().collect::<std::vec::Vec<u8>>(),
+            std::vec![
+                0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0x0, 0x1, 0x2, 0x3, 0x4, 0x5,
+                0x6, 0x7, 0x8, 0x9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF, 0x10, 0x11, 0x12, 0x13,
+            ]
+        );
+    }
+
+    #[test]
+    fn insert_rubbish_payload() {
+        use crate::detail::test_support::rubbish_payload_iterator::RubbishPayloadIterator;
+        let mut message = Sysex8::<std::vec::Vec<u32>>::new();
+        message.set_payload(0..20);
+        message.insert_payload(RubbishPayloadIterator::new(), 10);
+        assert_eq!(
+            message.payload().collect::<std::vec::Vec<u8>>(),
+            std::vec![
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+                16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
+                37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 10, 11, 12, 13, 14, 15, 16, 17,
+                18, 19
+            ]
+        );
+    }
+
+    #[test]
+    fn insert_rubbish_payload_front() {
+        use crate::detail::test_support::rubbish_payload_iterator::RubbishPayloadIterator;
+        let mut message = Sysex8::<std::vec::Vec<u32>>::new();
+        message.set_payload(0..20);
+        message.insert_payload(RubbishPayloadIterator::new(), 0);
+        assert_eq!(
+            message.payload().collect::<std::vec::Vec<u8>>(),
+            std::vec![
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+                23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43,
+                44, 45, 46, 47, 48, 49, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+                17, 18, 19,
+            ]
+        );
+    }
+
+    #[test]
+    fn insert_rubbish_payload_back() {
+        use crate::detail::test_support::rubbish_payload_iterator::RubbishPayloadIterator;
+        let mut message = Sysex8::<std::vec::Vec<u32>>::new();
+        message.set_payload(0..20);
+        message.insert_payload(RubbishPayloadIterator::new(), 20);
+        assert_eq!(
+            message.payload().collect::<std::vec::Vec<u8>>(),
+            std::vec![
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 0, 1, 2, 3,
+                4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+                26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46,
+                47, 48, 49,
+            ]
+        );
+    }
+
+    #[test]
     fn set_payload_to_fixed_size_buffer_with_overflow() {
         let mut message = Sysex8::<[u32; 16]>::new();
         assert_eq!(
@@ -1259,5 +1544,443 @@ mod tests {
         let mut packets = message.packets();
         assert_eq!(&*packets.next().unwrap(), &[0x5001_0000, 0x0, 0x0, 0x0][..]);
         assert_eq!(packets.next(), None);
+    }
+
+    #[test]
+    fn reformat_empty_packet_is_noop() {
+        let mut message = Sysex8(std::vec![
+            0x5001_BB00,
+            0x0000_0000,
+            0x0000_0000,
+            0x0000_0000,
+        ]);
+        compact(&mut message);
+        assert_eq!(
+            message.data(),
+            &[0x5001_BB00, 0x0000_0000, 0x0000_0000, 0x0000_0000,]
+        );
+    }
+
+    #[test]
+    fn reformat_complete_packet_is_noop() {
+        let mut message = Sysex8(std::vec![
+            0x5003_BB00,
+            0x0100_0000,
+            0x0000_0000,
+            0x0000_0000,
+        ]);
+        compact(&mut message);
+        assert_eq!(
+            message.data(),
+            &[0x5003_BB00, 0x0100_0000, 0x0000_0000, 0x0000_0000,]
+        );
+    }
+
+    #[test]
+    fn reformat_two_empty_packets_to_one_empty_packet() {
+        let mut message = Sysex8(std::vec![
+            0x5011_BB00,
+            0x0100_0000,
+            0x0000_0000,
+            0x0000_0000,
+            0x5031_BB00,
+            0x0100_0000,
+            0x0000_0000,
+            0x0000_0000,
+        ]);
+        compact(&mut message);
+        assert_eq!(
+            message.data(),
+            &[0x5001_BB00, 0x0100_0000, 0x0000_0000, 0x0000_0000,]
+        );
+    }
+
+    #[test]
+    fn empty_packet_is_compact() {
+        assert!(is_compact(&Sysex8([
+            0x5001_BB00_u32,
+            0x0000_0000,
+            0x0000_0000,
+            0x0000_0000,
+        ])))
+    }
+
+    #[test]
+    fn two_empty_packets_are_not_compact() {
+        assert!(!is_compact(&Sysex8([
+            0x5011_BB00_u32,
+            0x0000_0000,
+            0x0000_0000,
+            0x0000_0000,
+            0x5031_BB00_u32,
+            0x0000_0000,
+            0x0000_0000,
+            0x0000_0000,
+        ])))
+    }
+
+    #[test]
+    fn non_full_complete_message_is_compact() {
+        assert!(is_compact(&Sysex8([
+            0x5002_BB00_u32,
+            0x0000_0000,
+            0x0000_0000,
+            0x0000_0000,
+        ])))
+    }
+
+    #[test]
+    fn two_full_packets_is_compact() {
+        assert!(is_compact(&Sysex8([
+            0x501E_BB00_u32,
+            0x0000_0000,
+            0x0000_0000,
+            0x0000_0000,
+            0x503E_BB00_u32,
+            0x0000_0000,
+            0x0000_0000,
+            0x0000_0000,
+        ])))
+    }
+
+    #[test]
+    fn non_full_start_is_not_compact() {
+        assert!(!is_compact(&Sysex8([
+            0x5012_BB00_u32,
+            0x0000_0000,
+            0x0000_0000,
+            0x0000_0000,
+            0x503E_BB00_u32,
+            0x0000_0000,
+            0x0000_0000,
+            0x0000_0000,
+        ])))
+    }
+
+    #[test]
+    fn compact_non_contiguous_payload() {
+        let mut message = Sysex8(std::vec![
+            0x5412_BB00,
+            0x0000_0000,
+            0x0000_0000,
+            0x0000_0000,
+            0x5423_BB01,
+            0x0200_0000,
+            0x0000_0000,
+            0x0000_0000,
+            // empty
+            0x5421_BB00,
+            0x0000_0000,
+            0x0000_0000,
+            0x0000_0000,
+            // empty
+            0x5421_BB00,
+            0x0000_0000,
+            0x0000_0000,
+            0x0000_0000,
+            0x5424_BB03,
+            0x0405_0000,
+            0x0000_0000,
+            0x0000_0000,
+            0x5425_BB06,
+            0x0708_0900,
+            0x0000_0000,
+            0x0000_0000,
+            // empty
+            0x5421_BB00,
+            0x0000_0000,
+            0x0000_0000,
+            0x0000_0000,
+            0x5426_BB0A,
+            0x0B0C_0D0E,
+            0x0000_0000,
+            0x0000_0000,
+            // empty
+            0x5421_BB00,
+            0x0000_0000,
+            0x0000_0000,
+            0x0000_0000,
+            // empty
+            0x5421_BB00,
+            0x0000_0000,
+            0x0000_0000,
+            0x0000_0000,
+            // empty
+            0x5421_BB00,
+            0x0000_0000,
+            0x0000_0000,
+            0x0000_0000,
+            0x5427_BB0F,
+            0x1011_1213,
+            0x1400_0000,
+            0x0000_0000,
+            0x5428_BB15,
+            0x1617_1819,
+            0x1A1B_0000,
+            0x0000_0000,
+            0x5429_BB1C,
+            0x1D1E_1F20,
+            0x2122_2300,
+            0x0000_0000,
+            0x542A_BB24,
+            0x2526_2728,
+            0x292A_2B2C,
+            0x0000_0000,
+            0x5436_BB2D,
+            0x2E2F_3031,
+            0x0000_0000,
+            0x0000_0000,
+        ]);
+        compact(&mut message);
+        assert_eq!(
+            message.data(),
+            &[
+                0x541E_BB00,
+                0x0102_0304,
+                0x0506_0708,
+                0x090A_0B0C,
+                0x542E_BB0D,
+                0x0E0F_1011,
+                0x1213_1415,
+                0x1617_1819,
+                0x542E_BB1A,
+                0x1B1C_1D1E,
+                0x1F20_2122,
+                0x2324_2526,
+                0x543C_BB27,
+                0x2829_2A2B,
+                0x2C2D_2E2F,
+                0x3031_0000,
+            ]
+        );
+    }
+
+    #[test]
+    fn move_payload_tail_no_op() {
+        let mut message = Sysex8::<std::vec::Vec<u32>>::new();
+        message.set_payload((0..20).chain(std::iter::repeat(0).take(20)));
+        message.move_payload_tail(0, 0);
+        let payload = message.payload().collect::<std::vec::Vec<u8>>();
+        assert_eq!(payload.len(), 40);
+        assert_eq!(
+            payload,
+            std::vec![
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            ]
+        );
+    }
+
+    #[test]
+    fn move_entire_payload_one_place() {
+        let mut message = Sysex8::<std::vec::Vec<u32>>::new();
+        message.set_payload((0..20).chain(std::iter::repeat(0).take(20)));
+        message.move_payload_tail(0, 1);
+        let payload = message.payload().collect::<std::vec::Vec<u8>>();
+        assert_eq!(payload.len(), 40);
+        assert_eq!(
+            payload,
+            std::vec![
+                0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            ]
+        );
+    }
+
+    #[test]
+    fn move_half_payload_one_place() {
+        let mut message = Sysex8::<std::vec::Vec<u32>>::new();
+        message.set_payload((0..20).chain(std::iter::repeat(0).take(20)));
+        message.move_payload_tail(10, 11);
+        let payload = message.payload().collect::<std::vec::Vec<u8>>();
+        assert_eq!(payload.len(), 40);
+        assert_eq!(
+            payload,
+            std::vec![
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            ]
+        );
+    }
+
+    #[test]
+    fn move_half_payload_one_place_back() {
+        let mut message = Sysex8::<std::vec::Vec<u32>>::new();
+        message.set_payload((0..20).chain(std::iter::repeat(0).take(20)));
+        message.move_payload_tail(10, 9);
+        let payload = message.payload().collect::<std::vec::Vec<u8>>();
+        assert_eq!(payload.len(), 40);
+        assert_eq!(
+            payload,
+            std::vec![
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            ]
+        );
+    }
+
+    #[test]
+    fn move_half_payload_to_front() {
+        let mut message = Sysex8::<std::vec::Vec<u32>>::new();
+        message.set_payload((0..20).chain(std::iter::repeat(0).take(20)));
+        message.move_payload_tail(10, 0);
+        let payload = message.payload().collect::<std::vec::Vec<u8>>();
+        assert_eq!(payload.len(), 40);
+        assert_eq!(
+            payload,
+            std::vec![
+                10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            ]
+        );
+    }
+
+    #[test]
+    fn move_end_to_front() {
+        let mut message = Sysex8::<std::vec::Vec<u32>>::new();
+        message.set_payload((0..20).chain(std::iter::repeat(0).take(20)));
+        message.move_payload_tail(30, 0);
+        let payload = message.payload().collect::<std::vec::Vec<u8>>();
+        assert_eq!(payload.len(), 40);
+        assert_eq!(
+            payload,
+            std::vec![
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            ]
+        );
+    }
+
+    #[test]
+    fn set_byte_non_compact_payload() {
+        let mut message = Sysex8(std::vec![
+            // empty
+            0x5411_BB00,
+            0x0000_0000,
+            0x0000_0000,
+            0x0000_0000,
+            0x5422_BB00,
+            0x0000_0000,
+            0x0000_0000,
+            0x0000_0000,
+            0x5423_BB01,
+            0x0200_0000,
+            0x0000_0000,
+            0x0000_0000,
+            // empty
+            0x5421_BB00,
+            0x0000_0000,
+            0x0000_0000,
+            0x0000_0000,
+            // empty
+            0x5421_BB00,
+            0x0000_0000,
+            0x0000_0000,
+            0x0000_0000,
+            0x5424_BB03,
+            0x0405_0000,
+            0x0000_0000,
+            0x0000_0000,
+            0x5425_BB06,
+            0x0708_0900,
+            0x0000_0000,
+            0x0000_0000,
+            0x5426_BB0A,
+            0x0B0C_0D0E,
+            0x0000_0000,
+            0x0000_0000,
+            0x5427_BB0F,
+            0x1011_1213,
+            0x1400_0000,
+            0x0000_0000,
+            0x5428_BB15,
+            0x1617_1819,
+            0x1A1B_0000,
+            0x0000_0000,
+            0x5429_BB1C,
+            0x1D1E_1F20,
+            0x2122_2300,
+            0x0000_0000,
+            0x542A_BB24,
+            0x2526_2728,
+            0x292A_2B2C,
+            0x0000_0000,
+            0x5436_BB2D,
+            0x2E2F_3031,
+            0x0000_0000,
+            0x0000_0000,
+        ]);
+        message.set_byte(0xFF, 0);
+        message.set_byte(0xFE, 10);
+        message.set_byte(0xFD, 20);
+        message.set_byte(0xFC, 30);
+
+        let payload = message.payload().collect::<std::vec::Vec<u8>>();
+        assert_eq!(payload[0], 0xFF);
+        assert_eq!(payload[10], 0xFE);
+        assert_eq!(payload[20], 0xFD);
+        assert_eq!(payload[30], 0xFC);
+    }
+
+    #[test]
+    fn append_byte() {
+        let mut message = Sysex8::<std::vec::Vec<u32>>::new();
+        message.set_payload(0..20);
+        for i in 0u8..20 {
+            message.append_byte(i);
+        }
+        assert_eq!(
+            message.payload().collect::<std::vec::Vec<u8>>(),
+            std::vec![
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 0, 1, 2, 3,
+                4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+            ],
+        );
+    }
+
+    #[test]
+    fn append_payload() {
+        let mut message = Sysex8::<std::vec::Vec<u32>>::new();
+        message.set_payload(0..20);
+        message.append_payload(0..20);
+        assert_eq!(
+            message.payload().collect::<std::vec::Vec<u8>>(),
+            std::vec![
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 0, 1, 2, 3,
+                4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+            ],
+        );
+    }
+
+    #[test]
+    fn try_append_payload() {
+        let mut message = Sysex8::<[u32; 16]>::new();
+        message.try_set_payload(0..20).unwrap();
+        message.try_append_payload(0..20).unwrap();
+        assert_eq!(
+            message.payload().collect::<std::vec::Vec<u8>>(),
+            std::vec![
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 0, 1, 2, 3,
+                4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+            ],
+        );
+    }
+
+    #[test]
+    fn try_append_payload_fail() {
+        let mut message = Sysex8::<[u32; 15]>::new();
+        message.try_set_payload(0..20).unwrap();
+        assert_eq!(
+            message.try_append_payload(0..20),
+            Err(crate::error::BufferOverflow)
+        );
+    }
+
+    #[test]
+    fn fill_and_empty_payload_then_payload_size_should_be_zero() {
+        let mut message = Sysex8::<[u32; 16]>::new();
+        message.try_set_payload(0..40).unwrap();
+        message.try_set_payload(core::iter::empty()).unwrap();
+        assert_eq!(message.payload_size(), 0);
     }
 }

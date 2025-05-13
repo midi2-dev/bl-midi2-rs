@@ -451,7 +451,8 @@ impl<B: crate::buffer::Buffer> Sysex<B> for Sysex7<B> {
         D: core::iter::Iterator<Item = Self::Byte>,
         B: crate::buffer::BufferMut + crate::buffer::BufferResize,
     {
-        message_helpers::set_sysex_data(self, data)
+        <Self as SysexInternal<B>>::resize(self, 0);
+        self.insert_payload(data, 0);
     }
 
     fn try_set_payload<D>(
@@ -462,7 +463,61 @@ impl<B: crate::buffer::Buffer> Sysex<B> for Sysex7<B> {
         D: core::iter::Iterator<Item = Self::Byte>,
         B: crate::buffer::BufferMut + crate::buffer::BufferTryResize,
     {
-        message_helpers::try_set_sysex_data(self, data)
+        <Self as SysexInternal<B>>::try_resize(self, 0)?;
+        self.try_insert_payload(data, 0)
+    }
+
+    fn set_byte(&mut self, byte: ux::u7, mut index: usize)
+    where
+        B: crate::buffer::BufferMut,
+    {
+        match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
+            crate::buffer::UNIT_ID_U8 => {
+                let buffer = self.buffer_access_mut().specialise_u8_mut();
+                buffer[index + 1].set_septet(0, byte);
+            }
+            crate::buffer::UNIT_ID_U32 => {
+                // can't assume a compact payload here:
+                // linear complexity
+                let buffer = self.buffer_access_mut().specialise_u32_mut();
+                let mut packet_index = 0;
+                loop {
+                    let sz = (u8::from(buffer[packet_index * 2].nibble(3))) as usize;
+                    if index < sz {
+                        buffer[packet_index * 2 + (index + 2) / 4]
+                            .set_septet((index + 2) % 4, byte);
+                        break;
+                    }
+                    index -= sz;
+                    packet_index += 1;
+                }
+            }
+            _ => unreachable!(),
+        }
+    }
+
+    fn insert_payload<D>(&mut self, data: D, index: usize)
+    where
+        D: core::iter::Iterator<Item = Self::Byte>,
+        B: crate::buffer::BufferMut + crate::buffer::BufferResize,
+    {
+        message_helpers::insert_sysex_data(self, data, index)
+    }
+
+    fn try_insert_payload<D>(
+        &mut self,
+        data: D,
+        index: usize,
+    ) -> core::result::Result<(), crate::error::BufferOverflow>
+    where
+        D: core::iter::Iterator<Item = Self::Byte>,
+        B: crate::buffer::BufferMut + crate::buffer::BufferTryResize,
+    {
+        message_helpers::try_insert_sysex_data(self, data, index)
+    }
+
+    fn payload_size(&self) -> usize {
+        self.payload().len()
     }
 }
 
@@ -540,9 +595,142 @@ impl<B: crate::buffer::Buffer> SysexInternal<B> for Sysex7<B> {
         }
     }
 
-    fn payload_size(&self) -> usize {
-        self.payload().len()
+    fn move_payload_tail(&mut self, tail: usize, to: usize)
+    where
+        B: crate::buffer::BufferMut,
+    {
+        debug_assert!(is_compact(self));
+        match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
+            crate::buffer::UNIT_ID_U8 => {
+                let payload_size = self.payload_size();
+                let buffer = self.buffer_access_mut().specialise_u8_mut();
+                match to.cmp(&tail) {
+                    core::cmp::Ordering::Greater => {
+                        let d = payload_size.saturating_sub(to);
+                        buffer.copy_within(1 + tail..1 + tail + d, to + 1);
+                    }
+                    core::cmp::Ordering::Less => {
+                        buffer.copy_within(1 + tail..1 + payload_size, to + 1);
+                    }
+                    _ => {}
+                }
+            }
+            crate::buffer::UNIT_ID_U32 => {
+                let payload_size = self.payload_size();
+                let buffer = self.buffer_access_mut().specialise_u32_mut();
+                let index = |payload_index| {
+                    let byte_index = payload_index + 2 * (1 + payload_index / 6);
+                    (byte_index / 4, byte_index % 4)
+                };
+                match to.cmp(&tail) {
+                    core::cmp::Ordering::Greater => {
+                        let d = to - tail;
+                        for (src, dst) in (tail..(payload_size - d))
+                            .rev()
+                            .map(|i| (index(i), index(i + d)))
+                        {
+                            let v = buffer[src.0].octet(src.1);
+                            buffer[dst.0].set_octet(dst.1, v);
+                        }
+                    }
+                    core::cmp::Ordering::Less => {
+                        let d = tail - to;
+                        for (src, dst) in (tail..payload_size).map(|i| (index(i), index(i - d))) {
+                            let v = buffer[src.0].octet(src.1);
+                            buffer[dst.0].set_octet(dst.1, v);
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            _ => unreachable!(),
+        }
     }
+
+    fn compact(&mut self)
+    where
+        B: crate::buffer::BufferMut,
+    {
+        if !is_compact(self) {
+            compact(self);
+        }
+    }
+}
+
+fn is_compact<B: crate::buffer::Buffer>(sysex: &Sysex7<B>) -> bool {
+    match <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID {
+        crate::buffer::UNIT_ID_U8 => true,
+        crate::buffer::UNIT_ID_U32 => {
+            use crate::detail::BitOps;
+            for chunk in sysex
+                .0
+                .buffer()
+                .specialise_u32()
+                .chunks_exact(4)
+                .take_while(|packet| u8::from(packet[0].nibble(0)) == UMP_MESSAGE_TYPE)
+            {
+                let status: u8 = chunk[0].nibble(2).into();
+                let is_begin = status == 0x1;
+                let is_continue = status == 0x2;
+                let payload_size_in_packet: u8 = chunk[0].nibble(3).into();
+                if (is_begin || is_continue) && payload_size_in_packet != 6 {
+                    return false;
+                }
+            }
+            true
+        }
+        _ => unreachable!(),
+    }
+}
+//
+// move the payload bytes in-place so that they maximally fill the
+// underlying buffer
+fn compact<B: crate::buffer::Buffer + crate::buffer::BufferMut>(sysex: &mut Sysex7<B>) {
+    if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U8 {
+        return;
+    }
+
+    use crate::{detail::BitOps, BufferAccess};
+
+    let payload_size = sysex.payload_size();
+    let buffer = sysex.buffer_access_mut().specialise_u32_mut();
+    let mut src_packet_index: usize = 0;
+    let mut dst_packet_index = 0;
+    let mut dst_payload_index = 0;
+
+    // copy the data in place
+    loop {
+        // loop through the packets
+
+        let status: u8 = buffer[src_packet_index * 2].nibble(2).into();
+
+        if status == 0x0 {
+            break;
+        }
+
+        let size: u8 = buffer[src_packet_index * 2].nibble(3).into();
+
+        for i in 0..size as usize {
+            // loop through the payload within the current packet
+            let v = buffer[src_packet_index * 2 + (i + 2) / 4].octet((i + 2) % 4);
+            buffer[dst_packet_index * 2 + (dst_payload_index + 2) / 4]
+                .set_octet((dst_payload_index + 2) % 4, v);
+            dst_payload_index += 1;
+            if dst_payload_index == 6 {
+                dst_packet_index += 1;
+                dst_payload_index = 0;
+            }
+        }
+
+        src_packet_index += 1;
+
+        if status == 0x3 {
+            break;
+        }
+    }
+
+    // reset the statuses of the packets
+    try_resize_ump(sysex, payload_size, |_, _| Ok(())).expect("Resizing down should never fail");
 }
 
 fn try_resize_ump<
@@ -1655,5 +1843,580 @@ mod tests {
 
         assert_eq!(&*packets.next().unwrap(), &[0x3000_0000, 0x0][..]);
         assert_eq!(packets.next(), None);
+    }
+
+    #[test]
+    fn empty_message_is_compact() {
+        assert!(is_compact(&Sysex7(std::vec![0x3000_0000_u32, 0x0000_0000])));
+    }
+
+    #[test]
+    fn message_with_two_empty_packets_is_not_compact() {
+        assert!(!is_compact(&Sysex7(std::vec![
+            0x3010_0000_u32,
+            0x0000_0000,
+            0x3030_0000,
+            0x0000_0000,
+        ])));
+    }
+
+    #[test]
+    fn message_with_non_contiguous_payload_is_not_compact() {
+        assert!(!is_compact(&Sysex7(std::vec![
+            0x3010_0000_u32,
+            0x0000_0000,
+            0x3021_0000,
+            0x0000_0000,
+            0x3022_0102,
+            0x0000_0000,
+            0x3023_0304,
+            0x0500_0000,
+            0x3024_0607,
+            0x0809_0000,
+            0x3025_0A0B,
+            0x0C0D_0E00,
+            0x3026_0F10,
+            0x1112_1314,
+            0x3025_1516,
+            0x1718_1900,
+            0x3034_1A1B,
+            0x1C1D_0000,
+            0x0000_0000,
+            0x0000_0000,
+            0x0000_0000,
+            0x0000_0000,
+            0x0000_0000,
+        ])));
+    }
+
+    #[test]
+    fn message_with_empty_packets_is_not_compact() {
+        assert!(!is_compact(&Sysex7(std::vec![
+            0x3010_0000_u32,
+            0x0000_0000,
+            0x3021_0000,
+            0x0000_0000,
+            0x3022_0102,
+            0x0000_0000,
+            0x3020_0000,
+            0x0000_0000,
+            0x3020_0000,
+            0x0000_0000,
+            0x3023_0304,
+            0x0500_0000,
+            0x3024_0607,
+            0x0809_0000,
+            0x3025_0A0B,
+            0x0C0D_0E00,
+            0x3026_0F10,
+            0x1112_1314,
+            0x3025_1516,
+            0x1718_1900,
+            0x3034_1A1B,
+            0x1C1D_0000,
+            0x0000_0000,
+            0x0000_0000,
+            0x0000_0000,
+            0x0000_0000,
+            0x0000_0000,
+        ])))
+    }
+
+    #[test]
+    fn large_message_with_contiguous_payload_is_compact() {
+        assert!(is_compact(&Sysex7(std::vec![
+            0x3016_0001_u32,
+            0x0203_0405,
+            0x3026_0607,
+            0x0809_0A0B,
+            0x3026_0C0D,
+            0x0E0F_1011,
+            0x3026_1213,
+            0x1415_1617,
+            0x3026_1819,
+            0x1A1B_1C1D,
+            0x3026_1E1F,
+            0x2021_2223,
+            0x3026_2425,
+            0x2627_2829,
+            0x3026_2A2B,
+            0x2C2D_2E2F,
+            0x3032_3031,
+            0x0000_0000,
+        ])));
+    }
+
+    #[test]
+    fn compact_a_complete_message_is_no_op() {
+        let mut message = Sysex7([0x3005_0102_u32, 0x0304_0500]);
+        compact(&mut message);
+        assert_eq!(message.data(), &[0x3005_0102_u32, 0x0304_0500,])
+    }
+
+    #[test]
+    fn message_of_two_empty_packets_compacts_down_to_one_empty_packet() {
+        let mut message = Sysex7([0x3010_0000_u32, 0x0000_0000, 0x3030_0000, 0x0000_0000]);
+        compact(&mut message);
+        assert_eq!(message.data(), &[0x3000_0000, 0x0000_0000]);
+    }
+
+    #[test]
+    fn message_with_non_contiguous_payload_compacts_down() {
+        let mut message = Sysex7(std::vec![
+            0x3010_0000_u32,
+            0x0000_0000,
+            0x3021_0000,
+            0x0000_0000,
+            0x3022_0102,
+            0x0000_0000,
+            0x3023_0304,
+            0x0500_0000,
+            0x3024_0607,
+            0x0809_0000,
+            0x3025_0A0B,
+            0x0C0D_0E00,
+            0x3026_0F10,
+            0x1112_1314,
+            0x3025_1516,
+            0x1718_1900,
+            0x3024_1A1B,
+            0x1C1D_0000,
+            0x3023_1E1F,
+            0x2000_0000,
+            0x3022_2122,
+            0x0000_0000,
+            0x3021_2300,
+            0x0000_0000,
+            0x3020_0000,
+            0x0000_0000,
+            0x3021_2400,
+            0x0000_0000,
+            0x3022_2526,
+            0x0000_0000,
+            0x3023_2728,
+            0x2900_0000,
+            0x3024_2A2B,
+            0x2C2D_0000,
+            0x3034_2E2F,
+            0x3031_0000,
+        ]);
+        compact(&mut message);
+        assert_eq!(
+            message.data(),
+            &[
+                0x3016_0001,
+                0x0203_0405,
+                0x3026_0607,
+                0x0809_0A0B,
+                0x3026_0C0D,
+                0x0E0F_1011,
+                0x3026_1213,
+                0x1415_1617,
+                0x3026_1819,
+                0x1A1B_1C1D,
+                0x3026_1E1F,
+                0x2021_2223,
+                0x3026_2425,
+                0x2627_2829,
+                0x3026_2A2B,
+                0x2C2D_2E2F,
+                0x3032_3031,
+                0x0000_0000,
+            ]
+        );
+    }
+
+    fn move_payload_tail_no_op<U: crate::buffer::Unit>() {
+        let mut message = Sysex7::<std::vec::Vec<U>>::new();
+        message.set_payload((0u8..30u8).map(u7::new));
+        message.move_payload_tail(0, 0);
+        assert_eq!(
+            message.payload().collect::<std::vec::Vec<u7>>(),
+            (0u8..30u8).map(u7::new).collect::<std::vec::Vec<u7>>()
+        );
+    }
+
+    #[test]
+    fn move_payload_tail_ump_no_op() {
+        move_payload_tail_no_op::<u32>();
+    }
+
+    #[test]
+    fn move_payload_tail_bytes_no_op() {
+        move_payload_tail_no_op::<u8>();
+    }
+
+    fn move_payload_tail_one_place<U: crate::buffer::Unit>() {
+        let mut message = Sysex7::<std::vec::Vec<U>>::new();
+        message.set_payload((0u8..30u8).map(u7::new));
+        message.move_payload_tail(0, 1);
+        assert_eq!(
+            message.payload().collect::<std::vec::Vec<u7>>(),
+            [
+                0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
+                22, 23, 24, 25, 26, 27, 28,
+            ]
+            .iter()
+            .cloned()
+            .map(ux::u7::new)
+            .collect::<std::vec::Vec<u7>>()
+        );
+    }
+
+    #[test]
+    fn move_payload_tail_ump_one_place() {
+        move_payload_tail_one_place::<u32>();
+    }
+
+    #[test]
+    fn move_payload_tail_bytes_one_place() {
+        move_payload_tail_one_place::<u8>();
+    }
+
+    fn move_payload_tail_ten_places<U: crate::buffer::Unit>() {
+        let mut message = Sysex7::<std::vec::Vec<U>>::new();
+        message.set_payload((0u8..30u8).map(u7::new));
+        message.move_payload_tail(0, 10);
+        assert_eq!(
+            message.payload().collect::<std::vec::Vec<u7>>(),
+            [
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+                16, 17, 18, 19,
+            ]
+            .iter()
+            .cloned()
+            .map(ux::u7::new)
+            .collect::<std::vec::Vec<u7>>()
+        );
+    }
+
+    #[test]
+    fn move_payload_tail_ump_ten_places() {
+        move_payload_tail_ten_places::<u32>();
+    }
+
+    #[test]
+    fn move_payload_tail_bytes_ten_places() {
+        move_payload_tail_ten_places::<u8>();
+    }
+
+    fn move_payload_tail_ten_places_back<U: crate::buffer::Unit>() {
+        let mut message = Sysex7::<std::vec::Vec<U>>::new();
+        message.set_payload((0u8..30u8).map(u7::new));
+        message.move_payload_tail(10, 0);
+        assert_eq!(
+            message.payload().collect::<std::vec::Vec<u7>>(),
+            [
+                10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 20,
+                21, 22, 23, 24, 25, 26, 27, 28, 29,
+            ]
+            .iter()
+            .cloned()
+            .map(ux::u7::new)
+            .collect::<std::vec::Vec<u7>>()
+        );
+    }
+
+    #[test]
+    fn move_payload_tail_ump_ten_places_back() {
+        move_payload_tail_ten_places_back::<u32>();
+    }
+
+    #[test]
+    fn move_payload_tail_bytes_ten_places_back() {
+        move_payload_tail_ten_places_back::<u8>();
+    }
+
+    fn insert_rubbish_payload_front<U: crate::buffer::Unit>() {
+        use crate::detail::test_support::rubbish_payload_iterator::RubbishPayloadIterator;
+        let mut message = Sysex7::<std::vec::Vec<U>>::new();
+        message.set_payload((0u8..30u8).map(u7::new));
+        message.insert_payload(RubbishPayloadIterator::new().map(ux::u7::new), 0);
+        assert_eq!(
+            message.payload().collect::<std::vec::Vec<u7>>(),
+            [
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+                23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43,
+                44, 45, 46, 47, 48, 49, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+                17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
+            ]
+            .iter()
+            .cloned()
+            .map(ux::u7::new)
+            .collect::<std::vec::Vec<u7>>()
+        );
+    }
+
+    #[test]
+    fn insert_rubbish_payload_front_ump() {
+        insert_rubbish_payload_front::<u32>();
+    }
+
+    #[test]
+    fn insert_rubbish_payload_front_bytes() {
+        insert_rubbish_payload_front::<u8>();
+    }
+
+    fn insert_rubbish_payload_back<U: crate::buffer::Unit>() {
+        use crate::detail::test_support::rubbish_payload_iterator::RubbishPayloadIterator;
+        let mut message = Sysex7::<std::vec::Vec<U>>::new();
+        message.set_payload((0u8..30u8).map(u7::new));
+        message.insert_payload(RubbishPayloadIterator::new().map(ux::u7::new), 30);
+        assert_eq!(
+            message.payload().collect::<std::vec::Vec<u7>>(),
+            [
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+                23, 24, 25, 26, 27, 28, 29, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+                16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
+                37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49,
+            ]
+            .iter()
+            .cloned()
+            .map(ux::u7::new)
+            .collect::<std::vec::Vec<u7>>()
+        );
+    }
+
+    #[test]
+    fn insert_rubbish_payload_back_ump() {
+        insert_rubbish_payload_back::<u32>();
+    }
+
+    #[test]
+    fn insert_rubbish_payload_back_bytes() {
+        insert_rubbish_payload_back::<u8>();
+    }
+
+    fn insert_rubbish_payload_middle<U: crate::buffer::Unit>() {
+        use crate::detail::test_support::rubbish_payload_iterator::RubbishPayloadIterator;
+        let mut message = Sysex7::<std::vec::Vec<U>>::new();
+        message.set_payload((0u8..30u8).map(u7::new));
+        message.insert_payload(RubbishPayloadIterator::new().map(ux::u7::new), 15);
+        assert_eq!(
+            message.payload().collect::<std::vec::Vec<u7>>(),
+            [
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+                11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+                32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 15, 16, 17,
+                18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
+            ]
+            .iter()
+            .cloned()
+            .map(ux::u7::new)
+            .collect::<std::vec::Vec<u7>>()
+        );
+    }
+
+    #[test]
+    fn insert_rubbish_payload_middle_ump() {
+        insert_rubbish_payload_middle::<u32>();
+    }
+
+    #[test]
+    fn insert_rubbish_payload_middle_bytes() {
+        insert_rubbish_payload_middle::<u8>();
+    }
+
+    fn set_bytes<U: crate::buffer::Unit>() {
+        let mut message = Sysex7::<std::vec::Vec<U>>::new();
+        message.set_payload((0u8..30u8).map(u7::new));
+
+        message.set_byte(ux::u7::new(0x7F), 4);
+        message.set_byte(ux::u7::new(0x7E), 8);
+        message.set_byte(ux::u7::new(0x7D), 12);
+        message.set_byte(ux::u7::new(0x7C), 16);
+        message.set_byte(ux::u7::new(0x7B), 17);
+        message.set_byte(ux::u7::new(0x7A), 21);
+        message.set_byte(ux::u7::new(0x79), 25);
+        message.set_byte(ux::u7::new(0x78), 29);
+
+        let payload = message.payload().collect::<std::vec::Vec<u7>>();
+
+        assert_eq!(payload[4], ux::u7::new(0x7F));
+        assert_eq!(payload[8], ux::u7::new(0x7E));
+        assert_eq!(payload[12], ux::u7::new(0x7D));
+        assert_eq!(payload[16], ux::u7::new(0x7C));
+        assert_eq!(payload[17], ux::u7::new(0x7B));
+        assert_eq!(payload[21], ux::u7::new(0x7A));
+        assert_eq!(payload[25], ux::u7::new(0x79));
+        assert_eq!(payload[29], ux::u7::new(0x78));
+    }
+
+    #[test]
+    fn set_bytes_ump() {
+        set_bytes::<u32>();
+    }
+
+    #[test]
+    fn set_bytes_bytes() {
+        set_bytes::<u8>();
+    }
+
+    fn insert_payload_front_fixed_size_buffer<const N: usize, U: crate::buffer::Unit>() {
+        let mut message = Sysex7::<[U; N]>::new();
+        message.try_set_payload((0u8..30u8).map(u7::new)).unwrap();
+        message
+            .try_insert_payload((0..20u8).map(u7::new), 0)
+            .unwrap();
+        let payload = message.payload().collect::<std::vec::Vec<u7>>();
+        assert_eq!(
+            payload,
+            [
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 0, 1, 2, 3,
+                4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+                26, 27, 28, 29
+            ]
+            .iter()
+            .cloned()
+            .map(ux::u7::new)
+            .collect::<std::vec::Vec<u7>>()
+        );
+    }
+
+    #[test]
+    fn insert_payload_front_fixed_size_buffer_ump() {
+        insert_payload_front_fixed_size_buffer::<18, u32>();
+    }
+
+    #[test]
+    fn insert_payload_front_fixed_size_buffer_bytes() {
+        insert_payload_front_fixed_size_buffer::<52, u8>();
+    }
+
+    fn insert_payload_back_fixed_size_buffer<const N: usize, U: crate::buffer::Unit>() {
+        let mut message = Sysex7::<[U; N]>::new();
+        message.try_set_payload((0u8..30u8).map(u7::new)).unwrap();
+        message
+            .try_insert_payload((0..20u8).map(u7::new), 30)
+            .unwrap();
+        let payload = message.payload().collect::<std::vec::Vec<u7>>();
+        assert_eq!(
+            payload,
+            [
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+                23, 24, 25, 26, 27, 28, 29, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+                16, 17, 18, 19,
+            ]
+            .iter()
+            .cloned()
+            .map(ux::u7::new)
+            .collect::<std::vec::Vec<u7>>()
+        );
+    }
+
+    #[test]
+    fn insert_payload_back_fixed_size_buffer_ump() {
+        insert_payload_back_fixed_size_buffer::<18, u32>();
+    }
+
+    #[test]
+    fn insert_payload_back_fixed_size_buffer_bytes() {
+        insert_payload_back_fixed_size_buffer::<52, u8>();
+    }
+
+    fn insert_payload_middle_fixed_size_buffer<const N: usize, U: crate::buffer::Unit>() {
+        let mut message = Sysex7::<[U; N]>::new();
+        message.try_set_payload((0u8..30u8).map(u7::new)).unwrap();
+        message
+            .try_insert_payload((0..20u8).map(u7::new), 15)
+            .unwrap();
+        let payload = message.payload().collect::<std::vec::Vec<u7>>();
+        assert_eq!(
+            payload,
+            [
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+                11, 12, 13, 14, 15, 16, 17, 18, 19, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
+                27, 28, 29,
+            ]
+            .iter()
+            .cloned()
+            .map(ux::u7::new)
+            .collect::<std::vec::Vec<u7>>()
+        );
+    }
+
+    #[test]
+    fn insert_payload_middle_fixed_size_buffer_ump() {
+        insert_payload_middle_fixed_size_buffer::<18, u32>();
+    }
+
+    #[test]
+    fn insert_payload_middle_fixed_size_buffer_bytes() {
+        insert_payload_middle_fixed_size_buffer::<52, u8>();
+    }
+
+    fn insert_payload_fixed_size_buffer_fail<const N: usize, U: crate::buffer::Unit>() {
+        let mut message = Sysex7::<[U; N]>::new();
+        message.try_set_payload((0u8..20).map(u7::new)).unwrap();
+        assert_eq!(
+            message.try_insert_payload((0u8..20).map(u7::new), 15),
+            Err(crate::error::BufferOverflow),
+        );
+    }
+
+    #[test]
+    fn insert_payload_fixed_size_buffer_fail_ump() {
+        insert_payload_fixed_size_buffer_fail::<13, u32>();
+    }
+
+    #[test]
+    fn insert_payload_fixed_size_buffer_fail_bytes() {
+        insert_payload_fixed_size_buffer_fail::<41, u8>();
+    }
+
+    fn append_byte<U: crate::buffer::Unit>() {
+        let mut message = Sysex7::<std::vec::Vec<U>>::new();
+        message.set_payload((0..20).map(u7::new));
+        for i in 0u8..20 {
+            message.append_byte(u7::new(i));
+        }
+        assert_eq!(
+            message.payload().collect::<std::vec::Vec<u7>>(),
+            [
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 0, 1, 2, 3,
+                4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+            ]
+            .iter()
+            .cloned()
+            .map(u7::new)
+            .collect::<std::vec::Vec<u7>>(),
+        );
+    }
+
+    #[test]
+    fn append_byte_ump() {
+        append_byte::<u32>();
+    }
+
+    #[test]
+    fn append_byte_bytes() {
+        append_byte::<u8>();
+    }
+
+    fn append_payload<U: crate::buffer::Unit>() {
+        let mut message = Sysex7::<std::vec::Vec<U>>::new();
+        message.set_payload((0..20).map(u7::new));
+        message.append_payload((0..20).map(u7::new));
+        assert_eq!(
+            message.payload().collect::<std::vec::Vec<u7>>(),
+            [
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 0, 1, 2, 3,
+                4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+            ]
+            .iter()
+            .cloned()
+            .map(u7::new)
+            .collect::<std::vec::Vec<u7>>(),
+        );
+    }
+
+    #[test]
+    fn append_payload_ump() {
+        append_payload::<u32>();
+    }
+
+    #[test]
+    fn append_payload_bytes() {
+        append_payload::<u8>();
     }
 }

@@ -544,13 +544,103 @@ pub trait Sysex<B: crate::buffer::Buffer> {
     where
         D: core::iter::Iterator<Item = Self::Byte>,
         B: crate::buffer::BufferMut + crate::buffer::BufferTryResize;
+    fn payload_size(&self) -> usize;
+    /// Sets the value of the byte at position `index` in the payload.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `index` is greater than or equal to `payload_size`
+    fn set_byte(&mut self, byte: Self::Byte, index: usize)
+    where
+        B: crate::buffer::BufferMut;
+    /// Insert the provided byte data before position `index`
+    ///
+    /// # Panics
+    ///
+    /// Panics if `index` is greater than `payload_size`
+    fn insert_payload<D>(&mut self, data: D, index: usize)
+    where
+        D: core::iter::Iterator<Item = Self::Byte>,
+        B: crate::buffer::BufferMut + crate::buffer::BufferResize;
+    /// Insert the provided byte data before position `index`
+    ///
+    /// # Fails
+    ///
+    /// If the underlying buffer cannot resize to accommodate the new data.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `index` is greater than `payload_size`
+    fn try_insert_payload<D>(
+        &mut self,
+        data: D,
+        index: usize,
+    ) -> core::result::Result<(), crate::error::BufferOverflow>
+    where
+        D: core::iter::Iterator<Item = Self::Byte>,
+        B: crate::buffer::BufferMut + crate::buffer::BufferTryResize;
+
+    /// Pushes the provided payload data iterator into the back of the
+    /// existing message payload.
+    fn append_payload<D>(&mut self, data: D)
+    where
+        D: core::iter::Iterator<Item = Self::Byte>,
+        B: crate::buffer::BufferMut + crate::buffer::BufferResize,
+    {
+        self.insert_payload(data, self.payload_size());
+    }
+
+    /// Pushes the provided payload data iterator into the back of the
+    /// existing message payload.
+    ///
+    /// # Fails
+    ///
+    /// When the underlying buffer cannot resize to accommodate the new data.
+    fn try_append_payload<D>(
+        &mut self,
+        data: D,
+    ) -> core::result::Result<(), crate::error::BufferOverflow>
+    where
+        D: core::iter::Iterator<Item = Self::Byte>,
+        B: crate::buffer::BufferMut + crate::buffer::BufferTryResize,
+    {
+        self.try_insert_payload(data, self.payload_size())
+    }
+
+    /// Pushes the provided byte into the back of the
+    /// existing message payload.
+    fn append_byte(&mut self, byte: Self::Byte)
+    where
+        B: crate::buffer::BufferMut + crate::buffer::BufferResize,
+    {
+        self.insert_payload(core::iter::once(byte), self.payload_size());
+    }
+
+    /// Pushes the provided byte into the back of the
+    /// existing message payload.
+    ///
+    /// # Fails
+    ///
+    /// When the underlying buffer cannot resize to accommodate the new data.
+    fn try_append_byte(
+        &mut self,
+        byte: Self::Byte,
+    ) -> core::result::Result<(), crate::error::BufferOverflow>
+    where
+        B: crate::buffer::BufferMut + crate::buffer::BufferTryResize,
+    {
+        self.try_insert_payload(core::iter::once(byte), self.payload_size())
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct SysexTryResizeError(pub usize);
 
 pub(crate) trait SysexInternal<B: crate::buffer::Buffer>: Sysex<B> {
-    fn payload_size(&self) -> usize;
+    // Ensure that the payload optimally fills the underlying buffer.
+    fn compact(&mut self)
+    where
+        B: crate::buffer::BufferMut;
 
     // resize the underlying buffer to accommodate the requested amount
     // of bytes. The newly allocated data should be assumed to be
@@ -564,6 +654,19 @@ pub(crate) trait SysexInternal<B: crate::buffer::Buffer>: Sysex<B> {
     fn try_resize(&mut self, payload_size: usize) -> core::result::Result<(), SysexTryResizeError>
     where
         B: crate::buffer::BufferMut + crate::buffer::BufferTryResize;
+
+    // Moves the payload in-place such that the bytes [start, len) move to
+    // position `to`.
+    // This can be used to move the tail forward or backward.
+    // Note that this function does not change the size of the payload,
+    // nor the size of the underlying buffer.
+    // If the tail is moved towards the end of the payload then it overwrites
+    // the bytes at the end. Similarlarly when the tail is move towards the
+    // front, it overwrites the bytes at the start. It will also not zero
+    // the copied-from bytes - these will be left 'dirty'.
+    fn move_payload_tail(&mut self, tail: usize, to: usize)
+    where
+        B: crate::buffer::BufferMut;
 
     // write byte into the buffer at the provided index.
     // NOTE: the caller must ensure the buffer is large enough

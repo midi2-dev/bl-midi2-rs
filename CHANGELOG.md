@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.9.0](https://github.com/midi2-dev/bl-midi2-rs/compare/0.8.2..0.9.0) - 2025-05-13
+
+### ✨ Features
+
+- Extend sysex api - ([909c6e1](https://github.com/midi2-dev/bl-midi2-rs/commit/909c6e171f838ccb2c3c16a78ffc94ede44ead70))
+- Payload from sysex packets - ([f196aac](https://github.com/midi2-dev/bl-midi2-rs/commit/f196aac7c91f6951038f710610fffd2b67da78b2))
+
+### 🐛 Fixes
+
+- Sysex7 packet with invalid size passes validation - ([edd5ca2](https://github.com/midi2-dev/bl-midi2-rs/commit/edd5ca278f653e0bdc3f516086dad4ed2502101e))
+- Ignore clippy lint with false positives - ([3f47e53](https://github.com/midi2-dev/bl-midi2-rs/commit/3f47e53529025d3deef5e5d42876375b8e6a5ed2))
+
+### 🧪 Testing
+
+- Adds sysex insert fuzz test - ([e0d5920](https://github.com/midi2-dev/bl-midi2-rs/commit/e0d592055c7fc3902d7c61155afb7368b517e841))
+
+
 ## [0.8.2](https://github.com/midi2-dev/bl-midi2-rs/compare/0.8.1..0.8.2) - 2025-03-02
 
 ### 🐛 Fixes
