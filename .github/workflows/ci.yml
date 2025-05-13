@@ -39,3 +39,11 @@ jobs:
         run: cargo clippy --version
       - name: Run Clippy
         run: cargo clippy --all-features -- -D warnings
+
+  semver-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Check semver
+        uses: obi1kenobi/cargo-semver-checks-action@v2
