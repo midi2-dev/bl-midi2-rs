@@ -177,7 +177,7 @@ fn property_setter(property: &Property, public: bool) -> TokenStream {
 
     if property.resize {
         let fallible_ident = syn::Ident::new(
-            format!("try_{}", ident).as_str(),
+            format!("try_{ident}").as_str(),
             proc_macro2::Span::call_site(),
         );
         quote! {
