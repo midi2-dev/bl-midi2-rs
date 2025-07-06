@@ -561,7 +561,11 @@ pub trait Sysex<B: crate::buffer::Buffer> {
     fn insert_payload<D>(&mut self, data: D, index: usize)
     where
         D: core::iter::Iterator<Item = Self::Byte>,
-        B: crate::buffer::BufferMut + crate::buffer::BufferResize;
+        B: crate::buffer::BufferMut + crate::buffer::BufferResize,
+    {
+        self.splice_payload(data, index..index)
+    }
+
     /// Insert the provided byte data before position `index`
     ///
     /// # Fails
@@ -578,7 +582,10 @@ pub trait Sysex<B: crate::buffer::Buffer> {
     ) -> core::result::Result<(), crate::error::BufferOverflow>
     where
         D: core::iter::Iterator<Item = Self::Byte>,
-        B: crate::buffer::BufferMut + crate::buffer::BufferTryResize;
+        B: crate::buffer::BufferMut + crate::buffer::BufferTryResize,
+    {
+        self.try_splice_payload(data, index..index)
+    }
 
     /// Pushes the provided payload data iterator into the back of the
     /// existing message payload.
@@ -606,6 +613,27 @@ pub trait Sysex<B: crate::buffer::Buffer> {
     {
         self.try_insert_payload(data, self.payload_size())
     }
+
+    /// Replaces the specified payload range with the given `data` iterator.
+    /// `data` does not need to be the same length as range.
+    fn splice_payload<D, R>(&mut self, data: D, range: R)
+    where
+        D: core::iter::Iterator<Item = Self::Byte>,
+        B: crate::buffer::BufferMut + crate::buffer::BufferResize,
+        R: core::ops::RangeBounds<usize>;
+
+    /// Attempt to replace the specified payload range with the given `data` iterator.
+    /// `data` does not need to be the same length as range.
+    /// Fails if the underlying buffer cannot resize to accommodate the new data.
+    fn try_splice_payload<D, R>(
+        &mut self,
+        data: D,
+        range: R,
+    ) -> core::result::Result<(), crate::error::BufferOverflow>
+    where
+        D: core::iter::Iterator<Item = Self::Byte>,
+        B: crate::buffer::BufferMut + crate::buffer::BufferTryResize,
+        R: core::ops::RangeBounds<usize>;
 
     /// Pushes the provided byte into the back of the
     /// existing message payload.

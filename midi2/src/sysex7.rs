@@ -496,24 +496,26 @@ impl<B: crate::buffer::Buffer> Sysex<B> for Sysex7<B> {
         }
     }
 
-    fn insert_payload<D>(&mut self, data: D, index: usize)
+    fn splice_payload<D, R>(&mut self, data: D, range: R)
     where
         D: core::iter::Iterator<Item = Self::Byte>,
         B: crate::buffer::BufferMut + crate::buffer::BufferResize,
+        R: core::ops::RangeBounds<usize>,
     {
-        message_helpers::insert_sysex_data(self, data, index)
+        message_helpers::splice_sysex_data(self, data, range)
     }
 
-    fn try_insert_payload<D>(
+    fn try_splice_payload<D, R>(
         &mut self,
         data: D,
-        index: usize,
+        range: R,
     ) -> core::result::Result<(), crate::error::BufferOverflow>
     where
         D: core::iter::Iterator<Item = Self::Byte>,
         B: crate::buffer::BufferMut + crate::buffer::BufferTryResize,
+        R: core::ops::RangeBounds<usize>,
     {
-        message_helpers::try_insert_sysex_data(self, data, index)
+        message_helpers::try_splice_sysex_data(self, data, range)
     }
 
     fn payload_size(&self) -> usize {
@@ -2418,5 +2420,122 @@ mod tests {
     #[test]
     fn append_payload_bytes() {
         append_payload::<u8>();
+    }
+
+    fn splice_payload<U: crate::buffer::Unit>() {
+        let mut message = Sysex7::<std::vec::Vec<U>>::new();
+        message.set_payload((0..20).map(u7::new));
+        message.splice_payload(core::iter::repeat_n(u7::new(0x7F), 30), 5..10);
+        assert_eq!(
+            message.payload().collect::<std::vec::Vec<u7>>(),
+            [
+                0, 1, 2, 3, 4, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
+                127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
+                127, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+            ]
+            .iter()
+            .cloned()
+            .map(u7::new)
+            .collect::<std::vec::Vec<u7>>(),
+        );
+    }
+
+    #[test]
+    fn splice_payload_ump() {
+        splice_payload::<u32>();
+    }
+
+    #[test]
+    fn splice_payload_bytes() {
+        splice_payload::<u8>();
+    }
+
+    fn splice_rubbish_payload<U: crate::buffer::Unit>() {
+        use crate::detail::test_support::rubbish_payload_iterator::RubbishPayloadIterator;
+        let mut message = Sysex7::<std::vec::Vec<U>>::new();
+        message.set_payload((0..20).map(u7::new));
+        message.splice_payload(RubbishPayloadIterator::new().map(u7::new), 7..16);
+        assert_eq!(
+            message.payload().collect::<std::vec::Vec<u7>>(),
+            [
+                0, 1, 2, 3, 4, 5, 6, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+                18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38,
+                39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 16, 17, 18, 19,
+            ]
+            .iter()
+            .cloned()
+            .map(u7::new)
+            .collect::<std::vec::Vec<u7>>(),
+        );
+    }
+
+    #[test]
+    fn splice_rubbish_payload_ump() {
+        splice_rubbish_payload::<u32>();
+    }
+
+    #[test]
+    fn splice_rubbish_payload_bytes() {
+        splice_rubbish_payload::<u8>();
+    }
+
+    fn splice_rubbish_payload_front<U: crate::buffer::Unit>() {
+        use crate::detail::test_support::rubbish_payload_iterator::RubbishPayloadIterator;
+        let mut message = Sysex7::<std::vec::Vec<U>>::new();
+        message.set_payload((0..20).map(u7::new));
+        message.splice_payload(RubbishPayloadIterator::new().map(u7::new), 0..2);
+        assert_eq!(
+            message.payload().collect::<std::vec::Vec<u7>>(),
+            [
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+                23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43,
+                44, 45, 46, 47, 48, 49, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
+                19,
+            ]
+            .iter()
+            .cloned()
+            .map(u7::new)
+            .collect::<std::vec::Vec<u7>>(),
+        );
+    }
+
+    #[test]
+    fn splice_rubbish_payload_front_ump() {
+        splice_rubbish_payload_front::<u32>();
+    }
+
+    #[test]
+    fn splice_rubbish_payload_front_bytes() {
+        splice_rubbish_payload_front::<u8>();
+    }
+
+    fn splice_rubbish_payload_end<U: crate::buffer::Unit>() {
+        use crate::detail::test_support::rubbish_payload_iterator::RubbishPayloadIterator;
+        let mut message = Sysex7::<std::vec::Vec<U>>::new();
+        message.set_payload((0..20).map(u7::new));
+        message.splice_payload(RubbishPayloadIterator::new().map(u7::new), 19..20);
+        assert_eq!(
+            message.payload().collect::<std::vec::Vec<u7>>(),
+            [
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 0, 1, 2, 3, 4, 5,
+                6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27,
+                28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48,
+                49,
+            ]
+            .iter()
+            .cloned()
+            .map(u7::new)
+            .collect::<std::vec::Vec<u7>>(),
+        );
+    }
+
+    #[test]
+    fn splice_rubbish_payload_end_ump() {
+        splice_rubbish_payload_end::<u32>();
+    }
+
+    #[test]
+    fn splice_rubbish_payload_end_bytes() {
+        splice_rubbish_payload_end::<u8>();
     }
 }
