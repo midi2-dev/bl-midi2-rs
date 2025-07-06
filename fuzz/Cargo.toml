@@ -38,8 +38,8 @@ doc = false
 bench = false
 
 [[bin]]
-name = "generic_sysex_inserting_payloads"
-path = "./fuzz_targets/generic_sysex_inserting_payloads.rs"
+name = "generic_sysex_splicing_payloads"
+path = "./fuzz_targets/generic_sysex_splicing_payloads.rs"
 test = false
 doc = false
 bench = false

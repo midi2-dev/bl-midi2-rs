@@ -89,16 +89,17 @@ pub fn validate_sysex_group_statuses<
     Ok(())
 }
 
-pub fn try_insert_sysex_data<
+pub fn try_splice_sysex_data<
     B: crate::buffer::Buffer + crate::buffer::BufferMut + crate::buffer::BufferTryResize,
     S: SysexInternal<B>,
     D: core::iter::Iterator<Item = <S as crate::traits::Sysex<B>>::Byte>,
+    R: core::ops::RangeBounds<usize>,
 >(
     sysex: &mut S,
     data: D,
-    before: usize,
+    range: R,
 ) -> core::result::Result<(), crate::error::BufferOverflow> {
-    match detail::try_insert_sysex_data(sysex, data, |s, sz| s.try_resize(sz), before) {
+    match detail::try_splice_sysex_data(sysex, data, |s, sz| s.try_resize(sz), range) {
         Err(e) => {
             // if the write failed we reset the message
             // back to zero data
@@ -111,23 +112,24 @@ pub fn try_insert_sysex_data<
     }
 }
 
-pub fn insert_sysex_data<
+pub fn splice_sysex_data<
     B: crate::buffer::Buffer + crate::buffer::BufferMut + crate::buffer::BufferResize,
     S: SysexInternal<B>,
     D: core::iter::Iterator<Item = <S as crate::traits::Sysex<B>>::Byte>,
+    R: core::ops::RangeBounds<usize>,
 >(
     sysex: &mut S,
     data: D,
-    before: usize,
+    range: R,
 ) {
-    detail::try_insert_sysex_data(
+    detail::try_splice_sysex_data(
         sysex,
         data,
         |s, sz| {
             s.resize(sz);
             Ok(())
         },
-        before,
+        range,
     )
     .expect("Resizable buffers should not fail here")
 }
@@ -137,16 +139,17 @@ mod detail {
 
     use super::*;
 
-    pub fn try_insert_sysex_data<
+    pub fn try_splice_sysex_data<
         B: crate::buffer::Buffer + crate::buffer::BufferMut,
         S: crate::traits::SysexInternal<B>,
         D: core::iter::Iterator<Item = <S as crate::traits::Sysex<B>>::Byte>,
         R: Fn(&mut S, usize) -> core::result::Result<(), SysexTryResizeError>,
+        Rg: core::ops::RangeBounds<usize>,
     >(
         sysex: &mut S,
         data: D,
         resize: R,
-        before: usize,
+        range: Rg,
     ) -> core::result::Result<(), crate::error::BufferOverflow> {
         // reformat first to ensure data is optimally filling the
         // underlying buffer
@@ -154,6 +157,19 @@ mod detail {
 
         // get an initial estimate for the size of the data
         let initial_size = sysex.payload_size();
+
+        let splice_begin = match range.start_bound() {
+            core::ops::Bound::Included(&v) => v,
+            core::ops::Bound::Excluded(&v) => v + 1,
+            core::ops::Bound::Unbounded => 0,
+        };
+        let splice_end = match range.end_bound() {
+            core::ops::Bound::Included(&v) => v + 1,
+            core::ops::Bound::Excluded(&v) => v,
+            core::ops::Bound::Unbounded => initial_size,
+        };
+        let splice_size = splice_end - splice_begin;
+
         let mut running_data_size_estimate = match data.size_hint() {
             (_, Some(upper)) => upper,
             // not the optimal case - could lead to additional copying
@@ -163,27 +179,26 @@ mod detail {
         let mut additional_size_for_overflow = 1;
         let mut data = data.peekable();
 
-        // initial buffer resize
-        if let Err(SysexTryResizeError(sz)) =
-            resize(sysex, running_data_size_estimate + initial_size)
-        {
-            // failed. we'll work with what we've got
-            running_data_size_estimate = sz.saturating_sub(initial_size);
-        };
+        if splice_end < splice_end + running_data_size_estimate - splice_size {
+            // we need to grow
+            // initial buffer resize
+            if let Err(SysexTryResizeError(sz)) = resize(
+                sysex,
+                running_data_size_estimate + initial_size - splice_size,
+            ) {
+                // failed. we'll work with what we've got
+                running_data_size_estimate = sz.saturating_sub(initial_size - splice_size);
+            };
+        }
 
-        debug_assert_eq!(
-            sysex.payload_size(),
-            running_data_size_estimate + initial_size
-        );
-
-        let mut tail = before + running_data_size_estimate;
-        sysex.move_payload_tail(before, tail);
+        let mut tail = splice_end + running_data_size_estimate - splice_size;
+        sysex.move_payload_tail(splice_end, tail);
 
         'main: loop {
             while written < running_data_size_estimate {
                 match data.next() {
                     Some(v) => {
-                        sysex.write_datum(v, before + written);
+                        sysex.write_datum(v, splice_begin + written);
                         written += 1;
                     }
                     None => {
@@ -199,16 +214,29 @@ mod detail {
             }
 
             // we underestimated.
-            // resize to make more space
             running_data_size_estimate += additional_size_for_overflow;
-            if let Err(SysexTryResizeError(sz)) =
-                resize(sysex, running_data_size_estimate + initial_size)
+
             {
-                // failed. we'll work with what we've got
-                running_data_size_estimate = sz.saturating_sub(initial_size);
-            };
-            sysex.move_payload_tail(tail, before + running_data_size_estimate);
-            tail = before + running_data_size_estimate;
+                let mut to = splice_begin + running_data_size_estimate;
+                if tail < to {
+                    // we need to grow
+                    // resize to make more space
+                    // and move tail
+
+                    if let Err(SysexTryResizeError(sz)) = resize(
+                        sysex,
+                        running_data_size_estimate + initial_size - splice_size,
+                    ) {
+                        // failed. we'll work with what we've got
+                        running_data_size_estimate = sz.saturating_sub(initial_size - splice_size);
+                        to = splice_begin + running_data_size_estimate - splice_size;
+                    };
+                }
+
+                sysex.move_payload_tail(tail, to);
+                tail = splice_begin + running_data_size_estimate;
+            }
+
             additional_size_for_overflow *= 2;
 
             if written >= running_data_size_estimate {
@@ -216,11 +244,11 @@ mod detail {
             }
         }
 
-        if written < running_data_size_estimate {
-            // we shrink the buffer back down to the correct size
-            sysex.move_payload_tail(tail, before + written);
-            resize(sysex, written + initial_size).map_err(|_| crate::error::BufferOverflow)?;
-        }
+        // we ensure the buffer is the correct size and move the tail
+        // to the final position
+        sysex.move_payload_tail(tail, splice_begin + written);
+        resize(sysex, written + initial_size - splice_size)
+            .map_err(|_| crate::error::BufferOverflow)?;
 
         Ok(())
     }
