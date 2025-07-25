@@ -97,7 +97,7 @@ mod timestamp {
 mod delta_clockstamp {
     use crate::detail::common_properties;
     use crate::utility;
-    use crate::ux::{u20, u4};
+    use crate::ux::u20;
     pub const STATUS: u8 = 0b0100;
     #[midi2_proc::generate_message(Via(crate::utility::Utility), FixedSize, MinSizeUmp(1))]
     struct DeltaClockstamp {
@@ -117,32 +117,19 @@ mod delta_clockstamp {
 
     impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B> for DataProperty {
         fn read(buffer: &'a B) -> Self::Type {
-            use crate::detail::BitOps;
-            use core::ops::BitOr;
-            let bits: u20 = buffer.buffer()[0].nibble(3).into();
-            let bits = bits << 16;
-            bits.bitor(u20::new(buffer.buffer()[0].word(1) as u32))
+            u20::new(buffer.buffer()[0] & 0x000F_FFFF)
         }
         fn validate(_buffer: &B) -> Result<(), crate::error::InvalidData> {
             Ok(())
         }
     }
 
-    const UPPER_MASK: u20 = u20::new(0x000F_0000);
-    const LOWER_MASK: u20 = u20::new(0x0000_FFFF);
-
     impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::WriteProperty<B>
         for DataProperty
     {
         fn write(buffer: &mut B, value: Self::Type) {
-            use crate::detail::BitOps;
-            use core::ops::BitAnd;
-            let upper = value.bitand(UPPER_MASK) >> 16;
-            let upper: u4 = upper.try_into().unwrap();
-            let lower = value.bitand(LOWER_MASK);
-            let lower: u16 = lower.try_into().unwrap();
-            buffer.buffer_mut()[0].set_nibble(3, upper);
-            buffer.buffer_mut()[0].set_word(1, lower);
+            buffer.buffer_mut()[0] &= !0x000F_FFFF;
+            buffer.buffer_mut()[0] |= u32::from(value);
         }
         fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
             Ok(())
@@ -313,8 +300,8 @@ mod tests {
 
         let buffer: [u32; 4] = [0, 0, 0, 0];
         let mut dc = DeltaClockstamp::try_new_with_buffer(buffer).unwrap();
-        dc.set_time_data(u20::new(1_048_575));
-        assert_eq!(dc.time_data(), u20::new(0xF_FFFF));
+        dc.set_time_data(u20::new(0x1_2345));
+        assert_eq!(dc.time_data(), u20::new(0x1_2345));
     }
 
     #[test]
