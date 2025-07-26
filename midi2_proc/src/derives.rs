@@ -43,7 +43,7 @@ pub fn packets(item: TokenStream1) -> TokenStream1 {
     }
     quote! {
         impl<B: crate::buffer::Ump>  crate::Packets for #ident<B>  {
-            fn packets(&self) -> crate::PacketsIterator {
+            fn packets<'a>(&'a self) -> crate::PacketsIterator<'a> {
                 use #ident::*;
                 match self {
                     #match_arms

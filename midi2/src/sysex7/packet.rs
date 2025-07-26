@@ -135,7 +135,7 @@ impl Packet {
         status_from_data(&self.0[..]).unwrap()
     }
 
-    pub fn payload(&self) -> PayloadIterator {
+    pub fn payload<'a>(&'a self) -> PayloadIterator<'a> {
         PayloadIterator {
             data: &self.0,
             index: 0,
