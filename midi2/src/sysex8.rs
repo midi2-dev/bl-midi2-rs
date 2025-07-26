@@ -565,7 +565,7 @@ fn try_resize<
 }
 
 fn buffer_size_from_payload_size(payload_size: usize) -> usize {
-    if payload_size % 13 == 0 {
+    if payload_size.is_multiple_of(13) {
         if payload_size == 0 {
             4
         } else {

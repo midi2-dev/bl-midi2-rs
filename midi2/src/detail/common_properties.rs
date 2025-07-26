@@ -165,60 +165,6 @@ impl<
     }
 }
 
-pub struct BytesSchemaProperty<T, B: schema::BytesSchema>(core::marker::PhantomData<(T, B)>);
-
-impl<
-        B: Buffer,
-        BytesSchema: schema::BytesSchema,
-        T: Default + schema::BytesSchemaRepr<BytesSchema>,
-    > Property<B> for BytesSchemaProperty<T, BytesSchema>
-{
-    type Type = T;
-}
-
-impl<
-        'a,
-        B: Buffer,
-        BytesSchema: schema::BytesSchema,
-        T: Default + schema::BytesSchemaRepr<BytesSchema>,
-    > ReadProperty<'a, B> for BytesSchemaProperty<T, BytesSchema>
-{
-    fn read(buffer: &'a B) -> Self::Type {
-        match <B::Unit as UnitPrivate>::UNIT_ID {
-            UNIT_ID_U32 => Default::default(),
-            UNIT_ID_U8 => {
-                <T as schema::BytesSchemaRepr<BytesSchema>>::read(buffer.buffer().specialise_u8())
-            }
-            _ => unreachable!(),
-        }
-    }
-    fn validate(_buffer: &B) -> Result<(), crate::error::InvalidData> {
-        Ok(())
-    }
-}
-
-impl<
-        B: Buffer + BufferMut,
-        BytesSchema: schema::BytesSchema,
-        T: Default + schema::BytesSchemaRepr<BytesSchema>,
-    > WriteProperty<B> for BytesSchemaProperty<T, BytesSchema>
-{
-    fn write(buffer: &mut B, v: Self::Type) {
-        if <B::Unit as UnitPrivate>::UNIT_ID == UNIT_ID_U8 {
-            <T as schema::BytesSchemaRepr<BytesSchema>>::write(
-                buffer.buffer_mut().specialise_u8_mut(),
-                v,
-            )
-        }
-    }
-    fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
-        Ok(())
-    }
-    fn default() -> Self::Type {
-        Default::default()
-    }
-}
-
 pub struct UmpSchemaProperty<T, B: schema::UmpSchema>(core::marker::PhantomData<(T, B)>);
 
 impl<B: Buffer, UmpSchema: schema::UmpSchema, T: Default + schema::UmpSchemaRepr<UmpSchema>>

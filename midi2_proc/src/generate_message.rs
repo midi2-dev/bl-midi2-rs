@@ -339,7 +339,7 @@ fn data_impl(root_ident: &syn::Ident, args: &GenerateMessageArgs) -> TokenStream
 fn packets_impl(root_ident: &syn::Ident) -> TokenStream {
     quote! {
         impl<B: crate::buffer::Ump> crate::Packets for #root_ident<B> {
-            fn packets(&self) -> crate::PacketsIterator {
+            fn packets<'a>(&'a self) -> crate::PacketsIterator<'a> {
                 crate::PacketsIterator(self
                     .data()
                     .chunks_exact(<Self as crate::traits::MinSize<B>>::MIN_SIZE)
