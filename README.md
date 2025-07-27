@@ -18,7 +18,7 @@ for more details on the data protocol standard.
 > Expect breaking changes and bugs, and please report any issues you encounter.
 
 We would welcome contributions! 
-Please refer to the [CONTRIBUTOR.md](CONTRIBUTOR.md)
+Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## Strongly Typed Message Wrappers
 
