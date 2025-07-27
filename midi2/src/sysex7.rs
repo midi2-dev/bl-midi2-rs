@@ -808,7 +808,7 @@ fn try_resize_ump<
 }
 
 fn buffer_size_from_payload_size_ump(payload_size: usize) -> usize {
-    if payload_size % 6 == 0 {
+    if payload_size.is_multiple_of(6) {
         if payload_size == 0 {
             2
         } else {

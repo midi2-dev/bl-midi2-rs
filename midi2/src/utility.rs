@@ -97,6 +97,7 @@ mod timestamp {
 mod delta_clockstamp {
     use crate::detail::common_properties;
     use crate::utility;
+    use crate::ux::u20;
     pub const STATUS: u8 = 0b0100;
     #[midi2_proc::generate_message(Via(crate::utility::Utility), FixedSize, MinSizeUmp(1))]
     struct DeltaClockstamp {
@@ -104,8 +105,38 @@ mod delta_clockstamp {
         ump_type: (),
         #[property(common_properties::ChannelVoiceStatusProperty<STATUS>)]
         status: (),
-        #[property(utility::DataProperty)]
-        time_data: u16,
+        #[property(DataProperty)]
+        time_data: u20,
+    }
+
+    struct DataProperty;
+
+    impl<B: crate::buffer::Ump> crate::detail::property::Property<B> for DataProperty {
+        type Type = u20;
+    }
+
+    impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B> for DataProperty {
+        fn read(buffer: &'a B) -> Self::Type {
+            u20::new(buffer.buffer()[0] & 0x000F_FFFF)
+        }
+        fn validate(_buffer: &B) -> Result<(), crate::error::InvalidData> {
+            Ok(())
+        }
+    }
+
+    impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::WriteProperty<B>
+        for DataProperty
+    {
+        fn write(buffer: &mut B, value: Self::Type) {
+            buffer.buffer_mut()[0] &= !0x000F_FFFF;
+            buffer.buffer_mut()[0] |= u32::from(value);
+        }
+        fn validate(_v: &Self::Type) -> Result<(), crate::error::InvalidData> {
+            Ok(())
+        }
+        fn default() -> Self::Type {
+            Default::default()
+        }
     }
 }
 mod delta_clockstamp_tpq {
@@ -258,6 +289,19 @@ mod tests {
     #[test]
     fn delta_clock_stamp_try_from() {
         DeltaClockstamp::try_from(&[0x0040_0000][..]).unwrap();
+    }
+
+    #[test]
+    fn delta_clock_stamp_u20() {
+        use crate::ux::u20;
+
+        let dc = DeltaClockstamp::try_from(&[0x004A_BCDE][..]).unwrap();
+        assert_eq!(dc.time_data(), u20::new(0xABCDE));
+
+        let buffer: [u32; 4] = [0, 0, 0, 0];
+        let mut dc = DeltaClockstamp::try_new_with_buffer(buffer).unwrap();
+        dc.set_time_data(u20::new(0x1_2345));
+        assert_eq!(dc.time_data(), u20::new(0x1_2345));
     }
 
     #[test]

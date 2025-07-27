@@ -63,7 +63,7 @@ impl<B: Ump + BufferMut> ResizeProperty<B> for TextWriteStrProperty<'_> {
 
 fn ump_buffer_size_for_str(s: &str) -> usize {
     let str_size = s.len();
-    if str_size % 12 == 0 {
+    if str_size.is_multiple_of(12) {
         if str_size == 0 {
             4
         } else {
@@ -78,7 +78,7 @@ fn grow_buffer(mut buffer: &mut [u32], size: usize) {
     use crate::detail::BitOps;
     use crate::ux::{u2, u4};
 
-    debug_assert!(size % 4 == 0);
+    debug_assert!(size.is_multiple_of(4));
     debug_assert!(size != 0);
 
     let group = buffer[0].nibble(1);

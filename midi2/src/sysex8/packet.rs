@@ -165,7 +165,7 @@ impl Packet {
     pub fn stream_id(&self) -> u8 {
         sysex8::stream_id_from_packet(&self.0[..])
     }
-    pub fn payload(&self) -> PayloadIterator {
+    pub fn payload<'a>(&'a self) -> PayloadIterator<'a> {
         PayloadIterator {
             data: &self.0,
             index: 0,

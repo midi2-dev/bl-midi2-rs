@@ -387,7 +387,7 @@ fn clear_payload<const OFFSET: usize>(buffer: &mut [u32]) {
 fn required_buffer_size_for_str<const OFFSET: usize>(s: &str) -> usize {
     let str_size = s.len();
     let packet_capacity = 14 - OFFSET;
-    if str_size % packet_capacity == 0 {
+    if str_size.is_multiple_of(packet_capacity) {
         if str_size == 0 {
             4
         } else {

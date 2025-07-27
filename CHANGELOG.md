@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.10.0](https://github.com/midi2-dev/bl-midi2-rs/compare/0.9.0..0.10.0) - 2025-07-27
+
+### 🐛 Fixes
+
+- Rust 1.90.0 clippy warnings - ([5f24196](https://github.com/midi2-dev/bl-midi2-rs/commit/5f24196b16171a65587ef3fbaa42673717af23ac))
+- U20 for Delta Clockstamp Ticks Since Last Event per spec - ([9bfa4de..2d5713e](https://github.com/midi2-dev/bl-midi2-rs/compare/9bfa4de5b399e42682993adacece0cd79c7cf038..2d5713e762f09e468cd0ec6ffb0d7037ce95df7f))
+- Clippy warnings from rust 1.87.0 - ([9bfa4de](https://github.com/midi2-dev/bl-midi2-rs/commit/9bfa4de5b399e42682993adacece0cd79c7cf038))
+
+### 📚 Documentation
+
+- Improve the wording and details of the contributing docs - ([](https://github.com/midi2-dev/bl-midi2-rs/commit/a30428f294c5ca6e8c97bf3cbc1f2436797893a6))
+
+## New Contributors ❤️
+
+* @dpezely made their first contribution in [#73](https://github.com/midi2-dev/bl-midi2-rs/pull/73)
+
 ## [0.9.0](https://github.com/midi2-dev/bl-midi2-rs/compare/0.8.2..0.9.0) - 2025-05-13
 
 ### ✨ Features

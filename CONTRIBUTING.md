@@ -8,8 +8,8 @@ or open a PR from your own fork to start a discussion ☺️..
 
 ## 🪝 Hooks 🪝
 
-We recommend using the hooks while developing in this repository.
-The hooks manager is a python package which needs installing locally.
+It is recommended to use git hooks while developing in this repository.
+The hooks manager (pre-commit) is a python package which needs installing locally.
 The best way to do this is via a virtual environment.
 
 ```shell
@@ -22,18 +22,22 @@ The best way to do this is via a virtual environment.
 ## 🧱 Building 🧱
 
 To build, simply follow the usual cargo flow.
+
 ```shell
-> cargo build --all-features
+> cargo build --all --all-features
 ```
 
 ## Tests
 
-The project currently has a good unit tests coverage,
+The project currently has a unit test, and documentation test coverage,
 but no integration test coverage yet.
-To run the tests, follow the usual cargo flow.
+To run all the tests, follow the usual cargo flow.
+
+When adding new features please try to cover the new code
+with appropriate unit test cases.
 
 ```shell
-> cargo test --all-features
+> cargo test --all --all-features
 ```
 
 ## 🌍 A Tour of midi2 🌍 

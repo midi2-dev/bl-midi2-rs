@@ -70,5 +70,5 @@ impl core::iter::ExactSizeIterator for PacketsIterator<'_> {
 /// assert_eq!(packets.next(), None);
 /// ```
 pub trait Packets {
-    fn packets(&self) -> PacketsIterator;
+    fn packets<'a>(&'a self) -> PacketsIterator<'a>;
 }
