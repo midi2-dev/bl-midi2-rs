@@ -29,7 +29,7 @@ fn handle_message(buffer: &[u32]) {
             );
         }
         Err(e) => {
-            println!("Error parsing ump buffer: {:?}", e);
+            println!("Error parsing ump buffer: {e:?}");
         }
         _ => {}
     }

@@ -113,6 +113,6 @@ impl Generator {
 fn main() {
     let mut generator = Generator::new();
     for message in generator.generate().unwrap() {
-        std::println!("{:?}", message);
+        std::println!("{message:?}");
     }
 }

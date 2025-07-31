@@ -1758,7 +1758,7 @@ mod tests {
     #[test]
     fn move_payload_tail_no_op() {
         let mut message = Sysex8::<std::vec::Vec<u32>>::new();
-        message.set_payload((0..20).chain(std::iter::repeat(0).take(20)));
+        message.set_payload((0..20).chain(core::iter::repeat_n(0, 20)));
         message.move_payload_tail(0, 0);
         let payload = message.payload().collect::<std::vec::Vec<u8>>();
         assert_eq!(payload.len(), 40);
@@ -1774,7 +1774,7 @@ mod tests {
     #[test]
     fn move_entire_payload_one_place() {
         let mut message = Sysex8::<std::vec::Vec<u32>>::new();
-        message.set_payload((0..20).chain(std::iter::repeat(0).take(20)));
+        message.set_payload((0..20).chain(core::iter::repeat_n(0, 20)));
         message.move_payload_tail(0, 1);
         let payload = message.payload().collect::<std::vec::Vec<u8>>();
         assert_eq!(payload.len(), 40);
@@ -1790,7 +1790,7 @@ mod tests {
     #[test]
     fn move_half_payload_one_place() {
         let mut message = Sysex8::<std::vec::Vec<u32>>::new();
-        message.set_payload((0..20).chain(std::iter::repeat(0).take(20)));
+        message.set_payload((0..20).chain(core::iter::repeat_n(0, 20)));
         message.move_payload_tail(10, 11);
         let payload = message.payload().collect::<std::vec::Vec<u8>>();
         assert_eq!(payload.len(), 40);
@@ -1806,7 +1806,7 @@ mod tests {
     #[test]
     fn move_half_payload_one_place_back() {
         let mut message = Sysex8::<std::vec::Vec<u32>>::new();
-        message.set_payload((0..20).chain(std::iter::repeat(0).take(20)));
+        message.set_payload((0..20).chain(core::iter::repeat_n(0, 20)));
         message.move_payload_tail(10, 9);
         let payload = message.payload().collect::<std::vec::Vec<u8>>();
         assert_eq!(payload.len(), 40);
@@ -1822,7 +1822,7 @@ mod tests {
     #[test]
     fn move_half_payload_to_front() {
         let mut message = Sysex8::<std::vec::Vec<u32>>::new();
-        message.set_payload((0..20).chain(std::iter::repeat(0).take(20)));
+        message.set_payload((0..20).chain(core::iter::repeat_n(0, 20)));
         message.move_payload_tail(10, 0);
         let payload = message.payload().collect::<std::vec::Vec<u8>>();
         assert_eq!(payload.len(), 40);
@@ -1838,7 +1838,7 @@ mod tests {
     #[test]
     fn move_end_to_front() {
         let mut message = Sysex8::<std::vec::Vec<u32>>::new();
-        message.set_payload((0..20).chain(std::iter::repeat(0).take(20)));
+        message.set_payload((0..20).chain(core::iter::repeat_n(0, 20)));
         message.move_payload_tail(30, 0);
         let payload = message.payload().collect::<std::vec::Vec<u8>>();
         assert_eq!(payload.len(), 40);
