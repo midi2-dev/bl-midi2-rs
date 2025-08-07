@@ -7,7 +7,7 @@ use crate::{
 
 pub(crate) const STATUS: u16 = 0x11;
 
-#[midi2_proc::generate_message(Via(ump_stream::UmpStream), FixedSize, MinSizeUmp(2))]
+#[midi2_proc::generate_message(Via(ump_stream::UmpStream), FixedSize, MinSizeUmp(4))]
 struct FunctionBlockInfo {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
@@ -262,7 +262,7 @@ mod tests {
     #[test]
     fn active() {
         assert_eq!(
-            FunctionBlockInfo::try_from(&[0xF011_9136, 0x0D08_0120][..])
+            FunctionBlockInfo::try_from(&[0xF011_9136, 0x0D08_0120, 0x0, 0x0][..])
                 .unwrap()
                 .active(),
             true
@@ -272,7 +272,7 @@ mod tests {
     #[test]
     fn function_block_number() {
         assert_eq!(
-            FunctionBlockInfo::try_from(&[0xF011_9136, 0x0D08_0120][..])
+            FunctionBlockInfo::try_from(&[0xF011_9136, 0x0D08_0120, 0x0, 0x0][..])
                 .unwrap()
                 .function_block_number(),
             u7::new(0x11),
@@ -282,7 +282,7 @@ mod tests {
     #[test]
     fn first_group() {
         assert_eq!(
-            FunctionBlockInfo::try_from(&[0xF011_9136, 0x0D08_0120][..])
+            FunctionBlockInfo::try_from(&[0xF011_9136, 0x0D08_0120, 0x0, 0x0][..])
                 .unwrap()
                 .first_group(),
             u4::new(0xD),
@@ -292,7 +292,7 @@ mod tests {
     #[test]
     fn number_of_groups_spanned() {
         assert_eq!(
-            FunctionBlockInfo::try_from(&[0xF011_9136, 0x0D08_0120][..])
+            FunctionBlockInfo::try_from(&[0xF011_9136, 0x0D08_0120, 0x0, 0x0][..])
                 .unwrap()
                 .number_of_groups_spanned(),
             0x8,
@@ -302,7 +302,7 @@ mod tests {
     #[test]
     fn midi_ci_version() {
         assert_eq!(
-            FunctionBlockInfo::try_from(&[0xF011_9136, 0x0D08_0120][..])
+            FunctionBlockInfo::try_from(&[0xF011_9136, 0x0D08_0120, 0x0, 0x0][..])
                 .unwrap()
                 .midi_ci_version(),
             0x1,
@@ -312,7 +312,7 @@ mod tests {
     #[test]
     fn max_number_of_midi_ci_streams() {
         assert_eq!(
-            FunctionBlockInfo::try_from(&[0xF011_9136, 0x0D08_0120][..])
+            FunctionBlockInfo::try_from(&[0xF011_9136, 0x0D08_0120, 0x0, 0x0][..])
                 .unwrap()
                 .max_number_of_midi_ci_streams(),
             0x20,
@@ -322,7 +322,7 @@ mod tests {
     #[test]
     fn ui_hint() {
         assert_eq!(
-            FunctionBlockInfo::try_from(&[0xF011_9136, 0x0D08_0120][..])
+            FunctionBlockInfo::try_from(&[0xF011_9136, 0x0D08_0120, 0x0, 0x0][..])
                 .unwrap()
                 .ui_hint(),
             UiHint::SenderReciever,
@@ -332,7 +332,7 @@ mod tests {
     #[test]
     fn midi1_port() {
         assert_eq!(
-            FunctionBlockInfo::try_from(&[0xF011_9136, 0x0D08_0120][..])
+            FunctionBlockInfo::try_from(&[0xF011_9136, 0x0D08_0120, 0x0, 0x0][..])
                 .unwrap()
                 .midi1_port(),
             Some(Midi1Port::DontRestrictBandwidth),
@@ -342,7 +342,7 @@ mod tests {
     #[test]
     fn direction() {
         assert_eq!(
-            FunctionBlockInfo::try_from(&[0xF011_9136, 0x0D08_0120][..])
+            FunctionBlockInfo::try_from(&[0xF011_9136, 0x0D08_0120, 0x0, 0x0][..])
                 .unwrap()
                 .direction(),
             Direction::Output,

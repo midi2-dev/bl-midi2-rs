@@ -8,7 +8,7 @@ const STATUS: u8 = 0x0;
 /// MIDI 2.0 Flex Data Set Tempo Message
 ///
 /// See the [module docs](crate::flex_data) for more info.
-#[midi2_proc::generate_message(Via(crate::flex_data::FlexData), FixedSize, MinSizeUmp(2))]
+#[midi2_proc::generate_message(Via(crate::flex_data::FlexData), FixedSize, MinSizeUmp(4))]
 struct SetTempo {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
@@ -48,7 +48,7 @@ mod tests {
     #[test]
     fn number_of_10_nanosecond_units_per_quarter_note() {
         assert_eq!(
-            SetTempo::try_from(&[0xD710_0000, 0xF751_FE05,][..])
+            SetTempo::try_from(&[0xD710_0000, 0xF751_FE05, 0x0, 0x0][..])
                 .unwrap()
                 .number_of_10_nanosecond_units_per_quarter_note(),
             0xF751FE05,
