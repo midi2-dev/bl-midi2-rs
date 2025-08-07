@@ -2,7 +2,7 @@ use crate::{detail::common_properties, ump_stream, ump_stream::UMP_MESSAGE_TYPE}
 
 pub(crate) const STATUS: u16 = 0x21;
 
-#[midi2_proc::generate_message(Via(ump_stream::UmpStream), FixedSize, MinSizeUmp(1))]
+#[midi2_proc::generate_message(Via(ump_stream::UmpStream), FixedSize, MinSizeUmp(4))]
 struct EndOfClip {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
@@ -28,8 +28,8 @@ mod tests {
     #[test]
     fn from_data() {
         assert_eq!(
-            EndOfClip::try_from(&[0xF021_0000][..]),
-            Ok(EndOfClip(&[0xF021_0000][..]))
+            EndOfClip::try_from(&[0xF021_0000, 0x0, 0x0, 0x0][..]),
+            Ok(EndOfClip(&[0xF021_0000, 0x0, 0x0, 0x0][..]))
         );
     }
 }
