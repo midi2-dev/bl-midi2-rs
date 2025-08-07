@@ -9,7 +9,7 @@ const STATUS: u8 = 0x5;
 /// MIDI 2.0 Flex Data Set Key Signature Message
 ///
 /// See the [module docs](crate::flex_data) for more info.
-#[midi2_proc::generate_message(Via(crate::flex_data::FlexData), FixedSize, MinSizeUmp(2))]
+#[midi2_proc::generate_message(Via(crate::flex_data::FlexData), FixedSize, MinSizeUmp(4))]
 struct SetKeySignature {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
@@ -147,7 +147,7 @@ mod tests {
     #[test]
     fn tonic() {
         assert_eq!(
-            SetKeySignature::try_from(&[0xD410_0005, 0x5400_0000][..])
+            SetKeySignature::try_from(&[0xD410_0005, 0x5400_0000, 0x0, 0x0][..])
                 .unwrap()
                 .tonic(),
             flex_data::tonic::Tonic::D,
@@ -157,7 +157,7 @@ mod tests {
     #[test]
     fn sharps_flats() {
         assert_eq!(
-            SetKeySignature::try_from(&[0xD410_0005, 0x5400_0000][..])
+            SetKeySignature::try_from(&[0xD410_0005, 0x5400_0000, 0x0, 0x0][..])
                 .unwrap()
                 .sharps_flats(),
             SharpsFlats::Sharps(u3::new(5)),
@@ -167,7 +167,7 @@ mod tests {
     #[test]
     fn sharps_flats_with_flats() {
         assert_eq!(
-            SetKeySignature::try_from(&[0xD410_0005, 0xB400_0000][..])
+            SetKeySignature::try_from(&[0xD410_0005, 0xB400_0000, 0x0, 0x0][..])
                 .unwrap()
                 .sharps_flats(),
             SharpsFlats::Flats(u3::new(5)),
@@ -177,7 +177,7 @@ mod tests {
     #[test]
     fn sharps_flats_non_standard() {
         assert_eq!(
-            SetKeySignature::try_from(&[0xD410_0005, 0x8000_0000][..])
+            SetKeySignature::try_from(&[0xD410_0005, 0x8000_0000, 0x0, 0x0][..])
                 .unwrap()
                 .sharps_flats(),
             SharpsFlats::NonStandard,
@@ -187,7 +187,7 @@ mod tests {
     #[test]
     fn channel() {
         assert_eq!(
-            SetKeySignature::try_from(&[0xD40D_0005, 0x8000_0000][..])
+            SetKeySignature::try_from(&[0xD40D_0005, 0x8000_0000, 0x0, 0x0][..])
                 .unwrap()
                 .optional_channel(),
             Some(u4::new(0xD)),
@@ -197,7 +197,7 @@ mod tests {
     #[test]
     fn no_channel() {
         assert_eq!(
-            SetKeySignature::try_from(&[0xD410_0005, 0x8000_0000][..])
+            SetKeySignature::try_from(&[0xD410_0005, 0x8000_0000, 0x0, 0x0][..])
                 .unwrap()
                 .optional_channel(),
             None,

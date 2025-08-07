@@ -1224,7 +1224,7 @@ mod tests {
 
     #[test]
     fn try_from_set_tempo() {
-        let buffer = [0xD710_0000_u32, 0xF751_FE05];
+        let buffer = [0xD710_0000_u32, 0xF751_FE05, 0x0, 0x0];
         assert_eq!(
             FlexData::try_from(&buffer[..]),
             Ok(FlexData::SetTempo(
@@ -1235,8 +1235,9 @@ mod tests {
 
     #[test]
     fn read_bank() {
+        // Set Tempo
         assert_eq!(
-            FlexData::try_from(&[0xD710_0000_u32, 0xF751_FE05][..])
+            FlexData::try_from(&[0xD710_0000_u32, 0xF751_FE05, 0x0, 0x0][..])
                 .unwrap()
                 .bank(),
             Bank::SetupAndPerformance,

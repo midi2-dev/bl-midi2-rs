@@ -9,7 +9,7 @@ pub(crate) const STATUS: u8 = 0b1111;
 /// MIDI 2.0 Channel Voice Per Note Management Message
 ///
 /// See the [module docs](crate::channel_voice2) for more info.
-#[midi2_proc::generate_message(Via(crate::channel_voice2::ChannelVoice2), FixedSize, MinSizeUmp(1))]
+#[midi2_proc::generate_message(Via(crate::channel_voice2::ChannelVoice2), FixedSize, MinSizeUmp(2))]
 struct PerNoteManagement {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
@@ -49,7 +49,7 @@ mod tests {
     #[test]
     fn note_number() {
         assert_eq!(
-            PerNoteManagement::try_from(&[0x4BF9_1C03][..])
+            PerNoteManagement::try_from(&[0x4BF9_1C03, 0x0][..])
                 .unwrap()
                 .note_number(),
             u7::new(0x1C),
@@ -58,14 +58,14 @@ mod tests {
 
     #[test]
     fn detach() {
-        assert!(PerNoteManagement::try_from(&[0x4BF9_1C03][..])
+        assert!(PerNoteManagement::try_from(&[0x4BF9_1C03, 0x0][..])
             .unwrap()
             .detach(),);
     }
 
     #[test]
     fn reset() {
-        assert!(PerNoteManagement::try_from(&[0x4BF9_1C03][..])
+        assert!(PerNoteManagement::try_from(&[0x4BF9_1C03, 0x0][..])
             .unwrap()
             .reset(),);
     }

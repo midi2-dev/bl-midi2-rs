@@ -8,7 +8,7 @@ const STATUS: u8 = 0x1;
 /// MIDI 2.0 Flex Data Set Time Signature Message
 ///
 /// See the [module docs](crate::flex_data) for more info.
-#[midi2_proc::generate_message(Via(crate::flex_data::FlexData), FixedSize, MinSizeUmp(2))]
+#[midi2_proc::generate_message(Via(crate::flex_data::FlexData), FixedSize, MinSizeUmp(4))]
 struct SetTimeSignature {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
@@ -63,7 +63,7 @@ mod tests {
     #[test]
     fn numerator() {
         assert_eq!(
-            SetTimeSignature::try_from(&[0xDA10_0001, 0xCD90_7E00,][..])
+            SetTimeSignature::try_from(&[0xDA10_0001, 0xCD90_7E00, 0x0, 0x0][..])
                 .unwrap()
                 .numerator(),
             0xCD,
@@ -73,7 +73,7 @@ mod tests {
     #[test]
     fn denominator() {
         assert_eq!(
-            SetTimeSignature::try_from(&[0xDA10_0001, 0xCD90_7E00,][..])
+            SetTimeSignature::try_from(&[0xDA10_0001, 0xCD90_7E00, 0x0, 0x0][..])
                 .unwrap()
                 .denominator(),
             0x90,
@@ -83,7 +83,7 @@ mod tests {
     #[test]
     fn number_of_32nd_notes() {
         assert_eq!(
-            SetTimeSignature::try_from(&[0xDA10_0001, 0xCD90_7E00,][..])
+            SetTimeSignature::try_from(&[0xDA10_0001, 0xCD90_7E00, 0x0, 0x0][..])
                 .unwrap()
                 .number_of_32nd_notes(),
             0x7E,
@@ -93,7 +93,7 @@ mod tests {
     #[test]
     fn bank() {
         assert_eq!(
-            SetTimeSignature::try_from(&[0xDA10_0001, 0xCD90_7E00,][..])
+            SetTimeSignature::try_from(&[0xDA10_0001, 0xCD90_7E00, 0x0, 0x0][..])
                 .unwrap()
                 .bank(),
             flex_data::Bank::SetupAndPerformance,
@@ -103,7 +103,7 @@ mod tests {
     #[test]
     fn status() {
         assert_eq!(
-            SetTimeSignature::try_from(&[0xDA10_0001, 0xCD90_7E00,][..])
+            SetTimeSignature::try_from(&[0xDA10_0001, 0xCD90_7E00, 0x0, 0x0][..])
                 .unwrap()
                 .status(),
             STATUS,

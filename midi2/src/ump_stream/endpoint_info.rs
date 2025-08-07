@@ -7,7 +7,7 @@ use crate::{
 
 pub(crate) const STATUS: u16 = 0x01;
 
-#[midi2_proc::generate_message(Via(ump_stream::UmpStream), FixedSize, MinSizeUmp(2))]
+#[midi2_proc::generate_message(Via(ump_stream::UmpStream), FixedSize, MinSizeUmp(4))]
 struct EndpointInfo {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
@@ -64,9 +64,16 @@ mod tests {
     #[test]
     fn ump_version_major() {
         assert_eq!(
-            EndpointInfo::try_from(&[0xF001_0101, 0b1010_0000_0000_0000_0000_0011_0000_0011,][..])
-                .unwrap()
-                .ump_version_major(),
+            EndpointInfo::try_from(
+                &[
+                    0xF001_0101,
+                    0b1010_0000_0000_0000_0000_0011_0000_0011,
+                    0x0,
+                    0x0
+                ][..]
+            )
+            .unwrap()
+            .ump_version_major(),
             0x1,
         );
     }
@@ -74,9 +81,16 @@ mod tests {
     #[test]
     fn ump_version_minor() {
         assert_eq!(
-            EndpointInfo::try_from(&[0xF001_0101, 0b1010_0000_0000_0000_0000_0011_0000_0011,][..])
-                .unwrap()
-                .ump_version_minor(),
+            EndpointInfo::try_from(
+                &[
+                    0xF001_0101,
+                    0b1010_0000_0000_0000_0000_0011_0000_0011,
+                    0x0,
+                    0x0
+                ][..]
+            )
+            .unwrap()
+            .ump_version_minor(),
             0x1,
         );
     }
@@ -84,9 +98,16 @@ mod tests {
     #[test]
     fn static_function_blocks() {
         assert_eq!(
-            EndpointInfo::try_from(&[0xF001_0101, 0b1010_0000_0000_0000_0000_0011_0000_0011,][..])
-                .unwrap()
-                .static_function_blocks(),
+            EndpointInfo::try_from(
+                &[
+                    0xF001_0101,
+                    0b1010_0000_0000_0000_0000_0011_0000_0011,
+                    0x0,
+                    0x0
+                ][..]
+            )
+            .unwrap()
+            .static_function_blocks(),
             true,
         );
     }
@@ -94,9 +115,16 @@ mod tests {
     #[test]
     fn number_of_function_blocks() {
         assert_eq!(
-            EndpointInfo::try_from(&[0xF001_0101, 0b1010_0000_0000_0000_0000_0011_0000_0011,][..])
-                .unwrap()
-                .number_of_function_blocks(),
+            EndpointInfo::try_from(
+                &[
+                    0xF001_0101,
+                    0b1010_0000_0000_0000_0000_0011_0000_0011,
+                    0x0,
+                    0x0
+                ][..]
+            )
+            .unwrap()
+            .number_of_function_blocks(),
             u7::new(0x20),
         );
     }
@@ -104,9 +132,16 @@ mod tests {
     #[test]
     fn supports_midi2_protocol() {
         assert_eq!(
-            EndpointInfo::try_from(&[0xF001_0101, 0b1010_0000_0000_0000_0000_0011_0000_0011,][..])
-                .unwrap()
-                .supports_midi2_protocol(),
+            EndpointInfo::try_from(
+                &[
+                    0xF001_0101,
+                    0b1010_0000_0000_0000_0000_0011_0000_0011,
+                    0x0,
+                    0x0
+                ][..]
+            )
+            .unwrap()
+            .supports_midi2_protocol(),
             true,
         );
     }
@@ -114,9 +149,16 @@ mod tests {
     #[test]
     fn supports_midi1_protocol() {
         assert_eq!(
-            EndpointInfo::try_from(&[0xF001_0101, 0b1010_0000_0000_0000_0000_0011_0000_0011,][..])
-                .unwrap()
-                .supports_midi1_protocol(),
+            EndpointInfo::try_from(
+                &[
+                    0xF001_0101,
+                    0b1010_0000_0000_0000_0000_0011_0000_0011,
+                    0x0,
+                    0x0
+                ][..]
+            )
+            .unwrap()
+            .supports_midi1_protocol(),
             true,
         );
     }
@@ -124,9 +166,16 @@ mod tests {
     #[test]
     fn supports_sending_jr_timestamps() {
         assert_eq!(
-            EndpointInfo::try_from(&[0xF001_0101, 0b1010_0000_0000_0000_0000_0011_0000_0011,][..])
-                .unwrap()
-                .supports_sending_jr_timestamps(),
+            EndpointInfo::try_from(
+                &[
+                    0xF001_0101,
+                    0b1010_0000_0000_0000_0000_0011_0000_0011,
+                    0x0,
+                    0x0
+                ][..]
+            )
+            .unwrap()
+            .supports_sending_jr_timestamps(),
             true,
         );
     }
@@ -134,9 +183,16 @@ mod tests {
     #[test]
     fn supports_receiving_jr_timestamps() {
         assert_eq!(
-            EndpointInfo::try_from(&[0xF001_0101, 0b1010_0000_0000_0000_0000_0011_0000_0011,][..])
-                .unwrap()
-                .supports_receiving_jr_timestamps(),
+            EndpointInfo::try_from(
+                &[
+                    0xF001_0101,
+                    0b1010_0000_0000_0000_0000_0011_0000_0011,
+                    0x0,
+                    0x0
+                ][..]
+            )
+            .unwrap()
+            .supports_receiving_jr_timestamps(),
             true,
         );
     }

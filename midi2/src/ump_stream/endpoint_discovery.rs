@@ -6,7 +6,7 @@ use crate::{
 
 pub(crate) const STATUS: u16 = 0x0;
 
-#[midi2_proc::generate_message(Via(ump_stream::UmpStream), FixedSize, MinSizeUmp(2))]
+#[midi2_proc::generate_message(Via(ump_stream::UmpStream), FixedSize, MinSizeUmp(4))]
 struct EndpointDiscovery {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
@@ -54,7 +54,7 @@ mod tests {
     #[test]
     fn ump_version_major() {
         assert_eq!(
-            EndpointDiscovery::try_from(&[0xF000_0101, 0x0000_001F][..])
+            EndpointDiscovery::try_from(&[0xF000_0101, 0x0000_001F, 0x0, 0x0][..])
                 .unwrap()
                 .ump_version_major(),
             0x1,
@@ -64,7 +64,7 @@ mod tests {
     #[test]
     fn ump_version_minor() {
         assert_eq!(
-            EndpointDiscovery::try_from(&[0xF000_0101, 0x0000_001F][..])
+            EndpointDiscovery::try_from(&[0xF000_0101, 0x0000_001F, 0x0, 0x0][..])
                 .unwrap()
                 .ump_version_minor(),
             0x1,
@@ -74,7 +74,7 @@ mod tests {
     #[test]
     fn request_endpoint_info() {
         assert_eq!(
-            EndpointDiscovery::try_from(&[0xF000_0101, 0x0000_001F][..])
+            EndpointDiscovery::try_from(&[0xF000_0101, 0x0000_001F, 0x0, 0x0][..])
                 .unwrap()
                 .request_endpoint_info(),
             true,
@@ -84,7 +84,7 @@ mod tests {
     #[test]
     fn request_device_identity() {
         assert_eq!(
-            EndpointDiscovery::try_from(&[0xF000_0101, 0x0000_001F][..])
+            EndpointDiscovery::try_from(&[0xF000_0101, 0x0000_001F, 0x0, 0x0][..])
                 .unwrap()
                 .request_device_identity(),
             true,
@@ -94,7 +94,7 @@ mod tests {
     #[test]
     fn request_endpoint_name() {
         assert_eq!(
-            EndpointDiscovery::try_from(&[0xF000_0101, 0x0000_001F][..])
+            EndpointDiscovery::try_from(&[0xF000_0101, 0x0000_001F, 0x0, 0x0][..])
                 .unwrap()
                 .request_endpoint_name(),
             true,
@@ -104,7 +104,7 @@ mod tests {
     #[test]
     fn request_product_instance_id() {
         assert_eq!(
-            EndpointDiscovery::try_from(&[0xF000_0101, 0x0000_001F][..])
+            EndpointDiscovery::try_from(&[0xF000_0101, 0x0000_001F, 0x0, 0x0][..])
                 .unwrap()
                 .request_product_instance_id(),
             true,
@@ -114,7 +114,7 @@ mod tests {
     #[test]
     fn request_stream_configuration() {
         assert_eq!(
-            EndpointDiscovery::try_from(&[0xF000_0101, 0x0000_001F][..])
+            EndpointDiscovery::try_from(&[0xF000_0101, 0x0000_001F, 0x0, 0x0][..])
                 .unwrap()
                 .request_stream_configuration(),
             true,
