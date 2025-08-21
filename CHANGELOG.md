@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.11.0](https://github.com/midi2-dev/bl-midi2-rs/compare/0.10.0..0.11.0) - 2025-08-21
+
+### ✨ Features
+
+- *(sysex)* Splicing payload data - ([3ce414c](https://github.com/midi2-dev/bl-midi2-rs/commit/3ce414c4576f82497518f5a8c7396126b628ea6d))
+
+### 🐛 Fixes
+
+- Ci | release start determines incorrect previous version - ([62499f5](https://github.com/midi2-dev/bl-midi2-rs/commit/62499f51907fb67e234946b964528a38a33800df))
+- Include trailing reserved bytes - ([6e224a9](https://github.com/midi2-dev/bl-midi2-rs/commit/6e224a92c9aab5595aa12a373b2996a831f33bdd))
+- Further clippy warnings - ([8bbee8b](https://github.com/midi2-dev/bl-midi2-rs/commit/8bbee8ba8932b13aa018befd98e88a6f8e0c68d1))
+- Readme file link - ([eaa0c41](https://github.com/midi2-dev/bl-midi2-rs/commit/eaa0c41e24c8e1f70a8a1168d93705b14e722907))
+
 ## [0.10.0](https://github.com/midi2-dev/bl-midi2-rs/compare/0.9.0..0.10.0) - 2025-07-27
 
 ### 🐛 Fixes
