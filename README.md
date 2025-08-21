@@ -18,7 +18,7 @@ for more details on the data protocol standard.
 > Expect breaking changes and bugs, and please report any issues you encounter.
 
 We would welcome contributions! 
-Please refer to the [CONTRIBUTOR.md](CONTRIBUTOR.md)
+Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## Strongly Typed Message Wrappers
 
@@ -163,7 +163,7 @@ You'll want to setup midi2 without default features to compile
 without the `std` feature.
 
 ```toml
-midi2 = { version = "0.10.0", default-features = false, features = ["channel-voice2", "sysex7"],  }
+midi2 = { version = "0.11.0", default-features = false, features = ["channel-voice2", "sysex7"],  }
 ```
 
 ### Generic Representation

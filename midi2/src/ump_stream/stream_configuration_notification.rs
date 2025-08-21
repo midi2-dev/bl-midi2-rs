@@ -6,7 +6,7 @@ use crate::{
 
 pub(crate) const STATUS: u16 = 0x6;
 
-#[midi2_proc::generate_message(Via(ump_stream::UmpStream), FixedSize, MinSizeUmp(1))]
+#[midi2_proc::generate_message(Via(ump_stream::UmpStream), FixedSize, MinSizeUmp(4))]
 struct StreamConfigurationNotification {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
@@ -42,7 +42,7 @@ mod tests {
     #[test]
     fn protocol() {
         assert_eq!(
-            StreamConfigurationNotification::try_from(&[0xF006_0203][..])
+            StreamConfigurationNotification::try_from(&[0xF006_0203, 0x0, 0x0, 0x0][..])
                 .unwrap()
                 .protocol(),
             0x2
@@ -52,7 +52,7 @@ mod tests {
     #[test]
     fn receive_jr_timestamps() {
         assert_eq!(
-            StreamConfigurationNotification::try_from(&[0xF006_0203][..])
+            StreamConfigurationNotification::try_from(&[0xF006_0203, 0x0, 0x0, 0x0][..])
                 .unwrap()
                 .receive_jr_timestamps(),
             true
@@ -62,7 +62,7 @@ mod tests {
     #[test]
     fn send_jr_timestamps() {
         assert_eq!(
-            StreamConfigurationNotification::try_from(&[0xF006_0203][..])
+            StreamConfigurationNotification::try_from(&[0xF006_0203, 0x0, 0x0, 0x0][..])
                 .unwrap()
                 .send_jr_timestamps(),
             true

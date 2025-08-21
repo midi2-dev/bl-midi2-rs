@@ -59,12 +59,13 @@ impl IntoByte<u8> for u8 {
     }
 }
 
-fn test_case<B, M>(data: &InputData, mut message: M, index: usize)
+fn test_case<B, M, R>(data: &InputData, mut message: M, range: R)
 where
     B: midi2::buffer::Buffer + midi2::buffer::BufferTryResize + midi2::buffer::BufferMut,
     M: midi2::Sysex<B>,
     <M as Sysex<B>>::Byte: Eq + core::fmt::Debug,
     u8: IntoByte<<M as Sysex<B>>::Byte>,
+    R: core::ops::RangeBounds<usize> + Clone,
 {
     let Ok(()) = message.try_set_payload(data.initial_data.iter().map(u8::byte)) else {
         return;
@@ -78,14 +79,16 @@ where
         );
     }
 
-    let Ok(()) = message.try_insert_payload(data.data_to_insert.iter().map(u8::byte), index) else {
+    let Ok(()) =
+        message.try_splice_payload(data.data_to_insert.iter().map(u8::byte), range.clone())
+    else {
         return;
     };
 
     let actual = message.payload().collect::<Vec<_>>();
     let expected = {
         let mut ret = data.initial_data.clone();
-        ret.splice(index..index, data.data_to_insert.clone());
+        ret.splice(range, data.data_to_insert.clone());
         ret.iter().map(u8::byte).collect::<Vec<_>>()
     };
     assert_eq!(actual, expected);
@@ -94,10 +97,18 @@ where
 fuzz_target!(|data: InputData| {
     let mut rng = rand::rngs::StdRng::seed_from_u64(data.seed);
     let fized_size_buffer_size = rng.random_range(4..MAX_BUFFER_SIZE);
-    let index = if data.initial_data.is_empty() {
-        0
-    } else {
-        rng.random_range(0..data.initial_data.len())
+    let range = {
+        if data.initial_data.is_empty() {
+            0..0
+        } else {
+            let lower = rng.random_range(0..data.initial_data.len());
+            if lower == data.initial_data.len() {
+                lower..lower
+            } else {
+                let upper = rng.random_range(lower..data.initial_data.len());
+                lower..upper
+            }
+        }
     };
     test_case(
         &data,
@@ -105,7 +116,7 @@ fuzz_target!(|data: InputData| {
             FixedSizeBuffer::<u32>::new(fized_size_buffer_size),
         )
         .unwrap(),
-        index,
+        range.clone(),
     );
     test_case(
         &data,
@@ -113,7 +124,7 @@ fuzz_target!(|data: InputData| {
             FixedSizeBuffer::<u32>::new(fized_size_buffer_size),
         )
         .unwrap(),
-        index,
+        range.clone(),
     );
     test_case(
         &data,
@@ -121,6 +132,6 @@ fuzz_target!(|data: InputData| {
             FixedSizeBuffer::<u8>::new(fized_size_buffer_size),
         )
         .unwrap(),
-        index,
+        range.clone(),
     );
 });

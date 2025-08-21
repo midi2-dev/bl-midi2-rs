@@ -392,23 +392,26 @@ impl<B: crate::buffer::Ump> Sysex<B> for Sysex8<B> {
             packet_index += 1;
         }
     }
-    fn insert_payload<D>(&mut self, data: D, index: usize)
+    fn splice_payload<D, R>(&mut self, data: D, range: R)
     where
         D: core::iter::Iterator<Item = Self::Byte>,
         B: crate::buffer::BufferMut + crate::buffer::BufferResize,
+        R: core::ops::RangeBounds<usize>,
     {
-        message_helpers::insert_sysex_data(self, data, index)
+        message_helpers::splice_sysex_data(self, data, range)
     }
-    fn try_insert_payload<D>(
+
+    fn try_splice_payload<D, R>(
         &mut self,
         data: D,
-        index: usize,
+        range: R,
     ) -> core::result::Result<(), crate::error::BufferOverflow>
     where
         D: core::iter::Iterator<Item = Self::Byte>,
         B: crate::buffer::BufferMut + crate::buffer::BufferTryResize,
+        R: core::ops::RangeBounds<usize>,
     {
-        message_helpers::try_insert_sysex_data(self, data, index)
+        message_helpers::try_splice_sysex_data(self, data, range)
     }
 }
 
@@ -1758,7 +1761,7 @@ mod tests {
     #[test]
     fn move_payload_tail_no_op() {
         let mut message = Sysex8::<std::vec::Vec<u32>>::new();
-        message.set_payload((0..20).chain(std::iter::repeat(0).take(20)));
+        message.set_payload((0..20).chain(core::iter::repeat_n(0, 20)));
         message.move_payload_tail(0, 0);
         let payload = message.payload().collect::<std::vec::Vec<u8>>();
         assert_eq!(payload.len(), 40);
@@ -1774,7 +1777,7 @@ mod tests {
     #[test]
     fn move_entire_payload_one_place() {
         let mut message = Sysex8::<std::vec::Vec<u32>>::new();
-        message.set_payload((0..20).chain(std::iter::repeat(0).take(20)));
+        message.set_payload((0..20).chain(core::iter::repeat_n(0, 20)));
         message.move_payload_tail(0, 1);
         let payload = message.payload().collect::<std::vec::Vec<u8>>();
         assert_eq!(payload.len(), 40);
@@ -1790,7 +1793,7 @@ mod tests {
     #[test]
     fn move_half_payload_one_place() {
         let mut message = Sysex8::<std::vec::Vec<u32>>::new();
-        message.set_payload((0..20).chain(std::iter::repeat(0).take(20)));
+        message.set_payload((0..20).chain(core::iter::repeat_n(0, 20)));
         message.move_payload_tail(10, 11);
         let payload = message.payload().collect::<std::vec::Vec<u8>>();
         assert_eq!(payload.len(), 40);
@@ -1806,7 +1809,7 @@ mod tests {
     #[test]
     fn move_half_payload_one_place_back() {
         let mut message = Sysex8::<std::vec::Vec<u32>>::new();
-        message.set_payload((0..20).chain(std::iter::repeat(0).take(20)));
+        message.set_payload((0..20).chain(core::iter::repeat_n(0, 20)));
         message.move_payload_tail(10, 9);
         let payload = message.payload().collect::<std::vec::Vec<u8>>();
         assert_eq!(payload.len(), 40);
@@ -1822,7 +1825,7 @@ mod tests {
     #[test]
     fn move_half_payload_to_front() {
         let mut message = Sysex8::<std::vec::Vec<u32>>::new();
-        message.set_payload((0..20).chain(std::iter::repeat(0).take(20)));
+        message.set_payload((0..20).chain(core::iter::repeat_n(0, 20)));
         message.move_payload_tail(10, 0);
         let payload = message.payload().collect::<std::vec::Vec<u8>>();
         assert_eq!(payload.len(), 40);
@@ -1838,7 +1841,7 @@ mod tests {
     #[test]
     fn move_end_to_front() {
         let mut message = Sysex8::<std::vec::Vec<u32>>::new();
-        message.set_payload((0..20).chain(std::iter::repeat(0).take(20)));
+        message.set_payload((0..20).chain(core::iter::repeat_n(0, 20)));
         message.move_payload_tail(30, 0);
         let payload = message.payload().collect::<std::vec::Vec<u8>>();
         assert_eq!(payload.len(), 40);
@@ -1982,5 +1985,89 @@ mod tests {
         message.try_set_payload(0..40).unwrap();
         message.try_set_payload(core::iter::empty()).unwrap();
         assert_eq!(message.payload_size(), 0);
+    }
+
+    #[test]
+    fn splice_payload_inserted_data_exceeds_replaced() {
+        let mut message = Sysex8::<std::vec::Vec<u32>>::new();
+        message.set_payload(0..20);
+        message.splice_payload(core::iter::repeat(0x6_u8).take(10), 5..10);
+        assert_eq!(
+            message.payload().collect::<std::vec::Vec<u8>>(),
+            std::vec![
+                0, 1, 2, 3, 4, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 10, 11, 12, 13, 14, 15, 16, 17, 18,
+                19,
+            ],
+        );
+    }
+
+    #[test]
+    fn splice_payload_inserted_data_less_than_replaced() {
+        let mut message = Sysex8::<std::vec::Vec<u32>>::new();
+        message.set_payload(0..20);
+        message.splice_payload(core::iter::repeat(0x6_u8).take(3), 5..10);
+        assert_eq!(
+            message.payload().collect::<std::vec::Vec<u8>>(),
+            std::vec![0, 1, 2, 3, 4, 6, 6, 6, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,],
+        );
+    }
+
+    #[test]
+    fn splice_payload_inserted_data_equal_in_length_to_replaced() {
+        let mut message = Sysex8::<std::vec::Vec<u32>>::new();
+        message.set_payload(0..20);
+        message.splice_payload(core::iter::repeat(0x6_u8).take(5), 5..10);
+        assert_eq!(
+            message.payload().collect::<std::vec::Vec<u8>>(),
+            std::vec![0, 1, 2, 3, 4, 6, 6, 6, 6, 6, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,],
+        );
+    }
+
+    #[test]
+    fn splice_rubbish_payload() {
+        use crate::detail::test_support::rubbish_payload_iterator::RubbishPayloadIterator;
+        let mut message = Sysex8::<std::vec::Vec<u32>>::new();
+        message.set_payload(0..20);
+        message.splice_payload(RubbishPayloadIterator::new(), 5..10);
+        assert_eq!(
+            message.payload().collect::<std::vec::Vec<u8>>(),
+            std::vec![
+                0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
+                19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39,
+                40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+            ],
+        );
+    }
+
+    #[test]
+    fn splice_rubbish_payload_at_the_end() {
+        use crate::detail::test_support::rubbish_payload_iterator::RubbishPayloadIterator;
+        let mut message = Sysex8::<std::vec::Vec<u32>>::new();
+        message.set_payload(0..20);
+        message.splice_payload(RubbishPayloadIterator::new(), 15..20);
+        assert_eq!(
+            message.payload().collect::<std::vec::Vec<u8>>(),
+            std::vec![
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+                11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+                32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49,
+            ],
+        );
+    }
+
+    #[test]
+    fn splice_rubbish_payload_at_the_start() {
+        use crate::detail::test_support::rubbish_payload_iterator::RubbishPayloadIterator;
+        let mut message = Sysex8::<std::vec::Vec<u32>>::new();
+        message.set_payload(0..20);
+        message.splice_payload(RubbishPayloadIterator::new(), 0..5);
+        assert_eq!(
+            message.payload().collect::<std::vec::Vec<u8>>(),
+            std::vec![
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+                23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43,
+                44, 45, 46, 47, 48, 49, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+            ],
+        );
     }
 }

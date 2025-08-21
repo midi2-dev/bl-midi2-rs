@@ -8,7 +8,7 @@ const STATUS: u8 = 0x2;
 /// MIDI 2.0 Flex Data Set Metronome Message
 ///
 /// See the [module docs](crate::flex_data) for more info.
-#[midi2_proc::generate_message(Via(crate::flex_data::FlexData), FixedSize, MinSizeUmp(3))]
+#[midi2_proc::generate_message(Via(crate::flex_data::FlexData), FixedSize, MinSizeUmp(4))]
 struct SetMetronome {
     #[property(common_properties::UmpMessageTypeProperty<UMP_MESSAGE_TYPE>)]
     ump_type: (),
@@ -81,7 +81,7 @@ mod tests {
     #[test]
     fn number_of_clocks_per_primary_click() {
         assert_eq!(
-            SetMetronome::try_from(&[0xD110_0002, 0x9B4A_FE56, 0xB81B_0000][..])
+            SetMetronome::try_from(&[0xD110_0002, 0x9B4A_FE56, 0xB81B_0000, 0x0][..])
                 .unwrap()
                 .number_of_clocks_per_primary_click(),
             0x9B,
@@ -91,7 +91,7 @@ mod tests {
     #[test]
     fn bar_accent1() {
         assert_eq!(
-            SetMetronome::try_from(&[0xD110_0002, 0x9B4A_FE56, 0xB81B_0000][..])
+            SetMetronome::try_from(&[0xD110_0002, 0x9B4A_FE56, 0xB81B_0000, 0x0][..])
                 .unwrap()
                 .bar_accent1(),
             0x4A,
@@ -101,7 +101,7 @@ mod tests {
     #[test]
     fn bar_accent2() {
         assert_eq!(
-            SetMetronome::try_from(&[0xD110_0002, 0x9B4A_FE56, 0xB81B_0000][..])
+            SetMetronome::try_from(&[0xD110_0002, 0x9B4A_FE56, 0xB81B_0000, 0x0][..])
                 .unwrap()
                 .bar_accent2(),
             0xFE,
@@ -111,7 +111,7 @@ mod tests {
     #[test]
     fn bar_accent3() {
         assert_eq!(
-            SetMetronome::try_from(&[0xD110_0002, 0x9B4A_FE56, 0xB81B_0000][..])
+            SetMetronome::try_from(&[0xD110_0002, 0x9B4A_FE56, 0xB81B_0000, 0x0][..])
                 .unwrap()
                 .bar_accent3(),
             0x56,
@@ -121,7 +121,7 @@ mod tests {
     #[test]
     fn number_of_subdivision_clicks1() {
         assert_eq!(
-            SetMetronome::try_from(&[0xD110_0002, 0x9B4A_FE56, 0xB81B_0000][..])
+            SetMetronome::try_from(&[0xD110_0002, 0x9B4A_FE56, 0xB81B_0000, 0x0][..])
                 .unwrap()
                 .number_of_subdivision_clicks1(),
             0xB8,
@@ -131,7 +131,7 @@ mod tests {
     #[test]
     fn number_of_subdivision_clicks2() {
         assert_eq!(
-            SetMetronome::try_from(&[0xD110_0002, 0x9B4A_FE56, 0xB81B_0000][..])
+            SetMetronome::try_from(&[0xD110_0002, 0x9B4A_FE56, 0xB81B_0000, 0x0][..])
                 .unwrap()
                 .number_of_subdivision_clicks2(),
             0x1B,
