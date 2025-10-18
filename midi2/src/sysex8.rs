@@ -1991,7 +1991,7 @@ mod tests {
     fn splice_payload_inserted_data_exceeds_replaced() {
         let mut message = Sysex8::<std::vec::Vec<u32>>::new();
         message.set_payload(0..20);
-        message.splice_payload(core::iter::repeat(0x6_u8).take(10), 5..10);
+        message.splice_payload(core::iter::repeat_n(0x6_u8, 10), 5..10);
         assert_eq!(
             message.payload().collect::<std::vec::Vec<u8>>(),
             std::vec![
@@ -2005,7 +2005,7 @@ mod tests {
     fn splice_payload_inserted_data_less_than_replaced() {
         let mut message = Sysex8::<std::vec::Vec<u32>>::new();
         message.set_payload(0..20);
-        message.splice_payload(core::iter::repeat(0x6_u8).take(3), 5..10);
+        message.splice_payload(core::iter::repeat_n(0x6_u8, 3), 5..10);
         assert_eq!(
             message.payload().collect::<std::vec::Vec<u8>>(),
             std::vec![0, 1, 2, 3, 4, 6, 6, 6, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,],
@@ -2016,7 +2016,7 @@ mod tests {
     fn splice_payload_inserted_data_equal_in_length_to_replaced() {
         let mut message = Sysex8::<std::vec::Vec<u32>>::new();
         message.set_payload(0..20);
-        message.splice_payload(core::iter::repeat(0x6_u8).take(5), 5..10);
+        message.splice_payload(core::iter::repeat_n(0x6_u8, 5), 5..10);
         assert_eq!(
             message.payload().collect::<std::vec::Vec<u8>>(),
             std::vec![0, 1, 2, 3, 4, 6, 6, 6, 6, 6, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,],
