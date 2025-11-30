@@ -18,7 +18,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Run tests
-      run: cargo test --verbose --all-features
+      run: cargo test --all-targets --verbose --all-features
+    - name: Run no features
+      run: cargo test --all-targets --verbose --no-default-features
 
   deny:
     runs-on: ubuntu-24.04

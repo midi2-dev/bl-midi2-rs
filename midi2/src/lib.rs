@@ -27,16 +27,73 @@ pub mod utility;
 pub mod buffer;
 pub mod error;
 
-mod detail;
+#[cfg(any(
+    feature = "channel-voice1",
+    feature = "channel-voice2",
+    feature = "ci",
+    feature = "flex-data",
+    feature = "sysex7",
+    feature = "sysex8",
+    feature = "system-common",
+    feature = "ump-stream",
+    feature = "utility"
+))]
 mod message;
+#[cfg(any(
+    feature = "channel-voice1",
+    feature = "channel-voice2",
+    feature = "ci",
+    feature = "flex-data",
+    feature = "sysex7",
+    feature = "sysex8",
+    feature = "system-common",
+    feature = "ump-stream",
+    feature = "utility"
+))]
 mod packet;
+#[cfg(any(
+    feature = "channel-voice1",
+    feature = "channel-voice2",
+    feature = "ci",
+    feature = "flex-data",
+    feature = "sysex7",
+    feature = "sysex8",
+    feature = "system-common",
+    feature = "ump-stream",
+    feature = "utility"
+))]
 mod packets;
+
+mod detail;
 mod traits;
 
 pub use ux;
 
+#[cfg(any(
+    feature = "channel-voice1",
+    feature = "channel-voice2",
+    feature = "ci",
+    feature = "flex-data",
+    feature = "sysex7",
+    feature = "sysex8",
+    feature = "system-common",
+    feature = "ump-stream",
+    feature = "utility"
+))]
 pub use message::*;
+#[cfg(any(
+    feature = "channel-voice1",
+    feature = "channel-voice2",
+    feature = "ci",
+    feature = "flex-data",
+    feature = "sysex7",
+    feature = "sysex8",
+    feature = "system-common",
+    feature = "ump-stream",
+    feature = "utility"
+))]
 pub use packets::*;
+
 pub use traits::*;
 
 pub mod num {
