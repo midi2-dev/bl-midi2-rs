@@ -15,7 +15,7 @@ repository = "https://github.com/midi2-dev/bl-midi2-rs.git"
 manual_div_ceil = "allow"
 
 [dependencies]
-derive_more = { version = "2.0.1", features = ["from"], default-features = false }
+derive_more = { version = "2.1.1", features = ["from", "deref"], default-features = false }
 fixed = "1.28.0"
 midi2_proc = { version = "0.11.0", path = "../midi2_proc" }
 ux = "0.1.6"
