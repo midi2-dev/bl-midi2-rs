@@ -41,7 +41,7 @@ impl<const N: usize> Into<NoteOn1<[u32; N]>> for NoteOn<[u32; N]> {
         message.set_note_number(self.note_number());
         match self.velocity() {
             0 => message.set_velocity(u7::new(0x01)),
-            _ => message.set_velocity(u7::new((self.velocity() >> 8).try_into().unwrap())),
+            _ => message.set_velocity(u7::new((self.velocity() >> 9) as u8)),
         }
         message
     }
@@ -122,15 +122,15 @@ mod tests {
         message2.set_group(u4::new(0x8));
         message2.set_channel(u4::new(0x8));
         message2.set_note_number(u7::new(0x5E));
-        message2.set_velocity(0x6A14);
+        message2.set_velocity(0x8000);
 
-        assert_eq!(message2, NoteOn([0x4898_5E00, 0x6A14_0000, 0x0, 0x0]),);
+        assert_eq!(message2, NoteOn([0x4898_5E00, 0x8000_0000, 0x0, 0x0]),);
 
         let mut message1 = NoteOn1::<[u32; 4]>::new();
         message1.set_group(u4::new(0x8));
         message1.set_channel(u4::new(0x8));
         message1.set_note_number(u7::new(0x5E));
-        message1.set_velocity(u7::new(0x6A));
+        message1.set_velocity(u7::new(0x40));
 
         let message21: NoteOn1<[u32; 4]> = message2.into();
 
