@@ -35,6 +35,10 @@ use crate::{
     traits::{Channeled, Grouped},
 };
 
+/// Converts a CV2 Note On message to a CV1 Note On message.
+/// Note: Due to 0 velocity Note On messages being considered
+/// a Note Off in CV1 but not in CV2, a 0 velocity CV2 message
+/// will be converted to a 1 velocity CV1 message.
 #[cfg(feature = "channel-voice1")]
 impl<const N: usize> Into<channel_voice1::NoteOn<[u32; N]>> for NoteOn<[u32; N]> {
     fn into(self) -> channel_voice1::NoteOn<[u32; N]> {
@@ -43,6 +47,10 @@ impl<const N: usize> Into<channel_voice1::NoteOn<[u32; N]>> for NoteOn<[u32; N]>
         message.set_channel(self.channel());
         message.set_note_number(self.note_number());
         match self.velocity() {
+            // Since 0 velocity doesn't trigger a note off in CV2 like in CV1,
+            // we need to convert 0 velocity in CV2 to 1 velocity in CV1.
+            // See MIDI 2.0 spec 7.4.2: MIDI 2.0 Note On Message -> Velocity
+            // for details.
             0 => message.set_velocity(u7::new(0x01)),
             _ => message.set_velocity(u7::new((self.velocity() >> 9) as u8)),
         }
