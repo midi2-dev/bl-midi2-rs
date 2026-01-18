@@ -7,8 +7,6 @@ use crate::{
     ux::{u4, u7},
 };
 
-use crate::traits::{Channeled, Grouped};
-use crate::{channel_voice1::NoteOn as NoteOn1, Data};
 pub(crate) const STATUS: u8 = 0b1001;
 
 /// MIDI 2.0 Channel Voice Note On Message
@@ -31,11 +29,16 @@ struct NoteOn {
     #[property(AttributeProperty)]
     attribute: Option<Attribute>,
 }
+#[cfg(feature = "channel-voice1")]
+use crate::{
+    channel_voice1,
+    traits::{Channeled, Grouped},
+};
 
 #[cfg(feature = "channel-voice1")]
-impl<const N: usize> Into<NoteOn1<[u32; N]>> for NoteOn<[u32; N]> {
-    fn into(self) -> NoteOn1<[u32; N]> {
-        let mut message = NoteOn1::<[u32; N]>::new();
+impl<const N: usize> Into<channel_voice1::NoteOn<[u32; N]>> for NoteOn<[u32; N]> {
+    fn into(self) -> channel_voice1::NoteOn<[u32; N]> {
+        let mut message = channel_voice1::NoteOn::<[u32; N]>::new();
         message.set_group(self.group());
         message.set_channel(self.channel());
         message.set_note_number(self.note_number());
@@ -126,13 +129,13 @@ mod tests {
 
         assert_eq!(message2, NoteOn([0x4898_5E00, 0x8000_0000, 0x0, 0x0]),);
 
-        let mut message1 = NoteOn1::<[u32; 4]>::new();
+        let mut message1 = channel_voice1::NoteOn::<[u32; 4]>::new();
         message1.set_group(u4::new(0x8));
         message1.set_channel(u4::new(0x8));
         message1.set_note_number(u7::new(0x5E));
         message1.set_velocity(u7::new(0x40));
 
-        let message21: NoteOn1<[u32; 4]> = message2.into();
+        let message21: channel_voice1::NoteOn<[u32; 4]> = message2.into();
 
         assert_eq!(message21, message1);
     }
@@ -149,13 +152,13 @@ mod tests {
 
         assert_eq!(message2, NoteOn([0x4898_5E00, 0x0000_0000, 0x0, 0x0]),);
 
-        let mut message1 = NoteOn1::<[u32; 4]>::new();
+        let mut message1 = channel_voice1::NoteOn::<[u32; 4]>::new();
         message1.set_group(u4::new(0x8));
         message1.set_channel(u4::new(0x8));
         message1.set_note_number(u7::new(0x5E));
         message1.set_velocity(u7::new(0x01));
 
-        let message21: NoteOn1<[u32; 4]> = message2.into();
+        let message21: channel_voice1::NoteOn<[u32; 4]> = message2.into();
 
         assert_eq!(message21, message1);
     }
