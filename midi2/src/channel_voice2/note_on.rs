@@ -32,7 +32,9 @@ struct NoteOn {
 #[cfg(feature = "channel-voice1")]
 use crate::traits::{Channeled, Grouped};
 
-/// Converts a CV2 Note On message to a CV1 Note On message.
+/// Converts a CV2 Note On message to CV1 Note On message,
+/// storing the result in a pre-instantiated CV1 Note On.
+///
 /// Note: Due to 0 velocity Note On messages being considered
 /// a Note Off in CV1 but not in CV2, a 0 velocity CV2 message
 /// will be converted to a 1 velocity CV1 message.
@@ -56,6 +58,28 @@ impl<
             _ => dest.set_velocity(u7::new((src.velocity() >> 9) as u8)),
         }
         dest
+    }
+}
+
+/// Converts a CV2 Note On message to a CV1 Note On message.
+/// This is only infallible for resizable buffers.
+/// For fixed size buffers, see the Into impl for (CV2, CV1).
+///
+/// Note: Due to 0 velocity Note On messages being considered
+/// a Note Off in CV1 but not in CV2, a 0 velocity CV2 message
+/// will be converted to a 1 velocity CV1 message.
+#[cfg(feature = "channel-voice1")]
+impl<
+        A: crate::buffer::Buffer<Unit = u32>,
+        B: crate::buffer::Buffer<Unit = u32>
+            + crate::buffer::BufferMut
+            + crate::buffer::BufferDefault
+            + crate::buffer::BufferResize,
+    > Into<crate::channel_voice1::NoteOn<B>> for NoteOn<A>
+{
+    fn into(self) -> crate::channel_voice1::NoteOn<B> {
+        let mut dest = crate::channel_voice1::NoteOn::<B>::new();
+        (self, dest).into()
     }
 }
 
@@ -130,6 +154,56 @@ mod tests {
     fn into_midi_1() {
         use crate::channel_voice1;
         use crate::traits::{Channeled, Grouped};
+        use std::vec::Vec;
+
+        let mut message2 = NoteOn::<[u32; 4]>::new();
+        message2.set_group(u4::new(0x8));
+        message2.set_channel(u4::new(0x8));
+        message2.set_note_number(u7::new(0x5E));
+        message2.set_velocity(0x8000);
+
+        assert_eq!(message2, NoteOn([0x4898_5E00, 0x8000_0000, 0x0, 0x0]),);
+
+        let mut message1 = channel_voice1::NoteOn::<Vec<u32>>::new();
+        message1.set_group(u4::new(0x8));
+        message1.set_channel(u4::new(0x8));
+        message1.set_note_number(u7::new(0x5E));
+        message1.set_velocity(u7::new(0x40));
+
+        let message21: channel_voice1::NoteOn<Vec<u32>> = message2.into();
+
+        assert_eq!(message21, message1);
+    }
+
+    #[test]
+    fn into_midi_1_zero_velocity() {
+        use crate::channel_voice1;
+        use crate::traits::{Channeled, Grouped};
+        use std::vec::Vec;
+
+        let mut message2 = NoteOn::<[u32; 4]>::new();
+        message2.set_group(u4::new(0x8));
+        message2.set_channel(u4::new(0x8));
+        message2.set_note_number(u7::new(0x5E));
+        message2.set_velocity(0x0000);
+
+        assert_eq!(message2, NoteOn([0x4898_5E00, 0x0000_0000, 0x0, 0x0]),);
+
+        let mut message1 = channel_voice1::NoteOn::<Vec<u32>>::new();
+        message1.set_group(u4::new(0x8));
+        message1.set_channel(u4::new(0x8));
+        message1.set_note_number(u7::new(0x5E));
+        message1.set_velocity(u7::new(0x01));
+
+        let message21: channel_voice1::NoteOn<Vec<u32>> = message2.into();
+
+        assert_eq!(message21, message1);
+    }
+
+    #[test]
+    fn into_midi_1_with_dest() {
+        use crate::channel_voice1;
+        use crate::traits::{Channeled, Grouped};
 
         let mut message2 = NoteOn::<[u32; 4]>::new();
         message2.set_group(u4::new(0x8));
@@ -145,14 +219,14 @@ mod tests {
         message1.set_note_number(u7::new(0x5E));
         message1.set_velocity(u7::new(0x40));
 
-        let mut message21 = channel_voice1::NoteOn::<[u32; 4]>::new();
+        let message21 = channel_voice1::NoteOn::<[u32; 4]>::new();
         let message21: channel_voice1::NoteOn<[u32; 4]> = (message2, message21).into();
 
         assert_eq!(message21, message1);
     }
 
     #[test]
-    fn into_midi_1_zero_velocity() {
+    fn into_midi_1_zero_velocity_with_dest() {
         use crate::channel_voice1;
         use crate::traits::{Channeled, Grouped};
 
@@ -170,7 +244,7 @@ mod tests {
         message1.set_note_number(u7::new(0x5E));
         message1.set_velocity(u7::new(0x01));
 
-        let mut message21 = channel_voice1::NoteOn::<[u32; 4]>::new();
+        let message21 = channel_voice1::NoteOn::<[u32; 4]>::new();
         let message21: channel_voice1::NoteOn<[u32; 4]> = (message2, message21).into();
 
         assert_eq!(message21, message1);
