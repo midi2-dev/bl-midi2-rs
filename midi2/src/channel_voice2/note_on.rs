@@ -29,8 +29,6 @@ struct NoteOn {
     #[property(AttributeProperty)]
     attribute: Option<Attribute>,
 }
-#[cfg(feature = "channel-voice1")]
-use crate::traits::{Channeled, Grouped};
 
 /// Converts a CV2 Note On message to CV1 Note On message,
 /// storing the result in a pre-instantiated CV1 Note On.
@@ -45,6 +43,8 @@ impl<
     > Into<crate::channel_voice1::NoteOn<B>> for (NoteOn<A>, crate::channel_voice1::NoteOn<B>)
 {
     fn into(self) -> crate::channel_voice1::NoteOn<B> {
+        use crate::traits::{Channeled, Grouped};
+
         let (src, mut dest) = self;
         dest.set_group(src.group());
         dest.set_channel(src.channel());
