@@ -30,31 +30,32 @@ struct NoteOn {
     attribute: Option<Attribute>,
 }
 #[cfg(feature = "channel-voice1")]
-use crate::{
-    channel_voice1,
-    traits::{Channeled, Grouped},
-};
+use crate::traits::{Channeled, Grouped};
 
 /// Converts a CV2 Note On message to a CV1 Note On message.
 /// Note: Due to 0 velocity Note On messages being considered
 /// a Note Off in CV1 but not in CV2, a 0 velocity CV2 message
 /// will be converted to a 1 velocity CV1 message.
 #[cfg(feature = "channel-voice1")]
-impl<const N: usize> Into<channel_voice1::NoteOn<[u32; N]>> for NoteOn<[u32; N]> {
-    fn into(self) -> channel_voice1::NoteOn<[u32; N]> {
-        let mut message = channel_voice1::NoteOn::<[u32; N]>::new();
-        message.set_group(self.group());
-        message.set_channel(self.channel());
-        message.set_note_number(self.note_number());
-        match self.velocity() {
+impl<
+        A: crate::buffer::Buffer<Unit = u32>,
+        B: crate::buffer::Buffer<Unit = u32> + crate::buffer::BufferMut,
+    > Into<crate::channel_voice1::NoteOn<B>> for (NoteOn<A>, crate::channel_voice1::NoteOn<B>)
+{
+    fn into(self) -> crate::channel_voice1::NoteOn<B> {
+        let (src, mut dest) = self;
+        dest.set_group(src.group());
+        dest.set_channel(src.channel());
+        dest.set_note_number(src.note_number());
+        match src.velocity() {
             // Since 0 velocity doesn't trigger a note off in CV2 like in CV1,
             // we need to convert 0 velocity in CV2 to 1 velocity in CV1.
             // See MIDI 2.0 spec 7.4.2: MIDI 2.0 Note On Message -> Velocity
             // for details.
-            0 => message.set_velocity(u7::new(0x01)),
-            _ => message.set_velocity(u7::new((self.velocity() >> 9) as u8)),
+            0 => dest.set_velocity(u7::new(0x01)),
+            _ => dest.set_velocity(u7::new((src.velocity() >> 9) as u8)),
         }
-        message
+        dest
     }
 }
 
@@ -127,6 +128,7 @@ mod tests {
 
     #[test]
     fn into_midi_1() {
+        use crate::channel_voice1;
         use crate::traits::{Channeled, Grouped};
 
         let mut message2 = NoteOn::<[u32; 4]>::new();
@@ -143,13 +145,15 @@ mod tests {
         message1.set_note_number(u7::new(0x5E));
         message1.set_velocity(u7::new(0x40));
 
-        let message21: channel_voice1::NoteOn<[u32; 4]> = message2.into();
+        let mut message21 = channel_voice1::NoteOn::<[u32; 4]>::new();
+        let message21: channel_voice1::NoteOn<[u32; 4]> = (message2, message21).into();
 
         assert_eq!(message21, message1);
     }
 
     #[test]
     fn into_midi_1_zero_velocity() {
+        use crate::channel_voice1;
         use crate::traits::{Channeled, Grouped};
 
         let mut message2 = NoteOn::<[u32; 4]>::new();
@@ -166,7 +170,8 @@ mod tests {
         message1.set_note_number(u7::new(0x5E));
         message1.set_velocity(u7::new(0x01));
 
-        let message21: channel_voice1::NoteOn<[u32; 4]> = message2.into();
+        let mut message21 = channel_voice1::NoteOn::<[u32; 4]>::new();
+        let message21: channel_voice1::NoteOn<[u32; 4]> = (message2, message21).into();
 
         assert_eq!(message21, message1);
     }
