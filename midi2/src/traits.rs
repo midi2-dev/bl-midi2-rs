@@ -745,7 +745,7 @@ mod conversion {
             let min: u32 = Self::min_value().into();
             let max: u32 = Self::max_value().into();
 
-            ((max - min) / 2_u32)
+            ((max - min) / 2_u32 + 1)
                 .try_into()
                 .expect("Center shouldn't be larger than max.")
         }
@@ -915,11 +915,11 @@ mod conversion {
 
         #[test]
         fn test_centers_upscaling() {
-            let center_u7 = ux::u7::new(63);
-            let center_u9 = ux::u9::new(255);
-            let center_u14 = ux::u14::new(8191);
-            let center_u16 = 0x7FFF_u16;
-            let center_u32 = 0x7FFFFFFF_u32;
+            let center_u7 = ux::u7::new(0x40);
+            let center_u9 = ux::u9::new(256);
+            let center_u14 = ux::u14::new(8192);
+            let center_u16 = 0x8000_u16;
+            let center_u32 = 0x80000000_u32;
 
             assert_eq!(center_u7.upscale::<ux::u7>(), center_u7);
             assert_eq!(center_u7.upscale::<ux::u9>(), center_u9);
