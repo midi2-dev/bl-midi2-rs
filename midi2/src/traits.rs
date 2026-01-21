@@ -862,7 +862,6 @@ mod conversion {
                             }
                         };
                     }
-                    std::dbg!(upscaled, initial, repeating);
                     upscaled
                 }
 
