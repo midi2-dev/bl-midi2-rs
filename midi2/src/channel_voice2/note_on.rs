@@ -40,12 +40,13 @@ struct NoteOn {
 impl<
         A: crate::buffer::Buffer<Unit = u32>,
         B: crate::buffer::Buffer<Unit = u32> + crate::buffer::BufferMut,
-    > Into<crate::channel_voice1::NoteOn<B>> for (NoteOn<A>, crate::channel_voice1::NoteOn<B>)
+    > From<(NoteOn<A>, crate::channel_voice1::NoteOn<B>)> for crate::channel_voice1::NoteOn<B>
 {
-    fn into(self) -> crate::channel_voice1::NoteOn<B> {
+    fn from(val: (NoteOn<A>, crate::channel_voice1::NoteOn<B>)) -> Self {
+        use crate::traits::conversion::MinCenterMax;
         use crate::traits::{Channeled, Grouped};
 
-        let (src, mut dest) = self;
+        let (src, mut dest) = val;
         dest.set_group(src.group());
         dest.set_channel(src.channel());
         dest.set_note_number(src.note_number());
@@ -55,7 +56,7 @@ impl<
             // See MIDI 2.0 spec 7.4.2: MIDI 2.0 Note On Message -> Velocity
             // for details.
             0 => dest.set_velocity(u7::new(0x01)),
-            _ => dest.set_velocity(u7::new((src.velocity() >> 9) as u8)),
+            _ => dest.set_velocity(src.velocity().downscale::<ux::u7>()),
         }
         dest
     }
@@ -75,11 +76,11 @@ impl<
             + crate::buffer::BufferMut
             + crate::buffer::BufferDefault
             + crate::buffer::BufferResize,
-    > Into<crate::channel_voice1::NoteOn<B>> for NoteOn<A>
+    > From<NoteOn<A>> for crate::channel_voice1::NoteOn<B>
 {
-    fn into(self) -> crate::channel_voice1::NoteOn<B> {
+    fn from(val: NoteOn<A>) -> Self {
         let dest = crate::channel_voice1::NoteOn::<B>::new();
-        (self, dest).into()
+        (val, dest).into()
     }
 }
 

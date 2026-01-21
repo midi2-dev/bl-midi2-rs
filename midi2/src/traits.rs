@@ -732,18 +732,19 @@ pub(crate) trait BufferAccess<B: Buffer> {
         B: BufferMut;
 }
 
-mod conversion {
+#[allow(dead_code)]
+pub(crate) mod conversion {
     pub(crate) trait Center:
         Into<u32> + TryFrom<u32> + Sized + Copy + PartialEq + PartialOrd
     where
         <Self as TryFrom<u32>>::Error: core::fmt::Debug,
     {
-        fn min_value() -> Self;
-        fn max_value() -> Self;
+        const MIN: Self;
+        const MAX: Self;
 
         fn center_value() -> Self {
-            let min: u32 = Self::min_value().into();
-            let max: u32 = Self::max_value().into();
+            let min: u32 = Self::MIN.into();
+            let max: u32 = Self::MAX.into();
 
             ((max - min) / 2_u32 + 1)
                 .try_into()
@@ -752,48 +753,28 @@ mod conversion {
     }
 
     impl Center for ux::u7 {
-        fn min_value() -> Self {
-            Self::min_value()
-        }
-        fn max_value() -> Self {
-            Self::max_value()
-        }
+        const MIN: Self = Self::MIN;
+        const MAX: Self = Self::MAX;
     }
 
     impl Center for ux::u9 {
-        fn min_value() -> Self {
-            Self::min_value()
-        }
-        fn max_value() -> Self {
-            Self::max_value()
-        }
+        const MIN: Self = Self::MIN;
+        const MAX: Self = Self::MAX;
     }
 
     impl Center for ux::u14 {
-        fn min_value() -> Self {
-            Self::min_value()
-        }
-        fn max_value() -> Self {
-            Self::max_value()
-        }
+        const MIN: Self = Self::MIN;
+        const MAX: Self = Self::MAX;
     }
 
     impl Center for u16 {
-        fn min_value() -> Self {
-            Self::min_value()
-        }
-        fn max_value() -> Self {
-            Self::max_value()
-        }
+        const MIN: Self = Self::MIN;
+        const MAX: Self = Self::MAX;
     }
 
     impl Center for u32 {
-        fn min_value() -> Self {
-            Self::min_value()
-        }
-        fn max_value() -> Self {
-            Self::max_value()
-        }
+        const MIN: Self = Self::MIN;
+        const MAX: Self = Self::MAX;
     }
 
     pub(crate) trait MinCenterMax: Center + core::ops::Shr<u32>
@@ -806,44 +787,42 @@ mod conversion {
                 + core::ops::Add<Output = U>
                 + core::ops::BitAnd<Output = U>
                 + core::fmt::Debug
-                + core::ops::BitOr<Output = U>,
+                + core::ops::BitOr<Output = U>
+                + core::ops::Shr<u32, Output = U>
+                + core::ops::Shl<u32, Output = U>,
         >(
             self,
         ) -> U
         where
             Self: Into<U>,
-            U: core::ops::Shr<u32, Output = U>,
-            U: core::ops::Shl<u32, Output = U>,
-            U: From<<U as core::ops::Shl<u32>>::Output>,
             <U as TryFrom<u32>>::Error: core::fmt::Debug,
         {
-            let min = Self::min_value();
+            let min = Self::MIN;
             let center = Self::center_value();
-            let max = Self::max_value();
+            let max = Self::MAX;
 
             match self {
-                s if s == min => U::min_value(),
-                s if s == max => U::max_value(),
+                s if s == min => U::MIN,
+                s if s == max => U::MAX,
                 s if s == center => U::center_value(),
 
                 s if (min..center).contains(&s) => {
-                    let self_max: u32 = Self::max_value().into();
-                    let other_max: u32 = U::max_value().into();
+                    let self_max: u32 = Self::MAX.into();
+                    let other_max: u32 = U::MAX.into();
                     let shift = (other_max - self_max).count_ones();
                     let other: U = self.into();
-                    let upscaled = other << shift;
-                    upscaled
+                    other << shift
                 }
 
                 s if (center..max).contains(&s) => {
-                    let self_max: u32 = Self::max_value().into();
-                    let other_max: u32 = U::max_value().into();
+                    let self_max: u32 = Self::MAX.into();
+                    let other_max: u32 = U::MAX.into();
                     let self_bits = self_max.count_ones();
                     let other_bits = other_max.count_ones();
                     let shift = self_bits - 1;
 
                     let initial: U = self.into();
-                    let initial_mask = U::max_value() >> (other_bits - self_bits + 1);
+                    let initial_mask = U::MAX >> (other_bits - self_bits + 1);
                     let repeating = initial & initial_mask;
 
                     let mut upscaled = initial;
@@ -874,8 +853,8 @@ mod conversion {
             <U as TryFrom<u32>>::Error: core::fmt::Debug,
             <U as TryFrom<Self>>::Error: core::fmt::Debug,
         {
-            let self_max: u32 = Self::max_value().into();
-            let other_max: u32 = U::max_value().into();
+            let self_max: u32 = Self::MAX.into();
+            let other_max: u32 = U::MAX.into();
             let shift = (self_max - other_max).count_ones();
             let downscaled = self >> shift;
             let downscaled: Self = downscaled.into();
