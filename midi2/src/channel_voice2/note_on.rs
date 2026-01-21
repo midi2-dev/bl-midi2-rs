@@ -78,7 +78,7 @@ impl<
     > Into<crate::channel_voice1::NoteOn<B>> for NoteOn<A>
 {
     fn into(self) -> crate::channel_voice1::NoteOn<B> {
-        let mut dest = crate::channel_voice1::NoteOn::<B>::new();
+        let dest = crate::channel_voice1::NoteOn::<B>::new();
         (self, dest).into()
     }
 }
