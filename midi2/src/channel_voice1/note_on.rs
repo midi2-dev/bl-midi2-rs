@@ -63,7 +63,7 @@ impl<
             // See MIDI 2.0 spec 7.4.2: MIDI 2.0 Note On Message -> Velocity
             // for details.
             0 => dest.set_velocity(ux::u7::new(0x01)),
-            _ => dest.set_velocity(src.velocity().downscale::<ux::u7>()),
+            _ => dest.set_velocity(src.velocity().mcm_downscale::<ux::u7>()),
         }
         dest
     }
