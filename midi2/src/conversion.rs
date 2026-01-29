@@ -318,5 +318,34 @@ pub(crate) mod conversion {
 
             assert_eq!(lower_u7.downscale::<ux::u7>(), lower_u7);
         }
+
+        #[test]
+        fn test_centers_downscaling() {
+            let center_u7 = ux::u7::new(0x40);
+            let center_u9 = ux::u9::new(256);
+            let center_u14 = ux::u14::new(8192);
+            let center_u16 = 0x8000_u16;
+            let center_u32 = 0x80000000_u32;
+
+            assert_eq!(center_u32.downscale::<ux::u7>(), center_u7);
+            assert_eq!(center_u32.downscale::<ux::u9>(), center_u9);
+            assert_eq!(center_u32.downscale::<ux::u14>(), center_u14);
+            assert_eq!(center_u32.downscale::<u16>(), center_u16);
+            assert_eq!(center_u32.downscale::<u32>(), center_u32);
+
+            assert_eq!(center_u16.downscale::<ux::u7>(), center_u7);
+            assert_eq!(center_u16.downscale::<ux::u9>(), center_u9);
+            assert_eq!(center_u16.downscale::<ux::u14>(), center_u14);
+            assert_eq!(center_u16.downscale::<u16>(), center_u16);
+
+            assert_eq!(center_u14.downscale::<ux::u7>(), center_u7);
+            assert_eq!(center_u14.downscale::<ux::u9>(), center_u9);
+            assert_eq!(center_u14.downscale::<ux::u14>(), center_u14);
+
+            assert_eq!(center_u9.downscale::<ux::u7>(), center_u7);
+            assert_eq!(center_u9.downscale::<ux::u9>(), center_u9);
+
+            assert_eq!(center_u7.downscale::<ux::u7>(), center_u7);
+        }
     }
 }
