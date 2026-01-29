@@ -347,5 +347,77 @@ pub(crate) mod conversion {
 
             assert_eq!(center_u7.downscale::<ux::u7>(), center_u7);
         }
+
+        #[test]
+        fn test_mins_downscaling() {
+            let min_u7 = ux::u7::new(0);
+            let min_u9 = ux::u9::new(0);
+            let min_u14 = ux::u14::new(0);
+            let min_u16 = 0_u16;
+            let min_u32 = 0_u32;
+
+            assert_eq!(min_u32.downscale::<ux::u7>(), min_u7);
+            assert_eq!(min_u32.downscale::<ux::u9>(), min_u9);
+            assert_eq!(min_u32.downscale::<ux::u14>(), min_u14);
+            assert_eq!(min_u32.downscale::<u16>(), min_u16);
+            assert_eq!(min_u32.downscale::<u32>(), min_u32);
+
+            assert_eq!(min_u16.downscale::<ux::u7>(), min_u7);
+            assert_eq!(min_u16.downscale::<ux::u9>(), min_u9);
+            assert_eq!(min_u16.downscale::<ux::u14>(), min_u14);
+            assert_eq!(min_u16.downscale::<u16>(), min_u16);
+
+            assert_eq!(min_u14.downscale::<ux::u7>(), min_u7);
+            assert_eq!(min_u14.downscale::<ux::u9>(), min_u9);
+            assert_eq!(min_u14.downscale::<ux::u14>(), min_u14);
+
+            assert_eq!(min_u9.downscale::<ux::u7>(), min_u7);
+            assert_eq!(min_u9.downscale::<ux::u9>(), min_u9);
+
+            assert_eq!(min_u7.downscale::<ux::u7>(), min_u7);
+        }
+
+        #[test]
+        fn test_maxs_downscaling() {
+            let max_u7 = ux::u7::new(127);
+            let max_u9 = ux::u9::new(511);
+            let max_u14 = ux::u14::new(16383);
+            let max_u16 = 0xFFFF_u16;
+            let max_u32 = 0xFFFFFFFF_u32;
+
+            assert_eq!(max_u32.downscale::<ux::u7>(), max_u7);
+            assert_eq!(max_u32.downscale::<ux::u9>(), max_u9);
+            assert_eq!(max_u32.downscale::<ux::u14>(), max_u14);
+            assert_eq!(max_u32.downscale::<u16>(), max_u16);
+            assert_eq!(max_u32.downscale::<u32>(), max_u32);
+
+            assert_eq!(max_u16.downscale::<ux::u7>(), max_u7);
+            assert_eq!(max_u16.downscale::<ux::u9>(), max_u9);
+            assert_eq!(max_u16.downscale::<ux::u14>(), max_u14);
+            assert_eq!(max_u16.downscale::<u16>(), max_u16);
+
+            assert_eq!(max_u14.downscale::<ux::u7>(), max_u7);
+            assert_eq!(max_u14.downscale::<ux::u9>(), max_u9);
+            assert_eq!(max_u14.downscale::<ux::u14>(), max_u14);
+
+            assert_eq!(max_u9.downscale::<ux::u7>(), max_u7);
+            assert_eq!(max_u9.downscale::<ux::u9>(), max_u9);
+
+            assert_eq!(max_u7.downscale::<ux::u7>(), max_u7);
+        }
+
+        #[test]
+        fn test_example_downscaling() {
+            let examples = [
+                (5120_u16.downscale::<ux::u7>(), ux::u7::new(10)),
+                (32768_u16.downscale::<ux::u7>(), ux::u7::new(64)),
+                (44730_u16.downscale::<ux::u7>(), ux::u7::new(87)),
+                (65535_u16.downscale::<ux::u7>(), ux::u7::new(127)),
+            ];
+
+            for (input, expected) in examples {
+                assert_eq!(input, expected);
+            }
+        }
     }
 }
