@@ -50,7 +50,7 @@ impl<
     > From<(crate::channel_voice2::NoteOn<A>, NoteOn<B>)> for NoteOn<B>
 {
     fn from(val: (crate::channel_voice2::NoteOn<A>, NoteOn<B>)) -> Self {
-        use crate::conversion::conversion::MinCenterMax;
+        use crate::conversion::MinCenterMax;
         use crate::traits::{Channeled, Grouped};
 
         let (src, mut dest) = val;
