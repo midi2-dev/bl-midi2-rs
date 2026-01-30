@@ -137,6 +137,7 @@ where
 
 pub(crate) trait ZeroExtensionScaling: Center
 where
+    Self: core::ops::Add,
     <Self as TryFrom<u32>>::Error: core::fmt::Debug,
 {
     fn ze_upscale<U: Center>(&self) -> U
@@ -152,6 +153,42 @@ where
 
         ze_upscaled.try_into().expect("Upscaling should not fail.")
     }
+
+    fn ze_downscale<U: Center + TryFrom<Self>>(self) -> U
+    where
+        Self: core::fmt::Debug,
+        Self: core::ops::Div<Self, Output = Self>,
+        Self: core::ops::Shr<u32, Output = Self>,
+        Self: core::ops::Add<Self, Output = Self>,
+        <U as TryFrom<u32>>::Error: core::fmt::Debug,
+        <U as TryFrom<Self>>::Error: core::fmt::Debug,
+    {
+        let min = Self::MIN;
+        let center = Self::center_value();
+        let max = Self::MAX;
+
+        match self {
+            s if s == min => U::MIN,
+            s if s == max => U::MAX,
+            s if s == center => U::center_value(),
+            _ => {
+                let self_u64: u64 = self.into().into();
+                let self_max: u64 = Self::MAX.into().into();
+                let other_max: u64 = U::MAX.into().into();
+                let shift: u32 = (self_max - other_max).count_ones().into();
+                let half_scale_range: u64 = (1_u32 << (shift - 1_u32)).into();
+                let shifted = (self_u64 + half_scale_range) >> shift;
+
+                match TryInto::<u32>::try_into(shifted) {
+                    Ok(ds) => match TryInto::<U>::try_into(ds) {
+                        Ok(ds) => ds,
+                        _ => U::MAX,
+                    },
+                    _ => U::MAX,
+                }
+            }
+        }
+    }
 }
 
 impl<U: Center + core::ops::Shr<u32>> MinCenterMax for U
@@ -161,7 +198,7 @@ where
 {
 }
 
-impl<U: Center + core::ops::Shr<u32>> ZeroExtensionScaling for U
+impl<U: Center + core::ops::Shr<u32> + core::ops::Add> ZeroExtensionScaling for U
 where
     <U as TryFrom<u32>>::Error: core::fmt::Debug,
     <U as core::ops::Shr<u32>>::Output: Into<U>,
@@ -462,6 +499,23 @@ mod tests {
         ];
 
         for (input, expected) in examples {
+            assert_eq!(input, expected);
+        }
+    }
+
+    #[test]
+    fn test_ze_example_downscaling() {
+        let examples = [
+            (5120_u16.ze_downscale::<ux::u7>(), ux::u7::new(10)),
+            (5631_u16.ze_downscale::<ux::u7>(), ux::u7::new(11)),
+            (32768_u16.ze_downscale::<ux::u7>(), ux::u7::new(64)),
+            (44544_u16.ze_downscale::<ux::u7>(), ux::u7::new(87)),
+            (44730_u16.ze_downscale::<ux::u7>(), ux::u7::new(87)),
+            (44800_u16.ze_downscale::<ux::u7>(), ux::u7::new(88)),
+        ];
+
+        for (input, expected) in examples {
+            std::dbg!(input, expected);
             assert_eq!(input, expected);
         }
     }
