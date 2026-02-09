@@ -37,23 +37,6 @@ struct NoteOff {
     velocity: crate::ux::u7,
 }
 
-// #[midi2_proc::generate_message(Grouped, Channeled)]
-// struct NoteOff {
-//     ump_type: Property<
-//         NumericalConstant<MIDI1_CHANNEL_VOICE_TYPE>,
-//         UmpSchema<0xF000_0000, 0x0, 0x0, 0x0>,
-//         (),
-//     >,
-//     status: Property<
-//         NumericalConstant<OP_CODE>,
-//         UmpSchema<0x00F0_0000, 0x0, 0x0, 0x0>,
-//         BytesSchema<0xF0, 0x0, 0x0>,
-//     >,
-//     channel: Property<u4, UmpSchema<0x000F_0000, 0x0, 0x0, 0x0>, BytesSchema<0x0F, 0x0, 0x0>>,
-//     note_number: Property<u7, UmpSchema<0x0000_7F00, 0x0, 0x0, 0x0>, BytesSchema<0x0, 0x7F, 0x0>>,
-//     velocity: Property<u7, UmpSchema<0x0000_007F, 0x0, 0x0, 0x0>, BytesSchema<0x0, 0x0, 0x7F>>,
-// }
-
 #[cfg(test)]
 mod tests {
     use super::*;
