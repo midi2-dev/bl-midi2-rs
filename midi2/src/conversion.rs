@@ -16,6 +16,9 @@ where
     }
 }
 
+trait Uxs {}
+impl Uxs for ux::u7 {}
+
 impl Center for ux::u7 {
     const MIN: Self = Self::MIN;
     const MAX: Self = Self::MAX;
@@ -157,7 +160,6 @@ where
     fn ze_downscale<U: Center + TryFrom<Self>>(self) -> U
     where
         Self: core::fmt::Debug,
-        Self: core::ops::Div<Self, Output = Self>,
         Self: core::ops::Shr<u32, Output = Self>,
         Self: core::ops::Add<Self, Output = Self>,
         <U as TryFrom<u32>>::Error: core::fmt::Debug,
@@ -490,17 +492,114 @@ mod tests {
     }
 
     #[test]
-    fn test_ze_example_upscaling() {
-        let examples = [
-            (ux::u7::new(10).ze_upscale::<u16>(), 5120_u16),
-            (ux::u7::new(64).ze_upscale::<u16>(), 32768_u16),
-            (ux::u7::new(87).ze_upscale::<u16>(), 44544_u16),
-            (ux::u7::new(127).ze_upscale::<u16>(), 65024_u16),
-        ];
+    fn test_ze_centers_downscaling() {
+        let center_u7 = ux::u7::new(0x40);
+        let center_u9 = ux::u9::new(256);
+        let center_u14 = ux::u14::new(8192);
+        let center_u25 = ux::u25::new(0x0100_0000);
+        let center_u16 = 0x8000_u16;
+        let center_u32 = 0x80000000_u32;
 
-        for (input, expected) in examples {
-            assert_eq!(input, expected);
-        }
+        assert_eq!(center_u32.ze_downscale::<ux::u7>(), center_u7);
+        assert_eq!(center_u32.ze_downscale::<ux::u9>(), center_u9);
+        assert_eq!(center_u32.ze_downscale::<ux::u14>(), center_u14);
+        assert_eq!(center_u32.ze_downscale::<ux::u25>(), center_u25);
+        assert_eq!(center_u32.ze_downscale::<u16>(), center_u16);
+        assert_eq!(center_u32.ze_downscale::<u32>(), center_u32);
+
+        assert_eq!(center_u25.ze_downscale::<ux::u7>(), center_u7);
+        assert_eq!(center_u25.ze_downscale::<ux::u9>(), center_u9);
+        assert_eq!(center_u25.ze_downscale::<ux::u14>(), center_u14);
+        assert_eq!(center_u25.ze_downscale::<u16>(), center_u16);
+        assert_eq!(center_u25.ze_downscale::<ux::u25>(), center_u25);
+
+        assert_eq!(center_u16.ze_downscale::<ux::u7>(), center_u7);
+        assert_eq!(center_u16.ze_downscale::<ux::u9>(), center_u9);
+        assert_eq!(center_u16.ze_downscale::<ux::u14>(), center_u14);
+        assert_eq!(center_u16.ze_downscale::<u16>(), center_u16);
+
+        assert_eq!(center_u14.ze_downscale::<ux::u7>(), center_u7);
+        assert_eq!(center_u14.ze_downscale::<ux::u9>(), center_u9);
+        assert_eq!(center_u14.ze_downscale::<ux::u14>(), center_u14);
+
+        assert_eq!(center_u9.ze_downscale::<ux::u7>(), center_u7);
+        assert_eq!(center_u9.ze_downscale::<ux::u9>(), center_u9);
+
+        assert_eq!(center_u7.ze_downscale::<ux::u7>(), center_u7);
+    }
+
+    #[test]
+    fn test_ze_mins_downscaling() {
+        let min_u7 = ux::u7::new(0);
+        let min_u9 = ux::u9::new(0);
+        let min_u14 = ux::u14::new(0);
+        let min_u25 = ux::u25::new(0);
+        let min_u16 = 0_u16;
+        let min_u32 = 0_u32;
+
+        assert_eq!(min_u32.ze_downscale::<ux::u7>(), min_u7);
+        assert_eq!(min_u32.ze_downscale::<ux::u9>(), min_u9);
+        assert_eq!(min_u32.ze_downscale::<ux::u14>(), min_u14);
+        assert_eq!(min_u32.ze_downscale::<ux::u25>(), min_u25);
+        assert_eq!(min_u32.ze_downscale::<u16>(), min_u16);
+        assert_eq!(min_u32.ze_downscale::<u32>(), min_u32);
+
+        assert_eq!(min_u16.ze_downscale::<ux::u7>(), min_u7);
+        assert_eq!(min_u16.ze_downscale::<ux::u9>(), min_u9);
+        assert_eq!(min_u16.ze_downscale::<ux::u14>(), min_u14);
+        assert_eq!(min_u16.ze_downscale::<u16>(), min_u16);
+
+        assert_eq!(min_u14.ze_downscale::<ux::u7>(), min_u7);
+        assert_eq!(min_u14.ze_downscale::<ux::u9>(), min_u9);
+        assert_eq!(min_u14.ze_downscale::<ux::u14>(), min_u14);
+
+        assert_eq!(min_u25.ze_downscale::<ux::u7>(), min_u7);
+        assert_eq!(min_u25.ze_downscale::<ux::u9>(), min_u9);
+        assert_eq!(min_u25.ze_downscale::<ux::u14>(), min_u14);
+        assert_eq!(min_u25.ze_downscale::<u16>(), min_u16);
+        assert_eq!(min_u25.ze_downscale::<ux::u25>(), min_u25);
+
+        assert_eq!(min_u9.ze_downscale::<ux::u7>(), min_u7);
+        assert_eq!(min_u9.ze_downscale::<ux::u9>(), min_u9);
+
+        assert_eq!(min_u7.ze_downscale::<ux::u7>(), min_u7);
+    }
+
+    #[test]
+    fn test_ze_maxs_downscaling() {
+        let max_u7 = ux::u7::new(127);
+        let max_u9 = ux::u9::new(511);
+        let max_u14 = ux::u14::new(16383);
+        let max_u25 = ux::u25::new(0x1FFFFFF);
+        let max_u16 = 0xFFFF_u16;
+        let max_u32 = 0xFFFFFFFF_u32;
+
+        assert_eq!(max_u32.ze_downscale::<ux::u7>(), max_u7);
+        assert_eq!(max_u32.ze_downscale::<ux::u9>(), max_u9);
+        assert_eq!(max_u32.ze_downscale::<ux::u14>(), max_u14);
+        assert_eq!(max_u32.ze_downscale::<ux::u25>(), max_u25);
+        assert_eq!(max_u32.ze_downscale::<u16>(), max_u16);
+        assert_eq!(max_u32.ze_downscale::<u32>(), max_u32);
+
+        assert_eq!(max_u25.ze_downscale::<ux::u7>(), max_u7);
+        assert_eq!(max_u25.ze_downscale::<ux::u9>(), max_u9);
+        assert_eq!(max_u25.ze_downscale::<ux::u14>(), max_u14);
+        assert_eq!(max_u25.ze_downscale::<u16>(), max_u16);
+        assert_eq!(max_u25.ze_downscale::<ux::u25>(), max_u25);
+
+        assert_eq!(max_u16.ze_downscale::<ux::u7>(), max_u7);
+        assert_eq!(max_u16.ze_downscale::<ux::u9>(), max_u9);
+        assert_eq!(max_u16.ze_downscale::<ux::u14>(), max_u14);
+        assert_eq!(max_u16.ze_downscale::<u16>(), max_u16);
+
+        assert_eq!(max_u14.ze_downscale::<ux::u7>(), max_u7);
+        assert_eq!(max_u14.ze_downscale::<ux::u9>(), max_u9);
+        assert_eq!(max_u14.ze_downscale::<ux::u14>(), max_u14);
+
+        assert_eq!(max_u9.ze_downscale::<ux::u7>(), max_u7);
+        assert_eq!(max_u9.ze_downscale::<ux::u9>(), max_u9);
+
+        assert_eq!(max_u7.ze_downscale::<ux::u7>(), max_u7);
     }
 
     #[test]
@@ -516,6 +615,20 @@ mod tests {
 
         for (input, expected) in examples {
             std::dbg!(input, expected);
+            assert_eq!(input, expected);
+        }
+    }
+
+    #[test]
+    fn test_ze_example_upscaling() {
+        let examples = [
+            (ux::u7::new(10).ze_upscale::<u16>(), 5120_u16),
+            (ux::u7::new(64).ze_upscale::<u16>(), 32768_u16),
+            (ux::u7::new(87).ze_upscale::<u16>(), 44544_u16),
+            (ux::u7::new(127).ze_upscale::<u16>(), 65024_u16),
+        ];
+
+        for (input, expected) in examples {
             assert_eq!(input, expected);
         }
     }
