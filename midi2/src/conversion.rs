@@ -1,40 +1,3 @@
-pub trait FromCv2<T>: Sized {
-    fn from_cv2(other: T) -> Self;
-}
-
-pub trait IntoCv1<T> {
-    fn into_cv1(self) -> T;
-}
-
-impl<T, U> IntoCv1<U> for T
-where
-    U: FromCv2<T>,
-{
-    fn into_cv1(self) -> U {
-        <U as FromCv2<T>>::from_cv2(self)
-    }
-}
-
-pub trait TryFromCv2<T>: Sized {
-    type Error;
-    fn try_from_cv2(other: T) -> Result<Self, Self::Error>;
-}
-
-pub trait TryIntoCv1<T> {
-    type Error;
-    fn try_into_cv1(self) -> Result<T, Self::Error>;
-}
-
-impl<T, U> TryIntoCv1<U> for T
-where
-    U: TryFromCv2<T>,
-{
-    type Error = U::Error;
-    fn try_into_cv1(self) -> Result<U, Self::Error> {
-        <U as TryFromCv2<T>>::try_from_cv2(self)
-    }
-}
-
 pub(crate) trait Center:
     Into<u32> + TryFrom<u32> + Sized + Copy + PartialEq + PartialOrd
 where
@@ -43,6 +6,7 @@ where
     const MIN: Self;
     const MAX: Self;
 
+    #[allow(dead_code)]
     fn center_value() -> Self {
         let min: u32 = Self::MIN.into();
         let max: u32 = Self::MAX.into();
@@ -52,9 +16,6 @@ where
             .expect("Center shouldn't be larger than max.")
     }
 }
-
-trait Uxs {}
-impl Uxs for ux::u7 {}
 
 impl Center for ux::u7 {
     const MIN: Self = Self::MIN;
@@ -175,6 +136,7 @@ where
     }
 }
 
+#[allow(dead_code)]
 pub(crate) trait ZeroExtensionScaling: Center
 where
     Self: core::ops::Add,
@@ -214,7 +176,7 @@ where
                 let self_u64: u64 = self.into().into();
                 let self_max: u64 = Self::MAX.into().into();
                 let other_max: u64 = U::MAX.into().into();
-                let shift: u32 = (self_max - other_max).count_ones().into();
+                let shift: u32 = (self_max - other_max).count_ones();
                 let half_scale_range: u64 = (1_u32 << (shift - 1_u32)).into();
                 let shifted = (self_u64 + half_scale_range) >> shift;
 
