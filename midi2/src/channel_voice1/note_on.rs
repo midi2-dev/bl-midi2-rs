@@ -81,7 +81,7 @@ impl<
             + crate::buffer::BufferMut
             + crate::buffer::BufferDefault
             + crate::buffer::BufferTryResize,
-    > crate::conversion::TryFromCv2<crate::channel_voice2::NoteOn<A>> for NoteOn<B>
+    > crate::TryFromCv2<crate::channel_voice2::NoteOn<A>> for NoteOn<B>
 {
     type Error = crate::error::BufferOverflow;
     fn try_from_cv2(val: crate::channel_voice2::NoteOn<A>) -> Result<Self, Self::Error> {
@@ -104,7 +104,7 @@ impl<
             + crate::buffer::BufferMut
             + crate::buffer::BufferDefault
             + crate::buffer::BufferResize,
-    > crate::conversion::FromCv2<crate::channel_voice2::NoteOn<A>> for NoteOn<B>
+    > crate::FromCv2<crate::channel_voice2::NoteOn<A>> for NoteOn<B>
 {
     fn from_cv2(val: crate::channel_voice2::NoteOn<A>) -> Self {
         let dest = NoteOn::<B>::new();
@@ -116,7 +116,7 @@ impl<
 mod tests {
     use super::*;
     use crate::{
-        traits::{Channeled, Grouped},
+        traits::{Channeled, FromCv2, Grouped, IntoCv1, TryFromCv2, TryIntoCv1},
         ux::*,
     };
     use pretty_assertions::assert_eq;
@@ -182,7 +182,6 @@ mod tests {
     #[test]
     fn from_midi_2() {
         use crate::channel_voice2;
-        use crate::conversion::IntoCv1;
         use crate::traits::{Channeled, Grouped};
         use std::vec::Vec;
 
@@ -206,7 +205,6 @@ mod tests {
     #[test]
     fn try_from_midi_2() {
         use crate::channel_voice2;
-        use crate::conversion::TryIntoCv1;
         use crate::traits::{Channeled, Grouped};
         use std::vec::Vec;
 
@@ -232,7 +230,6 @@ mod tests {
     #[test]
     fn from_midi_2_zero_velocity() {
         use crate::channel_voice2;
-        use crate::conversion::IntoCv1;
         use crate::traits::{Channeled, Grouped};
         use std::vec::Vec;
 
