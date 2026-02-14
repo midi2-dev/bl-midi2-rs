@@ -1,3 +1,40 @@
+pub trait FromCv2<T>: Sized {
+    fn from_cv2(other: T) -> Self;
+}
+
+pub trait IntoCv1<T> {
+    fn into_cv1(self) -> T;
+}
+
+impl<T, U> IntoCv1<U> for T
+where
+    U: FromCv2<T>,
+{
+    fn into_cv1(self) -> U {
+        <U as FromCv2<T>>::from_cv2(self)
+    }
+}
+
+pub trait TryFromCv2<T>: Sized {
+    type Error;
+    fn try_from_cv2(other: T) -> Result<Self, Self::Error>;
+}
+
+pub trait TryIntoCv1<T> {
+    type Error;
+    fn try_into_cv1(self) -> Result<T, Self::Error>;
+}
+
+impl<T, U> TryIntoCv1<U> for T
+where
+    U: TryFromCv2<T>,
+{
+    type Error = U::Error;
+    fn try_into_cv1(self) -> Result<U, Self::Error> {
+        <U as TryFromCv2<T>>::try_from_cv2(self)
+    }
+}
+
 pub(crate) trait Center:
     Into<u32> + TryFrom<u32> + Sized + Copy + PartialEq + PartialOrd
 where

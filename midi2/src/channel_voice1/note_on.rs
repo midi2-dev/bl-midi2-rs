@@ -69,6 +69,27 @@ impl<
     }
 }
 
+/// Tries to Convert a CV2 Note On message to a CV1 Note On message.
+///
+/// Note: Due to 0 velocity Note On messages being considered
+/// a Note Off in CV1 but not in CV2, a 0 velocity CV2 message
+/// will be converted to a 1 velocity CV1 message.
+#[cfg(feature = "channel-voice2")]
+impl<
+        A: crate::buffer::Buffer<Unit = u32>,
+        B: crate::buffer::Buffer<Unit = u32>
+            + crate::buffer::BufferMut
+            + crate::buffer::BufferDefault
+            + crate::buffer::BufferTryResize,
+    > crate::conversion::TryFromCv2<crate::channel_voice2::NoteOn<A>> for NoteOn<B>
+{
+    type Error = crate::error::BufferOverflow;
+    fn try_from_cv2(val: crate::channel_voice2::NoteOn<A>) -> Result<Self, Self::Error> {
+        let dest = NoteOn::<B>::try_new()?;
+        Ok((val, dest).into())
+    }
+}
+
 /// Converts a CV2 Note On message to a CV1 Note On message.
 /// This is only infallible for resizable buffers.
 /// For fixed size buffers, see the Into impl for (CV2, CV1).
@@ -83,9 +104,9 @@ impl<
             + crate::buffer::BufferMut
             + crate::buffer::BufferDefault
             + crate::buffer::BufferResize,
-    > From<crate::channel_voice2::NoteOn<A>> for NoteOn<B>
+    > crate::conversion::FromCv2<crate::channel_voice2::NoteOn<A>> for NoteOn<B>
 {
-    fn from(val: crate::channel_voice2::NoteOn<A>) -> Self {
+    fn from_cv2(val: crate::channel_voice2::NoteOn<A>) -> Self {
         let dest = NoteOn::<B>::new();
         (val, dest).into()
     }
@@ -161,6 +182,7 @@ mod tests {
     #[test]
     fn from_midi_2() {
         use crate::channel_voice2;
+        use crate::conversion::IntoCv1;
         use crate::traits::{Channeled, Grouped};
         use std::vec::Vec;
 
@@ -176,7 +198,33 @@ mod tests {
         message1.set_note_number(u7::new(0x5E));
         message1.set_velocity(u7::new(0x40));
 
-        let message21: NoteOn<Vec<u32>> = message2.into();
+        let message21: NoteOn<Vec<u32>> = message2.into_cv1();
+
+        assert_eq!(message21, message1);
+    }
+
+    #[test]
+    fn try_from_midi_2() {
+        use crate::channel_voice2;
+        use crate::conversion::TryIntoCv1;
+        use crate::traits::{Channeled, Grouped};
+        use std::vec::Vec;
+
+        let mut message2 = crate::channel_voice2::NoteOn::<[u32; 4]>::new();
+        message2.set_group(u4::new(0x8));
+        message2.set_channel(u4::new(0x8));
+        message2.set_note_number(u7::new(0x5E));
+        message2.set_velocity(0x8000);
+
+        let mut message1 = NoteOn::<[u32; 4]>::new();
+        message1.set_group(u4::new(0x8));
+        message1.set_channel(u4::new(0x8));
+        message1.set_note_number(u7::new(0x5E));
+        message1.set_velocity(u7::new(0x40));
+
+        let message21: NoteOn<[u32; 4]> = message2
+            .try_into_cv1()
+            .expect("Conversion should not fail.");
 
         assert_eq!(message21, message1);
     }
@@ -184,6 +232,7 @@ mod tests {
     #[test]
     fn from_midi_2_zero_velocity() {
         use crate::channel_voice2;
+        use crate::conversion::IntoCv1;
         use crate::traits::{Channeled, Grouped};
         use std::vec::Vec;
 
@@ -199,7 +248,7 @@ mod tests {
         message1.set_note_number(u7::new(0x5E));
         message1.set_velocity(u7::new(0x01));
 
-        let message21: NoteOn<Vec<u32>> = message2.into();
+        let message21: NoteOn<Vec<u32>> = message2.into_cv1();
 
         assert_eq!(message21, message1);
     }
