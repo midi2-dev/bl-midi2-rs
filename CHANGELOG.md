@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.11.1](https://github.com/midi2-dev/bl-midi2-rs/compare/0.11.0..0.11.1) - 2026-04-09
+
+### ✨ Features
+
+- Compile with no enabled features - ([c4d1d6d](https://github.com/midi2-dev/bl-midi2-rs/commit/c4d1d6da0383f873e36e346897757f30332e7128))
+
+### 🛠️ Refactor
+
+- Update to derive-more 2.1 - ([92ccf07](https://github.com/midi2-dev/bl-midi2-rs/commit/92ccf0715e2a459e0cc1f4a1e8527b945624473b))
+
+### ◀️🔙 Revert
+
+- Remove commented out code - ([d40aa58](https://github.com/midi2-dev/bl-midi2-rs/commit/d40aa5891ac56e86d95f097f4259d1a8d1e35521))
+
+
 ## [0.11.0](https://github.com/midi2-dev/bl-midi2-rs/compare/0.10.0..0.11.0) - 2025-08-21
 
 ### ✨ Features

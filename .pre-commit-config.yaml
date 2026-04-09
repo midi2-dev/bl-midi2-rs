@@ -5,7 +5,7 @@ repos:
   - id: cargo-fmt
     stages: [pre-commit]
 - repo: https://github.com/compilerla/conventional-pre-commit
-  rev: v4.3.0
+  rev: v4.4.0
   hooks:
   - id: conventional-pre-commit
     stages: [commit-msg]
@@ -27,7 +27,7 @@ repos:
   - id: mixed-line-ending
     stages: [pre-commit]
 - repo: https://github.com/codespell-project/codespell
-  rev: v2.4.1
+  rev: v2.4.2
   hooks:
   - id: codespell
     args: [-I, codespell-ignore, -w]
