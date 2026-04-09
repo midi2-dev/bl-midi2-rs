@@ -2,7 +2,8 @@
 
 use crate::{detail::common_err_strings, error::InvalidData};
 
-#[derive(Eq, PartialEq, Clone, Debug, derive_more::From)]
+#[derive(Eq, PartialEq, Clone, Debug, derive_more::From, derive_more::Deref)]
+#[deref(forward)]
 pub enum Packet {
     #[cfg(feature = "channel-voice1")]
     ChannelVoice1(crate::channel_voice1::Packet),
@@ -20,30 +21,6 @@ pub enum Packet {
     UmpStream(crate::ump_stream::Packet),
     #[cfg(feature = "utility")]
     Utility(crate::utility::Packet),
-}
-
-impl core::ops::Deref for Packet {
-    type Target = [u32];
-    fn deref(&self) -> &Self::Target {
-        match self {
-            #[cfg(feature = "channel-voice1")]
-            Self::ChannelVoice1(p) => p.deref(),
-            #[cfg(feature = "channel-voice2")]
-            Self::ChannelVoice2(p) => p.deref(),
-            #[cfg(feature = "flex-data")]
-            Self::FlexData(p) => p.deref(),
-            #[cfg(feature = "sysex7")]
-            Self::Sysex7(p) => p.deref(),
-            #[cfg(feature = "sysex8")]
-            Self::Sysex8(p) => p.deref(),
-            #[cfg(feature = "system-common")]
-            Self::SystemCommon(p) => p.deref(),
-            #[cfg(feature = "ump-stream")]
-            Self::UmpStream(p) => p.deref(),
-            #[cfg(feature = "utility")]
-            Self::Utility(p) => p.deref(),
-        }
-    }
 }
 
 impl<'a> core::convert::TryFrom<&'a [u32]> for Packet {
