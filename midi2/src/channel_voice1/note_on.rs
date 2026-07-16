@@ -116,7 +116,7 @@ impl<
 mod tests {
     use super::*;
     use crate::{
-        traits::{Channeled, FromCv2, Grouped, IntoCv1, TryFromCv2, TryIntoCv1},
+        traits::{Channeled, Grouped, IntoCv1, TryIntoCv1},
         ux::*,
     };
     use pretty_assertions::assert_eq;
@@ -181,7 +181,6 @@ mod tests {
 
     #[test]
     fn from_midi_2() {
-        use crate::channel_voice2;
         use crate::traits::{Channeled, Grouped};
         use std::vec::Vec;
 
@@ -204,9 +203,7 @@ mod tests {
 
     #[test]
     fn try_from_midi_2() {
-        use crate::channel_voice2;
         use crate::traits::{Channeled, Grouped};
-        use std::vec::Vec;
 
         let mut message2 = crate::channel_voice2::NoteOn::<[u32; 4]>::new();
         message2.set_group(u4::new(0x8));
@@ -229,7 +226,6 @@ mod tests {
 
     #[test]
     fn from_midi_2_zero_velocity() {
-        use crate::channel_voice2;
         use crate::traits::{Channeled, Grouped};
         use std::vec::Vec;
 
@@ -252,7 +248,6 @@ mod tests {
 
     #[test]
     fn from_midi_2_with_dest() {
-        use crate::channel_voice2;
         use crate::traits::{Channeled, Grouped};
 
         let mut message2 = crate::channel_voice2::NoteOn::<[u32; 4]>::new();
@@ -275,7 +270,6 @@ mod tests {
 
     #[test]
     fn from_midi_2_zero_velocity_with_dest() {
-        use crate::channel_voice2;
         use crate::traits::{Channeled, Grouped};
 
         let mut message2 = crate::channel_voice2::NoteOn::<[u32; 4]>::new();
