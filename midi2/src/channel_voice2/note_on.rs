@@ -129,7 +129,7 @@ mod tests {
     }
 
     #[test]
-    fn try_from_midi_2() {
+    fn try_from_midi_2_with_dest() {
         use crate::traits::{Channeled, Grouped};
 
         let mut message2 = NoteOn::<[u32; 4]>::new();
@@ -149,5 +149,22 @@ mod tests {
             .expect("Message should convert.");
 
         assert_eq!(message12, message2);
+    }
+
+    #[test]
+    fn try_from_midi_2_with_dest_zero_velocity() {
+        use crate::error::InvalidData;
+        use crate::traits::{Channeled, Grouped};
+
+        let mut message1 = crate::channel_voice1::NoteOn::<[u32; 4]>::new();
+        message1.set_group(u4::new(0x8));
+        message1.set_channel(u4::new(0x8));
+        message1.set_note_number(u7::new(0x5E));
+        message1.set_velocity(u7::new(0x00));
+
+        let message12: Result<NoteOn<[u32; 4]>, InvalidData> =
+            (message1, NoteOn::<[u32; 4]>::new()).try_into();
+
+        assert_eq!(message12, Err(InvalidData("CV1 Note On messages with 0 veolicty should be converted to CV2 Note Off messages.")));
     }
 }
