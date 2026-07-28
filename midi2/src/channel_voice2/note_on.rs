@@ -30,6 +30,37 @@ struct NoteOn {
     attribute: Option<Attribute>,
 }
 
+/// Tries to convert a CV1 Note On message to CV2 Note On message,
+/// storing the result in a pre-instantiated CV2 Note On.
+///
+/// Will fail if the CV1 Note On has 0 Velocity, as it must be converted
+/// to a CV2 Note Off message instead.
+#[cfg(feature = "channel-voice1")]
+impl<
+        A: crate::buffer::Buffer<Unit = u32>,
+        B: crate::buffer::Buffer<Unit = u32> + crate::buffer::BufferMut,
+    > TryFrom<(crate::channel_voice1::NoteOn<A>, NoteOn<B>)> for NoteOn<B>
+{
+    type Error = crate::error::InvalidData;
+
+    fn try_from(val: (crate::channel_voice1::NoteOn<A>, NoteOn<B>)) -> Result<Self, Self::Error> {
+        use crate::conversion::MinCenterMax;
+        use crate::error::InvalidData;
+        use crate::traits::{Channeled, Grouped};
+
+        let (src, mut dest) = val;
+        if src.velocity() == ux::u7::new(0) {
+            Err(InvalidData("CV1 Note On messages with 0 veolicty should be converted to CV2 Note Off messages."))
+        } else {
+            dest.set_group(src.group());
+            dest.set_channel(src.channel());
+            dest.set_note_number(src.note_number());
+            dest.set_velocity(src.velocity().mcm_upscale::<u16>());
+            Ok(dest)
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -95,5 +126,28 @@ mod tests {
                 .attribute(),
             Some(Attribute::Pitch7_9(Fixed7_9::from_bits(0b1110100110001010))),
         );
+    }
+
+    #[test]
+    fn try_from_midi_2() {
+        use crate::traits::{Channeled, Grouped};
+
+        let mut message2 = NoteOn::<[u32; 4]>::new();
+        message2.set_group(u4::new(0x8));
+        message2.set_channel(u4::new(0x8));
+        message2.set_note_number(u7::new(0x5E));
+        message2.set_velocity(0x8000);
+
+        let mut message1 = crate::channel_voice1::NoteOn::<[u32; 4]>::new();
+        message1.set_group(u4::new(0x8));
+        message1.set_channel(u4::new(0x8));
+        message1.set_note_number(u7::new(0x5E));
+        message1.set_velocity(u7::new(0x40));
+
+        let message12: NoteOn<[u32; 4]> = (message1, NoteOn::<[u32; 4]>::new())
+            .try_into()
+            .expect("Message should convert.");
+
+        assert_eq!(message12, message2);
     }
 }
