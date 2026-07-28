@@ -31,7 +31,7 @@ struct NoteOn {
 }
 
 /// Tries to convert a CV1 Note On message to CV2 Note On message,
-/// storing the result in a pre-instantiated CV2 Note On.
+/// storing the result in a pre-allocated CV2 Note On.
 ///
 /// Will fail if the CV1 Note On has 0 Velocity, as it must be converted
 /// to a CV2 Note Off message instead.
@@ -57,6 +57,41 @@ impl<
             dest.set_note_number(src.note_number());
             dest.set_velocity(src.velocity().mcm_upscale::<u16>());
             Ok(dest)
+        }
+    }
+}
+
+/// Tries to convert a CV1 Note On message to CV2 Note On message.
+///
+/// Will fail if the CV1 Note On has 0 Velocity, as it must be converted
+/// to a CV2 Note Off message instead.
+///
+/// Will also fail if there is not enough room in the destination buffer to
+/// allocate a new CV2 NoteOn.
+///
+/// Will only attempt to allocate a new CV2 Note On if the given
+/// CV1 NoteOn has a non-zero velocity.
+#[cfg(feature = "channel-voice1")]
+impl<
+        A: crate::buffer::Buffer<Unit = u32>,
+        B: crate::buffer::Buffer<Unit = u32>
+            + crate::buffer::BufferMut
+            + crate::buffer::BufferDefault
+            + crate::buffer::BufferTryResize,
+    > crate::TryFromCv1<crate::channel_voice1::NoteOn<A>> for NoteOn<B>
+{
+    type Error = crate::error::Error;
+
+    fn try_from_cv1(val: crate::channel_voice1::NoteOn<A>) -> Result<Self, Self::Error> {
+        use crate::error::InvalidData;
+
+        if val.velocity() == ux::u7::new(0) {
+            Err(Self::Error::InvalidData(InvalidData("CV1 Note On messages with 0 veolicty should be converted to CV2 Note Off messages.")))
+        } else {
+            let dest = NoteOn::<B>::try_new()?;
+            Ok((val, dest)
+                .try_into()
+                .expect("Conversion should not fail. We already checked for 0 velocity."))
         }
     }
 }
@@ -126,6 +161,29 @@ mod tests {
                 .attribute(),
             Some(Attribute::Pitch7_9(Fixed7_9::from_bits(0b1110100110001010))),
         );
+    }
+
+    #[test]
+    fn try_from_midi_2() {
+        use crate::traits::{Channeled, Grouped, TryIntoCv2};
+
+        let mut message2 = NoteOn::<[u32; 4]>::new();
+        message2.set_group(u4::new(0x8));
+        message2.set_channel(u4::new(0x8));
+        message2.set_note_number(u7::new(0x5E));
+        message2.set_velocity(0x8000);
+
+        let mut message1 = crate::channel_voice1::NoteOn::<[u32; 4]>::new();
+        message1.set_group(u4::new(0x8));
+        message1.set_channel(u4::new(0x8));
+        message1.set_note_number(u7::new(0x5E));
+        message1.set_velocity(u7::new(0x40));
+
+        let message12: NoteOn<[u32; 4]> = message1
+            .try_into_cv2()
+            .expect("Conversion should not fail.");
+
+        assert_eq!(message12, message2);
     }
 
     #[test]

@@ -732,12 +732,20 @@ pub(crate) trait BufferAccess<B: Buffer> {
         B: BufferMut;
 }
 
+pub trait FromCv1<T>: Sized {
+    fn from_cv1(other: T) -> Self;
+}
+
 pub trait FromCv2<T>: Sized {
     fn from_cv2(other: T) -> Self;
 }
 
 pub trait IntoCv1<T> {
     fn into_cv1(self) -> T;
+}
+
+pub trait IntoCv2<T> {
+    fn into_cv2(self) -> T;
 }
 
 impl<T, U> IntoCv1<U> for T
@@ -747,6 +755,20 @@ where
     fn into_cv1(self) -> U {
         <U as FromCv2<T>>::from_cv2(self)
     }
+}
+
+impl<T, U> IntoCv2<U> for T
+where
+    U: FromCv1<T>,
+{
+    fn into_cv2(self) -> U {
+        <U as FromCv1<T>>::from_cv1(self)
+    }
+}
+
+pub trait TryFromCv1<T>: Sized {
+    type Error;
+    fn try_from_cv1(other: T) -> Result<Self, Self::Error>;
 }
 
 pub trait TryFromCv2<T>: Sized {
@@ -759,6 +781,11 @@ pub trait TryIntoCv1<T> {
     fn try_into_cv1(self) -> Result<T, Self::Error>;
 }
 
+pub trait TryIntoCv2<T> {
+    type Error;
+    fn try_into_cv2(self) -> Result<T, Self::Error>;
+}
+
 impl<T, U> TryIntoCv1<U> for T
 where
     U: TryFromCv2<T>,
@@ -766,5 +793,15 @@ where
     type Error = U::Error;
     fn try_into_cv1(self) -> Result<U, Self::Error> {
         <U as TryFromCv2<T>>::try_from_cv2(self)
+    }
+}
+
+impl<T, U> TryIntoCv2<U> for T
+where
+    U: TryFromCv1<T>,
+{
+    type Error = U::Error;
+    fn try_into_cv2(self) -> Result<U, Self::Error> {
+        <U as TryFromCv1<T>>::try_from_cv1(self)
     }
 }

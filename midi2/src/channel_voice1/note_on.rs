@@ -38,7 +38,7 @@ struct NoteOn {
 }
 
 /// Converts a CV2 Note On message to CV1 Note On message,
-/// storing the result in a pre-instantiated CV1 Note On.
+/// storing the result in a pre-allocated CV1 Note On.
 ///
 /// Note: Due to 0 velocity Note On messages being considered
 /// a Note Off in CV1 but not in CV2, a 0 velocity CV2 message
