@@ -164,7 +164,7 @@ fn property_getter(property: &Property, public: bool) -> TokenStream {
 fn property_setter(property: &Property, public: bool) -> TokenStream {
     let meta_type = &property.meta_type;
     let ident = syn::Ident::new(
-        format!("set_{}", &property.ident.to_string()).as_str(),
+        format!("set_{}", property.ident.to_string()).as_str(),
         proc_macro2::Span::call_site(),
     );
     let ty = &property.ty;
