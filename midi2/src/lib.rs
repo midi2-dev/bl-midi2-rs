@@ -11,6 +11,7 @@ pub mod channel_voice1;
 pub mod channel_voice2;
 #[cfg(feature = "ci")]
 pub mod ci;
+pub mod conversion;
 #[cfg(feature = "flex-data")]
 pub mod flex_data;
 #[cfg(feature = "sysex7")]
