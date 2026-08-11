@@ -67,7 +67,7 @@ impl Generator {
         }
     }
 
-    fn generate(&mut self) -> Result<MessageIterator, midi2::error::BufferOverflow> {
+    fn generate(&mut self) -> Result<MessageIterator<'_>, midi2::error::BufferOverflow> {
         let mut number_of_messages = 0;
         let buffer = &mut self.buffer[..];
 
