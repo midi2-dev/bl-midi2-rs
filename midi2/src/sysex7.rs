@@ -172,7 +172,9 @@ impl<'a, B: crate::buffer::Buffer> crate::detail::property::ReadProperty<'a, B>
         if <B::Unit as crate::buffer::UnitPrivate>::UNIT_ID == crate::buffer::UNIT_ID_U32 {
             if buffer
                 .specialise_u32()
-                .chunks_exact(2)
+                .as_chunks::<2>()
+                .0
+                .iter()
                 .any(|p| u8::from(p[0].nibble(3)) > 6)
             {
                 Err(crate::error::InvalidData(ERR_INVALID_PACKET_SIZE))
@@ -230,7 +232,9 @@ impl<B: crate::buffer::Buffer + crate::buffer::BufferMut> crate::detail::propert
             const TYPE: ux::u4 = ux::u4::new(UMP_MESSAGE_TYPE);
             for packet in buffer
                 .specialise_u32_mut()
-                .chunks_exact_mut(2)
+                .as_chunks_mut::<2>()
+                .0
+                .iter_mut()
                 .take_while(|packet| packet[0].nibble(0) == TYPE)
             {
                 packet[0].set_nibble(1, group);
@@ -269,7 +273,9 @@ impl<B: crate::buffer::Buffer> crate::traits::Size<B> for Sysex7<B> {
             crate::buffer::UNIT_ID_U32 => {
                 self.0
                     .specialise_u32()
-                    .chunks_exact(2)
+                    .as_chunks::<2>()
+                    .0
+                    .iter()
                     .position(|p| {
                         let status: u8 = p[0].nibble(2).into();
                         status == 0x0 || status == 0x3
@@ -432,8 +438,10 @@ impl<B: crate::buffer::Buffer> Sysex<B> for Sysex7<B> {
                 let size_cache = self
                     .data()
                     .specialise_u32()
-                    .chunks_exact(2)
-                    .map(PayloadIterator::<B::Unit>::packet_size)
+                    .as_chunks::<2>()
+                    .0
+                    .iter()
+                    .map(|packet| PayloadIterator::<B::Unit>::packet_size(packet[0]))
                     .sum::<usize>();
                 PayloadIterator {
                     data: self.0.buffer(),
@@ -668,7 +676,9 @@ fn is_compact<B: crate::buffer::Buffer>(sysex: &Sysex7<B>) -> bool {
                 .0
                 .buffer()
                 .specialise_u32()
-                .chunks_exact(4)
+                .as_chunks::<4>()
+                .0
+                .iter()
                 .take_while(|packet| u8::from(packet[0].nibble(0)) == UMP_MESSAGE_TYPE)
             {
                 let status: u8 = chunk[0].nibble(2).into();
@@ -755,7 +765,9 @@ fn try_resize_ump<
     let mut iter = sysex
         .0
         .specialise_u32_mut()
-        .chunks_exact_mut(2)
+        .as_chunks_mut::<2>()
+        .0
+        .iter_mut()
         .take(buffer_size / 2)
         .peekable();
     let mut group = None;
@@ -896,13 +908,16 @@ impl<U: crate::buffer::Unit> core::iter::Iterator for PayloadIterator<'_, U> {
             crate::buffer::UNIT_ID_U32 => {
                 let mut do_nth = || {
                     let mut packets = self.data_ump()[self.packet_index * 2..]
-                        .chunks_exact(2)
+                        .as_chunks::<2>()
+                        .0
+                        .iter()
                         .enumerate();
 
                     {
                         // first we check to see whether the requested byte lies
                         // within the first packet where we are potentially already offset
-                        let remaining = Self::packet_size(packets.next()?.1) - self.payload_index;
+                        let remaining =
+                            Self::packet_size(packets.next()?.1[0]) - self.payload_index;
                         if n < remaining {
                             self.payload_index += n;
                             self.size_cache -= n;
@@ -917,7 +932,7 @@ impl<U: crate::buffer::Unit> core::iter::Iterator for PayloadIterator<'_, U> {
                     // requested location
                     loop {
                         let (packet_index, packet) = packets.next()?;
-                        let size = Self::packet_size(packet);
+                        let size = Self::packet_size(packet[0]);
                         if n < size {
                             // we found the requested packet
                             self.packet_index += packet_index;
@@ -995,11 +1010,11 @@ impl<'a, U: crate::buffer::Unit> PayloadIterator<'a, U> {
     }
 
     fn current_packet_size_ump(&self) -> usize {
-        Self::packet_size(&self.data_ump()[self.packet_index * 2..self.packet_index * 2 + 2])
+        Self::packet_size(self.data_ump()[self.packet_index * 2])
     }
 
-    fn packet_size(packet: &[u32]) -> usize {
-        u8::from(packet[0].nibble(3)) as usize
+    fn packet_size(header: u32) -> usize {
+        u8::from(header.nibble(3)) as usize
     }
 }
 

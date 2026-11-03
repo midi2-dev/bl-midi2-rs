@@ -49,7 +49,9 @@ impl<'a, B: Ump> property::ReadProperty<'a, B> for FunctionBlockProperty {
         let function_block = buffer.buffer()[0].octet(2);
         if !buffer
             .buffer()
-            .chunks_exact(4)
+            .as_chunks::<4>()
+            .0
+            .iter()
             .all(|packet| packet[0].octet(2) == function_block)
         {
             Err(crate::error::InvalidData(
@@ -74,7 +76,7 @@ impl<B: Ump + BufferMut> property::WriteProperty<B> for FunctionBlockProperty {
     }
     fn write(buffer: &mut B, v: Self::Type) {
         use crate::detail::BitOps;
-        for packet in buffer.buffer_mut().chunks_exact_mut(4) {
+        for packet in buffer.buffer_mut().as_chunks_mut::<4>().0 {
             packet[0].set_octet(2, v);
         }
     }

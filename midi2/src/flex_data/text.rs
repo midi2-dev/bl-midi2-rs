@@ -87,7 +87,13 @@ fn grow_buffer(mut buffer: &mut [u32], size: usize) {
     let status = flex_data::status_from_buffer(buffer);
     let number_of_packets = size / 4;
 
-    for (i, packet) in buffer.buffer_mut().chunks_exact_mut(4).enumerate() {
+    for (i, packet) in buffer
+        .buffer_mut()
+        .as_chunks_mut::<4>()
+        .0
+        .iter_mut()
+        .enumerate()
+    {
         if i == number_of_packets {
             break;
         }

@@ -928,7 +928,9 @@ impl<'a, const STATUS: u8, B: Ump> ReadProperty<'a, B> for StatusProperty<STATUS
     fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         if buffer
             .buffer()
-            .chunks_exact(4)
+            .as_chunks::<4>()
+            .0
+            .iter()
             .all(|packet| packet[0].octet(3) == STATUS)
         {
             Ok(())
@@ -959,7 +961,9 @@ impl<'a, const BANK: u8, B: Ump> ReadProperty<'a, B> for BankProperty<BANK> {
     fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         if buffer
             .buffer()
-            .chunks_exact(4)
+            .as_chunks::<4>()
+            .0
+            .iter()
             .all(|packet| packet[0].octet(2) == BANK)
         {
             Ok(())
@@ -1138,7 +1142,9 @@ impl<B: Ump + BufferMut> WriteProperty<B> for GroupProperty {
     fn write(buffer: &mut B, group: Self::Type) {
         for packet in buffer
             .buffer_mut()
-            .chunks_exact_mut(4)
+            .as_chunks_mut::<4>()
+            .0
+            .iter_mut()
             .take_while(|packet| u8::from(packet[0].nibble(0)) == UMP_MESSAGE_TYPE)
         {
             packet[0].set_nibble(1, group);
@@ -1155,7 +1161,9 @@ impl<B: Ump + BufferMut> WriteProperty<B> for GroupProperty {
 fn flex_data_dyn_size<B: crate::buffer::Ump>(buffer: &B) -> usize {
     buffer
         .buffer()
-        .chunks_exact(4)
+        .as_chunks::<4>()
+        .0
+        .iter()
         .position(|p| {
             let status: u8 = p[0].crumb(4).into();
             status == COMPLETE_FORMAT || status == END_FORMAT
@@ -1182,7 +1190,7 @@ fn status_to_buffer(buffer: &mut [u32], status: u8) {
 }
 
 fn clear_payload(buffer: &mut [u32]) {
-    for packet in buffer.chunks_exact_mut(4) {
+    for packet in buffer.as_chunks_mut::<4>().0 {
         packet[1] = 0x0;
         packet[2] = 0x0;
         packet[3] = 0x0;

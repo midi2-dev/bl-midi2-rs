@@ -66,7 +66,7 @@ impl<B: crate::buffer::Ump> crate::detail::property::Property<B> for ValidPacket
 impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B> for ValidPacketSizes {
     fn read(_buffer: &'a B) -> Self::Type {}
     fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
-        if buffer.buffer().chunks_exact(4).any(|p| {
+        if buffer.buffer().as_chunks::<4>().0.iter().any(|p| {
             let number_bytes = u8::from(p[0].nibble(3));
             !(1..=14).contains(&number_bytes)
         }) {
@@ -85,7 +85,9 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::
     fn write(buffer: &mut B, _: Self::Type) {
         for packet in buffer
             .buffer_mut()
-            .chunks_exact_mut(4)
+            .as_chunks_mut::<4>()
+            .0
+            .iter_mut()
             .take_while(|packet| u8::from(packet[0].nibble(0)) == UMP_MESSAGE_TYPE)
         {
             let sz = packet[0].nibble(3);
@@ -125,7 +127,9 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::
     fn write(buffer: &mut B, group: Self::Type) {
         for packet in buffer
             .buffer_mut()
-            .chunks_exact_mut(4)
+            .as_chunks_mut::<4>()
+            .0
+            .iter_mut()
             .take_while(|packet| u8::from(packet[0].nibble(0)) == UMP_MESSAGE_TYPE)
         {
             packet[0].set_nibble(1, group);
@@ -153,7 +157,9 @@ impl<'a, B: crate::buffer::Ump> crate::detail::property::ReadProperty<'a, B> for
         let sid = stream_id_from_packet;
         let buffer = buffer.buffer();
         if buffer
-            .chunks_exact(4)
+            .as_chunks::<4>()
+            .0
+            .iter()
             .take_while(|packet| u8::from(packet[0].nibble(0)) == UMP_MESSAGE_TYPE)
             .all(|chunk| sid(chunk) == sid(buffer))
         {
@@ -174,7 +180,9 @@ impl<B: crate::buffer::Ump + crate::buffer::BufferMut> crate::detail::property::
     fn write(buffer: &mut B, id: Self::Type) {
         for packet in buffer
             .buffer_mut()
-            .chunks_exact_mut(4)
+            .as_chunks_mut::<4>()
+            .0
+            .iter_mut()
             .take_while(|packet| u8::from(packet[0].nibble(0)) == UMP_MESSAGE_TYPE)
         {
             packet[0].set_octet(3, id);
@@ -192,7 +200,9 @@ impl<B: crate::buffer::Ump> crate::traits::Size<B> for Sysex8<B> {
     fn size(&self) -> usize {
         self.0
             .buffer()
-            .chunks_exact(4)
+            .as_chunks::<4>()
+            .0
+            .iter()
             .position(|p| {
                 let status: u8 = p[0].nibble(2).into();
                 status == 0x0 || status == 0x3
@@ -236,13 +246,15 @@ impl core::iter::Iterator for PayloadIterator<'_> {
     fn nth(&mut self, mut n: usize) -> Option<Self::Item> {
         let mut do_nth = || {
             let mut packets = self.data[self.packet_index * 4..]
-                .chunks_exact(4)
+                .as_chunks::<4>()
+                .0
+                .iter()
                 .enumerate();
 
             {
                 // first we check to see whether the requested byte lies
                 // within the first packet where we are potentially already offset
-                let remaining = Self::packet_size(packets.next()?.1) - self.payload_index;
+                let remaining = Self::packet_size(packets.next()?.1[0]) - self.payload_index;
                 if n < remaining {
                     self.payload_index += n;
                     self.size_cache -= n;
@@ -257,7 +269,7 @@ impl core::iter::Iterator for PayloadIterator<'_> {
             // requested location
             loop {
                 let (packet_index, packet) = packets.next()?;
-                let size = Self::packet_size(packet);
+                let size = Self::packet_size(packet[0]);
                 if n < size {
                     // we found the requested packet
                     self.packet_index += packet_index;
@@ -306,14 +318,14 @@ impl PayloadIterator<'_> {
         let octet_index = (self.payload_index + 3) % 4;
         self.data[buffer_index].octet(octet_index)
     }
-    fn packet_size(packet: &[u32]) -> usize {
-        u8::from(packet[0].nibble(3)) as usize - 1
+    fn packet_size(header: u32) -> usize {
+        u8::from(header.nibble(3)) as usize - 1
     }
     fn finished(&self) -> bool {
         self.size_cache == 0
     }
     fn size_of_current_packet(&self) -> usize {
-        Self::packet_size(&self.data[self.packet_index * 4..(self.packet_index * 4 + 4)])
+        Self::packet_size(self.data[self.packet_index * 4])
     }
     fn advance(&mut self) {
         self.payload_index += 1;
@@ -344,8 +356,10 @@ impl<B: crate::buffer::Ump> Sysex<B> for Sysex8<B> {
             payload_index: 0,
             size_cache: self
                 .data()
-                .chunks_exact(4)
-                .map(PayloadIterator::packet_size)
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .map(|packet| PayloadIterator::packet_size(packet[0]))
                 .sum(),
         }
     }
@@ -513,7 +527,9 @@ fn try_resize<
     let mut iter = sysex
         .0
         .buffer_mut()
-        .chunks_exact_mut(4)
+        .as_chunks_mut::<4>()
+        .0
+        .iter_mut()
         .take(buffer_size / 4)
         .peekable();
     let mut group = None;
@@ -585,7 +601,9 @@ fn is_compact<B: crate::buffer::Buffer<Unit = u32>>(sysex: &Sysex8<B>) -> bool {
     for chunk in sysex
         .0
         .buffer()
-        .chunks_exact(4)
+        .as_chunks::<4>()
+        .0
+        .iter()
         .take_while(|packet| u8::from(packet[0].nibble(0)) == UMP_MESSAGE_TYPE)
     {
         let status: u8 = chunk[0].nibble(2).into();

@@ -125,7 +125,9 @@ impl<'a, const STATUS: u16, B: Ump> property::ReadProperty<'a, B> for StatusProp
     fn validate(buffer: &B) -> Result<(), crate::error::InvalidData> {
         if buffer
             .buffer()
-            .chunks_exact(4)
+            .as_chunks::<4>()
+            .0
+            .iter()
             .all(|packet| status_from_buffer(packet) == STATUS)
         {
             Ok(())
@@ -140,7 +142,7 @@ impl<const STATUS: u16, B: Ump + BufferMut> property::WriteProperty<B> for Statu
         Ok(())
     }
     fn write(buffer: &mut B, _v: Self::Type) {
-        for packet in buffer.buffer_mut().chunks_exact_mut(4) {
+        for packet in buffer.buffer_mut().as_chunks_mut::<4>().0 {
             packet[0] &= !0x03FF_0000;
             packet[0] |= (STATUS as u32) << 16;
         }
@@ -345,7 +347,9 @@ fn set_format_fields(buffer: &mut [u32]) {
     use crate::ux::u2;
 
     let mut packets = buffer
-        .chunks_exact_mut(4)
+        .as_chunks_mut::<4>()
+        .0
+        .iter_mut()
         .take_while(|packet| u8::from(packet[0].nibble(0)) == UMP_MESSAGE_TYPE)
         .peekable();
 
@@ -370,7 +374,7 @@ fn set_format_fields(buffer: &mut [u32]) {
 
 fn clear_payload<const OFFSET: usize>(buffer: &mut [u32]) {
     debug_assert!(OFFSET < 2);
-    for packet in buffer.chunks_exact_mut(4) {
+    for packet in buffer.as_chunks_mut::<4>().0 {
         use crate::detail::BitOps;
         if OFFSET < 1 {
             packet[0].set_octet(2, 0);
@@ -404,13 +408,13 @@ fn write_message_header_data(buffer: &mut [u32], size: usize) {
 
     let status = status_from_buffer(buffer);
 
-    for packet in buffer[..size].chunks_exact_mut(4) {
+    for packet in buffer[..size].as_chunks_mut::<4>().0 {
         packet[0].set_nibble(0, u4::new(UMP_MESSAGE_TYPE));
         packet[0] &= !0x03FF_0000;
         packet[0] |= (status as u32) << 16;
     }
 
-    for packet in buffer[size..].chunks_exact_mut(4) {
+    for packet in buffer[size..].as_chunks_mut::<4>().0 {
         packet[0] = 0x0;
     }
 }
@@ -420,7 +424,9 @@ fn message_size<B: crate::buffer::Ump>(buffer: &B) -> usize {
 
     buffer
         .buffer()
-        .chunks_exact(4)
+        .as_chunks::<4>()
+        .0
+        .iter()
         .position(|p| {
             let format: u8 = p[0].crumb(2).into();
             format == COMPLETE_FORMAT || format == END_FORMAT
